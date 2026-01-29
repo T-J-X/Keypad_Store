@@ -8,11 +8,28 @@ import {
   LogLevel,
   VendureConfig,
 } from '@vendure/core';
-import { AssetServerPlugin } from '@vendure/asset-server-plugin';
+import {
+  AssetServerPlugin,
+  configureS3AssetStorage,
+} from '@vendure/asset-server-plugin';
 import { AdminUiPlugin } from '@vendure/admin-ui-plugin';
 
 const port = Number(process.env.PORT ?? 3000);
 const adminPath = process.env.ADMIN_UI_PATH ?? 'admin';
+
+const storageStrategyFactory = configureS3AssetStorage({
+  bucket: process.env.S3_BUCKET ?? 'vendure-assets',
+  credentials: {
+    accessKeyId: process.env.S3_ACCESS_KEY ?? '',
+    secretAccessKey: process.env.S3_SECRET_KEY ?? '',
+  },
+  nativeS3Configuration: {
+    endpoint: process.env.S3_ENDPOINT ?? 'http://127.0.0.1:9000',
+    region: process.env.S3_REGION ?? 'eu-west-1',
+    forcePathStyle: (process.env.S3_FORCE_PATH_STYLE ?? 'true') === 'true',
+    signatureVersion: 'v4',
+  },
+});
 
 const config: VendureConfig = {
   apiOptions: {
@@ -39,7 +56,6 @@ const config: VendureConfig = {
   logger: new DefaultLogger({ level: LogLevel.Info }),
 
   plugins: [
-    // REQUIRED for Admin UI product/collection search
     DefaultSearchPlugin.init({
       indexStockStatus: false,
       bufferUpdates: false,
@@ -50,6 +66,7 @@ const config: VendureConfig = {
     AssetServerPlugin.init({
       route: 'assets',
       assetUploadDir: path.join(process.cwd(), 'apps/backend/static/assets'),
+      storageStrategyFactory,
     }),
 
     AdminUiPlugin.init({
