@@ -1,0 +1,27 @@
+# Roo Code ignore rules (similar to .gitignore)
+# Keep secrets + noise out of Roo context.
+
+# Secrets
+.env
+.env.*
+infra/.env
+infra/.env.*
+**/*.pem
+**/*.key
+
+# Dependencies / build
+node_modules/
+dist/
+build/
+.next/
+out/
+coverage/
+*.log
+
+# Git / editor
+.git/
+.DS_Store
+
+# Cache
+.cache/
+tmp/
