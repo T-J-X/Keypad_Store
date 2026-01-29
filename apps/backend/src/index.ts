@@ -56,7 +56,7 @@ bootstrap(config)
 - Shop API:   http://localhost:${port}/${config.apiOptions!.shopApiPath}
 - Admin API:  http://localhost:${port}/${config.apiOptions!.adminApiPath}
 - Assets:     http://localhost:${port}/assets
-- Admin UI:   http://localhost:${port + 1}/${process.env.ADMIN_UI_PATH ?? 'admin'}`);
+- Admin UI:   http://localhost:${port}/${process.env.ADMIN_UI_PATH ?? 'admin'}`);
   })
   .catch((err) => {
     // eslint-disable-next-line no-console
