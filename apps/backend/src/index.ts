@@ -1,10 +1,18 @@
 import 'dotenv/config';
 import path from 'node:path';
-import { bootstrap, DefaultLogger, DefaultSchedulerPlugin, LogLevel, VendureConfig } from '@vendure/core';
+import {
+  bootstrap,
+  DefaultLogger,
+  DefaultSchedulerPlugin,
+  DefaultSearchPlugin,
+  LogLevel,
+  VendureConfig,
+} from '@vendure/core';
 import { AssetServerPlugin } from '@vendure/asset-server-plugin';
 import { AdminUiPlugin } from '@vendure/admin-ui-plugin';
 
 const port = Number(process.env.PORT ?? 3000);
+const adminPath = process.env.ADMIN_UI_PATH ?? 'admin';
 
 const config: VendureConfig = {
   apiOptions: {
@@ -29,7 +37,14 @@ const config: VendureConfig = {
     logging: false,
   },
   logger: new DefaultLogger({ level: LogLevel.Info }),
+
   plugins: [
+    // REQUIRED for Admin UI product/collection search
+    DefaultSearchPlugin.init({
+      indexStockStatus: false,
+      bufferUpdates: false,
+    }),
+
     DefaultSchedulerPlugin.init(),
 
     AssetServerPlugin.init({
@@ -38,7 +53,7 @@ const config: VendureConfig = {
     }),
 
     AdminUiPlugin.init({
-      route: process.env.ADMIN_UI_PATH ?? 'admin',
+      route: adminPath,
       port: port + 1,
       adminUiConfig: {
         apiHost: 'http://localhost',
@@ -51,15 +66,13 @@ const config: VendureConfig = {
 
 bootstrap(config)
   .then(() => {
-    // eslint-disable-next-line no-console
     console.log(`Vendure running:
 - Shop API:   http://localhost:${port}/${config.apiOptions!.shopApiPath}
 - Admin API:  http://localhost:${port}/${config.apiOptions!.adminApiPath}
 - Assets:     http://localhost:${port}/assets
-- Admin UI:   http://localhost:${port}/${process.env.ADMIN_UI_PATH ?? 'admin'}`);
+- Admin UI:   http://localhost:${port}/${adminPath}`);
   })
   .catch((err) => {
-    // eslint-disable-next-line no-console
     console.error(err);
     process.exit(1);
   });
