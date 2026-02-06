@@ -35,9 +35,9 @@ export default function HeaderSearch() {
       <input
         value={value}
         onChange={(event) => setValue(event.target.value)}
-        placeholder="Search icons, IDs, or categories"
+        placeholder="Search button inserts, IDs, or categories"
         className="input pr-20"
-        aria-label="Search icons"
+        aria-label="Search button inserts"
       />
       <button
         type="submit"

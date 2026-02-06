@@ -512,6 +512,7 @@ async function createIconProductAndVariant(
           isIconProduct: true,
           iconId: pair.iconId,
           iconCategoryPath: pair.categoryPath,
+          iconCategories: [pair.categoryPath],
           insertAssetId,
         },
       },

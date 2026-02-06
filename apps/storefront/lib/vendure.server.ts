@@ -33,10 +33,11 @@ const PRODUCT_FIELDS = `
   slug
   featuredAsset { id preview source name }
   assets { id preview source name }
+  variants { id priceWithTax currencyCode }
   customFields {
     isIconProduct
     iconId
-    iconCategoryPath
+    iconCategories
     insertAssetId
     isKeypadProduct
   }
@@ -60,6 +61,11 @@ type ProductListResponse = {
   };
 };
 
+export type IconPageResult = {
+  items: IconProduct[];
+  totalItems: number;
+};
+
 const fetchAllProducts = cache(async (): Promise<CatalogProduct[]> => {
   let skip = 0;
   const allProducts: CatalogProduct[] = [];
@@ -70,7 +76,8 @@ const fetchAllProducts = cache(async (): Promise<CatalogProduct[]> => {
     });
     const items = (data.products.items ?? []).map((item) => ({
       ...item,
-      assets: item.assets ?? []
+      assets: item.assets ?? [],
+      variants: item.variants ?? [],
     }));
 
     allProducts.push(...items);
@@ -94,6 +101,52 @@ export async function fetchIconProducts(): Promise<IconProduct[]> {
     .map((item) => item as IconProduct);
 }
 
+export async function fetchIconProductsPage({
+  page,
+  take,
+  query = '',
+}: {
+  page: number;
+  take: number;
+  query?: string;
+}): Promise<IconPageResult> {
+  const safeTake = Math.max(1, Math.min(MAX_LIST_TAKE, take));
+  const safePage = Math.max(1, page);
+  const skip = (safePage - 1) * safeTake;
+  const trimmedQuery = query.trim();
+
+  const filter: Record<string, unknown> = {
+    isIconProduct: { eq: true },
+  };
+
+  if (trimmedQuery) {
+    filter._or = [
+      { iconId: { contains: trimmedQuery } },
+      { name: { contains: trimmedQuery } },
+      { slug: { contains: trimmedQuery } },
+    ];
+  }
+
+  const data = await vendureFetch<ProductListResponse>(PRODUCT_LIST_QUERY, {
+    options: {
+      take: safeTake,
+      skip,
+      filter,
+    },
+  });
+
+  const items = (data.products.items ?? []).map((item) => ({
+    ...item,
+    assets: item.assets ?? [],
+    variants: item.variants ?? [],
+  }));
+
+  return {
+    items: items.map((item) => item as IconProduct),
+    totalItems: data.products.totalItems,
+  };
+}
+
 export async function fetchKeypadProducts(): Promise<KeypadProduct[]> {
   const products = await fetchAllProducts();
 
@@ -115,6 +168,7 @@ export async function fetchProductBySlug(slug: string): Promise<CatalogProduct |
   if (!data.product) return null;
   return {
     ...data.product,
-    assets: data.product.assets ?? []
+    assets: data.product.assets ?? [],
+    variants: data.product.variants ?? [],
   };
 }

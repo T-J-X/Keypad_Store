@@ -3,6 +3,7 @@ import path from 'node:path';
 import {
   bootstrap,
   DefaultLogger,
+  DefaultJobQueuePlugin,
   dummyPaymentHandler,
   DefaultSchedulerPlugin,
   DefaultSearchPlugin,
@@ -16,6 +17,7 @@ import {
 } from '@vendure/asset-server-plugin';
 import { AdminUiPlugin } from '@vendure/admin-ui-plugin';
 
+const host = process.env.HOST ?? '127.0.0.1';
 const port = Number(process.env.PORT ?? 3000);
 const adminPath = process.env.ADMIN_UI_PATH ?? 'admin';
 
@@ -35,6 +37,7 @@ const storageStrategyFactory = configureS3AssetStorage({
 
 export const config: VendureConfig = {
   apiOptions: {
+    hostname: host,
     port,
     adminApiPath: process.env.ADMIN_API_PATH ?? 'admin-api',
     shopApiPath: process.env.SHOP_API_PATH ?? 'shop-api',
@@ -82,6 +85,18 @@ export const config: VendureConfig = {
         type: 'string',
         nullable: true,
         public: true,
+      },
+      {
+        // Canonical storefront/configurator icon categories source of truth.
+        name: 'iconCategories',
+        type: 'string',
+        list: true,
+        nullable: true,
+        public: true,
+        ui: {
+          component: 'text-form-input',
+          tab: 'Icons',
+        },
       },
       {
         // Stores the Asset.id of the matte "insert" image (used for overlay in the configurator).
@@ -162,6 +177,8 @@ export const config: VendureConfig = {
   },
 
   plugins: [
+    DefaultJobQueuePlugin,
+
     DefaultSearchPlugin.init({
       indexStockStatus: false,
       bufferUpdates: false,

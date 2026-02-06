@@ -5,10 +5,16 @@ export type VendureAsset = {
   name?: string;
 };
 
+export type VendureProductVariant = {
+  id: string;
+  priceWithTax?: number | null;
+  currencyCode?: string | null;
+};
+
 export type ProductCustomFields = {
   isIconProduct?: boolean;
   iconId?: string;
-  iconCategoryPath?: string;
+  iconCategories?: string[];
   insertAssetId?: string;
   isKeypadProduct?: boolean;
 };
@@ -19,56 +25,43 @@ export type CatalogProduct = {
   slug: string;
   featuredAsset?: VendureAsset | null;
   assets?: VendureAsset[];
+  variants?: VendureProductVariant[];
   customFields?: ProductCustomFields | null;
 };
 
 export type IconProduct = CatalogProduct;
 export type KeypadProduct = CatalogProduct;
 
-export type CategoryNode = {
+export type IconCategory = {
   name: string;
-  path: string;
+  slug: string;
   count: number;
-  children: CategoryNode[];
 };
 
-export function normalizeCategoryPath(input?: string | null) {
-  const raw = (input ?? '').trim();
-  if (!raw) return 'Uncategorised';
-  return raw
-    .split('/')
-    .map((part) => part.trim())
-    .filter(Boolean)
-    .join('/') || 'Uncategorised';
+export function normalizeCategoryName(input?: string | null) {
+  const value = (input ?? '').trim();
+  return value || 'Uncategorised';
 }
 
-export function buildCategoryTree(paths: string[]) {
-  const root: CategoryNode = { name: 'All', path: '', count: 0, children: [] };
+export function categorySlug(input?: string | null) {
+  return normalizeCategoryName(input)
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/-+/g, '-')
+    .replace(/^-+|-+$/g, '') || 'uncategorised';
+}
 
-  for (const path of paths) {
-    const normalized = normalizeCategoryPath(path);
-    root.count += 1;
-
-    let current = root;
-    for (const segment of normalized.split('/')) {
-      const nextPath = current.path ? `${current.path}/${segment}` : segment;
-      let node = current.children.find((child) => child.name === segment);
-      if (!node) {
-        node = { name: segment, path: nextPath, count: 0, children: [] };
-        current.children.push(node);
-      }
-      node.count += 1;
-      current = node;
-    }
+export function iconCategoriesFromProduct(product: { customFields?: ProductCustomFields | null }) {
+  const categories = product.customFields?.iconCategories ?? [];
+  const bySlug = new Map<string, string>();
+  for (const item of categories) {
+    const name = normalizeCategoryName(item);
+    bySlug.set(categorySlug(name), name);
   }
-
-  const sortTree = (node: CategoryNode) => {
-    node.children.sort((a, b) => a.name.localeCompare(b.name));
-    node.children.forEach(sortTree);
-  };
-  sortTree(root);
-
-  return root;
+  if (bySlug.size === 0) {
+    bySlug.set('uncategorised', 'Uncategorised');
+  }
+  return Array.from(bySlug.values()).sort((a, b) => a.localeCompare(b));
 }
 
 export function assetUrl(input?: string | null) {

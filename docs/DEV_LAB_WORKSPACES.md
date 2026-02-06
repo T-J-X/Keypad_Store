@@ -14,7 +14,6 @@ Once you have the repo cloned:
 ### LAB (experimental)
 - Folder: `project-lab`
 - Branch: `lab/<topic>` (e.g. `lab/configurator-redesign`)
-- Infra: `infra/docker-compose.lab.yml` + `infra/.env.lab`
 
 Commands:
 ```bash
@@ -40,8 +39,6 @@ docker compose --env-file .env.dev -f docker-compose.dev.yml up -d
 LAB:
 ```bash
 cd infra
-cp .env.lab.example .env.lab
-docker compose --env-file .env.lab -f docker-compose.lab.yml up -d
 ```
 
 Ports do not collide because LAB uses port offsets (5433/6380/9100/8026/8089).

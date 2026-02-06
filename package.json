@@ -4,12 +4,20 @@
   "packageManager": "pnpm@10.28.2",
   "scripts": {
     "dev:storefront": "pnpm -C apps/storefront dev",
+    "build": "pnpm --filter ./apps/storefront build",
     "lint": "pnpm -r lint",
+    "lint:storefront": "pnpm --filter ./apps/storefront lint",
     "typecheck": "pnpm -r typecheck",
-    "test": "pnpm -r test"
+    "test": "pnpm -r test",
+    "infra:up": "docker compose --env-file infra/.env.dev -f infra/docker-compose.dev.yml -p vendure-dev up -d",
+    "infra:down": "docker compose --env-file infra/.env.dev -f infra/docker-compose.dev.yml -p vendure-dev down",
+    "infra:ps": "docker compose --env-file infra/.env.dev -f infra/docker-compose.dev.yml -p vendure-dev ps",
+    "dev:backend": "pnpm -C apps/backend dev",
+    "smoke:backend": "node -e \"const http=require('http');const data=JSON.stringify({query:'query { __typename }'});const req=http.request('http://127.0.0.1:3000/shop-api',{method:'POST',headers:{'Content-Type':'application/json','Content-Length':Buffer.byteLength(data)}},res=>{let b='';res.on('data',d=>b+=d);res.on('end',()=>{console.log('status',res.statusCode);console.log(b.slice(0,200));process.exit(res.statusCode===200&&b.trim().startsWith('{')?0:1);});});req.on('error',e=>{console.error(e.message);process.exit(1);});req.write(data);req.end();\"",
+    "smoke:storefront": "curl -I http://127.0.0.1:3001/ | head -n 5 && curl -I http://127.0.0.1:3001/shop | head -n 5 && curl -I http://127.0.0.1:3001/configurator | head -n 5"
   },
   "devDependencies": {
-    "@types/node": "^25.1.0",
+    "@types/node": "^24.10.9",
     "ts-node": "^10.9.2",
     "ts-node-dev": "^2.0.0",
     "typescript": "^5.9.3"

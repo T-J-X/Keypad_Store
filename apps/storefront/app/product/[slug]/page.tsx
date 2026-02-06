@@ -1,22 +1,98 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { assetUrl, normalizeCategoryPath } from '../../../lib/vendure';
+import { assetUrl, iconCategoriesFromProduct } from '../../../lib/vendure';
 import { fetchProductBySlug } from '../../../lib/vendure.server';
 
-export default async function ProductDetailPage({ params }: { params: Promise<{ slug: string }> }) {
+type ProductSearchParams = {
+  from?: string | string[];
+  section?: string | string[];
+  cat?: string | string[];
+};
+
+type BreadcrumbItem = {
+  label: string;
+  href?: string;
+};
+
+function toStringParam(value?: string | string[]) {
+  return typeof value === 'string' ? value : '';
+}
+
+function toCategoryLabelFromSlug(slug: string) {
+  return slug
+    .split('-')
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(' ');
+}
+
+function buildShopHref(section?: 'button-inserts' | 'keypads', categorySlug = '') {
+  const params = new URLSearchParams();
+  if (section) params.set('section', section);
+  if (section === 'button-inserts' && categorySlug) params.set('cat', categorySlug);
+  const query = params.toString();
+  return `/shop${query ? `?${query}` : ''}`;
+}
+
+export default async function ProductDetailPage({
+  params,
+  searchParams,
+}: {
+  params: Promise<{ slug: string }>;
+  searchParams?: Promise<ProductSearchParams>;
+}) {
   const resolvedParams = await params;
+  const resolvedSearchParams = await searchParams;
   const product = await fetchProductBySlug(resolvedParams.slug);
   if (!product) return notFound();
 
+  const origin = toStringParam(resolvedSearchParams?.from);
+  const sectionParam = toStringParam(resolvedSearchParams?.section);
+  const categoryParam = toStringParam(resolvedSearchParams?.cat);
+  const section = sectionParam === 'keypads'
+    ? 'keypads'
+    : sectionParam === 'button-inserts' || sectionParam === 'icons' || sectionParam === 'inserts'
+      ? 'button-inserts'
+      : undefined;
+
   const image = product.featuredAsset?.preview ?? product.featuredAsset?.source ?? '';
   const iconId = product.customFields?.iconId ?? product.name;
-  const category = normalizeCategoryPath(product.customFields?.iconCategoryPath);
   const isKeypad = Boolean(product.customFields?.isKeypadProduct);
+  const iconCategories = iconCategoriesFromProduct(product);
+  const categoryLabel = iconCategories.length > 0 ? iconCategories.join(', ') : 'Uncategorised';
+
+  const breadcrumbs: BreadcrumbItem[] = origin === 'shop'
+    ? [
+      { label: 'Shop', href: buildShopHref() },
+      ...(section === 'button-inserts' ? [{ label: 'Button Inserts', href: buildShopHref('button-inserts') }] : []),
+      ...(section === 'button-inserts' && categoryParam
+        ? [{ label: toCategoryLabelFromSlug(categoryParam), href: buildShopHref('button-inserts', categoryParam) }]
+        : []),
+      ...(section === 'keypads' ? [{ label: 'Keypads', href: buildShopHref('keypads') }] : []),
+      { label: product.name },
+    ]
+    : [
+      { label: 'Home', href: '/' },
+      { label: product.name },
+    ];
 
   return (
     <div className="mx-auto w-full max-w-5xl px-6 pb-20 pt-12">
       <div className="mb-6 text-xs font-semibold uppercase tracking-wide text-ink/50">
-        <Link href="/shop" className="hover:text-ink">Shop</Link> / {product.name}
+        <nav aria-label="Breadcrumb">
+          <ol className="flex flex-wrap items-center gap-2">
+            {breadcrumbs.map((crumb, index) => (
+              <li key={`${crumb.label}-${index}`} className="flex items-center gap-2">
+                {crumb.href ? (
+                  <Link href={crumb.href} className="hover:text-ink">{crumb.label}</Link>
+                ) : (
+                  <span className="text-ink">{crumb.label}</span>
+                )}
+                {index < breadcrumbs.length - 1 && <span className="text-ink/35">/</span>}
+              </li>
+            ))}
+          </ol>
+        </nav>
       </div>
       <div className="grid gap-10 lg:grid-cols-[1fr_0.9fr]">
         <div className="card-soft flex items-center justify-center p-8">
@@ -27,15 +103,15 @@ export default async function ProductDetailPage({ params }: { params: Promise<{ 
           )}
         </div>
         <div className="space-y-5">
-          <div className="pill">Catalog detail</div>
+          <div className="pill">{isKeypad ? 'Keypad Catalog' : 'Button Insert Catalog'}</div>
           <div>
             <h1 className="text-3xl font-semibold tracking-tight text-ink md:text-4xl">{product.name}</h1>
-            <div className="mt-2 text-sm text-ink/60">{isKeypad ? 'Keypad model' : 'Icon product'}</div>
+            <div className="mt-2 text-sm text-ink/60">{isKeypad ? 'Keypad model' : 'Button Insert product'}</div>
           </div>
           {!isKeypad && (
             <div className="space-y-1 text-sm text-ink/70">
-              <div>Icon ID: <span className="font-semibold text-ink">{iconId}</span></div>
-              <div>Category: <span className="font-semibold text-ink">{category}</span></div>
+              <div>Button Insert ID: <span className="font-semibold text-ink">{iconId}</span></div>
+              <div>Categories: <span className="font-semibold text-ink">{categoryLabel}</span></div>
             </div>
           )}
           <p className="text-sm text-ink/60">

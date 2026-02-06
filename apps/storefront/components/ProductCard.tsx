@@ -1,42 +1,151 @@
 'use client';
 
 import Link from 'next/link';
+import { useEffect, useState } from 'react';
 import type { IconProduct } from '../lib/vendure';
-import { assetUrl, normalizeCategoryPath } from '../lib/vendure';
+import { assetUrl } from '../lib/vendure';
+import { buttonPrimaryClass } from './buttonStyles';
+import {
+  cardIdentifierTextClass,
+  cardPlaceholderTextClass,
+  cardSupportingTextClass,
+  cardTitleTextClass,
+} from './cardTypography';
 
 const placeholder = (
-  <div className="flex h-40 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-100 via-white to-slate-200 text-xs font-semibold uppercase tracking-wide text-slate-400">
+  <div
+    className={`flex h-40 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-100 via-white to-slate-200 ${cardPlaceholderTextClass}`}
+  >
     Render pending
   </div>
 );
 
-export default function ProductCard({ product }: { product: IconProduct }) {
+export default function ProductCard({
+  product,
+  categoryLabel,
+  categoryHref,
+  productHref,
+}: {
+  product: IconProduct;
+  categoryLabel: string;
+  categoryHref?: string;
+  productHref?: string;
+}) {
   const image = product.featuredAsset?.preview ?? product.featuredAsset?.source ?? '';
   const iconId = product.customFields?.iconId ?? product.name;
-  const category = normalizeCategoryPath(product.customFields?.iconCategoryPath);
+  const primaryVariant = product.variants?.[0];
+  const [adding, setAdding] = useState(false);
+  const [feedback, setFeedback] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+
+  const priceLabel = formatPrice(primaryVariant?.priceWithTax, primaryVariant?.currencyCode);
+
+  const onAddToCart = async () => {
+    if (!primaryVariant?.id || adding) return;
+    setAdding(true);
+    setFeedback(null);
+    try {
+      const response = await fetch('/api/cart/add-item', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ productVariantId: primaryVariant.id, quantity: 1 }),
+      });
+      const payload = (await response.json().catch(() => ({}))) as { error?: string };
+      if (!response.ok) {
+        throw new Error(payload.error || 'Could not add this button insert to cart.');
+      }
+      setFeedback({ message: 'Added to cart', type: 'success' });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Could not add this button insert to cart.';
+      setFeedback({ message, type: 'error' });
+    } finally {
+      setAdding(false);
+    }
+  };
+
+  useEffect(() => {
+    if (feedback?.type !== 'success') return;
+    const timer = window.setTimeout(() => {
+      setFeedback((current) => (current?.type === 'success' ? null : current));
+    }, 10000);
+    return () => window.clearTimeout(timer);
+  }, [feedback]);
 
   return (
-    <Link
-      href={`/product/${product.slug}`}
-      className="card-soft flex h-full flex-col gap-4 p-4 transition hover:-translate-y-1 hover:shadow-soft"
-    >
-      {image ? (
-        <div className="overflow-hidden rounded-2xl bg-slate-100">
-          <img
-            src={assetUrl(image)}
-            alt={product.name}
-            className="h-40 w-full object-contain p-4"
-            loading="lazy"
-          />
+    <div className="card-soft group relative flex h-full flex-col gap-4 p-4 transition hover:-translate-y-1 hover:shadow-soft">
+      <Link
+        href={productHref ?? `/product/${product.slug}`}
+        aria-label={`View ${product.name}`}
+        className="absolute inset-0 z-0 rounded-2xl"
+      />
+      <div className="relative z-10 pointer-events-none flex flex-1 flex-col gap-4">
+        {image ? (
+          <div className="overflow-hidden rounded-2xl bg-slate-100">
+            <img
+              src={assetUrl(image)}
+              alt={product.name}
+              className="h-40 w-full object-contain p-4"
+              loading="lazy"
+            />
+          </div>
+        ) : (
+          placeholder
+        )}
+        <div className="space-y-1">
+          <div className={cardTitleTextClass}>{product.name}</div>
+          <div className={cardIdentifierTextClass}>{iconId}</div>
+          {categoryHref ? (
+            <Link
+              href={categoryHref}
+              onClick={(event) => event.stopPropagation()}
+              className={`${cardSupportingTextClass} pointer-events-auto relative z-20 inline-flex transition hover:text-ink hover:underline`}
+            >
+              {categoryLabel}
+            </Link>
+          ) : (
+            <div className={cardSupportingTextClass}>{categoryLabel}</div>
+          )}
         </div>
-      ) : (
-        placeholder
-      )}
-      <div className="space-y-1">
-        <div className="text-xs font-semibold uppercase tracking-wide text-ink/50">{category}</div>
-        <div className="text-sm font-semibold text-ink">{iconId}</div>
-        <div className="text-xs text-ink/60">{product.name}</div>
       </div>
-    </Link>
+      <div className="relative z-20 mt-auto space-y-2">
+        <div className="flex items-center justify-between gap-3">
+          <div className="text-sm font-bold tracking-tight text-ink/70 md:text-base">
+            {priceLabel || 'Price unavailable'}
+          </div>
+          <button
+            type="button"
+            onClick={onAddToCart}
+            disabled={!primaryVariant?.id || adding}
+            className={`${buttonPrimaryClass} px-4 py-2 text-sm md:text-base disabled:cursor-not-allowed disabled:opacity-50`}
+          >
+            {adding ? 'Adding...' : 'Add to cart'}
+          </button>
+        </div>
+        {feedback && (
+          <div
+            className={
+              feedback.type === 'success'
+                ? 'text-sm font-bold text-ink'
+                : 'text-xs font-medium text-rose-700'
+            }
+          >
+            {feedback.message}
+          </div>
+        )}
+      </div>
+    </div>
   );
+}
+
+function formatPrice(priceWithTax?: number | null, currencyCode?: string | null) {
+  if (typeof priceWithTax !== 'number') return null;
+  const currency = currencyCode || 'USD';
+  try {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency,
+      maximumFractionDigits: 2,
+    }).format(priceWithTax / 100);
+  } catch {
+    return `${(priceWithTax / 100).toFixed(2)} ${currency}`;
+  }
 }

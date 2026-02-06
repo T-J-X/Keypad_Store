@@ -7,7 +7,7 @@ export default function Footer() {
         <div className="space-y-4">
           <div className="text-lg font-semibold tracking-tight">Keypad Store</div>
           <p className="text-sm text-ink/60">
-            Premium keypads and icon systems designed for tactile workflows. Configure, save, and ship the exact layout
+            Premium keypads and button insert systems designed for tactile workflows. Configure, save, and ship the exact layout
             your team needs.
           </p>
           <div className="flex items-center gap-3">
@@ -20,7 +20,7 @@ export default function Footer() {
 
         <div className="space-y-3 text-sm">
           <div className="text-xs font-semibold uppercase tracking-wide text-ink/50">Store</div>
-          <Link href="/shop" className="block text-ink/70 transition hover:text-ink">Shop icons</Link>
+          <Link href="/shop" className="block text-ink/70 transition hover:text-ink">Shop button inserts</Link>
           <Link href="/configurator" className="block text-ink/70 transition hover:text-ink">Configure keypads</Link>
           <Link href="/account" className="block text-ink/70 transition hover:text-ink">Order history</Link>
           <Link href="/signup" className="block text-ink/70 transition hover:text-ink">Create account</Link>
@@ -36,7 +36,7 @@ export default function Footer() {
 
         <div className="space-y-4 text-sm">
           <div className="text-xs font-semibold uppercase tracking-wide text-ink/50">Stay in the loop</div>
-          <p className="text-ink/60">Monthly drops, new icon packs, and configurator previews.</p>
+          <p className="text-ink/60">Monthly drops, new button insert packs, and configurator previews.</p>
           <form className="flex gap-2">
             <input className="input" placeholder="Email address" aria-label="Email address" />
             <button className="btn-primary" type="button">Join</button>

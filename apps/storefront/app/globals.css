@@ -22,7 +22,7 @@
 
 body {
   margin: 0;
-  font-family: var(--font-body), ui-sans-serif, system-ui;
+  font-family: 'Manrope', ui-sans-serif, system-ui, sans-serif;
   color: var(--ink);
   background: var(--mist);
   min-height: 100vh;
@@ -34,7 +34,7 @@ h3,
 h4,
 h5,
 .font-display {
-  font-family: var(--font-display), ui-sans-serif, system-ui;
+  font-family: 'Sora', ui-sans-serif, system-ui, sans-serif;
 }
 
 a {
@@ -55,7 +55,7 @@ img {
   display: flex;
   flex-direction: column;
   position: relative;
-  overflow-x: hidden;
+  overflow-x: clip;
 }
 
 .page-bg {

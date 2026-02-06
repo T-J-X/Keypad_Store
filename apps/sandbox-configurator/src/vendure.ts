@@ -14,7 +14,7 @@ export type IconProduct = {
   customFields?: {
     isIconProduct?: boolean;
     iconId?: string;
-    iconCategoryPath?: string;
+    iconCategories?: string[];
     insertAssetId?: string;
   } | null;
 };
@@ -47,7 +47,7 @@ export async function fetchIconProducts(): Promise<IconProduct[]> {
           customFields {
             isIconProduct
             iconId
-            iconCategoryPath
+            iconCategories
             insertAssetId
           }
         }
@@ -96,9 +96,17 @@ export function pickInsertAsset(product: IconProduct): VendureAsset | null {
   return other ?? product.featuredAsset ?? null;
 }
 
+export function categoriesOf(product: IconProduct) {
+  const raw = product.customFields?.iconCategories ?? [];
+  const set = new Set<string>();
+  for (const item of raw) {
+    const value = (item ?? '').trim();
+    if (value) set.add(value);
+  }
+  if (set.size === 0) return ['Uncategorised'];
+  return Array.from(set.values()).sort((a, b) => a.localeCompare(b));
+}
+
 export function categoryOf(product: IconProduct) {
-  const raw = product.customFields?.iconCategoryPath ?? 'Uncategorised';
-  // If you use "Render/Controls", show "Controls"
-  const parts = raw.split('/').filter(Boolean);
-  return parts[parts.length - 1] ?? raw;
+  return categoriesOf(product)[0] ?? 'Uncategorised';
 }
