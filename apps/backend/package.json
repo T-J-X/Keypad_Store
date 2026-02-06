@@ -4,7 +4,12 @@
   "scripts": {
     "dev": "ts-node-dev --respawn --transpile-only --project tsconfig.json src/index.ts",
     "build": "tsc -p tsconfig.json",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "backfill:icon-fields": "ts-node -r dotenv/config scripts/backfill-icon-fields.ts",
+    "backfill:insert-asset-id": "ts-node -r dotenv/config scripts/backfill-insert-asset-id.ts",
+    "import:icons": "ts-node -r dotenv/config scripts/import-icons.ts",
+    "import:keypads": "ts-node -r dotenv/config scripts/import-keypads.ts",
+    "sync:icon-catalog": "ts-node -r dotenv/config scripts/sync-icon-catalog.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.978.0",
@@ -15,6 +20,10 @@
     "bcrypt": "^6.0.0",
     "dotenv": "^17.2.3",
     "ioredis": "^5.9.2",
-    "pg": "^8.17.2"
+    "pg": "^8.17.2",
+    "xlsx": "^0.18.5"
+  },
+  "devDependencies": {
+    "@types/pg": "^8.16.0"
   }
 }

@@ -3,6 +3,7 @@
   "private": true,
   "packageManager": "pnpm@10.28.2",
   "scripts": {
+    "dev:storefront": "pnpm -C apps/storefront dev",
     "lint": "pnpm -r lint",
     "typecheck": "pnpm -r typecheck",
     "test": "pnpm -r test"

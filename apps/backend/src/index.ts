@@ -3,8 +3,10 @@ import path from 'node:path';
 import {
   bootstrap,
   DefaultLogger,
+  dummyPaymentHandler,
   DefaultSchedulerPlugin,
   DefaultSearchPlugin,
+  LanguageCode,
   LogLevel,
   VendureConfig,
 } from '@vendure/core';
@@ -31,7 +33,7 @@ const storageStrategyFactory = configureS3AssetStorage({
   },
 });
 
-const config: VendureConfig = {
+export const config: VendureConfig = {
   apiOptions: {
     port,
     adminApiPath: process.env.ADMIN_API_PATH ?? 'admin-api',
@@ -54,6 +56,110 @@ const config: VendureConfig = {
     logging: false,
   },
   logger: new DefaultLogger({ level: LogLevel.Info }),
+  customFields: {
+    Product: [
+      {
+        name: 'isIconProduct',
+        type: 'boolean',
+        defaultValue: false,
+        public: true,
+      },
+      {
+        name: 'isKeypadProduct',
+        type: 'boolean',
+        defaultValue: false,
+        public: true,
+      },
+      {
+        // Human-friendly code like "B321" to show in the UI + help map files to products.
+        name: 'iconId',
+        type: 'string',
+        nullable: true,
+        public: true,
+      },
+      {
+        name: 'iconCategoryPath',
+        type: 'string',
+        nullable: true,
+        public: true,
+      },
+      {
+        // Stores the Asset.id of the matte "insert" image (used for overlay in the configurator).
+        name: 'insertAssetId',
+        type: 'string',
+        nullable: true,
+        public: true,
+      },
+      {
+        // Comma-separated application values from catalog, stored as a queryable string list.
+        name: 'application',
+        type: 'string',
+        list: true,
+        nullable: true,
+        public: true,
+      },
+      {
+        name: 'colour',
+        type: 'string',
+        nullable: true,
+        public: true,
+      },
+      {
+        name: 'size',
+        type: 'string',
+        nullable: true,
+        public: true,
+      },
+    ],
+    ProductVariant: [
+      {
+        name: 'iconId',
+        type: 'string',
+        nullable: true,
+        public: true,
+      },
+      {
+        name: 'iconType',
+        type: 'string',
+        nullable: true,
+        options: [
+          {
+            value: 'render',
+            label: [{ languageCode: LanguageCode.en, value: 'render' }],
+          },
+          {
+            value: 'insert',
+            label: [{ languageCode: LanguageCode.en, value: 'insert' }],
+          },
+        ],
+        public: true,
+      },
+      {
+        name: 'keypadModelCode',
+        type: 'string',
+        nullable: true,
+        public: true,
+      },
+      {
+        name: 'slotMapKey',
+        type: 'string',
+        nullable: true,
+        public: true,
+      },
+    ],
+    OrderLine: [
+      {
+        name: 'configuration',
+        type: 'text',
+        nullable: true,
+        public: false,
+        ui: { component: 'json' },
+      },
+    ],
+  },
+  paymentOptions: {
+    paymentMethodHandlers: [dummyPaymentHandler],
+  },
 
   plugins: [
     DefaultSearchPlugin.init({
@@ -81,15 +187,18 @@ const config: VendureConfig = {
   ],
 };
 
-bootstrap(config)
-  .then(() => {
-    console.log(`Vendure running:
+async function startServer() {
+  await bootstrap(config);
+  console.log(`Vendure running:
 - Shop API:   http://localhost:${port}/${config.apiOptions!.shopApiPath}
 - Admin API:  http://localhost:${port}/${config.apiOptions!.adminApiPath}
 - Assets:     http://localhost:${port}/assets
 - Admin UI:   http://localhost:${port}/${adminPath}`);
-  })
-  .catch((err) => {
+}
+
+if (require.main === module) {
+  startServer().catch((err) => {
     console.error(err);
     process.exit(1);
   });
+}

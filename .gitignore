@@ -4,9 +4,12 @@ build/
 .next/
 out/
 coverage/
+*.tsbuildinfo
 .DS_Store
+apps/backend/imports/
 .env
 .env.*
+!apps/storefront/.env.local.example
 infra/.env
 infra/.env.*
 .DS_Store
