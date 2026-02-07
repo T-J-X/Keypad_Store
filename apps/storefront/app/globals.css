@@ -137,8 +137,8 @@ ul.list-disc.space-y-3.pl-5.text-base.leading-7.text-ink\/75 li > span {
     font-size: 12px;
     letter-spacing: 0.2px;
     font-weight: 600;
-    background: rgba(27, 127, 106, 0.12);
-    color: #115f4f;
+    background: #023e8a;
+    color: #ffffff;
   }
 
   .btn-primary {

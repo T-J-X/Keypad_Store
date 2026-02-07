@@ -9,6 +9,7 @@ import {
   type IconProduct,
   type KeypadProduct,
 } from '../lib/vendure';
+import BaseShopHero from './BaseShopHero';
 import KeypadCard from './KeypadCard';
 import ProductCard from './ProductCard';
 
@@ -19,13 +20,81 @@ function toCardCategoryLabel(categoryNames: string[]) {
   return categoryNames[0];
 }
 
+function normalizeSection(value: string): 'landing' | 'all' | 'button-inserts' | 'keypads' {
+  if (value === 'landing') return 'landing';
+  if (value === 'all') return 'all';
+  if (value === 'keypads') return 'keypads';
+  if (value === 'button-inserts' || value === 'icons' || value === 'inserts') return 'button-inserts';
+  return 'landing';
+}
+
+function normalizeSearchText(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+function tokenizeSearchText(value: string) {
+  const normalized = normalizeSearchText(value);
+  return normalized ? normalized.split(/\s+/g).filter(Boolean) : [];
+}
+
+function isSubsequence(term: string, token: string) {
+  let termIndex = 0;
+  for (let i = 0; i < token.length && termIndex < term.length; i += 1) {
+    if (token[i] === term[termIndex]) termIndex += 1;
+  }
+  return termIndex === term.length;
+}
+
+function boundedLevenshtein(a: string, b: string, maxDistance: number) {
+  if (Math.abs(a.length - b.length) > maxDistance) return maxDistance + 1;
+
+  let prev = new Array<number>(b.length + 1);
+  let curr = new Array<number>(b.length + 1);
+  for (let j = 0; j <= b.length; j += 1) prev[j] = j;
+
+  for (let i = 1; i <= a.length; i += 1) {
+    curr[0] = i;
+    let rowMin = curr[0];
+    for (let j = 1; j <= b.length; j += 1) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      curr[j] = Math.min(
+        prev[j] + 1,
+        curr[j - 1] + 1,
+        prev[j - 1] + cost,
+      );
+      if (curr[j] < rowMin) rowMin = curr[j];
+    }
+    if (rowMin > maxDistance) return maxDistance + 1;
+    const swap = prev;
+    prev = curr;
+    curr = swap;
+  }
+  return prev[b.length];
+}
+
+function tokenFuzzyMatch(term: string, token: string) {
+  if (token.includes(term) || token.startsWith(term)) return true;
+  if (term.length >= 3 && isSubsequence(term, token)) return true;
+  if (term.length < 3) return false;
+  const maxDistance = term.length >= 6 ? 2 : 1;
+  return boundedLevenshtein(term, token, maxDistance) <= maxDistance;
+}
+
+function matchesSearchTerms(tokens: string[], queryTerms: string[]) {
+  if (queryTerms.length === 0) return true;
+  return queryTerms.every((term) => tokens.some((token) => tokenFuzzyMatch(term, token)));
+}
+
 export default function ShopClient({
   icons,
   keypads,
   categorySourceIcons,
   initialQuery = '',
   initialCategories = [],
-  initialSection = 'button-inserts',
+  initialSection = 'landing',
   initialPage = 1,
   initialTake = 24,
   pagedTotalItems = 0,
@@ -36,20 +105,21 @@ export default function ShopClient({
   categorySourceIcons?: IconProduct[];
   initialQuery?: string;
   initialCategories?: string[];
-  initialSection?: 'button-inserts' | 'keypads' | 'icons' | 'inserts';
+  initialSection?: 'landing' | 'all' | 'button-inserts' | 'keypads' | 'icons' | 'inserts';
   initialPage?: number;
   initialTake?: number;
   pagedTotalItems?: number;
   isIconsPaginationActive?: boolean;
 }) {
+  const normalizedInitialSection = normalizeSection(initialSection);
   const router = useRouter();
   const pathname = usePathname();
-  const [activeSection, setActiveSection] = useState<'button-inserts' | 'keypads'>(
-    initialSection === 'keypads' ? 'keypads' : 'button-inserts',
+  const [activeSection, setActiveSection] = useState<'landing' | 'all' | 'button-inserts' | 'keypads'>(
+    normalizedInitialSection,
   );
   const [query, setQuery] = useState(initialQuery);
   const [activeCategorySlugs, setActiveCategorySlugs] = useState<string[]>(
-    initialSection === 'keypads' ? [] : initialCategories,
+    normalizedInitialSection === 'button-inserts' ? initialCategories : [],
   );
   const [iconsGroupOpen, setIconsGroupOpen] = useState(Boolean(initialCategories.length));
   const [page, setPage] = useState(Math.max(1, initialPage));
@@ -61,16 +131,16 @@ export default function ShopClient({
   }, [initialQuery]);
 
   useEffect(() => {
-    if (initialSection === 'keypads') {
+    if (normalizedInitialSection !== 'button-inserts') {
       setActiveCategorySlugs([]);
       return;
     }
     setActiveCategorySlugs(initialCategories ?? []);
-  }, [initialCategories, initialSection]);
+  }, [initialCategories, normalizedInitialSection]);
 
   useEffect(() => {
-    setActiveSection(initialSection === 'keypads' ? 'keypads' : 'button-inserts');
-  }, [initialSection]);
+    setActiveSection(normalizedInitialSection);
+  }, [normalizedInitialSection]);
 
   useEffect(() => {
     setPage(Math.max(1, initialPage));
@@ -85,7 +155,7 @@ export default function ShopClient({
   }, [activeCategorySlugs]);
 
   useEffect(() => {
-    if (activeSection === 'keypads' && activeCategorySlugs.length > 0) {
+    if (activeSection !== 'button-inserts' && activeCategorySlugs.length > 0) {
       setActiveCategorySlugs([]);
     }
   }, [activeSection, activeCategorySlugs]);
@@ -124,18 +194,23 @@ export default function ShopClient({
     return map;
   }, [icons]);
 
+  const isLandingSection = activeSection === 'landing';
+  const isAllSection = activeSection === 'all';
+  const isCatalogWideSection = isLandingSection || isAllSection;
   const isIconsSection = activeSection === 'button-inserts';
+  const isKeypadsSection = activeSection === 'keypads';
   const isAllIconsView = isIconsSection && activeCategorySlugs.length === 0;
 
   useEffect(() => {
     const params = new URLSearchParams();
-    params.set('section', activeSection);
+    if (activeSection !== 'landing') params.set('section', activeSection);
     const trimmed = query.trim();
     if (trimmed) params.set('q', trimmed);
-    if (isIconsSection && activeCategorySlugs.length > 0) {
+    if (activeSection === 'button-inserts' && activeCategorySlugs.length > 0) {
       params.set('cats', activeCategorySlugs.join(','));
     }
-    if (isIconsSection) {
+    const shouldIncludePaginationParams = activeSection === 'button-inserts' || activeSection === 'all';
+    if (shouldIncludePaginationParams) {
       params.set('page', String(Math.max(1, page)));
       params.set('take', String(take));
     }
@@ -143,33 +218,48 @@ export default function ShopClient({
     if (next === lastParams.current) return;
     lastParams.current = next;
     router.replace(`${pathname}${next ? `?${next}` : ''}`, { scroll: false });
-  }, [query, activeCategorySlugs, activeSection, isIconsSection, page, take, pathname, router]);
+  }, [query, activeCategorySlugs, activeSection, page, take, pathname, router]);
+
+  const queryTerms = useMemo(() => tokenizeSearchText(query), [query]);
+
+  const iconSearchIndex = useMemo(() => {
+    return icons.map((icon) => ({
+      icon,
+      tokens: tokenizeSearchText(
+        `${icon.customFields?.iconId ?? ''} ${icon.name ?? ''} ${icon.slug ?? ''} ${iconCategoriesFromProduct(icon).join(' ')}`,
+      ),
+    }));
+  }, [icons]);
+
+  const keypadSearchIndex = useMemo(() => {
+    return keypads.map((keypad) => ({
+      keypad,
+      tokens: tokenizeSearchText(`${keypad.name ?? ''} ${keypad.slug ?? ''} keypad keypads`),
+    }));
+  }, [keypads]);
 
   const filteredIcons = useMemo(() => {
-    const trimmed = query.trim().toLowerCase();
     const targetCategories = new Set(activeCategorySlugs);
+    const shouldApplyCategoryFilter = isIconsSection;
 
-    return icons.filter((icon) => {
-      const iconCategorySlugs = iconCategoriesFromProduct(icon).map((name) => categorySlug(name));
-      const matchesCategory =
-        targetCategories.size === 0 || iconCategorySlugs.some((slug) => targetCategories.has(slug));
-      if (!matchesCategory) return false;
-
-      if (!trimmed) return true;
-      const hay = `${icon.customFields?.iconId ?? ''} ${icon.name ?? ''} ${icon.slug ?? ''}`.toLowerCase();
-      return hay.includes(trimmed);
-    });
-  }, [icons, query, activeCategorySlugs]);
+    return iconSearchIndex
+      .filter(({ icon, tokens }) => {
+        if (shouldApplyCategoryFilter) {
+          const iconCategorySlugs = iconCategoriesFromProduct(icon).map((name) => categorySlug(name));
+          const matchesCategory =
+            targetCategories.size === 0 || iconCategorySlugs.some((slug) => targetCategories.has(slug));
+          if (!matchesCategory) return false;
+        }
+        return matchesSearchTerms(tokens, queryTerms);
+      })
+      .map(({ icon }) => icon);
+  }, [iconSearchIndex, queryTerms, activeCategorySlugs, isIconsSection]);
 
   const filteredKeypads = useMemo(() => {
-    const trimmed = query.trim().toLowerCase();
-    if (!trimmed) return keypads;
-
-    return keypads.filter((keypad) => {
-      const hay = `${keypad.name ?? ''} ${keypad.slug ?? ''}`.toLowerCase();
-      return hay.includes(trimmed);
-    });
-  }, [keypads, query]);
+    return keypadSearchIndex
+      .filter(({ tokens }) => matchesSearchTerms(tokens, queryTerms))
+      .map(({ keypad }) => keypad);
+  }, [keypadSearchIndex, queryTerms]);
 
   const onSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
@@ -177,12 +267,31 @@ export default function ShopClient({
     setPage(1);
   };
 
-  const onSectionChange = (section: 'button-inserts' | 'keypads') => {
+  const scrollToPageTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const onShopHome = () => {
+    setActiveSection('landing');
+    setQuery('');
+    setActiveCategorySlugs([]);
+    setPage(1);
+    setIconsGroupOpen(false);
+    scrollToPageTop();
+  };
+
+  const onSectionChange = (
+    section: 'landing' | 'all' | 'button-inserts' | 'keypads',
+    options?: { scrollToTop?: boolean },
+  ) => {
     if (section === activeSection) return;
     setActiveSection(section);
     setPage(1);
-    if (section === 'keypads') {
+    if (section !== 'button-inserts') {
       setActiveCategorySlugs([]);
+    }
+    if (options?.scrollToTop) {
+      scrollToPageTop();
     }
   };
 
@@ -234,7 +343,8 @@ export default function ShopClient({
     return activeCategorySlugs.find((slug) => productCategorySlugs.includes(slug)) ?? activeCategorySlugs[0];
   };
 
-  const isIconsPaginationMode = isAllIconsView && isIconsPaginationActive;
+  const isIconsPaginationMode =
+    ((isIconsSection && activeCategorySlugs.length === 0) || isAllSection) && isIconsPaginationActive;
   const isCategoryPaginationMode =
     isIconsSection &&
     !isIconsPaginationMode &&
@@ -244,22 +354,33 @@ export default function ShopClient({
   const paginationTotalItems = isIconsPaginationMode ? pagedTotalItems : filteredIcons.length;
   const totalPages = Math.max(1, Math.ceil(paginationTotalItems / Math.max(1, take)));
   const displayedIcons = useMemo(() => {
-    if (!isIconsSection) return [];
+    if (isKeypadsSection) return [];
     if (!isCategoryPaginationMode) return filteredIcons;
     const start = (Math.max(1, page) - 1) * take;
     return filteredIcons.slice(start, start + take);
-  }, [isIconsSection, isCategoryPaginationMode, filteredIcons, page, take]);
+  }, [isKeypadsSection, isCategoryPaginationMode, filteredIcons, page, take]);
   const activeCategoryLabels = activeCategorySlugs.map(
     (slug) => categoriesBySlug.get(slug)?.name ?? slug,
   );
   const searchPlaceholder = isIconsSection
     ? 'Search by button insert ID or name'
-    : 'Search by product name or ID';
-  const visibleResultCount = isIconsSection ? displayedIcons.length : filteredKeypads.length;
-  const visibleResultLabel = isIconsSection ? 'button inserts' : 'keypads';
+    : isKeypadsSection
+      ? 'Search by product name or ID'
+      : 'Search by name, category or ID...';
+  const showCatalogWideKeypads = isCatalogWideSection && query.trim().length > 0;
+  const catalogWideKeypads = showCatalogWideKeypads ? filteredKeypads : [];
+
+  const visibleResultCount = isIconsSection
+    ? displayedIcons.length
+    : isKeypadsSection
+      ? filteredKeypads.length
+      : displayedIcons.length + catalogWideKeypads.length;
+  const visibleResultLabel = isIconsSection ? 'button inserts' : isKeypadsSection ? 'keypads' : 'products';
   const availableResultCount = isIconsSection
     ? (isAnyIconsPaginationMode ? paginationTotalItems : filteredIcons.length)
-    : filteredKeypads.length;
+    : isKeypadsSection
+      ? filteredKeypads.length
+      : (isIconsPaginationMode ? paginationTotalItems : filteredIcons.length) + catalogWideKeypads.length;
   const activeChips = [
     ...(query.trim() ? [{ label: `Search: ${query.trim()}`, onClear: () => setQuery('') }] : []),
     ...activeCategorySlugs.map((slug, index) => ({
@@ -272,23 +393,26 @@ export default function ShopClient({
   ];
   const hasActiveFilters = query.trim().length > 0 || activeCategorySlugs.length > 0;
   const sidebarButtonBase =
-    'flex w-full min-h-11 items-center justify-between rounded-xl border px-3 py-2 text-sm font-semibold transition';
+    'flex w-full min-h-11 items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold transition-[background,box-shadow,color,transform] duration-200';
   const sidebarButtonLabel = 'min-w-0 flex-1 whitespace-normal break-words text-left leading-snug';
   const sidebarButtonCount = 'ml-2 shrink-0 whitespace-nowrap text-[11px]';
-  const sidebarActive = 'border-ink bg-ink text-white';
-  const sidebarInactive = 'border-ink/10 text-ink/70 hover:border-ink/25 hover:text-ink';
+  const sidebarActive = 'border-2 border-ink bg-ink text-white';
+  const sidebarInactive =
+    'border-2 border-transparent text-ink/60 bg-[linear-gradient(#ffffff,#ffffff),linear-gradient(#d7dde7,#d7dde7)] [background-origin:border-box] [background-clip:padding-box,border-box] hover:text-ink hover:bg-[linear-gradient(#ffffff,#ffffff),linear-gradient(90deg,#4e84d8_0%,#6da5f5_55%,#8ab8ff_100%)] hover:shadow-[0_8px_18px_rgba(4,15,46,0.14)]';
 
   useEffect(() => {
-    if (!isIconsSection) return;
+    if (!(isIconsSection || isAllSection)) return;
     if (page > totalPages) {
       setPage(totalPages);
     }
-  }, [isIconsSection, page, totalPages]);
+  }, [isIconsSection, isAllSection, page, totalPages]);
 
   const renderIconPaginationControls = (location: 'top' | 'bottom') => {
-    if (!isIconsSection || !isAnyIconsPaginationMode) return null;
+    if (!(isIconsSection || isAllSection) || !isAnyIconsPaginationMode) return null;
 
     const selectId = `shop-page-size-${location}`;
+    const paginationSummaryTotal = isAllSection ? availableResultCount : paginationTotalItems;
+    const paginationSummaryLabel = isAllSection ? 'products' : 'button inserts';
     const wrapperClass =
       location === 'top'
         ? 'mt-6 mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-ink/10 px-4 py-3 text-xs text-ink/60'
@@ -298,7 +422,7 @@ export default function ShopClient({
       <div className={wrapperClass}>
         <span>
           Page <span className="font-semibold text-ink">{page}</span> of{' '}
-          <span className="font-semibold text-ink">{totalPages}</span> ({paginationTotalItems} total button inserts)
+          <span className="font-semibold text-ink">{totalPages}</span> ({paginationSummaryTotal} total {paginationSummaryLabel})
         </span>
         <div className="flex flex-wrap items-center gap-2">
           <label htmlFor={selectId} className="text-ink/60">Per page</label>
@@ -335,20 +459,69 @@ export default function ShopClient({
     );
   };
 
+  const renderIconsGrid = (iconItems: IconProduct[]) => (
+    <div className="staggered grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+      {iconItems.map((icon) => {
+        const iconCategoryNames = categoryNamesByIconId.get(icon.id) ?? [];
+        const primaryCategoryName = iconCategoryNames[0] ?? '';
+        const primaryCategorySlug = primaryCategoryName ? categorySlug(primaryCategoryName) : '';
+        const breadcrumbCategorySlug = resolveProductCategoryForBreadcrumb(icon);
+
+        return (
+          <ProductCard
+            key={icon.id}
+            product={icon}
+            categoryLabel={toCardCategoryLabel(iconCategoryNames)}
+            categoryHref={primaryCategorySlug ? toCategoryHref(primaryCategorySlug) : undefined}
+            productHref={toProductHref(
+              icon.slug,
+              'button-inserts',
+              activeCategorySlugs,
+              breadcrumbCategorySlug,
+            )}
+          />
+        );
+      })}
+    </div>
+  );
+
+  const renderKeypadsGrid = (keypadItems: KeypadProduct[]) => (
+    <div className="staggered grid gap-6 sm:grid-cols-2 xl:grid-cols-2">
+      {keypadItems.map((keypad) => (
+        <KeypadCard
+          key={keypad.id}
+          product={keypad}
+          mode="shop"
+          learnMoreHref={toProductHref(keypad.slug, 'keypads')}
+        />
+      ))}
+    </div>
+  );
+
   return (
     <div className="mx-auto w-full max-w-[88rem] px-6 pb-20 pt-10">
+      <BaseShopHero showTiles={isLandingSection} />
+
       <div className="mb-8 flex flex-col gap-4">
         <div className="flex flex-wrap items-end justify-between gap-4">
-          <div>
-            <div className="pill">{isIconsSection ? 'Button Insert Catalog' : 'Keypad models'}</div>
-            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-ink md:text-4xl">
-              {isIconsSection ? 'Explore Inserts: Curated by Discipline.' : 'Spec Your KeyPad: Precision Defined'}
-            </h1>
-            {!isIconsSection && (
-              <p className="mt-2 text-sm text-ink/60">Compare keypad models, then continue to configuration.</p>
-            )}
-          </div>
-          <div className="text-sm text-ink/60">
+          {(isIconsSection || isKeypadsSection || isAllSection) && (
+            <div>
+              <div className="pill">
+                {isIconsSection ? 'Button Insert Catalog' : isKeypadsSection ? 'Keypad models' : 'All products'}
+              </div>
+              <h1 className="mt-3 text-3xl font-semibold tracking-tight text-ink md:text-4xl">
+                {isIconsSection
+                  ? 'Explore Inserts: Curated by Discipline.'
+                  : isKeypadsSection
+                    ? 'Spec Your KeyPad: Precision Defined'
+                    : 'Explore Technical Hardware & Components'}
+              </h1>
+              {isKeypadsSection && (
+                <p className="mt-2 text-sm text-ink/60">Compare keypad models, then continue to configuration.</p>
+              )}
+            </div>
+          )}
+          <div className={`text-sm text-ink/60 ${isCatalogWideSection ? 'ml-auto' : ''}`}>
             {availableResultCount} {visibleResultLabel} available
           </div>
         </div>
@@ -361,7 +534,13 @@ export default function ShopClient({
             }}
             placeholder={searchPlaceholder}
             className="input flex-1"
-            aria-label={isIconsSection ? 'Search button inserts' : 'Search keypads'}
+            aria-label={
+              isIconsSection
+                ? 'Search button inserts'
+                : isKeypadsSection
+                  ? 'Search keypads'
+                  : 'Search products'
+            }
           />
           <button type="submit" className="btn-primary shrink-0">Search</button>
         </form>
@@ -375,6 +554,30 @@ export default function ShopClient({
                 Categories
               </div>
               <div className="mt-4 space-y-2">
+              {!isLandingSection && (
+                <button
+                  type="button"
+                  onClick={onShopHome}
+                  className={`${sidebarButtonBase} ${sidebarInactive}`}
+                >
+                  <span className={sidebarButtonLabel}>Shop Home</span>
+                </button>
+              )}
+
+              <button
+                type="button"
+                aria-pressed={isAllSection}
+                onClick={() => onSectionChange('all', { scrollToTop: true })}
+                className={`${sidebarButtonBase} ${
+                  isAllSection ? sidebarActive : sidebarInactive
+                }`}
+              >
+                <span className={sidebarButtonLabel}>All products</span>
+                <span className={`${sidebarButtonCount} ${isAllSection ? 'text-white/75' : 'text-ink/45'}`}>
+                  {totalIconCount + keypads.length}
+                </span>
+              </button>
+
               <button
                 type="button"
                 aria-pressed={isIconsSection}
@@ -384,6 +587,7 @@ export default function ShopClient({
                   if (!isIconsSection) {
                     setActiveSection('button-inserts');
                     setPage(1);
+                    scrollToPageTop();
                   }
                   setIconsGroupOpen((prev) => !prev);
                 }}
@@ -409,6 +613,7 @@ export default function ShopClient({
                     onClick={() => {
                       setActiveCategorySlugs([]);
                       setPage(1);
+                      scrollToPageTop();
                     }}
                     className={`${sidebarButtonBase} ${
                       activeCategorySlugs.length === 0 ? sidebarActive : sidebarInactive
@@ -458,14 +663,14 @@ export default function ShopClient({
 
               <button
                 type="button"
-                aria-pressed={!isIconsSection}
-                onClick={() => onSectionChange('keypads')}
+                aria-pressed={isKeypadsSection}
+                onClick={() => onSectionChange('keypads', { scrollToTop: true })}
                 className={`${sidebarButtonBase} ${
-                  !isIconsSection ? sidebarActive : sidebarInactive
+                  isKeypadsSection ? sidebarActive : sidebarInactive
                 }`}
               >
                 <span className={sidebarButtonLabel}>Keypads</span>
-                <span className={`${sidebarButtonCount} ${!isIconsSection ? 'text-white/75' : 'text-ink/45'}`}>
+                <span className={`${sidebarButtonCount} ${isKeypadsSection ? 'text-white/75' : 'text-ink/45'}`}>
                   {keypads.length}
                 </span>
               </button>
@@ -504,7 +709,7 @@ export default function ShopClient({
               </div>
             ) : (
               <span className="rounded-full border border-ink/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide">
-                {isIconsSection ? 'All categories' : 'All keypads'}
+                {isIconsSection ? 'All categories' : isKeypadsSection ? 'All keypads' : 'All products'}
               </span>
             )}
           </div>
@@ -514,42 +719,18 @@ export default function ShopClient({
             <div className="card-soft p-8 text-sm text-ink/60">
               {isIconsSection
                 ? 'No button inserts match that search. Try a different query or category.'
-                : 'No keypads match that search. Try a different query.'}
+                : isKeypadsSection
+                  ? 'No keypads match that search. Try a different query.'
+                  : 'No products match that search. Try a different query.'}
             </div>
           ) : isIconsSection ? (
-            <div className="staggered grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-              {displayedIcons.map((icon) => {
-                const iconCategoryNames = categoryNamesByIconId.get(icon.id) ?? [];
-                const primaryCategoryName = iconCategoryNames[0] ?? '';
-                const primaryCategorySlug = primaryCategoryName ? categorySlug(primaryCategoryName) : '';
-                const breadcrumbCategorySlug = resolveProductCategoryForBreadcrumb(icon);
-
-                return (
-                  <ProductCard
-                    key={icon.id}
-                    product={icon}
-                    categoryLabel={toCardCategoryLabel(iconCategoryNames)}
-                    categoryHref={primaryCategorySlug ? toCategoryHref(primaryCategorySlug) : undefined}
-                    productHref={toProductHref(
-                      icon.slug,
-                      'button-inserts',
-                      activeCategorySlugs,
-                      breadcrumbCategorySlug,
-                    )}
-                  />
-                );
-              })}
-            </div>
+            renderIconsGrid(displayedIcons)
+          ) : isKeypadsSection ? (
+            renderKeypadsGrid(filteredKeypads)
           ) : (
-            <div className="staggered grid gap-6 sm:grid-cols-2 xl:grid-cols-2">
-              {filteredKeypads.map((keypad) => (
-                <KeypadCard
-                  key={keypad.id}
-                  product={keypad}
-                  mode="shop"
-                  learnMoreHref={toProductHref(keypad.slug, 'keypads')}
-                />
-              ))}
+            <div className="space-y-6">
+              {displayedIcons.length > 0 && renderIconsGrid(displayedIcons)}
+              {catalogWideKeypads.length > 0 && renderKeypadsGrid(catalogWideKeypads)}
             </div>
           )}
 

@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { useEffect, useState } from 'react';
 import type { IconProduct } from '../lib/vendure';
 import { assetUrl } from '../lib/vendure';
-import { buttonPrimaryClass } from './buttonStyles';
 import {
   cardIdentifierTextClass,
   cardPlaceholderTextClass,
@@ -37,7 +36,8 @@ export default function ProductCard({
   const [adding, setAdding] = useState(false);
   const [feedback, setFeedback] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
 
-  const priceLabel = formatPrice(primaryVariant?.priceWithTax, primaryVariant?.currencyCode);
+  const priceWithVatLabel = formatPrice(primaryVariant?.priceWithTax, primaryVariant?.currencyCode);
+  const priceExVatLabel = formatPriceExVatUk(primaryVariant?.priceWithTax, primaryVariant?.currencyCode);
 
   const onAddToCart = async () => {
     if (!primaryVariant?.id || adding) return;
@@ -69,6 +69,15 @@ export default function ProductCard({
     }, 10000);
     return () => window.clearTimeout(timer);
   }, [feedback]);
+
+  const addToCartClass = [
+    'group relative isolate inline-flex items-center justify-center gap-2 rounded-full border border-transparent px-4 py-2 text-sm font-medium text-white md:text-base',
+    'bg-[linear-gradient(90deg,#040F2E_0%,#112B5D_55%,#29457A_100%),linear-gradient(90deg,#203f7a_0%,#2f5da8_55%,#4b7fca_100%)] [background-origin:padding-box,border-box] [background-clip:padding-box,border-box]',
+    'transition-[background,box-shadow,transform] duration-300',
+    'hover:-translate-y-[1px] hover:bg-[linear-gradient(270deg,#040F2E_0%,#112B5D_55%,#29457A_100%),linear-gradient(90deg,#24497d_0%,#39629a_55%,#537bb0_100%)] hover:shadow-[0_0_0_1px_rgba(72,116,194,0.56),0_10px_24px_rgba(4,15,46,0.29)]',
+    'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#29457A]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white',
+    'disabled:cursor-not-allowed disabled:opacity-50',
+  ].join(' ');
 
   return (
     <div className="card-soft group relative flex h-full flex-col gap-4 p-4 transition hover:-translate-y-1 hover:shadow-soft">
@@ -108,16 +117,28 @@ export default function ProductCard({
       </div>
       <div className="relative z-20 mt-auto space-y-2">
         <div className="flex items-center justify-between gap-3">
-          <div className="text-sm font-bold tracking-tight text-ink/70 md:text-base">
-            {priceLabel || 'Price unavailable'}
+          <div className="space-y-0.5">
+            <div className="flex items-end gap-1.5">
+              <div className="text-sm font-bold tracking-tight text-ink md:text-base">
+                {priceWithVatLabel || 'Price unavailable'}
+              </div>
+              {priceWithVatLabel && (
+                <div className="pb-0.5 text-[10px] font-semibold tracking-wide text-ink/55">(INCL)</div>
+              )}
+            </div>
+            {priceExVatLabel && (
+              <div className="text-[10px] font-semibold tracking-wide text-ink/55">{priceExVatLabel} (EXCL)</div>
+            )}
           </div>
           <button
             type="button"
             onClick={onAddToCart}
             disabled={!primaryVariant?.id || adding}
-            className={`${buttonPrimaryClass} px-4 py-2 text-sm md:text-base disabled:cursor-not-allowed disabled:opacity-50`}
+            className={addToCartClass}
           >
-            {adding ? 'Adding...' : 'Add to cart'}
+            <span className="pointer-events-none absolute inset-0 rounded-full bg-[linear-gradient(270deg,rgba(255,255,255,0.10)_0%,rgba(255,255,255,0.02)_45%,rgba(255,255,255,0.08)_100%)] opacity-0 transition-opacity duration-300 group-hover:opacity-45" />
+            <span className="pointer-events-none absolute -inset-[1px] -z-10 rounded-full bg-[linear-gradient(90deg,rgba(11,27,58,0.44)_0%,rgba(27,52,95,0.30)_55%,rgba(58,116,198,0.30)_100%)] opacity-0 transition-opacity duration-300 group-hover:opacity-55" />
+            <span className="relative z-10">{adding ? 'Adding...' : 'Add to cart'}</span>
           </button>
         </div>
         {feedback && (
@@ -148,4 +169,10 @@ function formatPrice(priceWithTax?: number | null, currencyCode?: string | null)
   } catch {
     return `${(priceWithTax / 100).toFixed(2)} ${currency}`;
   }
+}
+
+function formatPriceExVatUk(priceWithTax?: number | null, currencyCode?: string | null) {
+  if (typeof priceWithTax !== 'number') return null;
+  const exVatMinor = Math.round(priceWithTax / 1.2);
+  return formatPrice(exVatMinor, currencyCode);
 }

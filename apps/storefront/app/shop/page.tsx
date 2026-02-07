@@ -31,10 +31,11 @@ function toPageSize(value: string) {
   return PAGE_SIZE_OPTIONS.includes(parsed as (typeof PAGE_SIZE_OPTIONS)[number]) ? parsed : DEFAULT_PAGE_SIZE;
 }
 
-function normalizeSection(value: string): 'button-inserts' | 'keypads' {
+function normalizeSection(value: string): 'landing' | 'all' | 'button-inserts' | 'keypads' {
+  if (value === 'all') return 'all';
   if (value === 'keypads') return 'keypads';
   if (value === 'button-inserts' || value === 'icons' || value === 'inserts') return 'button-inserts';
-  return 'button-inserts';
+  return 'landing';
 }
 
 function parseCategorySlugs(
@@ -64,12 +65,16 @@ export default async function ShopPage({
 }) {
   const resolvedSearchParams = await searchParams;
   const query = toStringParam(resolvedSearchParams?.q);
-  const selectedCategories = parseCategorySlugs(resolvedSearchParams?.cats, resolvedSearchParams?.cat);
   const sectionRaw = toStringParam(resolvedSearchParams?.section);
   const section = normalizeSection(sectionRaw);
+  const selectedCategories =
+    section === 'button-inserts'
+      ? parseCategorySlugs(resolvedSearchParams?.cats, resolvedSearchParams?.cat)
+      : [];
   const requestedPage = toPositiveInteger(toStringParam(resolvedSearchParams?.page), 1);
   const requestedTake = toPageSize(toStringParam(resolvedSearchParams?.take));
-  const enableIconsPagination = section === 'button-inserts' && selectedCategories.length === 0;
+  const enableIconsPagination =
+    (section === 'button-inserts' && selectedCategories.length === 0) || section === 'all';
 
   let icons;
   let categorySourceIcons;
