@@ -9,6 +9,9 @@ export type VendureProductVariant = {
   id: string;
   priceWithTax?: number | null;
   currencyCode?: string | null;
+  stockLevel?: string | null;
+  stockOnHand?: number | null;
+  stockAllocated?: number | null;
 };
 
 export type ProductCustomFields = {
@@ -17,12 +20,44 @@ export type ProductCustomFields = {
   iconCategories?: string[];
   insertAssetId?: string;
   isKeypadProduct?: boolean;
+  application?: string[] | string | null;
+  colour?: string | null;
+  size?: string | null;
+  additionalSpecs?: Array<
+    | string
+    | {
+      label?: string | null;
+      value?: string | null;
+      name?: string | null;
+      key?: string | null;
+      title?: string | null;
+      text?: string | null;
+    }
+  > | null;
+  whatsInTheBox?: string[] | string | null;
+  downloads?: Array<
+    | VendureAsset
+    | {
+      id?: string | null;
+      name?: string | null;
+      source?: string | null;
+      preview?: string | null;
+      href?: string | null;
+      url?: string | null;
+      link?: string | null;
+      label?: string | null;
+      title?: string | null;
+    }
+    | string
+  > | null;
+  [key: string]: unknown;
 };
 
 export type CatalogProduct = {
   id: string;
   name: string;
   slug: string;
+  description?: string;
   featuredAsset?: VendureAsset | null;
   assets?: VendureAsset[];
   variants?: VendureProductVariant[];

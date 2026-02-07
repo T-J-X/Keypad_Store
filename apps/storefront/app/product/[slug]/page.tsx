@@ -1,12 +1,18 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
-import { assetUrl, iconCategoriesFromProduct } from '../../../lib/vendure';
-import { fetchProductBySlug } from '../../../lib/vendure.server';
+import ButtonInsertPdp from '../../../components/ProductPdp/ButtonInsertPdp';
+import KeypadPdp from '../../../components/ProductPdp/KeypadPdp';
+import { type CatalogProduct, type IconProduct } from '../../../lib/vendure';
+import { fetchIconProducts, fetchProductBySlug } from '../../../lib/vendure.server';
 
 type ProductSearchParams = {
   from?: string | string[];
   section?: string | string[];
   cat?: string | string[];
+  cats?: string | string[];
+  q?: string | string[];
+  page?: string | string[];
+  take?: string | string[];
 };
 
 type BreadcrumbItem = {
@@ -14,8 +20,44 @@ type BreadcrumbItem = {
   href?: string;
 };
 
+type ShopSection = 'button-inserts' | 'keypads';
+
+const PAGE_SIZE_OPTIONS = [24, 48, 96] as const;
+const DEFAULT_PAGE_SIZE = 24;
+
 function toStringParam(value?: string | string[]) {
-  return typeof value === 'string' ? value : '';
+  if (typeof value === 'string') return value;
+  if (Array.isArray(value) && typeof value[0] === 'string') return value[0];
+  return '';
+}
+
+function toPositiveInteger(value: string, fallback: number) {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed) || parsed < 1) return fallback;
+  return parsed;
+}
+
+function toPageSize(value: string) {
+  const parsed = Number.parseInt(value, 10);
+  if (!Number.isFinite(parsed)) return DEFAULT_PAGE_SIZE;
+  return PAGE_SIZE_OPTIONS.includes(parsed as (typeof PAGE_SIZE_OPTIONS)[number]) ? parsed : DEFAULT_PAGE_SIZE;
+}
+
+function parseCategorySlugs(value: string) {
+  return Array.from(
+    new Set(
+      value
+        .split(',')
+        .map((item) => item.trim())
+        .filter(Boolean),
+    ),
+  );
+}
+
+function normalizeSection(value: string): ShopSection | undefined {
+  if (value === 'keypads') return 'keypads';
+  if (value === 'button-inserts' || value === 'icons' || value === 'inserts') return 'button-inserts';
+  return undefined;
 }
 
 function toCategoryLabelFromSlug(slug: string) {
@@ -26,12 +68,91 @@ function toCategoryLabelFromSlug(slug: string) {
     .join(' ');
 }
 
-function buildShopHref(section?: 'button-inserts' | 'keypads', categorySlug = '') {
+function buildShopHref({
+  section,
+  q,
+  cats = [],
+  cat,
+  page,
+  take,
+}: {
+  section?: ShopSection;
+  q?: string;
+  cats?: string[];
+  cat?: string;
+  page?: number;
+  take?: number;
+}) {
   const params = new URLSearchParams();
   if (section) params.set('section', section);
-  if (section === 'button-inserts' && categorySlug) params.set('cat', categorySlug);
+  const trimmedQuery = q?.trim();
+  if (trimmedQuery) params.set('q', trimmedQuery);
+  if (section === 'button-inserts' && cats.length > 0) params.set('cats', cats.join(','));
+  if (section === 'button-inserts' && cat) params.set('cat', cat);
+  if (section && page && page > 0) params.set('page', String(page));
+  if (section && take && take > 0) params.set('take', String(take));
   const query = params.toString();
   return `/shop${query ? `?${query}` : ''}`;
+}
+
+function resolveModelCode(product: CatalogProduct) {
+  const slugMatch = product.slug.match(/pkp-\d{4}-si/i);
+  if (slugMatch) return slugMatch[0].toUpperCase();
+
+  const nameMatch = product.name.match(/pkp[\s-]?(\d{4})[\s-]?si/i);
+  if (nameMatch) return `PKP-${nameMatch[1]}-SI`;
+
+  return product.name;
+}
+
+function isButtonInsertProduct(product: CatalogProduct) {
+  if (product.customFields?.isIconProduct) return true;
+  return (product.customFields?.iconCategories?.length ?? 0) > 0;
+}
+
+function resolveProductTypeLabel(product: CatalogProduct) {
+  if (isButtonInsertProduct(product)) return 'Button Insert Product';
+  if (product.customFields?.isKeypadProduct) return 'Keypad Product';
+  return 'Product';
+}
+
+function resolveRelatedProducts(currentProduct: CatalogProduct, icons: IconProduct[]) {
+  const currentCategories = new Set(
+    (currentProduct.customFields?.iconCategories ?? [])
+      .map((item) => item.trim().toLowerCase())
+      .filter(Boolean),
+  );
+
+  const candidates = icons.filter((icon) => icon.id !== currentProduct.id && icon.slug !== currentProduct.slug);
+  const byId = new Map(candidates.map((icon) => [icon.id, icon]));
+
+  const ranked = candidates
+    .map((candidate) => {
+      const candidateCategories = (candidate.customFields?.iconCategories ?? [])
+        .map((item) => item.trim().toLowerCase())
+        .filter(Boolean);
+      const overlap = candidateCategories.filter((category) => currentCategories.has(category)).length;
+      return {
+        product: candidate,
+        overlap,
+      };
+    })
+    .filter((entry) => (currentCategories.size > 0 ? entry.overlap > 0 : true))
+    .sort((a, b) => {
+      if (b.overlap !== a.overlap) return b.overlap - a.overlap;
+      return a.product.name.localeCompare(b.product.name);
+    })
+    .slice(0, 3)
+    .map((entry) => entry.product);
+
+  if (ranked.length === 3) return ranked;
+
+  const fallback = candidates
+    .filter((item) => !ranked.some((rankedItem) => rankedItem.id === item.id))
+    .sort((a, b) => a.name.localeCompare(b.name))
+    .slice(0, 3 - ranked.length);
+
+  return [...ranked, ...fallback].filter((item) => byId.has(item.id)).slice(0, 3);
 }
 
 export default async function ProductDetailPage({
@@ -47,28 +168,47 @@ export default async function ProductDetailPage({
   if (!product) return notFound();
 
   const origin = toStringParam(resolvedSearchParams?.from);
-  const sectionParam = toStringParam(resolvedSearchParams?.section);
-  const categoryParam = toStringParam(resolvedSearchParams?.cat);
-  const section = sectionParam === 'keypads'
-    ? 'keypads'
-    : sectionParam === 'button-inserts' || sectionParam === 'icons' || sectionParam === 'inserts'
-      ? 'button-inserts'
-      : undefined;
+  const section = normalizeSection(toStringParam(resolvedSearchParams?.section));
+  const categoryParam = toStringParam(resolvedSearchParams?.cat).trim();
+  const categoryParamList = parseCategorySlugs(toStringParam(resolvedSearchParams?.cats));
+  const categorySlugs = categoryParamList.length > 0
+    ? categoryParamList
+    : (categoryParam ? [categoryParam] : []);
+  const query = toStringParam(resolvedSearchParams?.q);
+  const page = toPositiveInteger(toStringParam(resolvedSearchParams?.page), 1);
+  const take = toPageSize(toStringParam(resolvedSearchParams?.take));
 
-  const image = product.featuredAsset?.preview ?? product.featuredAsset?.source ?? '';
-  const iconId = product.customFields?.iconId ?? product.name;
-  const isKeypad = Boolean(product.customFields?.isKeypadProduct);
-  const iconCategories = iconCategoriesFromProduct(product);
-  const categoryLabel = iconCategories.length > 0 ? iconCategories.join(', ') : 'Uncategorised';
+  const sectionHref = section
+    ? buildShopHref({
+      section,
+      q: query,
+      cats: section === 'button-inserts' ? categorySlugs : [],
+      cat: section === 'button-inserts' ? categoryParam : undefined,
+      page,
+      take,
+    })
+    : buildShopHref({});
+
+  const categoryHref = section === 'button-inserts' && categoryParam
+    ? buildShopHref({
+      section: 'button-inserts',
+      q: query,
+      cats: categorySlugs.length > 0 ? categorySlugs : [categoryParam],
+      cat: categoryParam,
+      page: 1,
+      take,
+    })
+    : undefined;
+
+  const sectionLabel = section === 'keypads' ? 'Keypads' : 'Button Inserts';
 
   const breadcrumbs: BreadcrumbItem[] = origin === 'shop'
     ? [
-      { label: 'Shop', href: buildShopHref() },
-      ...(section === 'button-inserts' ? [{ label: 'Button Inserts', href: buildShopHref('button-inserts') }] : []),
-      ...(section === 'button-inserts' && categoryParam
-        ? [{ label: toCategoryLabelFromSlug(categoryParam), href: buildShopHref('button-inserts', categoryParam) }]
+      { label: 'Shop', href: buildShopHref({}) },
+      ...(section ? [{ label: sectionLabel, href: sectionHref }] : []),
+      ...(section === 'button-inserts' && categoryParam && categoryHref
+        ? [{ label: toCategoryLabelFromSlug(categoryParam), href: categoryHref }]
         : []),
-      ...(section === 'keypads' ? [{ label: 'Keypads', href: buildShopHref('keypads') }] : []),
       { label: product.name },
     ]
     : [
@@ -76,58 +216,24 @@ export default async function ProductDetailPage({
       { label: product.name },
     ];
 
+  if (isButtonInsertProduct(product)) {
+    const icons = await fetchIconProducts();
+    const relatedProducts = resolveRelatedProducts(product, icons);
+
+    return (
+      <ButtonInsertPdp
+        product={product}
+        breadcrumbs={breadcrumbs}
+        productTypeLabel={resolveProductTypeLabel(product)}
+        relatedProducts={relatedProducts}
+      />
+    );
+  }
   return (
-    <div className="mx-auto w-full max-w-5xl px-6 pb-20 pt-12">
-      <div className="mb-6 text-xs font-semibold uppercase tracking-wide text-ink/50">
-        <nav aria-label="Breadcrumb">
-          <ol className="flex flex-wrap items-center gap-2">
-            {breadcrumbs.map((crumb, index) => (
-              <li key={`${crumb.label}-${index}`} className="flex items-center gap-2">
-                {crumb.href ? (
-                  <Link href={crumb.href} className="hover:text-ink">{crumb.label}</Link>
-                ) : (
-                  <span className="text-ink">{crumb.label}</span>
-                )}
-                {index < breadcrumbs.length - 1 && <span className="text-ink/35">/</span>}
-              </li>
-            ))}
-          </ol>
-        </nav>
-      </div>
-      <div className="grid gap-10 lg:grid-cols-[1fr_0.9fr]">
-        <div className="card-soft flex items-center justify-center p-8">
-          {image ? (
-            <img src={assetUrl(image)} alt={product.name} className="h-72 w-full object-contain" />
-          ) : (
-            <div className="text-xs font-semibold uppercase tracking-wide text-ink/40">Render pending</div>
-          )}
-        </div>
-        <div className="space-y-5">
-          <div className="pill">{isKeypad ? 'Keypad Catalog' : 'Button Insert Catalog'}</div>
-          <div>
-            <h1 className="text-3xl font-semibold tracking-tight text-ink md:text-4xl">{product.name}</h1>
-            <div className="mt-2 text-sm text-ink/60">{isKeypad ? 'Keypad model' : 'Button Insert product'}</div>
-          </div>
-          {!isKeypad && (
-            <div className="space-y-1 text-sm text-ink/70">
-              <div>Button Insert ID: <span className="font-semibold text-ink">{iconId}</span></div>
-              <div>Categories: <span className="font-semibold text-ink">{categoryLabel}</span></div>
-            </div>
-          )}
-          <p className="text-sm text-ink/60">
-            This page is a lightweight shell for future expansion. It will eventually include configurator previews,
-            inventory status, and ordering controls.
-          </p>
-          {isKeypad ? (
-            <Link href={`/configurator/${product.slug}`} className="btn-primary inline-flex w-fit">Configure now</Link>
-          ) : (
-            <Link href="/configurator" className="btn-primary inline-flex w-fit">Add to configuration</Link>
-          )}
-          <div className="card-soft p-4 text-xs text-ink/60">
-            Note: Storefront pages only display the featured render asset. Insert overlays remain configurator-only.
-          </div>
-        </div>
-      </div>
-    </div>
+    <KeypadPdp
+      product={product}
+      breadcrumbs={breadcrumbs}
+      modelCode={resolveModelCode(product)}
+    />
   );
 }

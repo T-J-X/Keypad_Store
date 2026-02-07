@@ -1,6 +1,7 @@
 # DEV + LAB Workspaces (Real-time Clone)
 
 Goal: keep DEV stable while LAB experiments can change fast (especially configurator UI/UX).
+Vendure Dev Rule: always use http://localhost:3000/admin; do not mix localhost and 127.0.0.1 because cookies are host-scoped and admin auth will silently fail.
 
 ## Recommended workflow: git worktrees
 

@@ -1,6 +1,7 @@
 import 'dotenv/config';
 import path from 'node:path';
 import {
+  Asset,
   bootstrap,
   DefaultLogger,
   DefaultJobQueuePlugin,
@@ -17,9 +18,22 @@ import {
 } from '@vendure/asset-server-plugin';
 import { AdminUiPlugin } from '@vendure/admin-ui-plugin';
 
-const host = process.env.HOST ?? '127.0.0.1';
-const port = Number(process.env.PORT ?? 3000);
+const host = 'localhost';
+const port = 3000;
 const adminPath = process.env.ADMIN_UI_PATH ?? 'admin';
+
+if (process.env.NODE_ENV !== 'production') {
+  const envUrlsUsingIp = Object.entries(process.env).filter(([key, value]) => {
+    return /url/i.test(key) && typeof value === 'string' && value.includes('127.0.0.1');
+  });
+
+  if (envUrlsUsingIp.length > 0) {
+    const urlKeys = envUrlsUsingIp.map(([key]) => key).join(', ');
+    throw new Error(
+      `Detected 127.0.0.1 in URL env var(s): ${urlKeys}. Use http://localhost:3000 for Vendure dev URLs.`,
+    );
+  }
+}
 
 const storageStrategyFactory = configureS3AssetStorage({
   bucket: process.env.S3_BUCKET ?? 'vendure-assets',
@@ -39,13 +53,27 @@ export const config: VendureConfig = {
   apiOptions: {
     hostname: host,
     port,
-    adminApiPath: process.env.ADMIN_API_PATH ?? 'admin-api',
-    shopApiPath: process.env.SHOP_API_PATH ?? 'shop-api',
+    adminApiPath: 'admin-api',
+    shopApiPath: 'shop-api',
+    cors: {
+      origin: ['http://localhost:3000'],
+      credentials: true,
+    },
   },
   authOptions: {
+    // Use cookie-based sessions for the Admin UI (recommended for local dev).
+    tokenMethod: 'cookie',
     superadminCredentials: {
       identifier: process.env.SUPERADMIN_USERNAME ?? 'superadmin',
       password: process.env.SUPERADMIN_PASSWORD ?? 'superadmin',
+    },
+    // Dev-safe cookie settings (Chrome will otherwise silently drop/block cookies in some cases).
+    cookieOptions: {
+      name: 'vendure-auth',
+      httpOnly: true,
+      secure: false,
+      sameSite: 'lax',
+      path: '/',
     },
   },
   dbConnectionOptions: {
@@ -124,6 +152,41 @@ export const config: VendureConfig = {
         type: 'string',
         nullable: true,
         public: true,
+      },
+      {
+        name: 'additionalSpecs',
+        type: 'struct',
+        list: true,
+        nullable: true,
+        public: true,
+        fields: [
+          { name: 'label', type: 'string' },
+          { name: 'value', type: 'string' },
+        ],
+        ui: {
+          tab: 'Specifications',
+        },
+      },
+      {
+        name: 'whatsInTheBox',
+        type: 'text',
+        list: true,
+        nullable: true,
+        public: true,
+        ui: {
+          tab: 'Content',
+        },
+      },
+      {
+        name: 'downloads',
+        type: 'relation',
+        list: true,
+        nullable: true,
+        entity: Asset,
+        public: true,
+        ui: {
+          tab: 'Downloads',
+        },
       },
     ],
     ProductVariant: [

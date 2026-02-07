@@ -79,7 +79,7 @@ export default function ProductCard({
       />
       <div className="relative z-10 pointer-events-none flex flex-1 flex-col gap-4">
         {image ? (
-          <div className="overflow-hidden rounded-2xl bg-slate-100">
+          <div className="overflow-hidden rounded-2xl bg-[linear-gradient(to_bottom,#f4f4f5_0%,#e4e4e7_50%,#ffffff_100%)]">
             <img
               src={assetUrl(image)}
               alt={product.name}

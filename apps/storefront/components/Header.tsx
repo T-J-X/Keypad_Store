@@ -48,10 +48,10 @@ export default function Header() {
 
   return (
     <header
-      className={`sticky top-0 z-40 border-b bg-white/70 backdrop-blur-xl transition-[transform,border-color,box-shadow] duration-300 ease-out will-change-transform ${
+      className={`sticky top-0 z-40 border-b bg-black backdrop-blur-xl transition-[transform,border-color,box-shadow] duration-300 ease-out will-change-transform ${
         isHidden ? '-translate-y-full' : 'translate-y-0'
       } ${
-        isScrolled ? 'border-black/10 shadow-[0_8px_26px_rgba(12,17,26,0.08)]' : 'border-black/5'
+        isScrolled ? 'border-white/20 shadow-[0_8px_26px_rgba(0,0,0,0.36)]' : 'border-white/10'
       }`}
     >
       <div
@@ -62,16 +62,16 @@ export default function Header() {
         <div className="flex items-center gap-6">
           <Link
             href="/"
-            className={`font-semibold tracking-tight text-ink transition-all duration-300 ease-out ${
+            className={`font-semibold tracking-tight text-white transition-all duration-300 ease-out ${
               isScrolled ? 'text-base' : 'text-lg'
             }`}
           >
             Keypad Store
           </Link>
-          <nav className="hidden items-center gap-4 text-sm font-medium text-ink/70 md:flex">
-            <Link href="/shop" className="transition hover:text-ink">Shop</Link>
-            <Link href="/configurator" className="transition hover:text-ink">Configurator</Link>
-            <Link href="/account" className="transition hover:text-ink">Account</Link>
+          <nav className="hidden items-center gap-4 text-sm font-medium text-white/75 md:flex">
+            <Link href="/shop" className="transition hover:text-white/90">Shop</Link>
+            <Link href="/configurator" className="transition hover:text-white/90">Configurator</Link>
+            <Link href="/account" className="transition hover:text-white/90">Account</Link>
           </nav>
         </div>
         <div
@@ -80,10 +80,10 @@ export default function Header() {
           } transition-all duration-300 ease-out`}
         >
           <div className="md:hidden">
-            <nav className="flex items-center gap-4 text-xs font-semibold uppercase tracking-wide text-ink/60">
-              <Link href="/shop" className="transition hover:text-ink">Shop</Link>
-              <Link href="/configurator" className="transition hover:text-ink">Configurator</Link>
-              <Link href="/account" className="transition hover:text-ink">Account</Link>
+            <nav className="flex items-center gap-4 text-xs font-semibold uppercase tracking-wide text-white/65">
+              <Link href="/shop" className="transition hover:text-white/90">Shop</Link>
+              <Link href="/configurator" className="transition hover:text-white/90">Configurator</Link>
+              <Link href="/account" className="transition hover:text-white/90">Account</Link>
             </nav>
           </div>
           <Suspense fallback={<div className="h-10 w-full max-w-[360px]" aria-hidden />}>
@@ -91,7 +91,7 @@ export default function Header() {
           </Suspense>
           <Link
             href="/login"
-            className={`hidden rounded-full border border-ink/15 px-4 text-sm font-semibold text-ink transition-all duration-300 ease-out hover:border-ink/30 md:inline-flex ${
+            className={`hidden rounded-full border border-white/35 px-4 text-sm font-semibold text-white transition-all duration-300 ease-out hover:border-white/55 hover:text-white/90 md:inline-flex ${
               isScrolled ? 'py-1.5' : 'py-2'
             }`}
           >

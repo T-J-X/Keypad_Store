@@ -27,19 +27,78 @@ export async function vendureFetch<T>(query: string, variables?: Record<string, 
   return json.data;
 }
 
+const PRODUCT_VARIANT_FIELDS = `
+  id
+  priceWithTax
+  currencyCode
+  stockLevel
+`;
+
+const PRODUCT_VARIANT_FIELDS_WITH_NUMERIC_STOCK = `
+  ${PRODUCT_VARIANT_FIELDS}
+  stockOnHand
+  stockAllocated
+`;
+
 const PRODUCT_FIELDS = `
   id
   name
   slug
+  description
   featuredAsset { id preview source name }
   assets { id preview source name }
-  variants { id priceWithTax currencyCode }
+  variants { ${PRODUCT_VARIANT_FIELDS} }
   customFields {
     isIconProduct
     iconId
     iconCategories
     insertAssetId
     isKeypadProduct
+    application
+    colour
+    size
+    additionalSpecs {
+      label
+      value
+    }
+    whatsInTheBox
+    downloads {
+      id
+      name
+      source
+      preview
+    }
+  }
+`;
+
+const PRODUCT_FIELDS_WITH_NUMERIC_STOCK = `
+  id
+  name
+  slug
+  description
+  featuredAsset { id preview source name }
+  assets { id preview source name }
+  variants { ${PRODUCT_VARIANT_FIELDS_WITH_NUMERIC_STOCK} }
+  customFields {
+    isIconProduct
+    iconId
+    iconCategories
+    insertAssetId
+    isKeypadProduct
+    application
+    colour
+    size
+    additionalSpecs {
+      label
+      value
+    }
+    whatsInTheBox
+    downloads {
+      id
+      name
+      source
+      preview
+    }
   }
 `;
 
@@ -156,19 +215,41 @@ export async function fetchKeypadProducts(): Promise<KeypadProduct[]> {
 }
 
 export async function fetchProductBySlug(slug: string): Promise<CatalogProduct | null> {
-  const query = `
+  const queryWithNumericStock = `
     query ProductBySlug($slug: String!) {
       product(slug: $slug) {
-        ${PRODUCT_FIELDS}
+        ${PRODUCT_FIELDS_WITH_NUMERIC_STOCK}
       }
     }
   `;
 
-  const data = await vendureFetch<{ product: CatalogProduct | null }>(query, { slug });
-  if (!data.product) return null;
-  return {
-    ...data.product,
-    assets: data.product.assets ?? [],
-    variants: data.product.variants ?? [],
-  };
+  try {
+    const data = await vendureFetch<{ product: CatalogProduct | null }>(queryWithNumericStock, { slug });
+    if (!data.product) return null;
+    return {
+      ...data.product,
+      assets: data.product.assets ?? [],
+      variants: data.product.variants ?? [],
+    };
+  } catch (error) {
+    const message = error instanceof Error ? error.message : '';
+    const stockFieldMissing = /stockOnHand|stockAllocated/.test(message);
+    if (!stockFieldMissing) throw error;
+
+    const fallbackQuery = `
+      query ProductBySlug($slug: String!) {
+        product(slug: $slug) {
+          ${PRODUCT_FIELDS}
+        }
+      }
+    `;
+
+    const fallbackData = await vendureFetch<{ product: CatalogProduct | null }>(fallbackQuery, { slug });
+    if (!fallbackData.product) return null;
+    return {
+      ...fallbackData.product,
+      assets: fallbackData.product.assets ?? [],
+      variants: fallbackData.product.variants ?? [],
+    };
+  }
 }
