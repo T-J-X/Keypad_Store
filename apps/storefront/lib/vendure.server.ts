@@ -1,6 +1,14 @@
 import 'server-only';
 import { cache } from 'react';
-import type { CatalogProduct, IconProduct, KeypadProduct } from './vendure';
+import type {
+  BaseShopDisciplineTile,
+  BaseShopTopTile,
+  BaseShopCategoryTile,
+  BaseShopPublicConfig,
+  CatalogProduct,
+  IconProduct,
+  KeypadProduct,
+} from './vendure';
 
 const SHOP_API = process.env.VENDURE_SHOP_API_URL || 'http://localhost:3000/shop-api';
 const MAX_LIST_TAKE = 100;
@@ -68,6 +76,11 @@ const PRODUCT_FIELDS = `
       source
       preview
     }
+    seoTitle
+    seoDescription
+    seoNoIndex
+    seoCanonicalUrl
+    seoKeywords
   }
 `;
 
@@ -99,6 +112,11 @@ const PRODUCT_FIELDS_WITH_NUMERIC_STOCK = `
       source
       preview
     }
+    seoTitle
+    seoDescription
+    seoNoIndex
+    seoCanonicalUrl
+    seoKeywords
   }
 `;
 
@@ -120,10 +138,81 @@ type ProductListResponse = {
   };
 };
 
+type BaseShopConfigPublicResponse = {
+  baseShopConfigPublic: {
+    categoryTiles?: BaseShopCategoryTile[] | null;
+    featuredProductSlugs?: string[] | null;
+    topTiles?: BaseShopTopTile[] | null;
+    disciplineTiles?: BaseShopDisciplineTile[] | null;
+  } | null;
+};
+
 export type IconPageResult = {
   items: IconProduct[];
   totalItems: number;
 };
+
+export const fetchBaseShopConfigPublic = cache(async (): Promise<BaseShopPublicConfig> => {
+  const query = `
+    query BaseShopConfigPublic {
+      baseShopConfigPublic {
+        categoryTiles {
+          id
+          title
+          subtitle
+          href
+          imageAssetId
+          imagePreview
+          imageSource
+          hoverStyle
+          isEnabled
+        }
+        featuredProductSlugs
+        topTiles {
+          id
+          label
+          subtitle
+          href
+          hoverStyle
+          kind
+          isEnabled
+          imagePreview
+          imageSource
+          imageAssetId
+        }
+        disciplineTiles {
+          id
+          labelOverride
+          order
+          isEnabled
+          imagePreview
+          imageSource
+          imageAssetId
+        }
+      }
+    }
+  `;
+
+  try {
+    const data = await vendureFetch<BaseShopConfigPublicResponse>(query);
+    const config = data.baseShopConfigPublic;
+    return {
+      categoryTiles: (config?.categoryTiles ?? []).filter(Boolean),
+      featuredProductSlugs: (config?.featuredProductSlugs ?? []).filter(
+        (slug): slug is string => typeof slug === 'string' && slug.trim().length > 0,
+      ),
+      topTiles: (config?.topTiles ?? []).filter(Boolean),
+      disciplineTiles: (config?.disciplineTiles ?? []).filter(Boolean),
+    };
+  } catch {
+    return {
+      categoryTiles: [],
+      featuredProductSlugs: [],
+      topTiles: [],
+      disciplineTiles: [],
+    };
+  }
+});
 
 const fetchAllProducts = cache(async (): Promise<CatalogProduct[]> => {
   let skip = 0;

@@ -50,6 +50,11 @@ export type ProductCustomFields = {
     }
     | string
   > | null;
+  seoTitle?: string | null;
+  seoDescription?: string | null;
+  seoNoIndex?: boolean | null;
+  seoCanonicalUrl?: string | null;
+  seoKeywords?: string | null;
   [key: string]: unknown;
 };
 
@@ -71,6 +76,48 @@ export type IconCategory = {
   name: string;
   slug: string;
   count: number;
+};
+
+export type BaseShopCategoryTile = {
+  id: string;
+  title?: string | null;
+  subtitle?: string | null;
+  href?: string | null;
+  imageAssetId?: string | null;
+  imagePreview?: string | null;
+  imageSource?: string | null;
+  hoverStyle?: string | null;
+  isEnabled?: boolean;
+};
+
+export type BaseShopTopTile = {
+  id: string;
+  label?: string | null;
+  subtitle?: string | null;
+  href?: string | null;
+  hoverStyle?: string | null;
+  kind?: string | null;
+  isEnabled?: boolean;
+  imagePreview?: string | null;
+  imageSource?: string | null;
+  imageAssetId?: string | null;
+};
+
+export type BaseShopDisciplineTile = {
+  id: string;
+  labelOverride?: string | null;
+  order?: number | null;
+  isEnabled?: boolean;
+  imagePreview?: string | null;
+  imageSource?: string | null;
+  imageAssetId?: string | null;
+};
+
+export type BaseShopPublicConfig = {
+  categoryTiles: BaseShopCategoryTile[];
+  featuredProductSlugs: string[];
+  topTiles: BaseShopTopTile[];
+  disciplineTiles: BaseShopDisciplineTile[];
 };
 
 export function normalizeCategoryName(input?: string | null) {

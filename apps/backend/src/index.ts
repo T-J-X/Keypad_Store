@@ -17,10 +17,17 @@ import {
   configureS3AssetStorage,
 } from '@vendure/asset-server-plugin';
 import { AdminUiPlugin } from '@vendure/admin-ui-plugin';
+import { compileUiExtensions } from '@vendure/ui-devkit/compiler';
+import { BaseShopPlugin } from './plugins/base-shop';
 
 const host = 'localhost';
 const port = 3000;
 const adminPath = process.env.ADMIN_UI_PATH ?? 'admin';
+const uiDevkitPackagePath = path.dirname(require.resolve('@vendure/ui-devkit/package.json'));
+const adminUiOutputPath = path.join(__dirname, '../admin-ui');
+const ngCompilerPath = require.resolve('@angular/cli/bin/ng.js', {
+  paths: [uiDevkitPackagePath],
+});
 
 if (process.env.NODE_ENV !== 'production') {
   const envUrlsUsingIp = Object.entries(process.env).filter(([key, value]) => {
@@ -188,6 +195,52 @@ export const config: VendureConfig = {
           tab: 'Downloads',
         },
       },
+      {
+        name: 'seoTitle',
+        type: 'string',
+        nullable: true,
+        public: true,
+        ui: {
+          tab: 'SEO',
+        },
+      },
+      {
+        name: 'seoDescription',
+        type: 'text',
+        nullable: true,
+        public: true,
+        ui: {
+          component: 'textarea-form-input',
+          tab: 'SEO',
+        },
+      },
+      {
+        name: 'seoNoIndex',
+        type: 'boolean',
+        defaultValue: false,
+        public: true,
+        ui: {
+          tab: 'SEO',
+        },
+      },
+      {
+        name: 'seoCanonicalUrl',
+        type: 'string',
+        nullable: true,
+        public: true,
+        ui: {
+          tab: 'SEO',
+        },
+      },
+      {
+        name: 'seoKeywords',
+        type: 'string',
+        nullable: true,
+        public: true,
+        ui: {
+          tab: 'SEO',
+        },
+      },
     ],
     ProductVariant: [
       {
@@ -249,6 +302,8 @@ export const config: VendureConfig = {
 
     DefaultSchedulerPlugin.init(),
 
+    BaseShopPlugin,
+
     AssetServerPlugin.init({
       route: 'assets',
       assetUploadDir: path.join(process.cwd(), 'apps/backend/static/assets'),
@@ -256,8 +311,26 @@ export const config: VendureConfig = {
     }),
 
     AdminUiPlugin.init({
-      route: adminPath,
+      route: 'admin',
       port: port + 1,
+      app: compileUiExtensions({
+        outputPath: adminUiOutputPath,
+        extensions: [
+          {
+            extensionPath: path.join(__dirname, 'plugins/base-shop/ui'),
+            ngModules: [
+              {
+                type: 'lazy',
+                route: 'baseshop',
+                ngModuleFileName: 'baseshop.module.ts',
+                ngModuleName: 'BaseShopModule',
+              },
+            ],
+          },
+        ],
+        devMode: true,
+        ngCompilerPath,
+      }),
       adminUiConfig: {
         apiHost: 'http://localhost',
         apiPort: port,

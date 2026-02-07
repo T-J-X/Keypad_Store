@@ -1,4 +1,4 @@
-import Link from 'next/link';
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import ButtonInsertPdp from '../../../components/ProductPdp/ButtonInsertPdp';
 import KeypadPdp from '../../../components/ProductPdp/KeypadPdp';
@@ -24,11 +24,16 @@ type ShopSection = 'button-inserts' | 'keypads';
 
 const PAGE_SIZE_OPTIONS = [24, 48, 96] as const;
 const DEFAULT_PAGE_SIZE = 24;
+const DEFAULT_SITE_URL = 'http://localhost:3001';
 
 function toStringParam(value?: string | string[]) {
   if (typeof value === 'string') return value;
   if (Array.isArray(value) && typeof value[0] === 'string') return value[0];
   return '';
+}
+
+function toTrimmedString(value: unknown) {
+  return typeof value === 'string' ? value.trim() : '';
 }
 
 function toPositiveInteger(value: string, fallback: number) {
@@ -66,6 +71,77 @@ function toCategoryLabelFromSlug(slug: string) {
     .filter(Boolean)
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(' ');
+}
+
+function siteUrl() {
+  const configured = process.env.NEXT_PUBLIC_SITE_URL?.trim();
+  if (!configured) return DEFAULT_SITE_URL;
+  return configured.endsWith('/') ? configured.slice(0, -1) : configured;
+}
+
+function stripHtml(input: string) {
+  return input.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+}
+
+function truncate(input: string, maxLength: number) {
+  if (input.length <= maxLength) return input;
+  return `${input.slice(0, Math.max(0, maxLength - 3)).trim()}...`;
+}
+
+function resolveSeoDescription(product: CatalogProduct) {
+  const seoDescription = toTrimmedString(product.customFields?.seoDescription);
+  if (seoDescription) return seoDescription;
+  const productDescription = stripHtml(product.description ?? '');
+  if (productDescription) return truncate(productDescription, 160);
+  return `Explore ${product.name} at Keypad Store.`;
+}
+
+function resolveCanonicalUrl(product: CatalogProduct, fallbackSlug: string) {
+  const canonicalOverride = toTrimmedString(product.customFields?.seoCanonicalUrl);
+  if (canonicalOverride) return canonicalOverride;
+  const slug = product.slug || fallbackSlug;
+  return `${siteUrl()}/product/${encodeURIComponent(slug)}`;
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const resolvedParams = await params;
+  const product = await fetchProductBySlug(resolvedParams.slug);
+
+  if (!product) {
+    return {
+      title: 'Product Not Found | Keypad Store',
+      description: 'The requested product could not be found.',
+      alternates: {
+        canonical: `${siteUrl()}/product/${encodeURIComponent(resolvedParams.slug)}`,
+      },
+      robots: {
+        index: false,
+        follow: false,
+      },
+    };
+  }
+
+  const seoTitle = toTrimmedString(product.customFields?.seoTitle) || `${product.name} | Keypad Store`;
+  const canonical = resolveCanonicalUrl(product, resolvedParams.slug);
+  const noIndex = product.customFields?.seoNoIndex === true;
+
+  return {
+    title: seoTitle,
+    description: resolveSeoDescription(product),
+    alternates: {
+      canonical,
+    },
+    robots: noIndex
+      ? {
+        index: false,
+        follow: false,
+      }
+      : undefined,
+  };
 }
 
 function buildShopHref({

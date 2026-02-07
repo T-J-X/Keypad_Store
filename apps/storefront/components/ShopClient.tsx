@@ -3,8 +3,11 @@
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import {
+  assetUrl,
   categorySlug,
   iconCategoriesFromProduct,
+  type BaseShopPublicConfig,
+  type BaseShopTopTile,
   type IconCategory,
   type IconProduct,
   type KeypadProduct,
@@ -14,6 +17,28 @@ import KeypadCard from './KeypadCard';
 import ProductCard from './ProductCard';
 
 const PAGE_SIZE_OPTIONS = [24, 48, 96] as const;
+const ringBlueHoverClass =
+  'border-2 border-transparent bg-[linear-gradient(#ffffff,#ffffff),linear-gradient(#d7dde7,#d7dde7)] [background-origin:border-box] [background-clip:padding-box,border-box] hover:bg-[linear-gradient(#ffffff,#ffffff),linear-gradient(90deg,#4e84d8_0%,#6da5f5_55%,#8ab8ff_100%)] hover:shadow-[0_10px_24px_rgba(4,15,46,0.16)]';
+const fallbackTopTiles: BaseShopTopTile[] = [
+  {
+    id: 'button-inserts',
+    label: 'Button Inserts',
+    subtitle: 'Browse category-sorted inserts and find the exact symbol set for your workflow.',
+    href: '/shop?section=button-inserts',
+    hoverStyle: 'ring-blue',
+    kind: 'section',
+    isEnabled: true,
+  },
+  {
+    id: 'keypads',
+    label: 'Keypads',
+    subtitle: 'Compare layouts, hardware formats, and jump directly into configuration.',
+    href: '/shop?section=keypads',
+    hoverStyle: 'ring-blue',
+    kind: 'section',
+    isEnabled: true,
+  },
+];
 
 function toCardCategoryLabel(categoryNames: string[]) {
   if (categoryNames.length === 0) return 'Uncategorised';
@@ -26,6 +51,12 @@ function normalizeSection(value: string): 'landing' | 'all' | 'button-inserts' |
   if (value === 'keypads') return 'keypads';
   if (value === 'button-inserts' || value === 'icons' || value === 'inserts') return 'button-inserts';
   return 'landing';
+}
+
+function humanizeDisciplineId(value: string) {
+  const normalized = value.trim().replace(/[-_]+/g, ' ');
+  if (!normalized) return value;
+  return normalized.replace(/\b\w/g, (match) => match.toUpperCase());
 }
 
 function normalizeSearchText(value: string) {
@@ -91,6 +122,7 @@ function matchesSearchTerms(tokens: string[], queryTerms: string[]) {
 export default function ShopClient({
   icons,
   keypads,
+  baseShopConfig,
   categorySourceIcons,
   initialQuery = '',
   initialCategories = [],
@@ -102,6 +134,7 @@ export default function ShopClient({
 }: {
   icons: IconProduct[];
   keypads: KeypadProduct[];
+  baseShopConfig?: BaseShopPublicConfig | null;
   categorySourceIcons?: IconProduct[];
   initialQuery?: string;
   initialCategories?: string[];
@@ -295,6 +328,32 @@ export default function ShopClient({
     }
   };
 
+  const onTopTileSelect = (tile: BaseShopTopTile) => {
+    const forcedHref = tile.kind === 'exploreMore' ? '/shop' : (tile.href ?? '').trim();
+    if (!forcedHref) return;
+
+    if (forcedHref.startsWith('/')) {
+      router.push(forcedHref);
+      return;
+    }
+
+    window.location.assign(forcedHref);
+  };
+
+  const onDisciplineTileSelect = (tile: { slug: string }) => {
+    if (!tile.slug) return;
+
+    if (tile.slug && categoriesBySlug.has(tile.slug)) {
+      setActiveSection('button-inserts');
+      setActiveCategorySlugs([tile.slug]);
+      setPage(1);
+      scrollToPageTop();
+      return;
+    }
+
+    onSectionChange('button-inserts', { scrollToTop: true });
+  };
+
   const clearFilters = () => {
     setQuery('');
     setActiveCategorySlugs([]);
@@ -369,18 +428,83 @@ export default function ShopClient({
       : 'Search by name, category or ID...';
   const showCatalogWideKeypads = isCatalogWideSection && query.trim().length > 0;
   const catalogWideKeypads = showCatalogWideKeypads ? filteredKeypads : [];
+  const configuredTopTiles = useMemo(() => {
+    const enabledTopTiles = (baseShopConfig?.topTiles ?? []).filter((tile) => tile.isEnabled !== false);
+    if (enabledTopTiles.length === 0) return [];
 
-  const visibleResultCount = isIconsSection
-    ? displayedIcons.length
-    : isKeypadsSection
-      ? filteredKeypads.length
-      : displayedIcons.length + catalogWideKeypads.length;
+    return [...enabledTopTiles]
+      .sort((a, b) => {
+        const aExplore = a.kind === 'exploreMore' ? 1 : 0;
+        const bExplore = b.kind === 'exploreMore' ? 1 : 0;
+        return aExplore - bExplore;
+      })
+      .slice(0, 6);
+  }, [baseShopConfig]);
+  const landingTopTiles = configuredTopTiles.length > 0 ? configuredTopTiles : fallbackTopTiles;
+  const configuredDisciplineTiles = useMemo(() => {
+    const enabledDisciplineTiles = (baseShopConfig?.disciplineTiles ?? []).filter(
+      (tile) => tile.isEnabled !== false,
+    );
+    if (enabledDisciplineTiles.length === 0) return [];
+
+    return [...enabledDisciplineTiles].sort((a, b) => {
+      const aOrder = typeof a.order === 'number' ? a.order : Number.MAX_SAFE_INTEGER;
+      const bOrder = typeof b.order === 'number' ? b.order : Number.MAX_SAFE_INTEGER;
+      if (aOrder !== bOrder) return aOrder - bOrder;
+
+      const aLabel = (a.labelOverride ?? a.id).toLocaleLowerCase();
+      const bLabel = (b.labelOverride ?? b.id).toLocaleLowerCase();
+      return aLabel.localeCompare(bLabel);
+    });
+  }, [baseShopConfig]);
+  const landingDisciplineTiles = useMemo(() => {
+    if (configuredDisciplineTiles.length > 0) {
+      return configuredDisciplineTiles.map((tile) => {
+        const label = tile.labelOverride?.trim() || categoriesBySlug.get(tile.id)?.name || humanizeDisciplineId(tile.id);
+        const slugCandidate = categoriesBySlug.has(tile.id) ? tile.id : categorySlug(label);
+        return {
+          id: tile.id,
+          label,
+          slug: categoriesBySlug.has(slugCandidate) ? slugCandidate : '',
+          imagePreview: tile.imagePreview ?? tile.imageSource ?? null,
+          count: undefined,
+        };
+      });
+    }
+
+    return categories.map((category) => ({
+      id: category.slug,
+      label: category.name,
+      slug: category.slug,
+      imagePreview: null,
+      count: category.count,
+    }));
+  }, [configuredDisciplineTiles, categoriesBySlug, categories]);
+  const featuredLandingKeypads = useMemo(() => {
+    const configuredSlugs = baseShopConfig?.featuredProductSlugs ?? [];
+    if (configuredSlugs.length === 0) return keypads.slice(0, 3);
+
+    const keypadsBySlug = new Map(keypads.map((keypad) => [keypad.slug, keypad]));
+    const fromConfig = configuredSlugs
+      .map((slug) => keypadsBySlug.get(slug))
+      .filter((keypad): keypad is KeypadProduct => Boolean(keypad));
+    return fromConfig.length > 0 ? fromConfig : keypads.slice(0, 3);
+  }, [baseShopConfig, keypads]);
+  const visibleResultCount = isLandingSection
+    ? 0
+    : isIconsSection
+      ? displayedIcons.length
+      : isKeypadsSection
+        ? filteredKeypads.length
+        : displayedIcons.length + catalogWideKeypads.length;
   const visibleResultLabel = isIconsSection ? 'button inserts' : isKeypadsSection ? 'keypads' : 'products';
-  const availableResultCount = isIconsSection
-    ? (isAnyIconsPaginationMode ? paginationTotalItems : filteredIcons.length)
-    : isKeypadsSection
-      ? filteredKeypads.length
-      : (isIconsPaginationMode ? paginationTotalItems : filteredIcons.length) + catalogWideKeypads.length;
+  const availableResultCount = isLandingSection
+    ? totalIconCount + keypads.length
+    : isIconsSection
+      ? (isAnyIconsPaginationMode ? paginationTotalItems : filteredIcons.length)
+      : isKeypadsSection
+        ? filteredKeypads.length
+        : (isIconsPaginationMode ? paginationTotalItems : filteredIcons.length) + catalogWideKeypads.length;
   const activeChips = [
     ...(query.trim() ? [{ label: `Search: ${query.trim()}`, onClear: () => setQuery('') }] : []),
     ...activeCategorySlugs.map((slug, index) => ({
@@ -500,7 +624,7 @@ export default function ShopClient({
 
   return (
     <div className="mx-auto w-full max-w-[88rem] px-6 pb-20 pt-10">
-      <BaseShopHero showTiles={isLandingSection} />
+      <BaseShopHero showTiles={false} />
 
       <div className="mb-8 flex flex-col gap-4">
         <div className="flex flex-wrap items-end justify-between gap-4">
@@ -546,197 +670,420 @@ export default function ShopClient({
         </form>
       </div>
 
-      <div className="grid gap-8 md:grid-cols-[260px_minmax(0,1fr)] md:items-start">
-        <aside className="space-y-6 md:sticky md:top-24 md:self-start">
-          <div className="card md:max-h-[calc(100vh-7rem)] md:overflow-y-auto md:pr-1">
-            <div className="px-4 py-3">
-              <div className="text-xs font-semibold uppercase tracking-wide text-ink/40">
-                Categories
+      {isLandingSection ? (
+        <section className="space-y-12">
+          <section className="rounded-3xl border border-ink/10 bg-[linear-gradient(180deg,#ffffff_0%,#f6f9ff_100%)] p-5 md:p-7">
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink/50">Top picks</p>
+                <h2 className="mt-1 text-2xl font-semibold tracking-tight text-ink md:text-3xl">
+                  Start Your Build Fast
+                </h2>
               </div>
-              <div className="mt-4 space-y-2">
-              {!isLandingSection && (
-                <button
-                  type="button"
-                  onClick={onShopHome}
-                  className={`${sidebarButtonBase} ${sidebarInactive}`}
-                >
-                  <span className={sidebarButtonLabel}>Shop Home</span>
-                </button>
-              )}
+            </div>
+            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+              {landingTopTiles.map((tile) => {
+                const href = (tile.href ?? '').trim();
+                const isInteractive = href.length > 0 && tile.isEnabled !== false;
+                const shouldUseRingBlue = isInteractive && (tile.hoverStyle ?? 'ring-blue') !== 'none';
+                const tileImage = tile.imagePreview || tile.imageSource || '';
+                const tileTitle =
+                  tile.label?.trim() || (tile.kind === 'exploreMore' ? 'Discover more' : humanizeDisciplineId(tile.id));
+                const tileSubtitle = tile.subtitle?.trim() || '';
 
-              <button
-                type="button"
-                aria-pressed={isAllSection}
-                onClick={() => onSectionChange('all', { scrollToTop: true })}
-                className={`${sidebarButtonBase} ${
-                  isAllSection ? sidebarActive : sidebarInactive
-                }`}
-              >
-                <span className={sidebarButtonLabel}>All products</span>
-                <span className={`${sidebarButtonCount} ${isAllSection ? 'text-white/75' : 'text-ink/45'}`}>
-                  {totalIconCount + keypads.length}
-                </span>
-              </button>
+                const cardClass = `group relative overflow-hidden rounded-2xl text-left ${shouldUseRingBlue ? ringBlueHoverClass : 'border border-ink/10 bg-white'} ${
+                  isInteractive
+                    ? 'cursor-pointer transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5'
+                    : 'cursor-default'
+                }`;
 
-              <button
-                type="button"
-                aria-pressed={isIconsSection}
-                aria-expanded={iconsGroupOpen}
-                aria-controls="icons-subcategories"
-                onClick={() => {
-                  if (!isIconsSection) {
-                    setActiveSection('button-inserts');
-                    setPage(1);
-                    scrollToPageTop();
-                  }
-                  setIconsGroupOpen((prev) => !prev);
-                }}
-                className={`${sidebarButtonBase} ${
-                  isIconsSection ? sidebarActive : sidebarInactive
-                }`}
-              >
-                <span className={sidebarButtonLabel}>Button Inserts</span>
-                <span
-                  className={`ml-2 flex shrink-0 items-center gap-2 whitespace-nowrap ${
-                    isIconsSection ? 'text-white/75' : 'text-ink/45'
-                  }`}
-                >
-                  <span className={sidebarButtonCount}>{totalIconCount}</span>
-                  <span className={`text-base transition ${iconsGroupOpen ? 'rotate-90' : ''}`}>&gt;</span>
-                </span>
-              </button>
+                const content = (
+                  <div className={`relative h-64 w-full ${tileImage ? '' : 'bg-[linear-gradient(145deg,#e8eef9_0%,#f7fbff_48%,#e1ebfa_100%)]'}`}>
+                    {tileImage ? (
+                      <img
+                        src={assetUrl(tileImage)}
+                        alt={tileTitle}
+                        className="h-full w-full object-cover"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="pointer-events-none absolute -right-16 -top-12 h-40 w-40 rounded-full bg-white/70 blur-2xl" />
+                    )}
+                    {isInteractive ? (
+                      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(5,11,22,0.05)_0%,rgba(5,11,22,0.1)_58%,rgba(5,11,22,0.78)_100%)] opacity-70 transition-opacity duration-300 group-hover:opacity-100" />
+                    ) : null}
+                    <div className="absolute inset-x-0 bottom-0 p-5">
+                      <p className={`text-lg font-semibold leading-tight ${isInteractive ? 'text-white' : 'text-ink'}`}>
+                        {tileTitle}
+                      </p>
+                      {tileSubtitle ? (
+                        <p className={`mt-2 text-sm ${isInteractive ? 'text-white/85' : 'text-ink/60'}`}>{tileSubtitle}</p>
+                      ) : null}
+                      {isInteractive ? (
+                        <span className="mt-4 inline-flex translate-y-2 items-center justify-center rounded-full bg-[linear-gradient(90deg,#0d2f66_0%,#2053a2_55%,#3f75c4_100%)] px-4 py-2 text-xs font-semibold text-white opacity-0 transition-[opacity,transform] duration-200 group-hover:translate-y-0 group-hover:opacity-100">
+                          {tile.kind === 'exploreMore' ? 'Discover more' : 'Explore'}
+                        </span>
+                      ) : null}
+                    </div>
+                  </div>
+                );
 
-              {isIconsSection && iconsGroupOpen && (
-                <div id="icons-subcategories" className="w-full space-y-2 pl-2.5">
+                return isInteractive ? (
                   <button
+                    key={tile.id}
+                    type="button"
+                    onClick={() => onTopTileSelect(tile)}
+                    className={cardClass}
+                  >
+                    {content}
+                  </button>
+                ) : (
+                  <div key={tile.id} className={cardClass}>
+                    {content}
+                  </div>
+                );
+              })}
+            </div>
+          </section>
+
+          <section className="rounded-3xl border border-ink/10 bg-[linear-gradient(180deg,#ffffff_0%,#f6f9ff_100%)] p-5 md:p-7">
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink/50">Browse categories</p>
+                <h2 className="mt-1 text-2xl font-semibold tracking-tight text-ink md:text-3xl">
+                  Explore Button Inserts by Discipline
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => onSectionChange('button-inserts', { scrollToTop: true })}
+                className="rounded-full border border-ink/15 px-4 py-2 text-sm font-semibold text-ink transition hover:border-ink/35"
+              >
+                View all inserts
+              </button>
+            </div>
+            {landingDisciplineTiles.length > 0 ? (
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {landingDisciplineTiles.map((tile) => {
+                  const isInteractive = Boolean(tile.slug);
+                  const cardClass = isInteractive
+                    ? `group rounded-2xl p-4 text-left transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 ${ringBlueHoverClass}`
+                    : 'rounded-2xl border border-ink/10 bg-white p-4 text-left';
+                  return (
+                    <div key={tile.id} className={cardClass}>
+                      {isInteractive ? (
+                        <button
+                          type="button"
+                          onClick={() => onDisciplineTileSelect(tile)}
+                          className="w-full text-left"
+                        >
+                          <div className="mb-3 flex items-center gap-3">
+                            {tile.imagePreview ? (
+                              <div className="h-10 w-10 overflow-hidden rounded-xl border border-ink/10 bg-slate-50">
+                                <img
+                                  src={assetUrl(tile.imagePreview)}
+                                  alt={tile.label}
+                                  className="h-full w-full object-cover"
+                                  loading="lazy"
+                                />
+                              </div>
+                            ) : (
+                              <div className="h-10 w-10 rounded-xl border border-ink/10 bg-[linear-gradient(140deg,#edf3ff_0%,#f8fbff_60%,#e7efff_100%)]" />
+                            )}
+                            <div className="text-xs font-semibold uppercase tracking-wide text-ink/45">
+                              Discipline
+                            </div>
+                          </div>
+                          <div className="text-base font-semibold text-ink">{tile.label}</div>
+                          <div className="mt-3 text-xs text-ink/55">
+                            {typeof tile.count === 'number' ? `${tile.count} inserts` : 'Explore inserts'}
+                          </div>
+                        </button>
+                      ) : (
+                        <div>
+                          <div className="mb-3 flex items-center gap-3">
+                            {tile.imagePreview ? (
+                              <div className="h-10 w-10 overflow-hidden rounded-xl border border-ink/10 bg-slate-50">
+                                <img
+                                  src={assetUrl(tile.imagePreview)}
+                                  alt={tile.label}
+                                  className="h-full w-full object-cover"
+                                  loading="lazy"
+                                />
+                              </div>
+                            ) : (
+                              <div className="h-10 w-10 rounded-xl border border-ink/10 bg-[linear-gradient(140deg,#edf3ff_0%,#f8fbff_60%,#e7efff_100%)]" />
+                            )}
+                            <div className="text-xs font-semibold uppercase tracking-wide text-ink/45">
+                              Discipline
+                            </div>
+                          </div>
+                          <div className="text-base font-semibold text-ink">{tile.label}</div>
+                          <div className="mt-3 text-xs text-ink/55">
+                            {typeof tile.count === 'number' ? `${tile.count} inserts` : 'Explore inserts'}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            ) : categories.length > 0 ? (
+              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {categories.map((category) => (
+                  <button
+                    key={category.slug}
                     type="button"
                     onClick={() => {
-                      setActiveCategorySlugs([]);
+                      setActiveSection('button-inserts');
+                      setActiveCategorySlugs([category.slug]);
                       setPage(1);
                       scrollToPageTop();
                     }}
+                    className={`group rounded-2xl p-4 text-left transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 ${ringBlueHoverClass}`}
+                  >
+                    <div className="mb-3 flex items-center gap-3">
+                      <div className="h-10 w-10 rounded-xl border border-ink/10 bg-[linear-gradient(140deg,#edf3ff_0%,#f8fbff_60%,#e7efff_100%)]" />
+                      <div className="text-xs font-semibold uppercase tracking-wide text-ink/45">Discipline</div>
+                    </div>
+                    <div className="text-base font-semibold text-ink">{category.name}</div>
+                    <div className="mt-3 text-xs text-ink/55">{category.count} inserts</div>
+                  </button>
+                ))}
+              </div>
+            ) : (
+              <div className="rounded-2xl border border-ink/10 bg-white p-6 text-sm text-ink/60">
+                No insert categories are available yet.
+              </div>
+            )}
+          </section>
+
+          <section>
+            <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+              <div>
+                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink/50">Featured products</p>
+                <h2 className="mt-1 text-2xl font-semibold tracking-tight text-ink md:text-3xl">
+                  Popular Keypads to Start From
+                </h2>
+              </div>
+              <button
+                type="button"
+                onClick={() => onSectionChange('keypads', { scrollToTop: true })}
+                className="rounded-full border border-ink/15 px-4 py-2 text-sm font-semibold text-ink transition hover:border-ink/35"
+              >
+                View all keypads
+              </button>
+            </div>
+            {featuredLandingKeypads.length > 0 ? (
+              <div className="grid gap-6 lg:grid-cols-3">
+                {featuredLandingKeypads.map((keypad, index) => (
+                  <div key={keypad.id} className={index === 0 ? 'lg:col-span-2' : ''}>
+                    <KeypadCard
+                      product={keypad}
+                      mode="shop"
+                      learnMoreHref={toProductHref(keypad.slug, 'keypads')}
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="card-soft p-8 text-sm text-ink/60">
+                No featured keypads are available yet.
+              </div>
+            )}
+          </section>
+        </section>
+      ) : (
+        <div className="grid gap-8 md:grid-cols-[260px_minmax(0,1fr)] md:items-start">
+          <aside className="space-y-6 md:sticky md:top-24 md:self-start">
+            <div className="card md:max-h-[calc(100vh-7rem)] md:overflow-y-auto md:pr-1">
+              <div className="px-4 py-3">
+                <div className="text-xs font-semibold uppercase tracking-wide text-ink/40">
+                  Categories
+                </div>
+                <div className="mt-4 space-y-2">
+                  <button
+                    type="button"
+                    onClick={onShopHome}
+                    className={`${sidebarButtonBase} ${sidebarInactive}`}
+                  >
+                    <span className={sidebarButtonLabel}>Shop Home</span>
+                  </button>
+
+                  <button
+                    type="button"
+                    aria-pressed={isAllSection}
+                    onClick={() => onSectionChange('all', { scrollToTop: true })}
                     className={`${sidebarButtonBase} ${
-                      activeCategorySlugs.length === 0 ? sidebarActive : sidebarInactive
+                      isAllSection ? sidebarActive : sidebarInactive
                     }`}
                   >
-                    <span className={sidebarButtonLabel}>All button inserts</span>
-                    <span
-                      className={`${sidebarButtonCount} ${
-                        activeCategorySlugs.length === 0 ? 'text-white/75' : 'text-ink/45'
-                      }`}
-                    >
-                      {totalIconCount}
+                    <span className={sidebarButtonLabel}>All products</span>
+                    <span className={`${sidebarButtonCount} ${isAllSection ? 'text-white/75' : 'text-ink/45'}`}>
+                      {totalIconCount + keypads.length}
                     </span>
                   </button>
 
-                  {categories.map((category) => (
-                    <button
-                      key={category.slug}
-                      type="button"
-                      onClick={() => {
-                        setActiveCategorySlugs((current) => {
-                          if (current.includes(category.slug)) {
-                            return current.filter((slug) => slug !== category.slug);
-                          }
-                          return [...current, category.slug];
-                        });
+                  <button
+                    type="button"
+                    aria-pressed={isIconsSection}
+                    aria-expanded={iconsGroupOpen}
+                    aria-controls="icons-subcategories"
+                    onClick={() => {
+                      if (!isIconsSection) {
+                        setActiveSection('button-inserts');
                         setPage(1);
-                      }}
-                      className={`${sidebarButtonBase} ${
-                        activeCategorySlugs.includes(category.slug) ? sidebarActive : sidebarInactive
+                        scrollToPageTop();
+                      }
+                      setIconsGroupOpen((prev) => !prev);
+                    }}
+                    className={`${sidebarButtonBase} ${
+                      isIconsSection ? sidebarActive : sidebarInactive
+                    }`}
+                  >
+                    <span className={sidebarButtonLabel}>Button Inserts</span>
+                    <span
+                      className={`ml-2 flex shrink-0 items-center gap-2 whitespace-nowrap ${
+                        isIconsSection ? 'text-white/75' : 'text-ink/45'
                       }`}
                     >
-                      <span className={sidebarButtonLabel}>{category.name}</span>
-                      <span
-                        className={`${sidebarButtonCount} ${
-                          activeCategorySlugs.includes(category.slug) ? 'text-white/75' : 'text-ink/45'
+                      <span className={sidebarButtonCount}>{totalIconCount}</span>
+                      <span className={`text-base transition ${iconsGroupOpen ? 'rotate-90' : ''}`}>&gt;</span>
+                    </span>
+                  </button>
+
+                  {isIconsSection && iconsGroupOpen && (
+                    <div id="icons-subcategories" className="w-full space-y-2 pl-2.5">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setActiveCategorySlugs([]);
+                          setPage(1);
+                          scrollToPageTop();
+                        }}
+                        className={`${sidebarButtonBase} ${
+                          activeCategorySlugs.length === 0 ? sidebarActive : sidebarInactive
                         }`}
                       >
-                        {category.count}
-                      </span>
+                        <span className={sidebarButtonLabel}>All button inserts</span>
+                        <span
+                          className={`${sidebarButtonCount} ${
+                            activeCategorySlugs.length === 0 ? 'text-white/75' : 'text-ink/45'
+                          }`}
+                        >
+                          {totalIconCount}
+                        </span>
+                      </button>
+
+                      {categories.map((category) => (
+                        <button
+                          key={category.slug}
+                          type="button"
+                          onClick={() => {
+                            setActiveCategorySlugs((current) => {
+                              if (current.includes(category.slug)) {
+                                return current.filter((slug) => slug !== category.slug);
+                              }
+                              return [...current, category.slug];
+                            });
+                            setPage(1);
+                          }}
+                          className={`${sidebarButtonBase} ${
+                            activeCategorySlugs.includes(category.slug) ? sidebarActive : sidebarInactive
+                          }`}
+                        >
+                          <span className={sidebarButtonLabel}>{category.name}</span>
+                          <span
+                            className={`${sidebarButtonCount} ${
+                              activeCategorySlugs.includes(category.slug) ? 'text-white/75' : 'text-ink/45'
+                            }`}
+                          >
+                            {category.count}
+                          </span>
+                        </button>
+                      ))}
+                    </div>
+                  )}
+
+                  <div aria-hidden className="my-2 border-t border-ink/10" />
+
+                  <button
+                    type="button"
+                    aria-pressed={isKeypadsSection}
+                    onClick={() => onSectionChange('keypads', { scrollToTop: true })}
+                    className={`${sidebarButtonBase} ${
+                      isKeypadsSection ? sidebarActive : sidebarInactive
+                    }`}
+                  >
+                    <span className={sidebarButtonLabel}>Keypads</span>
+                    <span className={`${sidebarButtonCount} ${isKeypadsSection ? 'text-white/75' : 'text-ink/45'}`}>
+                      {keypads.length}
+                    </span>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </aside>
+
+          <section>
+            <div className="mb-4 flex flex-wrap items-center justify-between gap-3 text-sm text-ink/60">
+              <span>
+                Showing <span className="font-semibold text-ink">{visibleResultCount}</span> {visibleResultLabel}
+              </span>
+              {activeChips.length > 0 ? (
+                <div className="flex flex-wrap gap-2">
+                  {activeChips.map((chip) => (
+                    <button
+                      key={chip.label}
+                      type="button"
+                      onClick={chip.onClear}
+                      className="flex items-center gap-2 rounded-full border border-ink/10 px-3 py-1 text-xs font-semibold text-ink/70 transition hover:border-ink/25"
+                    >
+                      <span>{chip.label}</span>
+                      <span className="text-ink/40">x</span>
                     </button>
                   ))}
+                  {hasActiveFilters && (
+                    <button
+                      type="button"
+                      onClick={clearFilters}
+                      className="btn-ghost px-3 py-1 text-xs"
+                    >
+                      Clear all filters
+                    </button>
+                  )}
                 </div>
-              )}
-
-              <div aria-hidden className="my-2 border-t border-ink/10" />
-
-              <button
-                type="button"
-                aria-pressed={isKeypadsSection}
-                onClick={() => onSectionChange('keypads', { scrollToTop: true })}
-                className={`${sidebarButtonBase} ${
-                  isKeypadsSection ? sidebarActive : sidebarInactive
-                }`}
-              >
-                <span className={sidebarButtonLabel}>Keypads</span>
-                <span className={`${sidebarButtonCount} ${isKeypadsSection ? 'text-white/75' : 'text-ink/45'}`}>
-                  {keypads.length}
+              ) : (
+                <span className="rounded-full border border-ink/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide">
+                  {isIconsSection ? 'All categories' : isKeypadsSection ? 'All keypads' : 'All products'}
                 </span>
-              </button>
-              </div>
+              )}
             </div>
-          </div>
-        </aside>
+            {renderIconPaginationControls('top')}
 
-        <section>
-          <div className="mb-4 flex flex-wrap items-center justify-between gap-3 text-sm text-ink/60">
-            <span>
-              Showing <span className="font-semibold text-ink">{visibleResultCount}</span> {visibleResultLabel}
-            </span>
-            {activeChips.length > 0 ? (
-              <div className="flex flex-wrap gap-2">
-                {activeChips.map((chip) => (
-                  <button
-                    key={chip.label}
-                    type="button"
-                    onClick={chip.onClear}
-                    className="flex items-center gap-2 rounded-full border border-ink/10 px-3 py-1 text-xs font-semibold text-ink/70 transition hover:border-ink/25"
-                  >
-                    <span>{chip.label}</span>
-                    <span className="text-ink/40">x</span>
-                  </button>
-                ))}
-                {hasActiveFilters && (
-                  <button
-                    type="button"
-                    onClick={clearFilters}
-                    className="btn-ghost px-3 py-1 text-xs"
-                  >
-                    Clear all filters
-                  </button>
-                )}
+            {visibleResultCount === 0 ? (
+              <div className="card-soft p-8 text-sm text-ink/60">
+                {isIconsSection
+                  ? 'No button inserts match that search. Try a different query or category.'
+                  : isKeypadsSection
+                    ? 'No keypads match that search. Try a different query.'
+                    : 'No products match that search. Try a different query.'}
               </div>
+            ) : isIconsSection ? (
+              renderIconsGrid(displayedIcons)
+            ) : isKeypadsSection ? (
+              renderKeypadsGrid(filteredKeypads)
             ) : (
-              <span className="rounded-full border border-ink/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide">
-                {isIconsSection ? 'All categories' : isKeypadsSection ? 'All keypads' : 'All products'}
-              </span>
+              <div className="space-y-6">
+                {displayedIcons.length > 0 && renderIconsGrid(displayedIcons)}
+                {catalogWideKeypads.length > 0 && renderKeypadsGrid(catalogWideKeypads)}
+              </div>
             )}
-          </div>
-          {renderIconPaginationControls('top')}
 
-          {visibleResultCount === 0 ? (
-            <div className="card-soft p-8 text-sm text-ink/60">
-              {isIconsSection
-                ? 'No button inserts match that search. Try a different query or category.'
-                : isKeypadsSection
-                  ? 'No keypads match that search. Try a different query.'
-                  : 'No products match that search. Try a different query.'}
-            </div>
-          ) : isIconsSection ? (
-            renderIconsGrid(displayedIcons)
-          ) : isKeypadsSection ? (
-            renderKeypadsGrid(filteredKeypads)
-          ) : (
-            <div className="space-y-6">
-              {displayedIcons.length > 0 && renderIconsGrid(displayedIcons)}
-              {catalogWideKeypads.length > 0 && renderKeypadsGrid(catalogWideKeypads)}
-            </div>
-          )}
-
-          {renderIconPaginationControls('bottom')}
-        </section>
-      </div>
+            {renderIconPaginationControls('bottom')}
+          </section>
+        </div>
+      )}
     </div>
   );
 }
