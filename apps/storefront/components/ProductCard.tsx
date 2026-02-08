@@ -24,11 +24,13 @@ export default function ProductCard({
   categoryLabel,
   categoryHref,
   productHref,
+  replaceProductNavigation = false,
 }: {
   product: IconProduct;
   categoryLabel: string;
   categoryHref?: string;
   productHref?: string;
+  replaceProductNavigation?: boolean;
 }) {
   const image = product.featuredAsset?.preview ?? product.featuredAsset?.source ?? '';
   const iconId = product.customFields?.iconId ?? product.name;
@@ -83,6 +85,7 @@ export default function ProductCard({
     <div className="card-soft group relative flex h-full flex-col gap-4 p-4 transition hover:-translate-y-1 hover:shadow-soft">
       <Link
         href={productHref ?? `/product/${product.slug}`}
+        replace={replaceProductNavigation}
         aria-label={`View ${product.name}`}
         className="absolute inset-0 z-0 rounded-2xl"
       />

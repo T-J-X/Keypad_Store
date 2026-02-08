@@ -3,18 +3,6 @@ import { Asset, Ctx, RequestContext, TransactionalConnection } from '@vendure/co
 import { In } from 'typeorm';
 import { BaseShopService } from './base-shop.service';
 
-type BaseShopPublicCategoryTile = {
-  id: string;
-  title: string | null;
-  subtitle: string | null;
-  href: string | null;
-  imageAssetId: string | null;
-  imagePreview: string | null;
-  imageSource: string | null;
-  hoverStyle: string | null;
-  isEnabled: boolean;
-};
-
 type BaseShopPublicTopTile = {
   id: string;
   label: string | null;
@@ -39,7 +27,6 @@ type BaseShopPublicDisciplineTile = {
 };
 
 type BaseShopPublicConfig = {
-  categoryTiles: BaseShopPublicCategoryTile[];
   topTiles: BaseShopPublicTopTile[];
   disciplineTiles: BaseShopPublicDisciplineTile[];
   featuredProductSlugs: string[];
@@ -55,7 +42,6 @@ export class BaseShopShopResolver {
   @Query()
   async baseShopConfigPublic(@Ctx() ctx: RequestContext): Promise<BaseShopPublicConfig> {
     const config = await this.baseShopService.getPublicConfig(ctx);
-    const categoryTiles = config.categoryTiles ?? [];
     const topTiles = config.topTiles ?? [];
     const disciplineTiles = config.disciplineTiles ?? [];
     const collectAssetIds = (ids: Array<string | null | undefined>) =>
@@ -63,7 +49,6 @@ export class BaseShopShopResolver {
     const imageAssetIds = Array.from(
       new Set(
         collectAssetIds([
-          ...categoryTiles.map((tile) => tile.imageAssetId),
           ...topTiles.map((tile) => tile.imageAssetId),
           ...disciplineTiles.map((tile) => tile.imageAssetId),
         ]),
@@ -78,20 +63,6 @@ export class BaseShopShopResolver {
     const assetsById = new Map(assets.map((asset) => [String(asset.id), asset]));
 
     return {
-      categoryTiles: categoryTiles.map((tile) => {
-        const asset = tile.imageAssetId ? assetsById.get(tile.imageAssetId) : undefined;
-        return {
-          id: tile.id,
-          title: tile.title,
-          subtitle: tile.subtitle,
-          href: tile.href,
-          imageAssetId: tile.imageAssetId,
-          imagePreview: asset?.preview ?? null,
-          imageSource: asset?.source ?? null,
-          hoverStyle: tile.hoverStyle,
-          isEnabled: tile.isEnabled,
-        };
-      }),
       topTiles: topTiles.map((tile) => {
         const asset = tile.imageAssetId ? assetsById.get(tile.imageAssetId) : undefined;
         return {

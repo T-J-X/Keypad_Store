@@ -78,18 +78,6 @@ export type IconCategory = {
   count: number;
 };
 
-export type BaseShopCategoryTile = {
-  id: string;
-  title?: string | null;
-  subtitle?: string | null;
-  href?: string | null;
-  imageAssetId?: string | null;
-  imagePreview?: string | null;
-  imageSource?: string | null;
-  hoverStyle?: string | null;
-  isEnabled?: boolean;
-};
-
 export type BaseShopTopTile = {
   id: string;
   label?: string | null;
@@ -114,7 +102,6 @@ export type BaseShopDisciplineTile = {
 };
 
 export type BaseShopPublicConfig = {
-  categoryTiles: BaseShopCategoryTile[];
   featuredProductSlugs: string[];
   topTiles: BaseShopTopTile[];
   disciplineTiles: BaseShopDisciplineTile[];
@@ -150,7 +137,18 @@ export function assetUrl(input?: string | null) {
   if (!input) return '';
   if (input.startsWith('http://') || input.startsWith('https://')) return input;
   const host = process.env.NEXT_PUBLIC_VENDURE_HOST || 'http://localhost:3000';
-  return `${host}${input.startsWith('/') ? '' : '/'}${input}`;
+  const normalized = input.startsWith('/') ? input : `/${input}`;
+
+  // Vendure asset fields can come back as `preview/...` or `source/...` paths.
+  // Normalize those to the configured asset route so images always resolve.
+  if (normalized.startsWith('/preview/') || normalized.startsWith('/source/')) {
+    return `${host}/assets${normalized}`;
+  }
+  if (normalized.startsWith('/assets/')) {
+    return `${host}${normalized}`;
+  }
+
+  return `${host}${normalized}`;
 }
 
 export function assetFromProduct(product: { featuredAsset?: VendureAsset | null }) {

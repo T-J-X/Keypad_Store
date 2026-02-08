@@ -12,13 +12,18 @@ import {
   type IconProduct,
   type KeypadProduct,
 } from '../lib/vendure';
+import { useShopLandingSubcategoryIcons } from '../lib/useShopLandingSubcategoryIcons';
+import { ensureShopHubAnchor } from '../lib/shopHistory';
 import BaseShopHero from './BaseShopHero';
 import KeypadCard from './KeypadCard';
 import ProductCard from './ProductCard';
+import ShopCategoryIcon from './ShopCategoryIcon';
 
 const PAGE_SIZE_OPTIONS = [24, 48, 96] as const;
 const ringBlueHoverClass =
   'border-2 border-transparent bg-[linear-gradient(#ffffff,#ffffff),linear-gradient(#d7dde7,#d7dde7)] [background-origin:border-box] [background-clip:padding-box,border-box] hover:bg-[linear-gradient(#ffffff,#ffffff),linear-gradient(90deg,#4e84d8_0%,#6da5f5_55%,#8ab8ff_100%)] hover:shadow-[0_10px_24px_rgba(4,15,46,0.16)]';
+const DEFAULT_EXPLORE_MORE_IMAGE_URL =
+  'https://upload.wikimedia.org/wikipedia/commons/4/4d/Barber_Vintage_Motorsports_Museum_%28Birmingham%2C_Alabama%29_-_race_cars_display_1.jpg';
 const fallbackTopTiles: BaseShopTopTile[] = [
   {
     id: 'button-inserts',
@@ -158,6 +163,7 @@ export default function ShopClient({
   const [page, setPage] = useState(Math.max(1, initialPage));
   const [take, setTake] = useState(initialTake);
   const lastParams = useRef('');
+  const wasSpokeSectionRef = useRef(false);
 
   useEffect(() => {
     setQuery(initialQuery ?? '');
@@ -209,10 +215,7 @@ export default function ShopClient({
         }
       }
     }
-    return Array.from(bySlug.values()).sort((a, b) => {
-      if (b.count !== a.count) return b.count - a.count;
-      return a.name.localeCompare(b.name);
-    });
+    return Array.from(bySlug.values()).sort((a, b) => a.name.localeCompare(b.name));
   }, [categorySeedIcons]);
 
   const categoriesBySlug = useMemo(() => {
@@ -252,6 +255,15 @@ export default function ShopClient({
     lastParams.current = next;
     router.replace(`${pathname}${next ? `?${next}` : ''}`, { scroll: false });
   }, [query, activeCategorySlugs, activeSection, page, take, pathname, router]);
+
+  useEffect(() => {
+    const isSpokeSection = activeSection === 'button-inserts' || activeSection === 'keypads';
+    if (isSpokeSection && !wasSpokeSectionRef.current) {
+      const currentHref = `${pathname}${window.location.search}${window.location.hash}`;
+      ensureShopHubAnchor(currentHref);
+    }
+    wasSpokeSectionRef.current = isSpokeSection;
+  }, [activeSection, pathname]);
 
   const queryTerms = useMemo(() => tokenizeSearchText(query), [query]);
 
@@ -329,7 +341,7 @@ export default function ShopClient({
   };
 
   const onTopTileSelect = (tile: BaseShopTopTile) => {
-    const forcedHref = tile.kind === 'exploreMore' ? '/shop' : (tile.href ?? '').trim();
+    const forcedHref = tile.kind === 'exploreMore' ? '/shop?section=all' : (tile.href ?? '').trim();
     if (!forcedHref) return;
 
     if (forcedHref.startsWith('/')) {
@@ -371,10 +383,14 @@ export default function ShopClient({
     section: 'button-inserts' | 'keypads',
     categorySlugValues: string[] = [],
     preferredCategorySlug = '',
+    options?: { hubReady?: boolean },
   ) => {
     const params = new URLSearchParams();
     params.set('from', 'shop');
     params.set('section', section);
+    if (options?.hubReady) {
+      params.set('hub', '1');
+    }
     if (section === 'button-inserts' && categorySlugValues.length > 0) {
       params.set('cats', categorySlugValues.join(','));
       const categoryForBreadcrumb =
@@ -441,45 +457,10 @@ export default function ShopClient({
       .slice(0, 6);
   }, [baseShopConfig]);
   const landingTopTiles = configuredTopTiles.length > 0 ? configuredTopTiles : fallbackTopTiles;
-  const configuredDisciplineTiles = useMemo(() => {
-    const enabledDisciplineTiles = (baseShopConfig?.disciplineTiles ?? []).filter(
-      (tile) => tile.isEnabled !== false,
-    );
-    if (enabledDisciplineTiles.length === 0) return [];
-
-    return [...enabledDisciplineTiles].sort((a, b) => {
-      const aOrder = typeof a.order === 'number' ? a.order : Number.MAX_SAFE_INTEGER;
-      const bOrder = typeof b.order === 'number' ? b.order : Number.MAX_SAFE_INTEGER;
-      if (aOrder !== bOrder) return aOrder - bOrder;
-
-      const aLabel = (a.labelOverride ?? a.id).toLocaleLowerCase();
-      const bLabel = (b.labelOverride ?? b.id).toLocaleLowerCase();
-      return aLabel.localeCompare(bLabel);
-    });
-  }, [baseShopConfig]);
-  const landingDisciplineTiles = useMemo(() => {
-    if (configuredDisciplineTiles.length > 0) {
-      return configuredDisciplineTiles.map((tile) => {
-        const label = tile.labelOverride?.trim() || categoriesBySlug.get(tile.id)?.name || humanizeDisciplineId(tile.id);
-        const slugCandidate = categoriesBySlug.has(tile.id) ? tile.id : categorySlug(label);
-        return {
-          id: tile.id,
-          label,
-          slug: categoriesBySlug.has(slugCandidate) ? slugCandidate : '',
-          imagePreview: tile.imagePreview ?? tile.imageSource ?? null,
-          count: undefined,
-        };
-      });
-    }
-
-    return categories.map((category) => ({
-      id: category.slug,
-      label: category.name,
-      slug: category.slug,
-      imagePreview: null,
-      count: category.count,
-    }));
-  }, [configuredDisciplineTiles, categoriesBySlug, categories]);
+  const landingDisciplineTiles = useShopLandingSubcategoryIcons({
+    categories,
+    overrides: baseShopConfig?.disciplineTiles ?? [],
+  });
   const featuredLandingKeypads = useMemo(() => {
     const configuredSlugs = baseShopConfig?.featuredProductSlugs ?? [];
     if (configuredSlugs.length === 0) return keypads.slice(0, 3);
@@ -602,21 +583,27 @@ export default function ShopClient({
               'button-inserts',
               activeCategorySlugs,
               breadcrumbCategorySlug,
+              { hubReady: isIconsSection || isAllSection },
             )}
+            replaceProductNavigation={isIconsSection}
           />
         );
       })}
     </div>
   );
 
-  const renderKeypadsGrid = (keypadItems: KeypadProduct[]) => (
+  const renderKeypadsGrid = (
+    keypadItems: KeypadProduct[],
+    options?: { hubReady?: boolean; replaceDetailNavigation?: boolean },
+  ) => (
     <div className="staggered grid gap-6 sm:grid-cols-2 xl:grid-cols-2">
       {keypadItems.map((keypad) => (
         <KeypadCard
           key={keypad.id}
           product={keypad}
           mode="shop"
-          learnMoreHref={toProductHref(keypad.slug, 'keypads')}
+          learnMoreHref={toProductHref(keypad.slug, 'keypads', [], '', { hubReady: options?.hubReady })}
+          replaceDetailNavigation={options?.replaceDetailNavigation === true}
         />
       ))}
     </div>
@@ -635,7 +622,7 @@ export default function ShopClient({
               </div>
               <h1 className="mt-3 text-3xl font-semibold tracking-tight text-ink md:text-4xl">
                 {isIconsSection
-                  ? 'Explore Inserts: Curated by Discipline.'
+                  ? 'Explore Inserts: Curated by Category.'
                   : isKeypadsSection
                     ? 'Spec Your KeyPad: Precision Defined'
                     : 'Explore Technical Hardware & Components'}
@@ -675,18 +662,19 @@ export default function ShopClient({
           <section className="rounded-3xl border border-ink/10 bg-[linear-gradient(180deg,#ffffff_0%,#f6f9ff_100%)] p-5 md:p-7">
             <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink/50">Top picks</p>
                 <h2 className="mt-1 text-2xl font-semibold tracking-tight text-ink md:text-3xl">
-                  Start Your Build Fast
+                  Product Categories
                 </h2>
               </div>
             </div>
-            <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+            <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
               {landingTopTiles.map((tile) => {
                 const href = (tile.href ?? '').trim();
                 const isInteractive = href.length > 0 && tile.isEnabled !== false;
                 const shouldUseRingBlue = isInteractive && (tile.hoverStyle ?? 'ring-blue') !== 'none';
-                const tileImage = tile.imagePreview || tile.imageSource || '';
+                const isExploreMoreTile = tile.kind === 'exploreMore';
+                const tileImage = tile.imageSource || tile.imagePreview || (isExploreMoreTile ? DEFAULT_EXPLORE_MORE_IMAGE_URL : '');
+                const tileImageUrl = tileImage ? assetUrl(tileImage) : '';
                 const tileTitle =
                   tile.label?.trim() || (tile.kind === 'exploreMore' ? 'Discover more' : humanizeDisciplineId(tile.id));
                 const tileSubtitle = tile.subtitle?.trim() || '';
@@ -701,7 +689,7 @@ export default function ShopClient({
                   <div className={`relative h-64 w-full ${tileImage ? '' : 'bg-[linear-gradient(145deg,#e8eef9_0%,#f7fbff_48%,#e1ebfa_100%)]'}`}>
                     {tileImage ? (
                       <img
-                        src={assetUrl(tileImage)}
+                        src={tileImageUrl}
                         alt={tileTitle}
                         className="h-full w-full object-cover"
                         loading="lazy"
@@ -709,8 +697,14 @@ export default function ShopClient({
                     ) : (
                       <div className="pointer-events-none absolute -right-16 -top-12 h-40 w-40 rounded-full bg-white/70 blur-2xl" />
                     )}
-                    {isInteractive ? (
-                      <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(180deg,rgba(5,11,22,0.05)_0%,rgba(5,11,22,0.1)_58%,rgba(5,11,22,0.78)_100%)] opacity-70 transition-opacity duration-300 group-hover:opacity-100" />
+                    {isInteractive && tileImage ? (
+                      <div
+                        className={`pointer-events-none absolute inset-0 transition-opacity duration-200 ${
+                          isExploreMoreTile
+                            ? 'bg-black/45 opacity-60 group-hover:opacity-85'
+                            : 'bg-black/25 opacity-55 group-hover:opacity-75'
+                        }`}
+                      />
                     ) : null}
                     <div className="absolute inset-x-0 bottom-0 p-5">
                       <p className={`text-lg font-semibold leading-tight ${isInteractive ? 'text-white' : 'text-ink'}`}>
@@ -720,7 +714,13 @@ export default function ShopClient({
                         <p className={`mt-2 text-sm ${isInteractive ? 'text-white/85' : 'text-ink/60'}`}>{tileSubtitle}</p>
                       ) : null}
                       {isInteractive ? (
-                        <span className="mt-4 inline-flex translate-y-2 items-center justify-center rounded-full bg-[linear-gradient(90deg,#0d2f66_0%,#2053a2_55%,#3f75c4_100%)] px-4 py-2 text-xs font-semibold text-white opacity-0 transition-[opacity,transform] duration-200 group-hover:translate-y-0 group-hover:opacity-100">
+                        <span
+                          className={`mt-4 inline-flex translate-y-2 items-center justify-center rounded-full px-4 py-2 text-xs font-semibold opacity-0 transition-[opacity,transform] duration-200 group-hover:translate-y-0 group-hover:opacity-100 ${
+                            isExploreMoreTile
+                              ? 'border border-transparent bg-[linear-gradient(#ffffff,#ffffff),linear-gradient(90deg,#b7d0fb_0%,#e8f1ff_100%)] [background-origin:border-box] [background-clip:padding-box,border-box] text-[#143f82] shadow-[0_8px_20px_rgba(6,23,59,0.2)]'
+                              : 'bg-[linear-gradient(90deg,#0d2f66_0%,#2053a2_55%,#3f75c4_100%)] text-white'
+                          }`}
+                        >
                           {tile.kind === 'exploreMore' ? 'Discover more' : 'Explore'}
                         </span>
                       ) : null}
@@ -749,9 +749,8 @@ export default function ShopClient({
           <section className="rounded-3xl border border-ink/10 bg-[linear-gradient(180deg,#ffffff_0%,#f6f9ff_100%)] p-5 md:p-7">
             <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink/50">Browse categories</p>
                 <h2 className="mt-1 text-2xl font-semibold tracking-tight text-ink md:text-3xl">
-                  Explore Button Inserts by Discipline
+                  Button Insert Categories
                 </h2>
               </div>
               <button
@@ -767,89 +766,46 @@ export default function ShopClient({
                 {landingDisciplineTiles.map((tile) => {
                   const isInteractive = Boolean(tile.slug);
                   const cardClass = isInteractive
-                    ? `group rounded-2xl p-4 text-left transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 ${ringBlueHoverClass}`
-                    : 'rounded-2xl border border-ink/10 bg-white p-4 text-left';
+                    ? 'group rounded-2xl border border-[#d6deeb] bg-[linear-gradient(160deg,#ffffff_0%,#f4f8ff_100%)] text-left transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:border-[#88b5fb] hover:shadow-[0_12px_24px_rgba(7,22,56,0.16)]'
+                    : 'rounded-2xl border border-[#d6deeb] bg-[linear-gradient(160deg,#ffffff_0%,#f4f8ff_100%)] text-left';
                   return (
                     <div key={tile.id} className={cardClass}>
                       {isInteractive ? (
                         <button
                           type="button"
                           onClick={() => onDisciplineTileSelect(tile)}
-                          className="w-full text-left"
+                          className="w-full text-left px-4 py-4"
                         >
-                          <div className="mb-3 flex items-center gap-3">
-                            {tile.imagePreview ? (
-                              <div className="h-10 w-10 overflow-hidden rounded-xl border border-ink/10 bg-slate-50">
-                                <img
-                                  src={assetUrl(tile.imagePreview)}
-                                  alt={tile.label}
-                                  className="h-full w-full object-cover"
-                                  loading="lazy"
-                                />
+                          <div className="flex min-h-[94px] items-center justify-between gap-4">
+                            <div className="min-w-0">
+                              <div className="truncate text-base font-semibold text-ink">{tile.label}</div>
+                              <div className="mt-2 text-xs font-medium text-ink/55">
+                                {typeof tile.count === 'number' ? `${tile.count} inserts` : 'Explore inserts'}
                               </div>
-                            ) : (
-                              <div className="h-10 w-10 rounded-xl border border-ink/10 bg-[linear-gradient(140deg,#edf3ff_0%,#f8fbff_60%,#e7efff_100%)]" />
-                            )}
-                            <div className="text-xs font-semibold uppercase tracking-wide text-ink/45">
-                              Discipline
                             </div>
-                          </div>
-                          <div className="text-base font-semibold text-ink">{tile.label}</div>
-                          <div className="mt-3 text-xs text-ink/55">
-                            {typeof tile.count === 'number' ? `${tile.count} inserts` : 'Explore inserts'}
+                            <div className="shrink-0">
+                              <ShopCategoryIcon image={tile.image} alt={tile.label} />
+                            </div>
                           </div>
                         </button>
                       ) : (
-                        <div>
-                          <div className="mb-3 flex items-center gap-3">
-                            {tile.imagePreview ? (
-                              <div className="h-10 w-10 overflow-hidden rounded-xl border border-ink/10 bg-slate-50">
-                                <img
-                                  src={assetUrl(tile.imagePreview)}
-                                  alt={tile.label}
-                                  className="h-full w-full object-cover"
-                                  loading="lazy"
-                                />
+                        <div className="px-4 py-4">
+                          <div className="flex min-h-[94px] items-center justify-between gap-4">
+                            <div className="min-w-0">
+                              <div className="truncate text-base font-semibold text-ink">{tile.label}</div>
+                              <div className="mt-2 text-xs font-medium text-ink/55">
+                                {typeof tile.count === 'number' ? `${tile.count} inserts` : 'Explore inserts'}
                               </div>
-                            ) : (
-                              <div className="h-10 w-10 rounded-xl border border-ink/10 bg-[linear-gradient(140deg,#edf3ff_0%,#f8fbff_60%,#e7efff_100%)]" />
-                            )}
-                            <div className="text-xs font-semibold uppercase tracking-wide text-ink/45">
-                              Discipline
                             </div>
-                          </div>
-                          <div className="text-base font-semibold text-ink">{tile.label}</div>
-                          <div className="mt-3 text-xs text-ink/55">
-                            {typeof tile.count === 'number' ? `${tile.count} inserts` : 'Explore inserts'}
+                            <div className="shrink-0">
+                              <ShopCategoryIcon image={tile.image} alt={tile.label} />
+                            </div>
                           </div>
                         </div>
                       )}
                     </div>
                   );
                 })}
-              </div>
-            ) : categories.length > 0 ? (
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {categories.map((category) => (
-                  <button
-                    key={category.slug}
-                    type="button"
-                    onClick={() => {
-                      setActiveSection('button-inserts');
-                      setActiveCategorySlugs([category.slug]);
-                      setPage(1);
-                      scrollToPageTop();
-                    }}
-                    className={`group rounded-2xl p-4 text-left transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 ${ringBlueHoverClass}`}
-                  >
-                    <div className="mb-3 flex items-center gap-3">
-                      <div className="h-10 w-10 rounded-xl border border-ink/10 bg-[linear-gradient(140deg,#edf3ff_0%,#f8fbff_60%,#e7efff_100%)]" />
-                      <div className="text-xs font-semibold uppercase tracking-wide text-ink/45">Discipline</div>
-                    </div>
-                    <div className="text-base font-semibold text-ink">{category.name}</div>
-                    <div className="mt-3 text-xs text-ink/55">{category.count} inserts</div>
-                  </button>
-                ))}
               </div>
             ) : (
               <div className="rounded-2xl border border-ink/10 bg-white p-6 text-sm text-ink/60">
@@ -861,7 +817,6 @@ export default function ShopClient({
           <section>
             <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
               <div>
-                <p className="text-xs font-semibold uppercase tracking-[0.16em] text-ink/50">Featured products</p>
                 <h2 className="mt-1 text-2xl font-semibold tracking-tight text-ink md:text-3xl">
                   Popular Keypads to Start From
                 </h2>
@@ -881,7 +836,7 @@ export default function ShopClient({
                     <KeypadCard
                       product={keypad}
                       mode="shop"
-                      learnMoreHref={toProductHref(keypad.slug, 'keypads')}
+                      learnMoreHref={toProductHref(keypad.slug, 'keypads', [], '', { hubReady: false })}
                     />
                   </div>
                 ))}
@@ -1072,11 +1027,18 @@ export default function ShopClient({
             ) : isIconsSection ? (
               renderIconsGrid(displayedIcons)
             ) : isKeypadsSection ? (
-              renderKeypadsGrid(filteredKeypads)
+              renderKeypadsGrid(filteredKeypads, {
+                hubReady: true,
+                replaceDetailNavigation: true,
+              })
             ) : (
               <div className="space-y-6">
                 {displayedIcons.length > 0 && renderIconsGrid(displayedIcons)}
-                {catalogWideKeypads.length > 0 && renderKeypadsGrid(catalogWideKeypads)}
+                {catalogWideKeypads.length > 0 &&
+                  renderKeypadsGrid(catalogWideKeypads, {
+                    hubReady: true,
+                    replaceDetailNavigation: false,
+                  })}
               </div>
             )}
 

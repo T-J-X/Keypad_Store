@@ -8,16 +8,6 @@ import { BaseShopService } from './base-shop.service';
 import { BaseShopShopResolver } from './base-shop.shop.resolver';
 
 const adminApiExtensions = gql`
-  type BaseShopCategoryTile {
-    id: String!
-    title: String
-    subtitle: String
-    href: String
-    imageAssetId: ID
-    hoverStyle: String
-    isEnabled: Boolean!
-  }
-
   type BaseShopTopTile {
     id: String!
     label: String
@@ -41,32 +31,9 @@ const adminApiExtensions = gql`
     id: ID!
     createdAt: DateTime!
     updatedAt: DateTime!
-    leftImageAssetId: ID
-    rightImageAssetId: ID
-    leftTitle: String
-    leftBody: String
-    leftCtaText: String
-    leftCtaUrl: String
-    leftCtaEnabled: Boolean!
-    rightTitle: String
-    rightBody: String
-    rightCtaText: String
-    rightCtaUrl: String
-    rightCtaEnabled: Boolean!
-    categoryTiles: [BaseShopCategoryTile!]!
     topTiles: [BaseShopTopTile!]!
     disciplineTiles: [BaseShopDisciplineTile!]!
     featuredProductSlugs: [String!]!
-  }
-
-  input BaseShopCategoryTileInput {
-    id: String
-    title: String
-    subtitle: String
-    href: String
-    imageAssetId: ID
-    hoverStyle: String
-    isEnabled: Boolean
   }
 
   input BaseShopTopTileInput {
@@ -89,19 +56,6 @@ const adminApiExtensions = gql`
   }
 
   input UpdateBaseShopConfigInput {
-    leftImageAssetId: ID
-    rightImageAssetId: ID
-    leftTitle: String
-    leftBody: String
-    leftCtaText: String
-    leftCtaUrl: String
-    leftCtaEnabled: Boolean
-    rightTitle: String
-    rightBody: String
-    rightCtaText: String
-    rightCtaUrl: String
-    rightCtaEnabled: Boolean
-    categoryTiles: [BaseShopCategoryTileInput!]
     topTiles: [BaseShopTopTileInput!]
     disciplineTiles: [BaseShopDisciplineTileInput!]
     featuredProductSlugs: [String!]
@@ -117,18 +71,6 @@ const adminApiExtensions = gql`
 `;
 
 const shopApiExtensions = gql`
-  type BaseShopCategoryTilePublic {
-    id: String!
-    title: String
-    subtitle: String
-    href: String
-    imageAssetId: ID
-    imagePreview: String
-    imageSource: String
-    hoverStyle: String
-    isEnabled: Boolean!
-  }
-
   type BaseShopTopTilePublic {
     id: String!
     label: String
@@ -153,7 +95,6 @@ const shopApiExtensions = gql`
   }
 
   type BaseShopPublicConfig {
-    categoryTiles: [BaseShopCategoryTilePublic!]!
     featuredProductSlugs: [String!]!
     topTiles: [BaseShopTopTilePublic!]!
     disciplineTiles: [BaseShopDisciplineTilePublic!]!

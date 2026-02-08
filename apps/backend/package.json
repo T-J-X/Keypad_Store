@@ -12,7 +12,8 @@
     "batch:set-catalog-pricing-stock": "ts-node -r dotenv/config scripts/batch-set-catalog-pricing-stock.ts",
     "import:icons": "ts-node -r dotenv/config scripts/import-icons.ts",
     "import:keypads": "ts-node -r dotenv/config scripts/import-keypads.ts",
-    "sync:icon-catalog": "ts-node -r dotenv/config scripts/sync-icon-catalog.ts"
+    "sync:icon-catalog": "ts-node -r dotenv/config scripts/sync-icon-catalog.ts",
+    "seed:shop-landing-icons": "ts-node -r dotenv/config scripts/seed-shop-landing-icons.ts"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.978.0",

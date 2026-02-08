@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import ShopClient from '../../components/ShopClient';
-import { fetchBaseShopConfigPublic, fetchIconProducts, fetchIconProductsPage, fetchKeypadProducts } from '../../lib/vendure.server';
+import { fetchIconProducts, fetchIconProductsPage, fetchKeypadProducts, fetchShopLandingContent } from '../../lib/vendure.server';
 
 type SearchParams = {
   q?: string | string[];
@@ -189,7 +189,7 @@ export default async function ShopPage({
   let categorySourceIcons;
   let pagination: { page: number; take: number; totalItems: number } | null = null;
   const keypadsPromise = fetchKeypadProducts();
-  const baseShopConfigPromise = fetchBaseShopConfigPublic();
+  const shopLandingContentPromise = fetchShopLandingContent();
 
   if (enableIconsPagination) {
     let pagedIcons = await fetchIconProductsPage({
@@ -222,7 +222,7 @@ export default async function ShopPage({
   }
 
   const keypads = await keypadsPromise;
-  const baseShopConfig = await baseShopConfigPromise;
+  const baseShopConfig = await shopLandingContentPromise;
 
   return (
     <ShopClient

@@ -14,7 +14,7 @@ export default [
   addNavMenuItem(
     {
       id: 'baseshop',
-      label: 'Base Shop',
+      label: 'Shop Landing page',
       routerLink: ['/extensions', 'baseshop'],
       icon: 'image-gallery',
     },

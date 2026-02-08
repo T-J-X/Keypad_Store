@@ -2,11 +2,13 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import ButtonInsertPdp from '../../../components/ProductPdp/ButtonInsertPdp';
 import KeypadPdp from '../../../components/ProductPdp/KeypadPdp';
+import ShopHubBackAnchor from '../../../components/ShopHubBackAnchor';
 import { type CatalogProduct, type IconProduct } from '../../../lib/vendure';
 import { fetchIconProducts, fetchProductBySlug } from '../../../lib/vendure.server';
 
 type ProductSearchParams = {
   from?: string | string[];
+  hub?: string | string[];
   section?: string | string[];
   cat?: string | string[];
   cats?: string | string[];
@@ -244,6 +246,7 @@ export default async function ProductDetailPage({
   if (!product) return notFound();
 
   const origin = toStringParam(resolvedSearchParams?.from);
+  const hubReady = toStringParam(resolvedSearchParams?.hub) === '1';
   const section = normalizeSection(toStringParam(resolvedSearchParams?.section));
   const categoryParam = toStringParam(resolvedSearchParams?.cat).trim();
   const categoryParamList = parseCategorySlugs(toStringParam(resolvedSearchParams?.cats));
@@ -297,19 +300,25 @@ export default async function ProductDetailPage({
     const relatedProducts = resolveRelatedProducts(product, icons);
 
     return (
-      <ButtonInsertPdp
-        product={product}
-        breadcrumbs={breadcrumbs}
-        productTypeLabel={resolveProductTypeLabel(product)}
-        relatedProducts={relatedProducts}
-      />
+      <>
+        <ShopHubBackAnchor enabled={!hubReady} />
+        <ButtonInsertPdp
+          product={product}
+          breadcrumbs={breadcrumbs}
+          productTypeLabel={resolveProductTypeLabel(product)}
+          relatedProducts={relatedProducts}
+        />
+      </>
     );
   }
   return (
-    <KeypadPdp
-      product={product}
-      breadcrumbs={breadcrumbs}
-      modelCode={resolveModelCode(product)}
-    />
+    <>
+      <ShopHubBackAnchor enabled={!hubReady} />
+      <KeypadPdp
+        product={product}
+        breadcrumbs={breadcrumbs}
+        modelCode={resolveModelCode(product)}
+      />
+    </>
   );
 }

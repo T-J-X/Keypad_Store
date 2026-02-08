@@ -5,7 +5,7 @@ export default [
   registerRouteComponent({
     path: 'extensions/baseshop',
     component: BaseShopComponent,
-    title: 'Baseshop',
-    breadcrumb: 'Baseshop',
+    title: 'Shop Landing page',
+    breadcrumb: 'Shop Landing page',
   }),
 ];

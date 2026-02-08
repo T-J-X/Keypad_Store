@@ -35,10 +35,12 @@ export default function KeypadCard({
   product,
   mode = 'configurator',
   learnMoreHref,
+  replaceDetailNavigation = false,
 }: {
   product: KeypadProduct;
   mode?: 'configurator' | 'shop';
   learnMoreHref?: string;
+  replaceDetailNavigation?: boolean;
 }) {
   const image = product.featuredAsset?.preview ?? product.featuredAsset?.source ?? '';
   const modelCode = resolveModelCode(product);
@@ -53,6 +55,7 @@ export default function KeypadCard({
       {isShopCard && (
         <Link
           href={detailHref}
+          replace={replaceDetailNavigation}
           aria-label={`View ${product.name}`}
           className="absolute inset-0 z-0 rounded-2xl"
         />
@@ -88,6 +91,7 @@ export default function KeypadCard({
           <div className="pointer-events-auto relative z-20 flex flex-col gap-2 sm:flex-row">
             <Link
               href={detailHref}
+              replace={replaceDetailNavigation}
               className={`${buttonSecondaryClass} w-full sm:w-auto`}
             >
               Learn more

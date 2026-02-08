@@ -8,24 +8,12 @@ import {
   SharedModule,
 } from '@vendure/admin-ui/core';
 import gql from 'graphql-tag';
-import { Subject, finalize, takeUntil } from 'rxjs';
-
-type TileKey = 'left' | 'right';
+import { Subject, finalize, firstValueFrom, takeUntil } from 'rxjs';
 
 interface AssetPreview {
   id: string;
   name: string | null;
   preview: string | null;
-}
-
-interface BaseShopCategoryTileData {
-  id: string;
-  title: string | null;
-  subtitle: string | null;
-  href: string | null;
-  imageAssetId: string | null;
-  hoverStyle: string | null;
-  isEnabled: boolean;
 }
 
 interface BaseShopTopTileData {
@@ -49,19 +37,6 @@ interface BaseShopDisciplineTileData {
 
 interface BaseShopConfigData {
   id: string;
-  leftImageAssetId: string | null;
-  rightImageAssetId: string | null;
-  leftTitle: string | null;
-  leftBody: string | null;
-  leftCtaText: string | null;
-  leftCtaUrl: string | null;
-  leftCtaEnabled: boolean;
-  rightTitle: string | null;
-  rightBody: string | null;
-  rightCtaText: string | null;
-  rightCtaUrl: string | null;
-  rightCtaEnabled: boolean;
-  categoryTiles: BaseShopCategoryTileData[];
   featuredProductSlugs: string[];
   topTiles: BaseShopTopTileData[];
   disciplineTiles: BaseShopDisciplineTileData[];
@@ -76,27 +51,6 @@ interface UpdateBaseShopConfigMutation {
 }
 
 interface BaseShopConfigInput {
-  leftImageAssetId?: string | null;
-  rightImageAssetId?: string | null;
-  leftTitle?: string | null;
-  leftBody?: string | null;
-  leftCtaText?: string | null;
-  leftCtaUrl?: string | null;
-  leftCtaEnabled?: boolean;
-  rightTitle?: string | null;
-  rightBody?: string | null;
-  rightCtaText?: string | null;
-  rightCtaUrl?: string | null;
-  rightCtaEnabled?: boolean;
-  categoryTiles?: Array<{
-    id?: string | null;
-    title?: string | null;
-    subtitle?: string | null;
-    href?: string | null;
-    imageAssetId?: string | null;
-    hoverStyle?: string | null;
-    isEnabled?: boolean;
-  }> | null;
   topTiles?: Array<{
     id?: string | null;
     label?: string | null;
@@ -135,31 +89,40 @@ interface AssetSelection {
   preview?: string | null;
 }
 
+interface IconCategoryProductsQuery {
+  products: {
+    totalItems: number;
+    items: Array<{
+      customFields?: {
+        isIconProduct?: boolean | null;
+        iconCategories?: string[] | null;
+      } | null;
+    }>;
+  };
+}
+
+interface IconCategoryProductsVariables {
+  options: {
+    take: number;
+    skip: number;
+    filter?: {
+      isIconProduct?: {
+        eq?: boolean;
+      };
+    };
+  };
+}
+
+interface AvailableCategory {
+  slug: string;
+  name: string;
+  count: number;
+}
+
 const GET_BASE_SHOP_CONFIG = gql`
   query GetBaseShopConfig {
     baseShopConfig {
       id
-      leftImageAssetId
-      rightImageAssetId
-      leftTitle
-      leftBody
-      leftCtaText
-      leftCtaUrl
-      leftCtaEnabled
-      rightTitle
-      rightBody
-      rightCtaText
-      rightCtaUrl
-      rightCtaEnabled
-      categoryTiles {
-        id
-        title
-        subtitle
-        href
-        imageAssetId
-        hoverStyle
-        isEnabled
-      }
       topTiles {
         id
         label
@@ -186,27 +149,6 @@ const UPDATE_BASE_SHOP_CONFIG = gql`
   mutation UpdateBaseShopConfig($input: UpdateBaseShopConfigInput!) {
     updateBaseShopConfig(input: $input) {
       id
-      leftImageAssetId
-      rightImageAssetId
-      leftTitle
-      leftBody
-      leftCtaText
-      leftCtaUrl
-      leftCtaEnabled
-      rightTitle
-      rightBody
-      rightCtaText
-      rightCtaUrl
-      rightCtaEnabled
-      categoryTiles {
-        id
-        title
-        subtitle
-        href
-        imageAssetId
-        hoverStyle
-        isEnabled
-      }
       topTiles {
         id
         label
@@ -239,6 +181,20 @@ const GET_ASSET_BY_ID = gql`
   }
 `;
 
+const GET_ICON_CATEGORY_PRODUCTS = gql`
+  query GetIconCategoryProducts($options: ProductListOptions) {
+    products(options: $options) {
+      totalItems
+      items {
+        customFields {
+          isIconProduct
+          iconCategories
+        }
+      }
+    }
+  }
+`;
+
 @Component({
   selector: 'base-shop-config',
   standalone: true,
@@ -247,7 +203,7 @@ const GET_ASSET_BY_ID = gql`
     <vdr-page-block>
       <vdr-action-bar>
         <vdr-ab-left>
-          <h2>Baseshop</h2>
+          <h2>Shop Landing page</h2>
         </vdr-ab-left>
         <vdr-ab-right>
           <button
@@ -263,380 +219,254 @@ const GET_ASSET_BY_ID = gql`
     </vdr-page-block>
 
     <vdr-page-block *ngIf="loading">
-      <p>Loading Baseshop configuration...</p>
+      <p>Loading shop landing page configuration...</p>
     </vdr-page-block>
 
     <form class="form" [formGroup]="form" *ngIf="!loading">
       <vdr-page-block>
-        <div class="baseshop-grid">
-          <vdr-card title="Left Tile">
-            <div class="asset-preview-frame">
-              <img
-                *ngIf="leftAsset?.preview; else leftAssetPlaceholder"
-                [src]="leftAsset?.preview || ''"
-                [alt]="leftAsset?.name || 'Left tile image'"
-              />
+        <div class="config-stack">
+          <vdr-card class="config-card" title="Top Tiles">
+            <p class="helper-text">
+              Configure up to {{ maxRegularTopTiles }} primary tiles. Discover more is required, cannot be removed,
+              and always links to All Products.
+            </p>
+            <div class="tile-list">
+              <div class="tile-row" *ngFor="let tile of topTiles; let i = index">
+                <div class="tile-header">
+                  <strong>{{ isDiscoverMore(tile) ? 'Discover more (required)' : 'Top tile ' + (i + 1) }}</strong>
+                  <div class="tile-controls" *ngIf="!isDiscoverMore(tile)">
+                    <button
+                      type="button"
+                      class="btn btn-sm"
+                      [disabled]="i === 0"
+                      (click)="moveTopTileUp(i)"
+                    >
+                      Up
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-sm"
+                      [disabled]="i === topTiles.length - 1 || (topTiles[i + 1] && isDiscoverMore(topTiles[i + 1]))"
+                      (click)="moveTopTileDown(i)"
+                    >
+                      Down
+                    </button>
+                    <button
+                      type="button"
+                      class="btn btn-sm btn-danger"
+                      (click)="removeTopTile(i)"
+                    >
+                      Delete
+                    </button>
+                  </div>
+                </div>
+
+                <vdr-form-field label="Label">
+                  <input
+                    type="text"
+                    [value]="tile.label ?? ''"
+                    (input)="updateTopTileText(i, 'label', $any($event.target).value)"
+                  />
+                </vdr-form-field>
+
+                <vdr-form-field label="Subtitle">
+                  <input
+                    type="text"
+                    [value]="tile.subtitle ?? ''"
+                    (input)="updateTopTileText(i, 'subtitle', $any($event.target).value)"
+                  />
+                </vdr-form-field>
+
+                <vdr-form-field label="Href" [hint]="isDiscoverMore(tile) ? '/shop?section=all (fixed)' : ''">
+                  <input
+                    type="text"
+                    [readonly]="isDiscoverMore(tile)"
+                    [value]="isDiscoverMore(tile) ? '/shop?section=all' : tile.href ?? ''"
+                    (input)="updateTopTileText(i, 'href', $any($event.target).value)"
+                  />
+                </vdr-form-field>
+
+                <vdr-form-field label="Hover style">
+                  <select [value]="tile.hoverStyle ?? 'ring-blue'" (change)="updateTopTileHoverStyle(i, $any($event.target).value)">
+                    <option value="ring-blue">ring-blue</option>
+                    <option value="none">none</option>
+                  </select>
+                </vdr-form-field>
+
+                <div class="tile-asset-picker">
+                  <div class="tile-asset-preview-frame">
+                    <img
+                      *ngIf="topTileAssetsById.get(i)?.preview; else topTileAssetFallback"
+                      [src]="topTileAssetsById.get(i)?.preview || ''"
+                      [alt]="topTileAssetsById.get(i)?.name || 'Top tile asset'"
+                    />
+                  </div>
+                  <ng-template #topTileAssetFallback>
+                    <div class="tile-asset-placeholder">
+                      {{ tile.imageAssetId ? 'Asset selected' : 'No image selected' }}
+                    </div>
+                  </ng-template>
+                  <div class="asset-actions">
+                    <button type="button" class="btn btn-sm btn-secondary" (click)="pickTopTileAsset(i)">
+                      Select asset
+                    </button>
+                    <button
+                      *ngIf="tile.imageAssetId"
+                      type="button"
+                      class="btn btn-sm"
+                      (click)="clearTopTileAsset(i)"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                  <p class="helper-text" *ngIf="tile.imageAssetId">Asset ID: {{ tile.imageAssetId }}</p>
+                </div>
+
+                <label class="clr-checkbox-wrapper cta-toggle" *ngIf="!isDiscoverMore(tile)">
+                  <input
+                    type="checkbox"
+                    [checked]="tile.isEnabled"
+                    (change)="updateTopTileEnabled(i, $any($event.target).checked)"
+                  />
+                  <span>Enabled</span>
+                </label>
+
+                <p class="helper-text" *ngIf="isDiscoverMore(tile)">
+                  This tile is required and always appears last.
+                </p>
+              </div>
             </div>
-            <ng-template #leftAssetPlaceholder>
-              <div class="asset-placeholder">No image selected</div>
-            </ng-template>
 
-            <div class="asset-actions">
-              <button type="button" class="btn btn-sm btn-secondary" (click)="openAssetPicker('left')">
-                Select image
-              </button>
-              <button
-                type="button"
-                class="btn btn-sm"
-                [disabled]="!form.controls.leftImageAssetId.value"
-                (click)="clearAsset('left')"
-              >
-                Clear
-              </button>
-            </div>
-
-            <vdr-form-field label="Title (optional)" for="leftTitle">
-              <input id="leftTitle" type="text" formControlName="leftTitle" />
-            </vdr-form-field>
-
-            <vdr-form-field label="Body (optional)" for="leftBody">
-              <textarea id="leftBody" rows="3" formControlName="leftBody"></textarea>
-            </vdr-form-field>
-
-            <vdr-form-field label="CTA text (optional)" for="leftCtaText">
-              <input id="leftCtaText" type="text" formControlName="leftCtaText" />
-            </vdr-form-field>
-
-            <vdr-form-field label="CTA URL (optional)" for="leftCtaUrl">
-              <input id="leftCtaUrl" type="url" formControlName="leftCtaUrl" />
-            </vdr-form-field>
-
-            <label class="clr-checkbox-wrapper cta-toggle">
-              <input type="checkbox" formControlName="leftCtaEnabled" />
-              <span>CTA enabled</span>
-            </label>
+            <button
+              type="button"
+              class="btn btn-sm btn-secondary"
+              [disabled]="regularTopTileCount >= maxRegularTopTiles"
+              (click)="addTopTile()"
+            >
+              Add top tile
+            </button>
           </vdr-card>
 
-          <vdr-card title="Right Tile">
-            <div class="asset-preview-frame">
-              <img
-                *ngIf="rightAsset?.preview; else rightAssetPlaceholder"
-                [src]="rightAsset?.preview || ''"
-                [alt]="rightAsset?.name || 'Right tile image'"
-              />
+          <vdr-card class="config-card" title="Button Insert Categories">
+            <p class="helper-text">
+              Icon sub-categories are auto-discovered from icon products. Use overrides for custom labels and icons.
+            </p>
+            <p class="helper-text">
+              Design standard: upload transparent SVG/PNG outline icons. Keep visual weight consistent. Icon updates
+              go live on storefront without code changes.
+            </p>
+            <p class="helper-text" *ngIf="loadingCategoryCatalog">Refreshing icon category list...</p>
+
+            <div class="tile-list" *ngIf="disciplineTiles.length > 0; else noCategoryTiles">
+              <div class="tile-row" *ngFor="let tile of disciplineTiles; let i = index">
+                <div class="tile-header tile-header-stack">
+                  <strong>{{ resolveCategoryName(tile.id) }}</strong>
+                  <div class="tile-meta">
+                    <span>{{ tile.id }}</span>
+                    <span *ngIf="resolveCategoryCount(tile.id) !== null">{{ resolveCategoryCount(tile.id) }} inserts</span>
+                  </div>
+                </div>
+
+                <vdr-form-field label="Category slug">
+                  <input type="text" [value]="tile.id" readonly />
+                </vdr-form-field>
+
+                <vdr-form-field label="Category label override">
+                  <input
+                    type="text"
+                    [value]="tile.labelOverride ?? ''"
+                    (input)="updateDisciplineTileText(i, 'labelOverride', $any($event.target).value)"
+                  />
+                </vdr-form-field>
+
+                <div class="tile-asset-picker">
+                  <div class="tile-asset-preview-frame tile-asset-preview-square">
+                    <img
+                      *ngIf="disciplineTileAssetsById.get(i)?.preview; else disciplineTileAssetFallback"
+                      [src]="disciplineTileAssetsById.get(i)?.preview || ''"
+                      [alt]="disciplineTileAssetsById.get(i)?.name || 'Category icon asset'"
+                    />
+                  </div>
+                  <ng-template #disciplineTileAssetFallback>
+                    <div class="tile-asset-placeholder">
+                      {{ tile.imageAssetId ? 'Asset selected' : 'No icon selected' }}
+                    </div>
+                  </ng-template>
+                  <div class="asset-actions">
+                    <button type="button" class="btn btn-sm btn-secondary" (click)="pickDisciplineTileAsset(i)">
+                      Select icon
+                    </button>
+                    <button
+                      *ngIf="tile.imageAssetId"
+                      type="button"
+                      class="btn btn-sm"
+                      (click)="clearDisciplineTileAsset(i)"
+                    >
+                      Clear
+                    </button>
+                  </div>
+                  <p class="helper-text" *ngIf="tile.imageAssetId">Asset ID: {{ tile.imageAssetId }}</p>
+                </div>
+
+                <label class="clr-checkbox-wrapper cta-toggle">
+                  <input
+                    type="checkbox"
+                    [checked]="tile.isEnabled"
+                    (change)="updateDisciplineTileEnabled(i, $any($event.target).checked)"
+                  />
+                  <span>Enabled</span>
+                </label>
+              </div>
             </div>
-            <ng-template #rightAssetPlaceholder>
-              <div class="asset-placeholder">No image selected</div>
+
+            <ng-template #noCategoryTiles>
+              <div class="empty-state">No icon categories found yet. Add icon products with category values to populate this list.</div>
             </ng-template>
+          </vdr-card>
 
-            <div class="asset-actions">
-              <button type="button" class="btn btn-sm btn-secondary" (click)="openAssetPicker('right')">
-                Select image
-              </button>
-              <button
-                type="button"
-                class="btn btn-sm"
-                [disabled]="!form.controls.rightImageAssetId.value"
-                (click)="clearAsset('right')"
-              >
-                Clear
-              </button>
-            </div>
-
-            <vdr-form-field label="Title (optional)" for="rightTitle">
-              <input id="rightTitle" type="text" formControlName="rightTitle" />
+          <vdr-card class="config-card" title="Featured Keypads">
+            <vdr-form-field
+              label="Featured product slugs"
+              for="featuredProductSlugs"
+              hint="One slug per line (or comma-separated)"
+            >
+              <textarea
+                id="featuredProductSlugs"
+                rows="4"
+                formControlName="featuredProductSlugs"
+              ></textarea>
             </vdr-form-field>
-
-            <vdr-form-field label="Body (optional)" for="rightBody">
-              <textarea id="rightBody" rows="3" formControlName="rightBody"></textarea>
-            </vdr-form-field>
-
-            <vdr-form-field label="CTA text (optional)" for="rightCtaText">
-              <input id="rightCtaText" type="text" formControlName="rightCtaText" />
-            </vdr-form-field>
-
-            <vdr-form-field label="CTA URL (optional)" for="rightCtaUrl">
-              <input id="rightCtaUrl" type="url" formControlName="rightCtaUrl" />
-            </vdr-form-field>
-
-            <label class="clr-checkbox-wrapper cta-toggle">
-              <input type="checkbox" formControlName="rightCtaEnabled" />
-              <span>CTA enabled</span>
-            </label>
           </vdr-card>
         </div>
-
-        <vdr-card title="Top Tiles (Shop Landing)">
-          <p class="helper-text">
-            Configure top landing tiles. Discover more is required and always appears last.
-          </p>
-          <div class="tile-list">
-            <div class="tile-row" *ngFor="let tile of topTiles; let i = index">
-              <div class="tile-header">
-                <strong>{{ isDiscoverMore(tile) ? 'Discover more (required)' : 'Top tile ' + (i + 1) }}</strong>
-                <div class="tile-controls" *ngIf="!isDiscoverMore(tile)">
-                  <button
-                    type="button"
-                    class="btn btn-sm"
-                    [disabled]="i === 0"
-                    (click)="moveTopTileUp(i)"
-                  >
-                    Up
-                  </button>
-                  <button
-                    type="button"
-                    class="btn btn-sm"
-                    [disabled]="i === topTiles.length - 1 || (topTiles[i + 1] && isDiscoverMore(topTiles[i + 1]))"
-                    (click)="moveTopTileDown(i)"
-                  >
-                    Down
-                  </button>
-                  <button
-                    type="button"
-                    class="btn btn-sm btn-danger"
-                    (click)="removeTopTile(i)"
-                  >
-                    Delete
-                  </button>
-                </div>
-              </div>
-
-              <vdr-form-field label="Label">
-                <input
-                  type="text"
-                  [value]="tile.label ?? ''"
-                  (input)="updateTopTileText(i, 'label', $any($event.target).value)"
-                />
-              </vdr-form-field>
-
-              <vdr-form-field label="Subtitle">
-                <input
-                  type="text"
-                  [value]="tile.subtitle ?? ''"
-                  (input)="updateTopTileText(i, 'subtitle', $any($event.target).value)"
-                />
-              </vdr-form-field>
-
-              <vdr-form-field label="Href">
-                <input
-                  type="text"
-                  [value]="tile.href ?? ''"
-                  (input)="updateTopTileText(i, 'href', $any($event.target).value)"
-                />
-              </vdr-form-field>
-
-              <vdr-form-field label="Hover style">
-                <select [value]="tile.hoverStyle ?? 'ring-blue'" (change)="updateTopTileHoverStyle(i, $any($event.target).value)">
-                  <option value="ring-blue">ring-blue</option>
-                  <option value="none">none</option>
-                </select>
-              </vdr-form-field>
-
-              <div class="tile-asset-picker">
-                <div class="tile-asset-preview-frame">
-                  <img
-                    *ngIf="topTileAssetsById.get(i)?.preview; else topTileAssetFallback"
-                    [src]="topTileAssetsById.get(i)?.preview || ''"
-                    [alt]="topTileAssetsById.get(i)?.name || 'Top tile asset'"
-                  />
-                </div>
-                <ng-template #topTileAssetFallback>
-                  <div class="tile-asset-placeholder">
-                    {{ tile.imageAssetId ? 'Asset selected' : 'No image selected' }}
-                  </div>
-                </ng-template>
-                <div class="asset-actions">
-                  <button type="button" class="btn btn-sm btn-secondary" (click)="pickTopTileAsset(i)">
-                    Select asset
-                  </button>
-                  <button
-                    *ngIf="tile.imageAssetId"
-                    type="button"
-                    class="btn btn-sm"
-                    (click)="clearTopTileAsset(i)"
-                  >
-                    Clear
-                  </button>
-                </div>
-                <p class="helper-text" *ngIf="tile.imageAssetId">Asset ID: {{ tile.imageAssetId }}</p>
-              </div>
-
-              <label class="clr-checkbox-wrapper cta-toggle" *ngIf="!isDiscoverMore(tile)">
-                <input
-                  type="checkbox"
-                  [checked]="tile.isEnabled"
-                  (change)="updateTopTileEnabled(i, $any($event.target).checked)"
-                />
-                <span>Enabled</span>
-              </label>
-
-              <p class="helper-text" *ngIf="isDiscoverMore(tile)">
-                This tile is required and always appears last.
-              </p>
-            </div>
-          </div>
-
-          <button type="button" class="btn btn-sm btn-secondary" (click)="addTopTile()">Add top tile</button>
-        </vdr-card>
-
-        <vdr-card title="Discipline Tiles (Explore Button Inserts by Discipline)">
-          <p class="helper-text">
-            Use an id matching a category slug to make the tile clickable (e.g. engine).
-          </p>
-          <div class="tile-list">
-            <div class="tile-row" *ngFor="let tile of disciplineTiles; let i = index">
-              <div class="tile-header">
-                <strong>Discipline tile {{ i + 1 }}</strong>
-                <div class="tile-controls">
-                  <button
-                    type="button"
-                    class="btn btn-sm"
-                    [disabled]="i === 0"
-                    (click)="moveDisciplineTileUp(i)"
-                  >
-                    Up
-                  </button>
-                  <button
-                    type="button"
-                    class="btn btn-sm"
-                    [disabled]="i === disciplineTiles.length - 1"
-                    (click)="moveDisciplineTileDown(i)"
-                  >
-                    Down
-                  </button>
-                  <button type="button" class="btn btn-sm btn-danger" (click)="removeDisciplineTile(i)">
-                    Delete
-                  </button>
-                </div>
-              </div>
-
-              <vdr-form-field label="id (category slug)">
-                <input
-                  type="text"
-                  [value]="tile.id ?? ''"
-                  (input)="updateDisciplineTileText(i, 'id', $any($event.target).value)"
-                />
-              </vdr-form-field>
-
-              <vdr-form-field label="labelOverride">
-                <input
-                  type="text"
-                  [value]="tile.labelOverride ?? ''"
-                  (input)="updateDisciplineTileText(i, 'labelOverride', $any($event.target).value)"
-                />
-              </vdr-form-field>
-
-              <vdr-form-field label="order">
-                <input
-                  type="number"
-                  [value]="tile.order ?? ''"
-                  (input)="updateDisciplineTileOrder(i, $any($event.target).value)"
-                />
-              </vdr-form-field>
-
-              <div class="tile-asset-picker">
-                <div class="tile-asset-preview-frame">
-                  <img
-                    *ngIf="disciplineTileAssetsById.get(i)?.preview; else disciplineTileAssetFallback"
-                    [src]="disciplineTileAssetsById.get(i)?.preview || ''"
-                    [alt]="disciplineTileAssetsById.get(i)?.name || 'Discipline tile asset'"
-                  />
-                </div>
-                <ng-template #disciplineTileAssetFallback>
-                  <div class="tile-asset-placeholder">
-                    {{ tile.imageAssetId ? 'Asset selected' : 'No image selected' }}
-                  </div>
-                </ng-template>
-                <div class="asset-actions">
-                  <button type="button" class="btn btn-sm btn-secondary" (click)="pickDisciplineTileAsset(i)">
-                    Select asset
-                  </button>
-                  <button
-                    *ngIf="tile.imageAssetId"
-                    type="button"
-                    class="btn btn-sm"
-                    (click)="clearDisciplineTileAsset(i)"
-                  >
-                    Clear
-                  </button>
-                </div>
-                <p class="helper-text" *ngIf="tile.imageAssetId">Asset ID: {{ tile.imageAssetId }}</p>
-              </div>
-
-              <label class="clr-checkbox-wrapper cta-toggle">
-                <input
-                  type="checkbox"
-                  [checked]="tile.isEnabled"
-                  (change)="updateDisciplineTileEnabled(i, $any($event.target).checked)"
-                />
-                <span>Enabled</span>
-              </label>
-            </div>
-          </div>
-
-          <button type="button" class="btn btn-sm btn-secondary" (click)="addDisciplineTile()">Add discipline tile</button>
-        </vdr-card>
-
-        <vdr-card title="Landing Config (Storefront)">
-          <vdr-form-field
-            label="Category tiles JSON"
-            for="categoryTilesJson"
-            hint="Array of tile objects: id, title, subtitle, href, imageAssetId, hoverStyle, isEnabled"
-          >
-            <textarea
-              id="categoryTilesJson"
-              rows="10"
-              formControlName="categoryTilesJson"
-            ></textarea>
-          </vdr-form-field>
-
-          <vdr-form-field
-            label="Featured product slugs"
-            for="featuredProductSlugs"
-            hint="One slug per line (or comma-separated)"
-          >
-            <textarea
-              id="featuredProductSlugs"
-              rows="4"
-              formControlName="featuredProductSlugs"
-            ></textarea>
-          </vdr-form-field>
-        </vdr-card>
       </vdr-page-block>
     </form>
   `,
   styles: [
     `
-      .baseshop-grid {
+      .config-stack {
         display: grid;
         gap: 1rem;
-        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
       }
 
-      .asset-preview-frame {
-        width: 100%;
-        height: 180px;
-        border: 1px solid var(--clr-color-neutral-300);
-        border-radius: 8px;
-        overflow: hidden;
-        margin-bottom: 0.75rem;
-        background: var(--clr-color-neutral-50);
+      .config-card {
+        display: block;
       }
 
-      .asset-preview-frame img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
+      :host ::ng-deep .config-card .card {
+        border-radius: 12px;
+        border: 1px solid var(--clr-color-neutral-400);
+        background: var(--clr-global-app-background, var(--clr-color-neutral-0));
+        box-shadow: 0 4px 14px color-mix(in srgb, var(--clr-color-neutral-900) 10%, transparent);
       }
 
-      .asset-placeholder {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        width: 100%;
-        height: 100%;
-        color: var(--clr-color-neutral-600);
-        font-size: 0.875rem;
+      :host ::ng-deep .config-card .card-header {
+        border-bottom: 1px solid var(--clr-color-neutral-400);
+      }
+
+      :host ::ng-deep .config-card .card-title {
+        font-size: 0.95rem;
+        font-weight: 600;
+        letter-spacing: 0.01em;
       }
 
       .asset-actions {
@@ -659,10 +489,16 @@ const GET_ASSET_BY_ID = gql`
       }
 
       .tile-row {
-        border: 1px solid var(--clr-color-neutral-300);
-        border-radius: 8px;
-        padding: 0.75rem;
-        background: var(--clr-color-neutral-50);
+        border: 1px solid var(--clr-color-neutral-400);
+        border-radius: 10px;
+        padding: 0.85rem;
+        background: var(--clr-global-app-background, var(--clr-color-neutral-0));
+        transition: border-color 0.18s ease, box-shadow 0.18s ease;
+      }
+
+      .tile-row:hover {
+        border-color: var(--clr-color-primary-500);
+        box-shadow: 0 0 0 1px color-mix(in srgb, var(--clr-color-primary-500) 28%, transparent);
       }
 
       .tile-header {
@@ -672,15 +508,34 @@ const GET_ASSET_BY_ID = gql`
         margin-bottom: 0.5rem;
       }
 
+      .tile-header-stack {
+        align-items: flex-start;
+        flex-direction: column;
+        gap: 0.125rem;
+      }
+
       .tile-controls {
         display: flex;
         gap: 0.5rem;
         flex-wrap: wrap;
       }
 
+      .tile-controls .btn {
+        min-width: 3.25rem;
+      }
+
+      .tile-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 0.5rem;
+        font-size: 0.75rem;
+        color: var(--clr-color-neutral-600);
+      }
+
       .helper-text {
         margin: 0 0 0.75rem;
         color: var(--clr-color-neutral-700);
+        font-size: 0.85rem;
       }
 
       .tile-asset-picker {
@@ -691,11 +546,15 @@ const GET_ASSET_BY_ID = gql`
         width: 100%;
         max-width: 260px;
         height: 120px;
-        border: 1px solid var(--clr-color-neutral-300);
-        border-radius: 6px;
+        border: 1px solid var(--clr-color-neutral-400);
+        border-radius: 8px;
         overflow: hidden;
-        background: var(--clr-color-neutral-50);
+        background: var(--clr-color-neutral-100);
         margin-bottom: 0.5rem;
+      }
+
+      .tile-asset-preview-square {
+        max-width: 120px;
       }
 
       .tile-asset-preview-frame img {
@@ -713,36 +572,45 @@ const GET_ASSET_BY_ID = gql`
         color: var(--clr-color-neutral-600);
         font-size: 0.875rem;
       }
+
+      .empty-state {
+        border: 1px dashed var(--clr-color-neutral-500);
+        border-radius: 10px;
+        padding: 0.75rem;
+        color: var(--clr-color-neutral-700);
+        font-size: 0.875rem;
+      }
+
+      input[readonly] {
+        background: color-mix(in srgb, var(--clr-global-app-background, var(--clr-color-neutral-0)) 80%, var(--clr-color-neutral-300) 20%);
+      }
+
+      @media (max-width: 900px) {
+        :host ::ng-deep .config-card .card-block {
+          padding-left: 0.75rem;
+          padding-right: 0.75rem;
+        }
+      }
     `,
   ],
 })
 export class BaseShopConfigComponent implements OnInit, OnDestroy {
+  readonly maxRegularTopTiles = 5;
+
   form = this.formBuilder.group({
-    leftImageAssetId: this.formBuilder.control<string | null>(null),
-    rightImageAssetId: this.formBuilder.control<string | null>(null),
-    leftTitle: this.formBuilder.nonNullable.control(''),
-    leftBody: this.formBuilder.nonNullable.control(''),
-    leftCtaText: this.formBuilder.nonNullable.control(''),
-    leftCtaUrl: this.formBuilder.nonNullable.control(''),
-    leftCtaEnabled: this.formBuilder.nonNullable.control(true),
-    rightTitle: this.formBuilder.nonNullable.control(''),
-    rightBody: this.formBuilder.nonNullable.control(''),
-    rightCtaText: this.formBuilder.nonNullable.control(''),
-    rightCtaUrl: this.formBuilder.nonNullable.control(''),
-    rightCtaEnabled: this.formBuilder.nonNullable.control(true),
-    categoryTilesJson: this.formBuilder.nonNullable.control('[]'),
     featuredProductSlugs: this.formBuilder.nonNullable.control(''),
   });
 
   loading = true;
   saving = false;
-  leftAsset: AssetPreview | null = null;
-  rightAsset: AssetPreview | null = null;
+  loadingCategoryCatalog = false;
   topTiles: BaseShopTopTileData[] = [];
   disciplineTiles: BaseShopDisciplineTileData[] = [];
   topTileAssetsById = new Map<number, AssetPreview>();
   disciplineTileAssetsById = new Map<number, AssetPreview>();
 
+  private configuredDisciplineTiles: BaseShopDisciplineTileData[] = [];
+  private availableCategoriesBySlug = new Map<string, AvailableCategory>();
   private destroy$ = new Subject<void>();
 
   constructor(
@@ -752,23 +620,18 @@ export class BaseShopConfigComponent implements OnInit, OnDestroy {
     private notificationService: NotificationService,
   ) {}
 
+  get regularTopTileCount(): number {
+    return this.topTiles.filter((tile) => !this.isDiscoverMore(tile)).length;
+  }
+
   ngOnInit(): void {
     this.loadConfig();
+    void this.loadIconCategoryCatalog();
   }
 
   ngOnDestroy(): void {
     this.destroy$.next();
     this.destroy$.complete();
-  }
-
-  openAssetPicker(tile: TileKey): void {
-    this.openSingleAssetPicker((asset) => {
-      this.setAsset(tile, asset);
-    });
-  }
-
-  clearAsset(tile: TileKey): void {
-    this.setAsset(tile, null);
   }
 
   pickTopTileAsset(index: number): void {
@@ -806,6 +669,10 @@ export class BaseShopConfigComponent implements OnInit, OnDestroy {
   }
 
   addTopTile(): void {
+    if (this.regularTopTileCount >= this.maxRegularTopTiles) {
+      return;
+    }
+
     const nextTile: BaseShopTopTileData = {
       id: '',
       label: null,
@@ -816,12 +683,14 @@ export class BaseShopConfigComponent implements OnInit, OnDestroy {
       isEnabled: true,
       imageAssetId: null,
     };
+
     const discoverIndex = this.topTiles.findIndex((tile) => this.isDiscoverMore(tile));
     if (discoverIndex === -1) {
       this.topTiles = [nextTile, this.createDiscoverMoreTile()];
       this.topTileAssetsById.clear();
       return;
     }
+
     this.topTileAssetsById = this.shiftAssetMapForInsert(this.topTileAssetsById, discoverIndex);
     const next = [...this.topTiles];
     next.splice(discoverIndex, 0, nextTile);
@@ -833,6 +702,7 @@ export class BaseShopConfigComponent implements OnInit, OnDestroy {
     if (!tile || this.isDiscoverMore(tile)) {
       return;
     }
+
     this.topTileAssetsById = this.shiftAssetMapForRemoval(this.topTileAssetsById, index);
     this.topTiles = this.topTiles.filter((_, currentIndex) => currentIndex !== index);
   }
@@ -874,12 +744,18 @@ export class BaseShopConfigComponent implements OnInit, OnDestroy {
   ): void {
     const tile = this.topTiles[index];
     if (!tile) return;
+    if (this.isDiscoverMore(tile) && field === 'href') {
+      tile.href = '/shop?section=all';
+      return;
+    }
+
     const trimmed = value.trim();
     if (field === 'id') {
       tile.id = trimmed;
     } else {
       tile[field] = trimmed.length > 0 ? value : null;
     }
+
     if (field === 'imageAssetId') {
       this.topTileAssetsById.delete(index);
     }
@@ -897,76 +773,18 @@ export class BaseShopConfigComponent implements OnInit, OnDestroy {
     tile.isEnabled = value;
   }
 
-  addDisciplineTile(): void {
-    this.disciplineTiles = [
-      ...this.disciplineTiles,
-      {
-        id: '',
-        labelOverride: null,
-        order: this.disciplineTiles.length,
-        isEnabled: true,
-        imageAssetId: null,
-      },
-    ];
-  }
-
-  removeDisciplineTile(index: number): void {
-    this.disciplineTileAssetsById = this.shiftAssetMapForRemoval(this.disciplineTileAssetsById, index);
-    this.disciplineTiles = this.disciplineTiles.filter((_, currentIndex) => currentIndex !== index);
-  }
-
-  moveDisciplineTileUp(index: number): void {
-    if (index <= 0 || index >= this.disciplineTiles.length) {
-      return;
-    }
-    this.swapDisciplineTiles(index, index - 1);
-  }
-
-  moveDisciplineTileDown(index: number): void {
-    if (index < 0 || index >= this.disciplineTiles.length - 1) {
-      return;
-    }
-    this.swapDisciplineTiles(index, index + 1);
-  }
-
-  swapDisciplineTiles(a: number, b: number): void {
-    if (a < 0 || b < 0 || a >= this.disciplineTiles.length || b >= this.disciplineTiles.length || a === b) {
-      return;
-    }
-    const next = [...this.disciplineTiles];
-    [next[a], next[b]] = [next[b], next[a]];
-    this.disciplineTiles = next;
-    this.swapAssetMapEntries(this.disciplineTileAssetsById, a, b);
-  }
-
   updateDisciplineTileText(
     index: number,
-    field: 'id' | 'labelOverride' | 'imageAssetId',
+    field: 'labelOverride' | 'imageAssetId',
     value: string,
   ): void {
     const tile = this.disciplineTiles[index];
     if (!tile) return;
     const trimmed = value.trim();
-    if (field === 'id') {
-      tile.id = trimmed;
-    } else {
-      tile[field] = trimmed.length > 0 ? value : null;
-    }
+    tile[field] = trimmed.length > 0 ? value : null;
     if (field === 'imageAssetId') {
       this.disciplineTileAssetsById.delete(index);
     }
-  }
-
-  updateDisciplineTileOrder(index: number, value: string): void {
-    const tile = this.disciplineTiles[index];
-    if (!tile) return;
-    const trimmed = value.trim();
-    if (!trimmed) {
-      tile.order = null;
-      return;
-    }
-    const parsed = Number.parseInt(trimmed, 10);
-    tile.order = Number.isFinite(parsed) ? parsed : null;
   }
 
   updateDisciplineTileEnabled(index: number, value: boolean): void {
@@ -975,15 +793,20 @@ export class BaseShopConfigComponent implements OnInit, OnDestroy {
     tile.isEnabled = value;
   }
 
+  resolveCategoryName(slug: string): string {
+    return this.availableCategoriesBySlug.get(slug)?.name ?? this.humanizeSlug(slug);
+  }
+
+  resolveCategoryCount(slug: string): number | null {
+    return this.availableCategoriesBySlug.get(slug)?.count ?? null;
+  }
+
   isDiscoverMore(tile: BaseShopTopTileData): boolean {
     return tile.kind === 'exploreMore';
   }
 
   save(): void {
     const input = this.getInput();
-    if (!input) {
-      return;
-    }
 
     this.saving = true;
     this.dataService
@@ -999,10 +822,10 @@ export class BaseShopConfigComponent implements OnInit, OnDestroy {
       .subscribe({
         next: ({ updateBaseShopConfig }) => {
           this.applyConfig(updateBaseShopConfig);
-          this.notificationService.success('Baseshop settings saved');
+          this.notificationService.success('Shop landing page saved');
         },
         error: () => {
-          this.notificationService.error('Could not save Baseshop settings');
+          this.notificationService.error('Could not save shop landing page');
         },
       });
   }
@@ -1021,76 +844,134 @@ export class BaseShopConfigComponent implements OnInit, OnDestroy {
       .subscribe({
         next: (config) => this.applyConfig(config),
         error: () => {
-          this.notificationService.error('Could not load Baseshop settings');
+          this.notificationService.error('Could not load shop landing page');
         },
       });
+  }
+
+  private async loadIconCategoryCatalog(): Promise<void> {
+    this.loadingCategoryCatalog = true;
+
+    try {
+      const take = 100;
+      let skip = 0;
+      let totalItems = 0;
+      const bySlug = new Map<string, AvailableCategory>();
+
+      do {
+        const page = await firstValueFrom(
+          this.dataService
+            .query<IconCategoryProductsQuery, IconCategoryProductsVariables>(GET_ICON_CATEGORY_PRODUCTS, {
+              options: {
+                take,
+                skip,
+                filter: {
+                  isIconProduct: {
+                    eq: true,
+                  },
+                },
+              },
+            })
+            .mapSingle((result) => result.products),
+        );
+
+        const items = page?.items ?? [];
+        totalItems = page?.totalItems ?? 0;
+
+        for (const item of items) {
+          const customFields = item.customFields;
+          const categories = Array.isArray(customFields?.iconCategories)
+            ? customFields.iconCategories
+            : [];
+
+          const validCategories = categories
+            .filter((value): value is string => typeof value === 'string' && value.trim().length > 0)
+            .map((value) => value.trim());
+
+          const isIconProduct = customFields?.isIconProduct === true || validCategories.length > 0;
+          if (!isIconProduct) {
+            continue;
+          }
+
+          for (const categoryNameRaw of validCategories) {
+            const categoryName = this.normalizeCategoryName(categoryNameRaw);
+            const slug = this.toCategorySlug(categoryName);
+            const existing = bySlug.get(slug);
+            if (existing) {
+              existing.count += 1;
+              continue;
+            }
+            bySlug.set(slug, {
+              slug,
+              name: categoryName,
+              count: 1,
+            });
+          }
+        }
+
+        if (items.length === 0) {
+          break;
+        }
+        skip += items.length;
+      } while (skip < totalItems);
+
+      this.availableCategoriesBySlug = new Map(
+        [...bySlug.entries()].sort((a, b) => a[1].name.localeCompare(b[1].name)),
+      );
+      this.rebuildDisciplineTiles();
+    } catch {
+      this.notificationService.error('Could not load icon category list');
+    } finally {
+      this.loadingCategoryCatalog = false;
+    }
   }
 
   private applyConfig(config: BaseShopConfigData): void {
     this.topTiles = this.normalizeTopTiles(config.topTiles ?? []);
-    this.disciplineTiles = this.normalizeDisciplineTiles(config.disciplineTiles ?? []);
-    this.loadRepeaterAssetPreviews();
+    this.configuredDisciplineTiles = this.normalizeDisciplineTiles(config.disciplineTiles ?? []);
+    this.rebuildDisciplineTiles();
+
     this.form.patchValue({
-      leftImageAssetId: config.leftImageAssetId,
-      rightImageAssetId: config.rightImageAssetId,
-      leftTitle: config.leftTitle ?? '',
-      leftBody: config.leftBody ?? '',
-      leftCtaText: config.leftCtaText ?? '',
-      leftCtaUrl: config.leftCtaUrl ?? '',
-      leftCtaEnabled: config.leftCtaEnabled,
-      rightTitle: config.rightTitle ?? '',
-      rightBody: config.rightBody ?? '',
-      rightCtaText: config.rightCtaText ?? '',
-      rightCtaUrl: config.rightCtaUrl ?? '',
-      rightCtaEnabled: config.rightCtaEnabled,
-      categoryTilesJson: JSON.stringify(config.categoryTiles ?? [], null, 2),
       featuredProductSlugs: (config.featuredProductSlugs ?? []).join('\n'),
     });
     this.form.markAsPristine();
-    this.loadAssetPreview('left', config.leftImageAssetId);
-    this.loadAssetPreview('right', config.rightImageAssetId);
   }
 
-  private loadAssetPreview(tile: TileKey, id: string | null): void {
-    if (!id) {
-      if (tile === 'left') {
-        this.leftAsset = null;
-      } else {
-        this.rightAsset = null;
-      }
-      return;
-    }
+  private rebuildDisciplineTiles(): void {
+    const existingBySlug = new Map<string, BaseShopDisciplineTileData>();
 
-    this.dataService
-      .query<AssetByIdQuery, AssetByIdVariables>(GET_ASSET_BY_ID, { id })
-      .mapSingle((result) => result.asset)
-      .pipe(takeUntil(this.destroy$))
-      .subscribe({
-        next: (asset) => {
-          if (!asset) {
-            this.setAsset(tile, null, false);
-            return;
-          }
-          this.setAsset(tile, asset, false);
-        },
-        error: () => this.setAsset(tile, null, false),
+    for (const tile of this.configuredDisciplineTiles) {
+      const slug = this.toCategorySlug(tile.id ?? '');
+      if (!slug) {
+        continue;
+      }
+      existingBySlug.set(slug, {
+        ...tile,
+        id: slug,
       });
-  }
-
-  private setAsset(tile: TileKey, asset: AssetPreview | null, markDirty = true): void {
-    if (tile === 'left') {
-      this.leftAsset = asset;
-      this.form.controls.leftImageAssetId.setValue(asset?.id ?? null);
-      if (markDirty) {
-        this.form.controls.leftImageAssetId.markAsDirty();
-      }
-    } else {
-      this.rightAsset = asset;
-      this.form.controls.rightImageAssetId.setValue(asset?.id ?? null);
-      if (markDirty) {
-        this.form.controls.rightImageAssetId.markAsDirty();
-      }
     }
+
+    const fromCatalog = [...this.availableCategoriesBySlug.keys()].map((slug, index) => {
+      const existing = existingBySlug.get(slug);
+      return {
+        id: slug,
+        labelOverride: existing?.labelOverride ?? null,
+        order: existing?.order ?? index,
+        isEnabled: existing?.isEnabled !== false,
+        imageAssetId: existing?.imageAssetId ?? null,
+      } satisfies BaseShopDisciplineTileData;
+    });
+
+    const legacyOnly = [...existingBySlug.values()]
+      .filter((tile) => !this.availableCategoriesBySlug.has(tile.id))
+      .sort((a, b) => (a.order ?? Number.MAX_SAFE_INTEGER) - (b.order ?? Number.MAX_SAFE_INTEGER));
+
+    this.disciplineTiles = [...fromCatalog, ...legacyOnly].map((tile, index) => ({
+      ...tile,
+      order: typeof tile.order === 'number' ? tile.order : index,
+    }));
+
+    this.loadRepeaterAssetPreviews();
   }
 
   private openSingleAssetPicker(onSelected: (asset: AssetPreview) => void): void {
@@ -1164,9 +1045,11 @@ export class BaseShopConfigComponent implements OnInit, OnDestroy {
   private loadRepeaterAssetPreviews(): void {
     this.topTileAssetsById.clear();
     this.disciplineTileAssetsById.clear();
+
     this.topTiles.forEach((tile, index) => {
       this.loadIndexedAssetPreview(this.topTileAssetsById, index, tile.imageAssetId);
     });
+
     this.disciplineTiles.forEach((tile, index) => {
       this.loadIndexedAssetPreview(this.disciplineTileAssetsById, index, tile.imageAssetId);
     });
@@ -1198,17 +1081,8 @@ export class BaseShopConfigComponent implements OnInit, OnDestroy {
       });
   }
 
-  private getInput(): BaseShopConfigInput | null {
+  private getInput(): BaseShopConfigInput {
     const value = this.form.getRawValue();
-    let categoryTiles: BaseShopConfigInput['categoryTiles'] = [];
-
-    try {
-      categoryTiles = this.parseCategoryTiles(value.categoryTilesJson);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : 'Invalid category tiles JSON';
-      this.notificationService.error(message);
-      return null;
-    }
 
     const topTiles = this.topTiles.map((tile, index) => {
       const discover = this.isDiscoverMore(tile);
@@ -1216,7 +1090,7 @@ export class BaseShopConfigComponent implements OnInit, OnDestroy {
         id: this.toNullableString(tile.id ?? '') ?? (discover ? 'explore-more' : `top-tile-${index + 1}`),
         label: this.toNullableString(tile.label ?? ''),
         subtitle: this.toNullableString(tile.subtitle ?? ''),
-        href: this.toNullableString(tile.href ?? ''),
+        href: discover ? '/shop?section=all' : this.toNullableString(tile.href ?? ''),
         hoverStyle: this.toNullableString(tile.hoverStyle ?? '') ?? 'ring-blue',
         kind: discover ? 'exploreMore' : this.toNullableString(tile.kind ?? '') ?? 'section',
         isEnabled: discover ? true : tile.isEnabled !== false,
@@ -1227,25 +1101,12 @@ export class BaseShopConfigComponent implements OnInit, OnDestroy {
     const disciplineTiles = this.disciplineTiles.map((tile, index) => ({
       id: this.toNullableString(tile.id ?? '') ?? `discipline-${index + 1}`,
       labelOverride: this.toNullableString(tile.labelOverride ?? ''),
-      order: typeof tile.order === 'number' ? tile.order : null,
+      order: index,
       isEnabled: tile.isEnabled !== false,
       imageAssetId: this.toNullableString(tile.imageAssetId ?? ''),
     }));
 
     return {
-      leftImageAssetId: value.leftImageAssetId,
-      rightImageAssetId: value.rightImageAssetId,
-      leftTitle: this.toNullableString(value.leftTitle),
-      leftBody: this.toNullableString(value.leftBody),
-      leftCtaText: this.toNullableString(value.leftCtaText),
-      leftCtaUrl: this.toNullableString(value.leftCtaUrl),
-      leftCtaEnabled: value.leftCtaEnabled,
-      rightTitle: this.toNullableString(value.rightTitle),
-      rightBody: this.toNullableString(value.rightBody),
-      rightCtaText: this.toNullableString(value.rightCtaText),
-      rightCtaUrl: this.toNullableString(value.rightCtaUrl),
-      rightCtaEnabled: value.rightCtaEnabled,
-      categoryTiles,
       topTiles,
       disciplineTiles,
       featuredProductSlugs: this.parseFeaturedProductSlugs(value.featuredProductSlugs),
@@ -1255,32 +1116,6 @@ export class BaseShopConfigComponent implements OnInit, OnDestroy {
   private toNullableString(value: string): string | null {
     const trimmed = value.trim();
     return trimmed.length > 0 ? trimmed : null;
-  }
-
-  private parseCategoryTiles(value: string): BaseShopConfigInput['categoryTiles'] {
-    const trimmed = value.trim();
-    if (!trimmed) return [];
-
-    const parsed = JSON.parse(trimmed) as unknown;
-    if (!Array.isArray(parsed)) {
-      throw new Error('Category tiles must be a JSON array');
-    }
-
-    return parsed.map((entry, index) => {
-      if (!entry || typeof entry !== 'object' || Array.isArray(entry)) {
-        throw new Error(`Category tile at index ${index} must be an object`);
-      }
-      const tile = entry as Record<string, unknown>;
-      return {
-        id: this.toNullableStringFromUnknown(tile.id) ?? `tile-${index + 1}`,
-        title: this.toNullableStringFromUnknown(tile.title),
-        subtitle: this.toNullableStringFromUnknown(tile.subtitle),
-        href: this.toNullableStringFromUnknown(tile.href),
-        imageAssetId: this.toNullableStringFromUnknown(tile.imageAssetId),
-        hoverStyle: this.toNullableStringFromUnknown(tile.hoverStyle),
-        isEnabled: typeof tile.isEnabled === 'boolean' ? tile.isEnabled : true,
-      };
-    });
   }
 
   private parseFeaturedProductSlugs(value: string): string[] {
@@ -1305,10 +1140,16 @@ export class BaseShopConfigComponent implements OnInit, OnDestroy {
       isEnabled: tile.isEnabled !== false,
       imageAssetId: tile.imageAssetId ?? null,
     }));
+
     const discoverMoreTile = normalizedTiles.find((tile) => this.isDiscoverMore(tile)) ?? this.createDiscoverMoreTile();
     discoverMoreTile.kind = 'exploreMore';
     discoverMoreTile.isEnabled = true;
-    const nonDiscoverTiles = normalizedTiles.filter((tile) => !this.isDiscoverMore(tile));
+    discoverMoreTile.href = '/shop?section=all';
+
+    const nonDiscoverTiles = normalizedTiles
+      .filter((tile) => !this.isDiscoverMore(tile))
+      .slice(0, this.maxRegularTopTiles);
+
     return [...nonDiscoverTiles, discoverMoreTile];
   }
 
@@ -1317,7 +1158,7 @@ export class BaseShopConfigComponent implements OnInit, OnDestroy {
       id: 'explore-more',
       label: 'Discover more',
       subtitle: null,
-      href: '/shop',
+      href: '/shop?section=all',
       hoverStyle: 'ring-blue',
       kind: 'exploreMore',
       isEnabled: true,
@@ -1327,7 +1168,7 @@ export class BaseShopConfigComponent implements OnInit, OnDestroy {
 
   private normalizeDisciplineTiles(tiles: BaseShopDisciplineTileData[]): BaseShopDisciplineTileData[] {
     return (tiles ?? []).map((tile, index) => ({
-      id: tile.id ?? `discipline-${index + 1}`,
+      id: this.toCategorySlug(tile.id ?? `discipline-${index + 1}`),
       labelOverride: tile.labelOverride ?? null,
       order: typeof tile.order === 'number' ? tile.order : index,
       isEnabled: tile.isEnabled !== false,
@@ -1335,7 +1176,36 @@ export class BaseShopConfigComponent implements OnInit, OnDestroy {
     }));
   }
 
-  private toNullableStringFromUnknown(value: unknown): string | null {
-    return typeof value === 'string' ? this.toNullableString(value) : null;
+  private normalizeCategoryName(input: string): string {
+    const trimmed = input.trim();
+    return trimmed || 'Uncategorised';
+  }
+
+  private toCategorySlug(input: string): string {
+    return this.normalizeCategoryName(input)
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-+|-+$/g, '') || 'uncategorised';
+  }
+
+  private humanizeSlug(value: string): string {
+    const acronymMap: Record<string, string> = {
+      hvac: 'HVAC',
+    };
+
+    return value
+      .trim()
+      .replace(/[-_]+/g, ' ')
+      .split(/\s+/)
+      .filter(Boolean)
+      .map((word) => {
+        const lower = word.toLowerCase();
+        if (acronymMap[lower]) {
+          return acronymMap[lower];
+        }
+        return lower.charAt(0).toUpperCase() + lower.slice(1);
+      })
+      .join(' ');
   }
 }

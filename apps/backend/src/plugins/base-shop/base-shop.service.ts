@@ -2,35 +2,11 @@ import { Injectable } from '@nestjs/common';
 import { RequestContext, TransactionalConnection } from '@vendure/core';
 import {
   BaseShopConfig,
-  type BaseShopCategoryTile,
   type BaseShopDisciplineTile,
   type BaseShopTopTile,
 } from './base-shop-config.entity';
 
-export type UpdateBaseShopCategoryTileInput = {
-  id?: string | null;
-  title?: string | null;
-  subtitle?: string | null;
-  href?: string | null;
-  imageAssetId?: string | null;
-  hoverStyle?: string | null;
-  isEnabled?: boolean;
-};
-
 export type UpdateBaseShopConfigInput = {
-  leftImageAssetId?: string | null;
-  rightImageAssetId?: string | null;
-  leftTitle?: string | null;
-  leftBody?: string | null;
-  leftCtaText?: string | null;
-  leftCtaUrl?: string | null;
-  leftCtaEnabled?: boolean;
-  rightTitle?: string | null;
-  rightBody?: string | null;
-  rightCtaText?: string | null;
-  rightCtaUrl?: string | null;
-  rightCtaEnabled?: boolean;
-  categoryTiles?: UpdateBaseShopCategoryTileInput[] | null;
   topTiles?: UpdateBaseShopTopTileInput[] | null;
   disciplineTiles?: UpdateBaseShopDisciplineTileInput[] | null;
   featuredProductSlugs?: string[] | null;
@@ -56,7 +32,6 @@ export type UpdateBaseShopDisciplineTileInput = {
 };
 
 export type BaseShopPublicConfig = {
-  categoryTiles: BaseShopCategoryTile[];
   featuredProductSlugs: string[];
   topTiles: BaseShopTopTile[];
   disciplineTiles: BaseShopDisciplineTile[];
@@ -76,7 +51,6 @@ export class BaseShopService {
     const disciplineTiles = this.normalizeDisciplineTiles(config.disciplineTiles ?? []) ?? [];
 
     return {
-      categoryTiles: (config.categoryTiles ?? []).filter((tile) => tile.isEnabled),
       featuredProductSlugs: config.featuredProductSlugs ?? [],
       topTiles: topTiles.filter((tile) => tile.isEnabled),
       disciplineTiles: this.sortPublicDisciplineTiles(disciplineTiles.filter((tile) => tile.isEnabled)),
@@ -102,9 +76,6 @@ export class BaseShopService {
 
     if (!config) {
       config = repo.create({
-        leftCtaEnabled: true,
-        rightCtaEnabled: true,
-        categoryTiles: [],
         topTiles: [],
         disciplineTiles: [],
         featuredProductSlugs: [],
@@ -112,7 +83,6 @@ export class BaseShopService {
       config = await repo.save(config);
     }
 
-    config.categoryTiles = config.categoryTiles ?? [];
     config.topTiles = this.normalizeTopTiles(config.topTiles ?? []) ?? [];
     config.disciplineTiles = this.normalizeDisciplineTiles(config.disciplineTiles ?? []) ?? [];
     config.featuredProductSlugs = config.featuredProductSlugs ?? [];
@@ -121,49 +91,6 @@ export class BaseShopService {
   }
 
   private applyInput(config: BaseShopConfig, input: UpdateBaseShopConfigInput) {
-    const leftImageAssetId = this.normalizeNullableString(input.leftImageAssetId);
-    if (leftImageAssetId !== undefined) config.leftImageAssetId = leftImageAssetId;
-
-    const rightImageAssetId = this.normalizeNullableString(input.rightImageAssetId);
-    if (rightImageAssetId !== undefined) config.rightImageAssetId = rightImageAssetId;
-
-    const leftTitle = this.normalizeNullableString(input.leftTitle);
-    if (leftTitle !== undefined) config.leftTitle = leftTitle;
-
-    const leftBody = this.normalizeNullableString(input.leftBody);
-    if (leftBody !== undefined) config.leftBody = leftBody;
-
-    const leftCtaText = this.normalizeNullableString(input.leftCtaText);
-    if (leftCtaText !== undefined) config.leftCtaText = leftCtaText;
-
-    const leftCtaUrl = this.normalizeNullableString(input.leftCtaUrl);
-    if (leftCtaUrl !== undefined) config.leftCtaUrl = leftCtaUrl;
-
-    if (typeof input.leftCtaEnabled === 'boolean') {
-      config.leftCtaEnabled = input.leftCtaEnabled;
-    }
-
-    const rightTitle = this.normalizeNullableString(input.rightTitle);
-    if (rightTitle !== undefined) config.rightTitle = rightTitle;
-
-    const rightBody = this.normalizeNullableString(input.rightBody);
-    if (rightBody !== undefined) config.rightBody = rightBody;
-
-    const rightCtaText = this.normalizeNullableString(input.rightCtaText);
-    if (rightCtaText !== undefined) config.rightCtaText = rightCtaText;
-
-    const rightCtaUrl = this.normalizeNullableString(input.rightCtaUrl);
-    if (rightCtaUrl !== undefined) config.rightCtaUrl = rightCtaUrl;
-
-    if (typeof input.rightCtaEnabled === 'boolean') {
-      config.rightCtaEnabled = input.rightCtaEnabled;
-    }
-
-    const categoryTiles = this.normalizeCategoryTiles(input.categoryTiles);
-    if (categoryTiles !== undefined) {
-      config.categoryTiles = categoryTiles;
-    }
-
     const topTiles = this.normalizeTopTiles(input.topTiles);
     if (topTiles !== undefined) {
       config.topTiles = topTiles;
@@ -180,40 +107,20 @@ export class BaseShopService {
     }
   }
 
-  private normalizeNullableString(value: string | null | undefined): string | null | undefined {
+  private normalizeNullableString(value: unknown): string | null | undefined {
     if (value === undefined) return undefined;
     if (value === null) return null;
+
+    // Accept numbers (e.g. asset IDs) and strings. Reject everything else.
+    if (typeof value === 'number') {
+      const normalized = String(value).trim();
+      return normalized.length > 0 ? normalized : null;
+    }
+
+    if (typeof value !== 'string') return null;
+
     const normalized = value.trim();
     return normalized.length > 0 ? normalized : null;
-  }
-
-  private normalizeCategoryTiles(
-    value: UpdateBaseShopCategoryTileInput[] | null | undefined,
-  ): BaseShopCategoryTile[] | undefined {
-    if (value === undefined) return undefined;
-    if (value === null) return [];
-
-    return value
-      .map((tile, index) => {
-        const id = this.normalizeNullableString(tile.id) ?? `tile-${index + 1}`;
-        const title = this.normalizeNullableString(tile.title) ?? null;
-        const subtitle = this.normalizeNullableString(tile.subtitle) ?? null;
-        const href = this.normalizeNullableString(tile.href) ?? null;
-        const imageAssetId = this.normalizeNullableString(tile.imageAssetId) ?? null;
-        const hoverStyle = this.normalizeNullableString(tile.hoverStyle) ?? null;
-        const isEnabled = typeof tile.isEnabled === 'boolean' ? tile.isEnabled : true;
-
-        return {
-          id,
-          title,
-          subtitle,
-          href,
-          imageAssetId,
-          hoverStyle,
-          isEnabled,
-        };
-      })
-      .filter((tile) => Boolean(tile.title || tile.subtitle || tile.href || tile.imageAssetId));
   }
 
   private normalizeTopTiles(
@@ -227,7 +134,7 @@ export class BaseShopService {
       const label = this.normalizeNullableString(tile.label) ?? null;
       const subtitle = this.normalizeNullableString(tile.subtitle) ?? null;
       const href = this.normalizeNullableString(tile.href) ?? null;
-      const imageAssetId = this.normalizeNullableString(tile.imageAssetId) ?? null;
+      const imageAssetId = this.normalizeNullableString((tile as any).imageAssetId) ?? null;
       const hoverStyle = this.normalizeNullableString(tile.hoverStyle) ?? null;
       const kind = this.normalizeNullableString(tile.kind) ?? null;
       const isEnabled = this.coerceBoolean(tile.isEnabled, true);
@@ -271,7 +178,8 @@ export class BaseShopService {
   }
 
   private applyTopTileRules(tiles: BaseShopTopTile[]): BaseShopTopTile[] {
-    const nonExploreTiles = tiles.filter((tile) => tile.kind !== 'exploreMore');
+    const maxRegularTiles = 5;
+    const nonExploreTiles = tiles.filter((tile) => tile.kind !== 'exploreMore').slice(0, maxRegularTiles);
     const existingExploreMore = tiles.find((tile) => tile.kind === 'exploreMore');
 
     const discoverMoreTile: BaseShopTopTile = existingExploreMore
@@ -279,7 +187,7 @@ export class BaseShopService {
         ...existingExploreMore,
         id: existingExploreMore.id || 'explore-more',
         label: 'Discover more',
-        href: '/shop',
+        href: '/shop?section=all',
         hoverStyle: existingExploreMore.hoverStyle ?? 'ring-blue',
         isEnabled: true,
         kind: 'exploreMore',
@@ -288,31 +196,14 @@ export class BaseShopService {
         id: 'explore-more',
         label: 'Discover more',
         subtitle: null,
-        href: '/shop',
+        href: '/shop?section=all',
         imageAssetId: null,
         hoverStyle: 'ring-blue',
         isEnabled: true,
         kind: 'exploreMore',
       };
 
-    const maxEnabledRegularTiles = 5;
-    let enabledRegularTiles = 0;
-
-    const normalizedRegularTiles = nonExploreTiles.map((tile) => {
-      if (!tile.isEnabled) {
-        return tile;
-      }
-      if (enabledRegularTiles < maxEnabledRegularTiles) {
-        enabledRegularTiles += 1;
-        return tile;
-      }
-      return {
-        ...tile,
-        isEnabled: false,
-      };
-    });
-
-    return [...normalizedRegularTiles, discoverMoreTile];
+    return [...nonExploreTiles, discoverMoreTile];
   }
 
   private sortPublicDisciplineTiles(tiles: BaseShopDisciplineTile[]): BaseShopDisciplineTile[] {

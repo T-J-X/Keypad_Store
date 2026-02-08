@@ -3,7 +3,6 @@ import { cache } from 'react';
 import type {
   BaseShopDisciplineTile,
   BaseShopTopTile,
-  BaseShopCategoryTile,
   BaseShopPublicConfig,
   CatalogProduct,
   IconProduct,
@@ -140,7 +139,6 @@ type ProductListResponse = {
 
 type BaseShopConfigPublicResponse = {
   baseShopConfigPublic: {
-    categoryTiles?: BaseShopCategoryTile[] | null;
     featuredProductSlugs?: string[] | null;
     topTiles?: BaseShopTopTile[] | null;
     disciplineTiles?: BaseShopDisciplineTile[] | null;
@@ -152,52 +150,50 @@ export type IconPageResult = {
   totalItems: number;
 };
 
-export const fetchBaseShopConfigPublic = cache(async (): Promise<BaseShopPublicConfig> => {
-  const query = `
-    query BaseShopConfigPublic {
-      baseShopConfigPublic {
-        categoryTiles {
-          id
-          title
-          subtitle
-          href
-          imageAssetId
-          imagePreview
-          imageSource
-          hoverStyle
-          isEnabled
-        }
-        featuredProductSlugs
-        topTiles {
-          id
-          label
-          subtitle
-          href
-          hoverStyle
-          kind
-          isEnabled
-          imagePreview
-          imageSource
-          imageAssetId
-        }
-        disciplineTiles {
-          id
-          labelOverride
-          order
-          isEnabled
-          imagePreview
-          imageSource
-          imageAssetId
-        }
+const SHOP_LANDING_TOP_TILE_FIELDS = `
+  id
+  label
+  subtitle
+  href
+  hoverStyle
+  kind
+  isEnabled
+  imagePreview
+  imageSource
+  imageAssetId
+`;
+
+const SHOP_LANDING_SUBCATEGORY_ICON_FIELDS = `
+  id
+  labelOverride
+  order
+  isEnabled
+  imagePreview
+  imageSource
+  imageAssetId
+`;
+
+const SHOP_LANDING_CONTENT_QUERY = `
+  query ShopLandingContent {
+    baseShopConfigPublic {
+      featuredProductSlugs
+      topTiles {
+        ${SHOP_LANDING_TOP_TILE_FIELDS}
+      }
+      disciplineTiles {
+        ${SHOP_LANDING_SUBCATEGORY_ICON_FIELDS}
       }
     }
-  `;
+  }
+`;
 
+export async function fetchShopLandingContent(): Promise<BaseShopPublicConfig> {
+  // This stays non-sticky so icon swaps in Vendure content reflect immediately.
+  // vendureFetch() already uses fetch(cache: 'no-store').
   try {
-    const data = await vendureFetch<BaseShopConfigPublicResponse>(query);
+    const data = await vendureFetch<BaseShopConfigPublicResponse>(SHOP_LANDING_CONTENT_QUERY);
     const config = data.baseShopConfigPublic;
     return {
-      categoryTiles: (config?.categoryTiles ?? []).filter(Boolean),
       featuredProductSlugs: (config?.featuredProductSlugs ?? []).filter(
         (slug): slug is string => typeof slug === 'string' && slug.trim().length > 0,
       ),
@@ -206,13 +202,24 @@ export const fetchBaseShopConfigPublic = cache(async (): Promise<BaseShopPublicC
     };
   } catch {
     return {
-      categoryTiles: [],
       featuredProductSlugs: [],
       topTiles: [],
       disciplineTiles: [],
     };
   }
-});
+}
+
+export async function fetchBaseShopConfigPublic(): Promise<BaseShopPublicConfig> {
+  try {
+    return await fetchShopLandingContent();
+  } catch {
+    return {
+      featuredProductSlugs: [],
+      topTiles: [],
+      disciplineTiles: [],
+    };
+  }
+}
 
 const fetchAllProducts = cache(async (): Promise<CatalogProduct[]> => {
   let skip = 0;
