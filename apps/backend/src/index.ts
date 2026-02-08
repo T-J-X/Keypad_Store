@@ -318,6 +318,7 @@ export const config: VendureConfig = {
         extensions: [
           {
             extensionPath: path.join(__dirname, 'plugins/base-shop/ui'),
+            providers: ['providers.ts'],
             ngModules: [
               {
                 type: 'lazy',

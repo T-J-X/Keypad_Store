@@ -1,13 +1,23 @@
-import { addNavMenuItem } from '@vendure/admin-ui/core';
+import { addNavMenuItem, addNavMenuSection } from '@vendure/admin-ui/core';
 
 export default [
+  addNavMenuSection(
+    {
+      id: 'content',
+      label: 'Content',
+      icon: 'file',
+      items: [],
+    },
+    'settings'
+  ),
+
   addNavMenuItem(
     {
       id: 'baseshop',
-      label: 'Baseshop',
+      label: 'Base Shop',
       routerLink: ['/extensions', 'baseshop'],
       icon: 'image-gallery',
     },
-    'settings'
+    'content'
   ),
 ];
