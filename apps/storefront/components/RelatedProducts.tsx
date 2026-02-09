@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import { assetUrl, iconCategoriesFromProduct, type IconProduct } from '../lib/vendure';
 
 export default function RelatedProducts({
@@ -25,7 +26,15 @@ export default function RelatedProducts({
             >
               <div className="overflow-hidden rounded-2xl bg-[linear-gradient(to_bottom,#f4f4f5_0%,#e4e4e7_50%,#ffffff_100%)]">
                 {image ? (
-                  <img src={assetUrl(image)} alt={product.name} className="h-36 w-full object-contain p-4" loading="lazy" />
+                  <Image
+                    src={assetUrl(image)}
+                    alt={product.name}
+                    width={288}
+                    height={144}
+                    sizes="(max-width: 768px) 100vw, 33vw"
+                    className="h-36 w-full object-contain p-4"
+                    loading="lazy"
+                  />
                 ) : (
                   <div className="flex h-36 items-center justify-center text-xs font-semibold uppercase tracking-wide text-ink/40">
                     Render pending

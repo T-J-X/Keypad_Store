@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 import type { KeypadProduct } from '../lib/vendure';
 import { assetUrl } from '../lib/vendure';
 import { buttonPrimaryClass, buttonSecondaryClass } from './buttonStyles';
@@ -66,9 +67,12 @@ export default function KeypadCard({
         }`}
       >
         {image ? (
-          <img
+          <Image
             src={assetUrl(image)}
             alt={product.name}
+            width={448}
+            height={224}
+            sizes="(max-width: 768px) 100vw, 50vw"
             className={`${mediaHeightClass} w-full object-contain ${mediaPaddingClass}`}
             loading="lazy"
           />

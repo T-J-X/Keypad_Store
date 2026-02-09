@@ -22,14 +22,32 @@ import { BaseShopPlugin } from './plugins/base-shop';
 
 const host = 'localhost';
 const port = 3000;
+const isProduction = process.env.NODE_ENV === 'production';
 const adminPath = process.env.ADMIN_UI_PATH ?? 'admin';
+const devCorsOrigins = ['http://localhost:3000', 'http://localhost:3001'];
+const configuredCorsOrigins = (process.env.CORS_ORIGINS ?? '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+const corsOrigins = Array.from(
+  new Set(configuredCorsOrigins.length > 0 ? configuredCorsOrigins : devCorsOrigins),
+);
 const uiDevkitPackagePath = path.dirname(require.resolve('@vendure/ui-devkit/package.json'));
 const adminUiOutputPath = path.join(__dirname, '../admin-ui');
 const ngCompilerPath = require.resolve('@angular/cli/bin/ng.js', {
   paths: [uiDevkitPackagePath],
 });
 
-if (process.env.NODE_ENV !== 'production') {
+const superadminIdentifier = process.env.SUPERADMIN_USERNAME?.trim() || (isProduction ? '' : 'superadmin');
+const superadminPassword = process.env.SUPERADMIN_PASSWORD?.trim() || (isProduction ? '' : 'superadmin');
+
+if (isProduction && (!superadminIdentifier || !superadminPassword)) {
+  throw new Error(
+    'FATAL: SUPERADMIN_USERNAME and SUPERADMIN_PASSWORD must be set in production.',
+  );
+}
+
+if (!isProduction) {
   const envUrlsUsingIp = Object.entries(process.env).filter(([key, value]) => {
     return /url/i.test(key) && typeof value === 'string' && value.includes('127.0.0.1');
   });
@@ -63,22 +81,22 @@ export const config: VendureConfig = {
     adminApiPath: 'admin-api',
     shopApiPath: 'shop-api',
     cors: {
-      origin: ['http://localhost:3000'],
+      origin: corsOrigins,
       credentials: true,
     },
   },
   authOptions: {
-    // Use cookie-based sessions for the Admin UI (recommended for local dev).
+    // Use cookie-based sessions for the Admin UI.
     tokenMethod: 'cookie',
     superadminCredentials: {
-      identifier: process.env.SUPERADMIN_USERNAME ?? 'superadmin',
-      password: process.env.SUPERADMIN_PASSWORD ?? 'superadmin',
+      identifier: superadminIdentifier,
+      password: superadminPassword,
     },
-    // Dev-safe cookie settings (Chrome will otherwise silently drop/block cookies in some cases).
+    // Secure cookies in production, relaxed only for local HTTP development.
     cookieOptions: {
       name: 'vendure-auth',
       httpOnly: true,
-      secure: false,
+      secure: isProduction,
       sameSite: 'lax',
       path: '/',
     },

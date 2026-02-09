@@ -45,6 +45,34 @@ const fallbackTopTiles: BaseShopTopTile[] = [
   },
 ];
 
+const SAFE_EXTERNAL_PROTOCOLS = new Set(['http:', 'https:']);
+
+function getSafeUrl(url: string | null | undefined): string {
+  const value = (url ?? '').trim();
+  if (!value) return '/shop';
+  if (value.startsWith('/')) return value;
+  try {
+    const parsed = new URL(value);
+    if (SAFE_EXTERNAL_PROTOCOLS.has(parsed.protocol)) return parsed.toString();
+  } catch {
+    // Invalid URLs fall back to a safe in-app location.
+  }
+  return '/shop';
+}
+
+function useDebouncedValue<T>(value: T, delayMs: number): T {
+  const [debounced, setDebounced] = useState(value);
+
+  useEffect(() => {
+    const timeoutId = window.setTimeout(() => {
+      setDebounced(value);
+    }, delayMs);
+    return () => window.clearTimeout(timeoutId);
+  }, [value, delayMs]);
+
+  return debounced;
+}
+
 function toCardCategoryLabel(categoryNames: string[]) {
   if (categoryNames.length === 0) return 'Uncategorised';
   return categoryNames[0];
@@ -164,6 +192,7 @@ export default function ShopClient({
   const [take, setTake] = useState(initialTake);
   const lastParams = useRef('');
   const wasSpokeSectionRef = useRef(false);
+  const debouncedQuery = useDebouncedValue(query, 300);
 
   useEffect(() => {
     setQuery(initialQuery ?? '');
@@ -240,7 +269,7 @@ export default function ShopClient({
   useEffect(() => {
     const params = new URLSearchParams();
     if (activeSection !== 'landing') params.set('section', activeSection);
-    const trimmed = query.trim();
+    const trimmed = debouncedQuery.trim();
     if (trimmed) params.set('q', trimmed);
     if (activeSection === 'button-inserts' && activeCategorySlugs.length > 0) {
       params.set('cats', activeCategorySlugs.join(','));
@@ -254,7 +283,7 @@ export default function ShopClient({
     if (next === lastParams.current) return;
     lastParams.current = next;
     router.replace(`${pathname}${next ? `?${next}` : ''}`, { scroll: false });
-  }, [query, activeCategorySlugs, activeSection, page, take, pathname, router]);
+  }, [debouncedQuery, activeCategorySlugs, activeSection, page, take, pathname, router]);
 
   useEffect(() => {
     const isSpokeSection = activeSection === 'button-inserts' || activeSection === 'keypads';
@@ -265,7 +294,7 @@ export default function ShopClient({
     wasSpokeSectionRef.current = isSpokeSection;
   }, [activeSection, pathname]);
 
-  const queryTerms = useMemo(() => tokenizeSearchText(query), [query]);
+  const queryTerms = useMemo(() => tokenizeSearchText(debouncedQuery), [debouncedQuery]);
 
   const iconSearchIndex = useMemo(() => {
     return icons.map((icon) => ({
@@ -341,15 +370,15 @@ export default function ShopClient({
   };
 
   const onTopTileSelect = (tile: BaseShopTopTile) => {
-    const forcedHref = tile.kind === 'exploreMore' ? '/shop?section=all' : (tile.href ?? '').trim();
-    if (!forcedHref) return;
+    const forcedHref = tile.kind === 'exploreMore' ? '/shop?section=all' : tile.href;
+    const safeHref = getSafeUrl(forcedHref);
 
-    if (forcedHref.startsWith('/')) {
-      router.push(forcedHref);
+    if (safeHref.startsWith('/')) {
+      router.push(safeHref);
       return;
     }
 
-    window.location.assign(forcedHref);
+    window.location.assign(safeHref);
   };
 
   const onDisciplineTileSelect = (tile: { slug: string }) => {
@@ -669,7 +698,7 @@ export default function ShopClient({
             </div>
             <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
               {landingTopTiles.map((tile) => {
-                const href = (tile.href ?? '').trim();
+                const href = tile.kind === 'exploreMore' ? '/shop?section=all' : (tile.href ?? '').trim();
                 const isInteractive = href.length > 0 && tile.isEnabled !== false;
                 const shouldUseRingBlue = isInteractive && (tile.hoverStyle ?? 'ring-blue') !== 'none';
                 const isExploreMoreTile = tile.kind === 'exploreMore';

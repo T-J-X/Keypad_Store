@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { assetUrl, type CatalogProduct } from '../../lib/vendure';
 import PurchasePanel from './PurchasePanel';
 
@@ -36,9 +37,12 @@ export default function ProductHero({
           <div className="flex h-[460px] w-full items-center justify-center overflow-hidden rounded-3xl bg-white">
             <div className="flex h-[200px] w-[200px] items-center justify-center">
               {renderImage ? (
-                <img
+                <Image
                   src={assetUrl(renderImage)}
                   alt={product.name}
+                  width={200}
+                  height={200}
+                  sizes="200px"
                   className="h-full w-full object-contain drop-shadow-[0_5px_12px_rgba(41,69,122,0.30)]"
                   draggable={false}
                 />

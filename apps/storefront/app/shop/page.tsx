@@ -13,7 +13,6 @@ type SearchParams = {
 
 const PAGE_SIZE_OPTIONS = [24, 48, 96] as const;
 const DEFAULT_PAGE_SIZE = 24;
-const DEFAULT_SITE_URL = 'http://localhost:3001';
 
 function toStringParam(value?: string | string[]) {
   if (typeof value === 'string') return value;
@@ -38,12 +37,6 @@ function normalizeSection(value: string): 'landing' | 'all' | 'button-inserts' |
   if (value === 'keypads') return 'keypads';
   if (value === 'button-inserts' || value === 'icons' || value === 'inserts') return 'button-inserts';
   return 'landing';
-}
-
-function siteUrl() {
-  const configured = process.env.NEXT_PUBLIC_SITE_URL?.trim();
-  if (!configured) return DEFAULT_SITE_URL;
-  return configured.endsWith('/') ? configured.slice(0, -1) : configured;
 }
 
 function sectionSeo(section: 'landing' | 'all' | 'button-inserts' | 'keypads') {
@@ -115,7 +108,7 @@ export async function generateMetadata({
   const resolvedSearchParams = await searchParams;
   const section = normalizeSection(toStringParam(resolvedSearchParams?.section));
   const seo = sectionSeo(section);
-  const baseShopCanonical = `${siteUrl()}/shop`;
+  const baseShopCanonical = '/shop';
   const catsList = parseCanonicalCatsList(resolvedSearchParams?.cats, resolvedSearchParams?.cat);
 
   let canonical = baseShopCanonical;

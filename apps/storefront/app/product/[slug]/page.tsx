@@ -26,7 +26,6 @@ type ShopSection = 'button-inserts' | 'keypads';
 
 const PAGE_SIZE_OPTIONS = [24, 48, 96] as const;
 const DEFAULT_PAGE_SIZE = 24;
-const DEFAULT_SITE_URL = 'http://localhost:3001';
 
 function toStringParam(value?: string | string[]) {
   if (typeof value === 'string') return value;
@@ -75,12 +74,6 @@ function toCategoryLabelFromSlug(slug: string) {
     .join(' ');
 }
 
-function siteUrl() {
-  const configured = process.env.NEXT_PUBLIC_SITE_URL?.trim();
-  if (!configured) return DEFAULT_SITE_URL;
-  return configured.endsWith('/') ? configured.slice(0, -1) : configured;
-}
-
 function stripHtml(input: string) {
   return input.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
 }
@@ -100,9 +93,19 @@ function resolveSeoDescription(product: CatalogProduct) {
 
 function resolveCanonicalUrl(product: CatalogProduct, fallbackSlug: string) {
   const canonicalOverride = toTrimmedString(product.customFields?.seoCanonicalUrl);
-  if (canonicalOverride) return canonicalOverride;
+  if (canonicalOverride.startsWith('/')) return canonicalOverride;
+  if (canonicalOverride) {
+    try {
+      const parsed = new URL(canonicalOverride);
+      if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+        return parsed.toString();
+      }
+    } catch {
+      // Invalid canonical override falls back to the product path.
+    }
+  }
   const slug = product.slug || fallbackSlug;
-  return `${siteUrl()}/product/${encodeURIComponent(slug)}`;
+  return `/product/${encodeURIComponent(slug)}`;
 }
 
 export async function generateMetadata({
@@ -118,7 +121,7 @@ export async function generateMetadata({
       title: 'Product Not Found | Keypad Store',
       description: 'The requested product could not be found.',
       alternates: {
-        canonical: `${siteUrl()}/product/${encodeURIComponent(resolvedParams.slug)}`,
+        canonical: `/product/${encodeURIComponent(resolvedParams.slug)}`,
       },
       robots: {
         index: false,

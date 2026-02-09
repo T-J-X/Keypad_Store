@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import type { IconProduct } from '../lib/vendure';
 import { assetUrl } from '../lib/vendure';
@@ -92,9 +93,12 @@ export default function ProductCard({
       <div className="relative z-10 pointer-events-none flex flex-1 flex-col gap-4">
         {image ? (
           <div className="overflow-hidden rounded-2xl bg-[linear-gradient(to_bottom,#f4f4f5_0%,#e4e4e7_50%,#ffffff_100%)]">
-            <img
+            <Image
               src={assetUrl(image)}
               alt={product.name}
+              width={320}
+              height={160}
+              sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 25vw"
               className="h-40 w-full object-contain p-4"
               loading="lazy"
             />

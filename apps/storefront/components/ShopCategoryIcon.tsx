@@ -1,3 +1,4 @@
+import Image from 'next/image';
 import { assetUrl } from '../lib/vendure';
 
 export default function ShopCategoryIcon({
@@ -12,9 +13,12 @@ export default function ShopCategoryIcon({
   return (
     <div className="h-14 w-14 overflow-hidden rounded-2xl border border-[#1a3f77]/20 bg-[linear-gradient(150deg,#f4f8ff_0%,#ffffff_42%,#ecf3ff_100%)] shadow-[inset_0_0_0_1px_rgba(63,117,196,0.1),0_8px_18px_rgba(9,28,61,0.12)]">
       {src ? (
-        <img
+        <Image
           src={src}
           alt={alt}
+          width={56}
+          height={56}
+          sizes="56px"
           className="h-full w-full object-contain p-2"
           loading="lazy"
           decoding="async"

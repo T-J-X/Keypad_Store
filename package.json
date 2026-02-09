@@ -31,5 +31,13 @@
   },
   "dependencies": {
     "geist": "^1.7.0"
+  },
+  "pnpm": {
+    "overrides": {
+      "@apollo/server": "^4.13.0",
+      "bcrypt": "^6.0.0",
+      "fast-xml-parser": "^5.3.4",
+      "lodash": "^4.17.23"
+    }
   }
 }

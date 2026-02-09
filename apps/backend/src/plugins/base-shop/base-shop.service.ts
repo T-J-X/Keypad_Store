@@ -123,6 +123,21 @@ export class BaseShopService {
     return normalized.length > 0 ? normalized : null;
   }
 
+  private normalizeTopTileHref(value: unknown): string | null {
+    const normalized = this.normalizeNullableString(value);
+    if (!normalized) return null;
+    if (normalized.startsWith('/')) return normalized;
+    try {
+      const parsed = new URL(normalized);
+      if (parsed.protocol === 'http:' || parsed.protocol === 'https:') {
+        return parsed.toString();
+      }
+    } catch {
+      // Unsafe or malformed URLs are dropped.
+    }
+    return null;
+  }
+
   private normalizeTopTiles(
     value: UpdateBaseShopTopTileInput[] | BaseShopTopTile[] | null | undefined,
   ): BaseShopTopTile[] | undefined {
@@ -133,7 +148,7 @@ export class BaseShopService {
       const id = this.normalizeNullableString(tile.id) ?? `top-tile-${index + 1}`;
       const label = this.normalizeNullableString(tile.label) ?? null;
       const subtitle = this.normalizeNullableString(tile.subtitle) ?? null;
-      const href = this.normalizeNullableString(tile.href) ?? null;
+      const href = this.normalizeTopTileHref(tile.href);
       const imageAssetId = this.normalizeNullableString((tile as any).imageAssetId) ?? null;
       const hoverStyle = this.normalizeNullableString(tile.hoverStyle) ?? null;
       const kind = this.normalizeNullableString(tile.kind) ?? null;
