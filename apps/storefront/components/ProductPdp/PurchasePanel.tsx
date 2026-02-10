@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { categorySlug } from '../../lib/vendure';
 
@@ -24,6 +24,7 @@ export default function PurchasePanel({
   priceWithVatLabel,
   productVariantId,
   stock,
+  priceAndStockSlot,
 }: {
   productName: string;
   productTypeLabel: string;
@@ -35,6 +36,7 @@ export default function PurchasePanel({
   priceWithVatLabel?: string | null;
   productVariantId?: string;
   stock: StockSummary;
+  priceAndStockSlot?: ReactNode;
 }) {
   const router = useRouter();
   const [quantity, setQuantity] = useState(1);
@@ -201,14 +203,24 @@ export default function PurchasePanel({
         </div>
       </dl>
 
-      <div className="space-y-1">
-        <div className="text-sm font-semibold uppercase tracking-wide text-ink/55">Price</div>
-        <div className="flex items-end gap-2">
-          <div className="text-3xl font-semibold tracking-tight text-ink">{priceWithVatLabel ?? priceExVatLabel}</div>
-          <div className="pb-1 text-xs font-semibold tracking-wide text-ink/60">(INCL VAT)</div>
-        </div>
-        <div className="text-xs font-semibold tracking-wide text-ink/55">{priceExVatLabel} (EXCL VAT)</div>
-      </div>
+      {priceAndStockSlot ? (
+        priceAndStockSlot
+      ) : (
+        <>
+          <div className="space-y-1">
+            <div className="text-sm font-semibold uppercase tracking-wide text-ink/55">Price</div>
+            <div className="flex items-end gap-2">
+              <div className="text-3xl font-semibold tracking-tight text-ink">{priceWithVatLabel ?? priceExVatLabel}</div>
+              <div className="pb-1 text-xs font-semibold tracking-wide text-ink/60">(INCL VAT)</div>
+            </div>
+            <div className="text-xs font-semibold tracking-wide text-ink/55">{priceExVatLabel} (EXCL VAT)</div>
+          </div>
+
+          <div className="rounded-xl bg-white/80 px-3 py-2 text-sm text-ink/75">
+            {numericStockLeft !== null ? `Stock: ${numericStockLeft} left` : `Stock: ${humanizeStockLevel(stock.label)}`}
+          </div>
+        </>
+      )}
 
       <div className="space-y-2 text-sm">
         <div className="font-semibold text-ink">Quantity</div>
@@ -242,10 +254,6 @@ export default function PurchasePanel({
             +
           </button>
         </div>
-      </div>
-
-      <div className="rounded-xl bg-white/80 px-3 py-2 text-sm text-ink/75">
-        {numericStockLeft !== null ? `Stock: ${numericStockLeft} left` : `Stock: ${humanizeStockLevel(stock.label)}`}
       </div>
 
       <div className="mt-12 grid gap-3">

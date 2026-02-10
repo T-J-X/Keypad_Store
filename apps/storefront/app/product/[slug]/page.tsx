@@ -1,7 +1,9 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
+import { Suspense } from 'react';
 import ButtonInsertPdp from '../../../components/ProductPdp/ButtonInsertPdp';
 import KeypadPdp from '../../../components/ProductPdp/KeypadPdp';
+import PriceAndStock from '../../../components/ProductPdp/PriceAndStock';
 import ShopHubBackAnchor from '../../../components/ShopHubBackAnchor';
 import { type CatalogProduct, type IconProduct } from '../../../lib/vendure';
 import { fetchIconProducts, fetchProductBySlug } from '../../../lib/vendure.server';
@@ -236,29 +238,68 @@ function resolveRelatedProducts(currentProduct: CatalogProduct, icons: IconProdu
   return [...ranked, ...fallback].filter((item) => byId.has(item.id)).slice(0, 3);
 }
 
-export default async function ProductDetailPage({
+function PriceAndStockFallback({ showStock = false }: { showStock?: boolean }) {
+  return (
+    <>
+      <div className="space-y-1">
+        <div className="h-4 w-14 animate-pulse rounded bg-gray-200" />
+        <div className="h-10 w-44 animate-pulse rounded bg-gray-200" />
+        <div className="h-4 w-36 animate-pulse rounded bg-gray-200" />
+      </div>
+      {showStock ? <div className="h-10 animate-pulse rounded-xl bg-gray-200" /> : null}
+    </>
+  );
+}
+
+export default function ProductDetailPage({
   params,
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
   searchParams?: Promise<ProductSearchParams>;
 }) {
-  const resolvedParams = await params;
-  const resolvedSearchParams = await searchParams;
+  return (
+    <Suspense fallback={<ProductPageFallback />}>
+      <ProductDetailContent paramsPromise={params} searchParamsPromise={searchParams} />
+    </Suspense>
+  );
+}
+
+function ProductPageFallback() {
+  return (
+    <div className="mx-auto w-full max-w-6xl px-6 pb-20 pt-12">
+      <div className="mb-6 h-4 w-48 animate-pulse rounded bg-gray-200" />
+      <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+        <div className="card-soft h-[460px] animate-pulse rounded-3xl bg-gray-200" />
+        <div className="card-soft h-[460px] animate-pulse rounded-3xl bg-gray-200" />
+      </div>
+    </div>
+  );
+}
+
+async function ProductDetailContent({
+  paramsPromise,
+  searchParamsPromise,
+}: {
+  paramsPromise: Promise<{ slug: string }>;
+  searchParamsPromise?: Promise<ProductSearchParams>;
+}) {
+  const resolvedParams = await paramsPromise;
+  const searchParams = await searchParamsPromise;
   const product = await fetchProductBySlug(resolvedParams.slug);
   if (!product) return notFound();
 
-  const origin = toStringParam(resolvedSearchParams?.from);
-  const hubReady = toStringParam(resolvedSearchParams?.hub) === '1';
-  const section = normalizeSection(toStringParam(resolvedSearchParams?.section));
-  const categoryParam = toStringParam(resolvedSearchParams?.cat).trim();
-  const categoryParamList = parseCategorySlugs(toStringParam(resolvedSearchParams?.cats));
+  const origin = toStringParam(searchParams?.from);
+  const hubReady = toStringParam(searchParams?.hub) === '1';
+  const section = normalizeSection(toStringParam(searchParams?.section));
+  const categoryParam = toStringParam(searchParams?.cat).trim();
+  const categoryParamList = parseCategorySlugs(toStringParam(searchParams?.cats));
   const categorySlugs = categoryParamList.length > 0
     ? categoryParamList
     : (categoryParam ? [categoryParam] : []);
-  const query = toStringParam(resolvedSearchParams?.q);
-  const page = toPositiveInteger(toStringParam(resolvedSearchParams?.page), 1);
-  const take = toPageSize(toStringParam(resolvedSearchParams?.take));
+  const query = toStringParam(searchParams?.q);
+  const page = toPositiveInteger(toStringParam(searchParams?.page), 1);
+  const take = toPageSize(toStringParam(searchParams?.take));
 
   const sectionHref = section
     ? buildShopHref({
@@ -310,6 +351,11 @@ export default async function ProductDetailPage({
           breadcrumbs={breadcrumbs}
           productTypeLabel={resolveProductTypeLabel(product)}
           relatedProducts={relatedProducts}
+          priceAndStockSlot={(
+            <Suspense fallback={<PriceAndStockFallback showStock />}>
+              <PriceAndStock slug={product.slug} showStock />
+            </Suspense>
+          )}
         />
       </>
     );
@@ -321,6 +367,11 @@ export default async function ProductDetailPage({
         product={product}
         breadcrumbs={breadcrumbs}
         modelCode={resolveModelCode(product)}
+        priceAndStockSlot={(
+          <Suspense fallback={<PriceAndStockFallback />}>
+            <PriceAndStock slug={product.slug} showStock={false} />
+          </Suspense>
+        )}
       />
     </>
   );

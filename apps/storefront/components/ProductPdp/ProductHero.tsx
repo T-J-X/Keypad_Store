@@ -1,4 +1,5 @@
 import Image from 'next/image';
+import type { ReactNode } from 'react';
 import { assetUrl, type CatalogProduct } from '../../lib/vendure';
 import PurchasePanel from './PurchasePanel';
 
@@ -12,6 +13,7 @@ export default function ProductHero({
   priceWithVatLabel,
   productVariantId,
   stock,
+  priceAndStockSlot,
 }: {
   product: CatalogProduct;
   productTypeLabel: string;
@@ -26,6 +28,7 @@ export default function ProductHero({
     quantityLeft: number | null;
     available: boolean;
   };
+  priceAndStockSlot?: ReactNode;
 }) {
   const renderAsset = product.featuredAsset ?? product.assets?.[0] ?? null;
   const renderImage = renderAsset?.preview ?? renderAsset?.source ?? '';
@@ -66,6 +69,7 @@ export default function ProductHero({
           priceWithVatLabel={priceWithVatLabel}
           productVariantId={productVariantId}
           stock={stock}
+          priceAndStockSlot={priceAndStockSlot}
         />
       </div>
     </div>

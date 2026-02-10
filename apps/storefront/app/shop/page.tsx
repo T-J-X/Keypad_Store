@@ -1,4 +1,5 @@
 import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import ShopClient from '../../components/ShopClient';
 import { fetchIconProducts, fetchIconProductsPage, fetchKeypadProducts, fetchShopLandingContent } from '../../lib/vendure.server';
 
@@ -160,12 +161,37 @@ function parseCategorySlugs(
   return catParam ? [catParam] : [];
 }
 
-export default async function ShopPage({
+export default function ShopPage({
   searchParams
 }: {
   searchParams?: Promise<SearchParams>;
 }) {
-  const resolvedSearchParams = await searchParams;
+  return (
+    <Suspense fallback={<ShopPageFallback />}>
+      <ShopPageContent searchParamsPromise={searchParams} />
+    </Suspense>
+  );
+}
+
+function ShopPageFallback() {
+  return (
+    <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
+      <div className="mb-8 h-10 w-56 animate-pulse rounded bg-gray-200" />
+      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+        {Array.from({ length: 8 }).map((_, index) => (
+          <div key={index} className="card-soft h-[360px] animate-pulse rounded-3xl bg-gray-200" />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+async function ShopPageContent({
+  searchParamsPromise,
+}: {
+  searchParamsPromise?: Promise<SearchParams>;
+}) {
+  const resolvedSearchParams = await searchParamsPromise;
   const query = toStringParam(resolvedSearchParams?.q);
   const sectionRaw = toStringParam(resolvedSearchParams?.section);
   const section = normalizeSection(sectionRaw);

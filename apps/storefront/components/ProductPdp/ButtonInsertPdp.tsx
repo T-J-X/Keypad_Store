@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import type { ReactNode } from 'react';
 import RelatedProducts from '../RelatedProducts';
 import {
   iconCategoriesFromProduct,
@@ -88,11 +89,13 @@ export default function ButtonInsertPdp({
   breadcrumbs,
   productTypeLabel,
   relatedProducts,
+  priceAndStockSlot,
 }: {
   product: CatalogProduct;
   breadcrumbs: BreadcrumbItem[];
   productTypeLabel: string;
   relatedProducts: IconProduct[];
+  priceAndStockSlot?: ReactNode;
 }) {
   const iconId = product.customFields?.iconId ?? '';
   const categories = iconCategoriesFromProduct(product);
@@ -267,6 +270,7 @@ export default function ButtonInsertPdp({
         priceWithVatLabel={priceWithVatLabel}
         productVariantId={primaryVariant?.id}
         stock={stockSummary}
+        priceAndStockSlot={priceAndStockSlot}
       />
 
       <div className="mt-[75px] space-y-12">

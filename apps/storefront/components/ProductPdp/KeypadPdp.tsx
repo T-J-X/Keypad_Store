@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import type { ReactNode } from 'react';
 import Accordion from '../faq/Accordion';
 import DownloadsList from './DownloadsList';
 import KeypadImageGallery from './KeypadImageGallery';
@@ -21,10 +22,12 @@ export default function KeypadPdp({
   product,
   breadcrumbs,
   modelCode,
+  priceAndStockSlot,
 }: {
   product: CatalogProduct;
   breadcrumbs: BreadcrumbItem[];
   modelCode: string;
+  priceAndStockSlot?: ReactNode;
 }) {
   const galleryImages = resolveGalleryImages(product);
   const description = product.description?.trim() || 'PKP-SI keypads are built for configurable, rugged control systems.';
@@ -219,14 +222,18 @@ export default function KeypadPdp({
             </div>
           </dl>
 
-          <div className="space-y-1">
-            <div className="text-sm font-semibold uppercase tracking-wide text-ink/55">Price</div>
-            <div className="flex items-end gap-2">
-              <div className="text-3xl font-semibold tracking-tight text-ink">{priceWithVatLabel ?? priceExVatLabel}</div>
-              <div className="pb-1 text-xs font-semibold tracking-wide text-ink/60">(INCL VAT)</div>
+          {priceAndStockSlot ? (
+            priceAndStockSlot
+          ) : (
+            <div className="space-y-1">
+              <div className="text-sm font-semibold uppercase tracking-wide text-ink/55">Price</div>
+              <div className="flex items-end gap-2">
+                <div className="text-3xl font-semibold tracking-tight text-ink">{priceWithVatLabel ?? priceExVatLabel}</div>
+                <div className="pb-1 text-xs font-semibold tracking-wide text-ink/60">(INCL VAT)</div>
+              </div>
+              <div className="text-xs font-semibold tracking-wide text-ink/55">{priceExVatLabel} (EXCL VAT)</div>
             </div>
-            <div className="text-xs font-semibold tracking-wide text-ink/55">{priceExVatLabel} (EXCL VAT)</div>
-          </div>
+          )}
 
           <div className="pt-2">
             <Link
