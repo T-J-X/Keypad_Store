@@ -75,6 +75,7 @@ type CheckoutSessionPayload = {
 type IconCatalogPayload = {
   icons?: Array<{
     iconId: string;
+    name?: string;
     matteAssetPath: string | null;
     categories: string[];
   }>;

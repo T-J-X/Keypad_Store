@@ -6,13 +6,12 @@ import { X } from 'lucide-react';
 import { RING_GLOW_OPTIONS, type IconCatalogItem } from '../../lib/configuratorCatalog';
 import { assetUrl, categorySlug } from '../../lib/vendure';
 
-const SLOT_SIZE_MM = 15;
-
 type PopupView = 'icons' | 'swatches';
 
 export default function IconSelectionPopup({
   isOpen,
   isMobile = false,
+  slotSizeMm,
   slotLabel,
   icons,
   selectedIconId,
@@ -23,6 +22,7 @@ export default function IconSelectionPopup({
 }: {
   isOpen: boolean;
   isMobile?: boolean;
+  slotSizeMm: number;
   slotLabel: string;
   icons: IconCatalogItem[];
   selectedIconId: string | null;
@@ -35,8 +35,8 @@ export default function IconSelectionPopup({
   const [activeCategorySlug, setActiveCategorySlug] = useState('all');
 
   const sizeMatchedIcons = useMemo(
-    () => icons.filter((icon) => icon.sizeMm === SLOT_SIZE_MM),
-    [icons],
+    () => icons.filter((icon) => icon.sizeMm === slotSizeMm),
+    [icons, slotSizeMm],
   );
 
   const categoryTabs = useMemo(() => {
@@ -69,10 +69,16 @@ export default function IconSelectionPopup({
   }, [activeCategorySlug, categoryTabs, isOpen]);
 
   const filteredIcons = useMemo(() => {
-    if (activeCategorySlug === 'all') return sizeMatchedIcons;
-    return sizeMatchedIcons.filter((icon) =>
-      icon.categories.some((category) => categorySlug(category) === activeCategorySlug),
-    );
+    const scoped =
+      activeCategorySlug === 'all'
+        ? sizeMatchedIcons
+        : sizeMatchedIcons.filter((icon) =>
+            icon.categories.some((category) => categorySlug(category) === activeCategorySlug),
+          );
+
+    return scoped
+      .slice()
+      .sort((a, b) => a.iconId.localeCompare(b.iconId));
   }, [activeCategorySlug, sizeMatchedIcons]);
 
   if (!isOpen) return null;
@@ -161,14 +167,11 @@ export default function IconSelectionPopup({
             <section>
               {filteredIcons.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-white/25 bg-white/5 p-8 text-sm text-blue-100/80">
-                  No 15mm icons available for this category.
+                  {`No ${slotSizeMm}mm icons available for this category.`}
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">
-                  {filteredIcons
-                    .slice()
-                    .sort((a, b) => a.iconId.localeCompare(b.iconId))
-                    .map((icon) => {
+                  {filteredIcons.map((icon) => {
                       const isActive = selectedIconId === icon.iconId;
                       const glossySrc = icon.glossyAssetPath ? assetUrl(icon.glossyAssetPath) : '';
                       return (

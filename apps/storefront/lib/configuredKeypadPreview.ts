@@ -7,6 +7,7 @@ import {
 
 export type ConfiguredIconLookupEntry = {
   iconId: string;
+  iconName: string;
   matteAssetPath: string | null;
   category: string | null;
 };
@@ -14,6 +15,7 @@ export type ConfiguredIconLookupEntry = {
 export type ConfiguredIconLookup = Map<string, ConfiguredIconLookupEntry>;
 export type ConfiguredIconPayloadItem = {
   iconId: string;
+  name?: string;
   matteAssetPath: string | null;
   categories: string[];
 };
@@ -27,6 +29,7 @@ export function buildConfiguredIconLookup(icons: IconCatalogItem[]): ConfiguredI
 
     lookup.set(iconId, {
       iconId,
+      iconName: icon.name || icon.iconId,
       matteAssetPath: icon.matteAssetPath,
       category: icon.categories[0] ?? null,
     });
@@ -44,7 +47,7 @@ export function buildConfiguredIconLookupFromPayload(
       productId: '',
       variantId: '',
       iconId: icon.iconId,
-      name: icon.iconId,
+      name: icon.name || icon.iconId,
       sku: null,
       categories: icon.categories ?? [],
       sizeMm: null,

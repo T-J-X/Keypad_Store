@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { PKP_2200_SI_GEOMETRY } from '../../../../config/layouts/geometry';
 import {
   asStrictConfiguration,
   SLOT_IDS,
@@ -132,6 +133,7 @@ type IconProductListResponse = {
 
 type BodyPayload = {
   orderCode?: unknown;
+  designName?: unknown;
   configuration?: unknown;
 };
 
@@ -143,11 +145,8 @@ type IconAssetMapping = {
 
 export async function POST(request: Request) {
   const body = (await request.json().catch(() => null)) as BodyPayload | null;
+  const designName = typeof body?.designName === 'string' ? body.designName.trim() : '';
   const orderCode = typeof body?.orderCode === 'string' ? body.orderCode.trim() : '';
-
-  if (!orderCode) {
-    return NextResponse.json({ error: 'orderCode is required.' }, { status: 400 });
-  }
 
   const configurationValidation = validateAndNormalizeConfigurationInput(body?.configuration, { requireComplete: true });
   if (!configurationValidation.ok) {
@@ -159,46 +158,70 @@ export async function POST(request: Request) {
     return NextResponse.json({ error: 'Configuration is incomplete.' }, { status: 400 });
   }
 
-  const orderExportResponse = await queryShopApi<OrderPdfExportDataResponse>(request, {
-    query: ORDER_EXPORT_QUERY,
-    variables: { orderCode },
-  });
+  let resolvedOrderCode = orderCode || 'PREVIEW';
+  let resolvedOrderDate = new Date().toISOString();
+  let resolvedCustomerName: string | null = null;
+  let resolvedLine: ExportOrderLine = {
+    lineId: 'preview-line',
+    quantity: 1,
+    variantId: 'preview-variant',
+    variantName: designName || 'Saved Design',
+    variantSku: '',
+    configuration: JSON.stringify(requestedConfiguration),
+  };
+  let orderExportRawResponse: Response | null = null;
 
-  if (!orderExportResponse.ok) {
-    return withSessionCookie(
-      NextResponse.json({ error: orderExportResponse.error }, { status: orderExportResponse.status }),
-      orderExportResponse.rawResponse,
-    );
-  }
+  const withOptionalCookie = (response: NextResponse) =>
+    orderExportRawResponse ? withSessionCookie(response, orderExportRawResponse) : response;
 
-  const exportData = orderExportResponse.data.orderPdfExportData;
-  if (!exportData || (exportData.lines?.length ?? 0) === 0) {
-    return withSessionCookie(
-      NextResponse.json({ error: 'No configured order lines were found for this order.' }, { status: 400 }),
-      orderExportResponse.rawResponse,
-    );
-  }
+  if (orderCode) {
+    const orderExportResponse = await queryShopApi<OrderPdfExportDataResponse>(request, {
+      query: ORDER_EXPORT_QUERY,
+      variables: { orderCode },
+    });
 
-  const requestedConfigJson = JSON.stringify(requestedConfiguration);
-  const matchingLine = exportData.lines.find((line) => line.configuration === requestedConfigJson);
-  if (!matchingLine) {
-    return withSessionCookie(
-      NextResponse.json(
-        { error: 'Provided configuration does not match any configured line on this order.' },
-        { status: 400 },
-      ),
-      orderExportResponse.rawResponse,
-    );
-  }
+    if (!orderExportResponse.ok) {
+      return withSessionCookie(
+        NextResponse.json({ error: orderExportResponse.error }, { status: orderExportResponse.status }),
+        orderExportResponse.rawResponse,
+      );
+    }
 
-  const lineConfigurationValidation = validateAndNormalizeConfigurationInput(matchingLine.configuration, {
-    requireComplete: true,
-  });
-  if (!lineConfigurationValidation.ok) {
-    return withSessionCookie(
-      NextResponse.json({ error: `Stored line configuration is invalid: ${lineConfigurationValidation.error}` }, { status: 400 }),
-      orderExportResponse.rawResponse,
-    );
+    const exportData = orderExportResponse.data.orderPdfExportData;
+    orderExportRawResponse = orderExportResponse.rawResponse;
+    if (!exportData || (exportData.lines?.length ?? 0) === 0) {
+      return withSessionCookie(
+        NextResponse.json({ error: 'No configured order lines were found for this order.' }, { status: 400 }),
+        orderExportResponse.rawResponse,
+      );
+    }
+
+    const requestedConfigJson = JSON.stringify(requestedConfiguration);
+    const matchingLine = exportData.lines.find((line) => line.configuration === requestedConfigJson);
+    if (!matchingLine) {
+      return withSessionCookie(
+        NextResponse.json(
+          { error: 'Provided configuration does not match any configured line on this order.' },
+          { status: 400 },
+        ),
+        orderExportResponse.rawResponse,
+      );
+    }
+
+    const lineConfigurationValidation = validateAndNormalizeConfigurationInput(matchingLine.configuration, {
+      requireComplete: true,
+    });
+    if (!lineConfigurationValidation.ok) {
+      return withSessionCookie(
+        NextResponse.json({ error: `Stored line configuration is invalid: ${lineConfigurationValidation.error}` }, { status: 400 }),
+        orderExportResponse.rawResponse,
+      );
+    }
+
+    resolvedOrderCode = exportData.orderCode;
+    resolvedOrderDate = exportData.orderDate;
+    resolvedCustomerName = exportData.customerName ?? exportData.customerEmail ?? null;
+    resolvedLine = matchingLine;
   }
 
   const iconIds = SLOT_IDS.map((slotId) => requestedConfiguration[slotId].iconId);
@@ -206,17 +229,16 @@ export async function POST(request: Request) {
 
   const missingIconId = iconIds.find((iconId) => !iconAssetMap.has(iconId));
   if (missingIconId) {
-    return withSessionCookie(
+    return withOptionalCookie(
       NextResponse.json({ error: `AssetPathError: matte asset missing for iconId ${missingIconId}` }, { status: 422 }),
-      orderExportResponse.rawResponse,
     );
   }
 
   const pdfHtml = renderPdfHtml({
-    orderCode: exportData.orderCode,
-    orderDate: exportData.orderDate,
-    customerName: exportData.customerName ?? exportData.customerEmail ?? null,
-    line: matchingLine,
+    orderCode: resolvedOrderCode,
+    orderDate: resolvedOrderDate,
+    customerName: resolvedCustomerName,
+    line: resolvedLine,
     configuration: requestedConfiguration,
     iconAssetMap,
   });
@@ -226,9 +248,8 @@ export async function POST(request: Request) {
     pdfBuffer = await renderPdfBuffer(pdfHtml);
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unable to render PDF.';
-    return withSessionCookie(
+    return withOptionalCookie(
       NextResponse.json({ error: message }, { status: 500 }),
-      orderExportResponse.rawResponse,
     );
   }
 
@@ -237,15 +258,22 @@ export async function POST(request: Request) {
     pdfBuffer.byteOffset + pdfBuffer.byteLength,
   ) as ArrayBuffer;
   const pdfBlob = new Blob([pdfArrayBuffer], { type: 'application/pdf' });
+  const fileToken = resolvedOrderCode !== 'PREVIEW'
+    ? resolvedOrderCode
+    : (designName
+        .replace(/[^a-z0-9_-]+/gi, '-')
+        .replace(/-+/g, '-')
+        .replace(/^-+|-+$/g, '')
+        .slice(0, 60)
+      || 'Preview');
 
-  return withSessionCookie(
+  return withOptionalCookie(
     new NextResponse(pdfBlob, {
       headers: {
         'Content-Type': 'application/pdf',
-        'Content-Disposition': `attachment; filename="Keypad-Config-${exportData.orderCode}.pdf"`,
+        'Content-Disposition': `attachment; filename="Keypad-Config-${fileToken}.pdf"`,
       },
     }),
-    orderExportResponse.rawResponse,
   );
 }
 
@@ -402,21 +430,21 @@ function renderPdfHtml({
   });
 
   const renderSlots = slotRows
-    .map((row, index) => {
-      const slotPositions = [
-        { left: '22%', top: '20%' },
-        { left: '54%', top: '20%' },
-        { left: '22%', top: '52%' },
-        { left: '54%', top: '52%' },
-      ];
-      const position = slotPositions[index] ?? slotPositions[0];
+    .map((row) => {
+      const geometry = PKP_2200_SI_GEOMETRY.slots[row.slotId];
+      const position = {
+        left: `${geometry.leftPct}%`,
+        top: `${geometry.topPct}%`,
+        width: `${geometry.widthPct}%`,
+        height: `${geometry.heightPct}%`,
+      };
 
       const glow = row.color !== 'No glow'
         ? `box-shadow: inset 0 0 0 2px ${row.color}, 0 0 20px ${row.color}66;`
         : 'box-shadow: inset 0 0 0 1px rgba(255,255,255,0.25);';
 
       return `
-        <div class="slot" style="left:${position.left};top:${position.top};${glow}">
+        <div class="slot" style="left:${position.left};top:${position.top};width:${position.width};height:${position.height};${glow}">
           <img src="${row.matteAssetUrl}" alt="${escapeHtml(row.iconId)}" />
           <span class="slot-label">${escapeHtml(row.slotId.replace('_', ' '))}</span>
         </div>
@@ -442,11 +470,14 @@ function renderPdfHtml({
     <html>
       <head>
         <meta charset="utf-8" />
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+        <link href="https://fonts.googleapis.com/css2?family=Geist+Mono:wght@400;500;700&display=swap" rel="stylesheet" />
         <style>
           @page { size: A4 portrait; margin: 12mm; }
           body {
             margin: 0;
-            font-family: "Arial", "Helvetica", sans-serif;
+            font-family: "Geist Mono", "SFMono-Regular", "Consolas", "Menlo", "Monaco", monospace;
             color: #0f1f3d;
             background: #f7f9ff;
           }

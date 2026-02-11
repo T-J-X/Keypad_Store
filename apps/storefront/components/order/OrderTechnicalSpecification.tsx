@@ -28,6 +28,7 @@ type TechnicalSpecPayload = {
 type IconCatalogPayload = {
   icons?: Array<{
     iconId: string;
+    name?: string;
     matteAssetPath: string | null;
     categories: string[];
   }>;
@@ -244,16 +245,19 @@ export default function OrderTechnicalSpecification({
                         <tr className="bg-white/8 text-left text-[11px] uppercase tracking-[0.12em] text-blue-100/75">
                           <th className="px-3 py-2">Slot</th>
                           <th className="px-3 py-2">Icon ID</th>
+                          <th className="px-3 py-2">Icon Name</th>
                           <th className="px-3 py-2">Glow</th>
                         </tr>
                       </thead>
                       <tbody>
                         {SLOT_IDS.map((slotId) => {
                           const slot = activeLine.configuration[slotId as SlotId];
+                          const iconMeta = slot.iconId ? iconLookup.get(slot.iconId) : undefined;
                           return (
                             <tr key={slotId} className="border-t border-white/15 text-blue-50/90">
                               <td className="px-3 py-2 font-semibold">{slotId.replace('_', ' ')}</td>
                               <td className="px-3 py-2 font-mono">{slot.iconId || 'N/A'}</td>
+                              <td className="px-3 py-2">{iconMeta?.iconName || 'Unknown icon'}</td>
                               <td className="px-3 py-2">{slot.color || 'No glow'}</td>
                             </tr>
                           );

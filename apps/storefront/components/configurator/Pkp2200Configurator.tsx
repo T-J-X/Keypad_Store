@@ -20,7 +20,7 @@ import ConfiguratorActions from './ConfiguratorActions';
 import ConfigurationSidebar from './ConfigurationSidebar';
 import KeypadPreview from './KeypadPreview';
 import IconSelectionPopup from './IconSelectionPopup';
-import { PKP_2200_SI_LAYOUT } from './pkp2200Layout';
+import { PKP_2200_SI_LAYOUT, PKP_2200_SI_SLOT_SIZE_MM } from './pkp2200Layout';
 import PremiumToast, { type ToastPayload } from './PremiumToast';
 import SaveDesignModal from './SaveDesignModal';
 import type { PilotKeypadProduct, SavedConfigurationItem, StatusMessage } from './types';
@@ -402,8 +402,8 @@ export default function Pkp2200Configurator({
   };
 
   const onDownloadPdf = async () => {
-    if (!lastOrderCode || !strictConfiguration) {
-      setSaveStatus({ type: 'error', message: 'Add this configured keypad to cart first to generate the order PDF.' });
+    if (!strictConfiguration) {
+      setSaveStatus({ type: 'error', message: 'Complete all 4 slots before generating the engineering PDF.' });
       return;
     }
 
@@ -422,7 +422,8 @@ export default function Pkp2200Configurator({
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
-          orderCode: lastOrderCode,
+          orderCode: lastOrderCode ?? undefined,
+          designName: loadedSavedConfig?.name ?? `${keypad.modelCode} Design`,
           configuration: strictConfiguration,
         }),
       });
@@ -439,7 +440,7 @@ export default function Pkp2200Configurator({
 
       const headerFilename = response.headers.get('content-disposition') || '';
       const filenameMatch = headerFilename.match(/filename="?([^";]+)"?/i);
-      anchor.download = filenameMatch?.[1] || `Keypad-Config-${lastOrderCode}.pdf`;
+      anchor.download = filenameMatch?.[1] || `Keypad-Config-${keypad.modelCode}.pdf`;
       document.body.appendChild(anchor);
       anchor.click();
       anchor.remove();
@@ -456,7 +457,7 @@ export default function Pkp2200Configurator({
 
   const configurationJson = useMemo(() => serializeConfiguration(configurationDraft), [configurationDraft]);
   const canOpenSaveAction = isAuthenticated !== null;
-  const canDownloadPdf = Boolean(lastOrderCode && strictConfiguration);
+  const canDownloadPdf = Boolean(strictConfiguration);
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 pb-28 pt-10 sm:px-6 lg:px-8 lg:pb-20">
@@ -561,6 +562,7 @@ export default function Pkp2200Configurator({
       <IconSelectionPopup
         isOpen={popupSlotId != null}
         isMobile={isMobile}
+        slotSizeMm={PKP_2200_SI_SLOT_SIZE_MM}
         slotLabel={popupSlotId ? PKP_2200_SI_LAYOUT[popupSlotId].label : 'Slot'}
         icons={icons}
         selectedIconId={popupSlotId ? slots[popupSlotId].iconId : null}

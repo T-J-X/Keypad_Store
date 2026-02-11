@@ -1,10 +1,10 @@
 'use client';
 
 import Image from 'next/image';
+import { PKP_2200_SI_GEOMETRY } from '../../config/layouts/geometry';
 import { assetUrl } from '../../lib/vendure';
 import { SLOT_IDS, type SlotId } from '../../lib/keypadConfiguration';
 import type { SlotVisualState } from '../../lib/configuratorStore';
-import { PKP_2200_SI_LAYOUT } from './pkp2200Layout';
 
 function hexToRgba(hex: string, alpha: number) {
   const normalized = hex.replace('#', '');
@@ -60,7 +60,7 @@ export default function KeypadPreview({
 
         {SLOT_IDS.map((slotId) => {
           const slot = slots[slotId];
-          const geometry = PKP_2200_SI_LAYOUT[slotId];
+          const geometry = PKP_2200_SI_GEOMETRY.slots[slotId];
           const isActive = slotId === activeSlotId;
           const matteSrc = slot.matteAssetPath ? assetUrl(slot.matteAssetPath) : '';
           const ringColor = slot.color;

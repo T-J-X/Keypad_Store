@@ -223,6 +223,54 @@ export default function AccountTabs() {
     }
   };
 
+  const onDownloadPdf = async (item: SavedConfigurationRecord) => {
+    const validation = validateAndNormalizeConfigurationInput(item.configuration, { requireComplete: true });
+    if (!validation.ok) {
+      setError(`Saved configuration "${item.name}" is invalid: ${validation.error}`);
+      return;
+    }
+
+    setPendingId(item.id);
+    setError(null);
+    setFeedback(null);
+
+    try {
+      const response = await fetch('/api/order/export-pdf', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          designName: item.name,
+          configuration: validation.value,
+        }),
+      });
+
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => ({}))) as { error?: string };
+        throw new Error(payload.error || 'Could not generate configuration PDF.');
+      }
+
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = objectUrl;
+
+      const headerFilename = response.headers.get('content-disposition') || '';
+      const filenameMatch = headerFilename.match(/filename="?([^";]+)"?/i);
+      anchor.download = filenameMatch?.[1] || `Keypad-Config-${item.name}.pdf`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(objectUrl);
+
+      setFeedback(`Downloaded technical PDF for "${item.name}".`);
+    } catch (nextError) {
+      const message = nextError instanceof Error ? nextError.message : 'Could not generate configuration PDF.';
+      setError(message);
+    } finally {
+      setPendingId(null);
+    }
+  };
+
   return (
     <div className="card overflow-hidden p-6">
       <div className="flex flex-wrap gap-2 border-b border-black/5 pb-4">
@@ -256,6 +304,7 @@ export default function AccountTabs() {
             pendingId={pendingId}
             onDelete={onDelete}
             onAddToCart={onAddToCart}
+            onDownloadPdf={onDownloadPdf}
             onPreview={setPreviewId}
             onEnquireOpen={setEnquireId}
           />
@@ -304,6 +353,7 @@ function SavedDesignsPanel({
   pendingId,
   onDelete,
   onAddToCart,
+  onDownloadPdf,
   onPreview,
   onEnquireOpen,
 }: {
@@ -316,6 +366,7 @@ function SavedDesignsPanel({
   pendingId: string | null;
   onDelete: (item: SavedConfigurationRecord) => void;
   onAddToCart: (item: SavedConfigurationRecord) => void;
+  onDownloadPdf: (item: SavedConfigurationRecord) => void;
   onPreview: (id: string) => void;
   onEnquireOpen: (id: string) => void;
 }) {
@@ -368,7 +419,7 @@ function SavedDesignsPanel({
                 <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink/45">{item.id}</div>
               </div>
 
-              <div className="mt-3 grid gap-2 sm:grid-cols-5">
+              <div className="mt-3 grid gap-2 sm:grid-cols-6">
                 <ActionButton onClick={() => onPreview(item.id)} label="View" />
                 {editHref ? (
                   <Link href={editHref} className={actionButtonClass()}>
@@ -380,6 +431,11 @@ function SavedDesignsPanel({
                 <ActionButton
                   onClick={() => onAddToCart(item)}
                   label={pendingId === item.id ? 'Adding...' : 'Add to cart'}
+                  disabled={pendingId === item.id}
+                />
+                <ActionButton
+                  onClick={() => onDownloadPdf(item)}
+                  label={pendingId === item.id ? 'Preparing...' : 'PDF'}
                   disabled={pendingId === item.id}
                 />
                 <ActionButton onClick={() => onEnquireOpen(item.id)} label="Enquire" disabled={pendingId === item.id} />
