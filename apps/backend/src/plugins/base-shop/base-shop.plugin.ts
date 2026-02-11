@@ -6,6 +6,11 @@ import { BaseShopAdminResolver } from './base-shop.admin.resolver';
 import { BaseShopConfig } from './base-shop-config.entity';
 import { BaseShopService } from './base-shop.service';
 import { BaseShopShopResolver } from './base-shop.shop.resolver';
+import { OrderExportShopResolver } from './order-export.shop.resolver';
+import { OrderExportService } from './order-export.service';
+import { SavedConfiguration } from './saved-configuration.entity';
+import { SavedConfigurationShopResolver } from './saved-configuration.shop.resolver';
+import { SavedConfigurationService } from './saved-configuration.service';
 
 const adminApiExtensions = gql`
   type BaseShopTopTile {
@@ -71,6 +76,34 @@ const adminApiExtensions = gql`
 `;
 
 const shopApiExtensions = gql`
+  type SavedConfiguration {
+    id: ID!
+    createdAt: DateTime!
+    updatedAt: DateTime!
+    name: String!
+    keypadModel: String!
+    configuration: String!
+  }
+
+  type OrderPdfExportLine {
+    lineId: ID!
+    quantity: Int!
+    variantId: ID!
+    variantName: String!
+    variantSku: String!
+    configuration: String!
+  }
+
+  type OrderPdfExportPayload {
+    orderId: ID!
+    orderCode: String!
+    orderDate: DateTime!
+    customerId: ID!
+    customerEmail: String
+    customerName: String
+    lines: [OrderPdfExportLine!]!
+  }
+
   type BaseShopTopTilePublic {
     id: String!
     label: String
@@ -102,20 +135,29 @@ const shopApiExtensions = gql`
 
   extend type Query {
     baseShopConfigPublic: BaseShopPublicConfig!
+    getSavedConfigurations: [SavedConfiguration!]!
+    getSavedConfiguration(id: ID!): SavedConfiguration!
+    orderPdfExportData(orderCode: String!): OrderPdfExportPayload!
+  }
+
+  extend type Mutation {
+    saveConfiguration(name: String!, keypadModel: String!, configJson: String!): SavedConfiguration!
+    updateConfiguration(id: ID!, name: String!, configJson: String!): SavedConfiguration!
+    deleteConfiguration(id: ID!): Boolean!
   }
 `;
 
 @VendurePlugin({
   imports: [PluginCommonModule],
-  entities: [BaseShopConfig],
-  providers: [BaseShopService],
+  entities: [BaseShopConfig, SavedConfiguration],
+  providers: [BaseShopService, SavedConfigurationService, OrderExportService],
   adminApiExtensions: {
     schema: adminApiExtensions,
     resolvers: [BaseShopAdminResolver],
   },
   shopApiExtensions: {
     schema: shopApiExtensions,
-    resolvers: [BaseShopShopResolver],
+    resolvers: [BaseShopShopResolver, SavedConfigurationShopResolver, OrderExportShopResolver],
   },
 })
 export class BaseShopPlugin {

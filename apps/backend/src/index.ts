@@ -274,6 +274,13 @@ export const config: VendureConfig = {
         public: true,
       },
       {
+        // Stores the Asset.id of the matte insert paired to this purchasable variant.
+        name: 'insertAssetId',
+        type: 'string',
+        nullable: true,
+        public: true,
+      },
+      {
         name: 'iconType',
         type: 'string',
         nullable: true,
@@ -301,13 +308,27 @@ export const config: VendureConfig = {
         nullable: true,
         public: true,
       },
+      {
+        // Slot diameter in mm, used by configurator filtering (e.g. 15mm).
+        name: 'sizeMm',
+        type: 'int',
+        nullable: true,
+        public: true,
+      },
     ],
     OrderLine: [
       {
         name: 'configuration',
         type: 'text',
         nullable: true,
-        public: false,
+        public: true,
+        label: [{ languageCode: LanguageCode.en, value: 'Keypad Configuration' }],
+        description: [
+          {
+            languageCode: LanguageCode.en,
+            value: 'JSON mapping of slot IDs to icon IDs and ring glow colors',
+          },
+        ],
         ui: { component: 'json' },
       },
     ],

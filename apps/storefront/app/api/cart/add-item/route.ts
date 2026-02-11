@@ -1,4 +1,8 @@
 import { NextResponse } from 'next/server';
+import {
+  serializeConfiguration,
+  validateAndNormalizeConfigurationInput,
+} from '../../../../lib/keypadConfiguration';
 
 const SHOP_API = process.env.VENDURE_SHOP_API_URL || 'http://localhost:3000/shop-api';
 
@@ -22,8 +26,16 @@ type AddItemResponse = {
 };
 
 const ADD_ITEM_MUTATION = `
-  mutation AddItemToOrder($productVariantId: ID!, $quantity: Int!) {
-    addItemToOrder(productVariantId: $productVariantId, quantity: $quantity) {
+  mutation AddItemToOrder(
+    $productVariantId: ID!
+    $quantity: Int!
+    $customFields: OrderLineCustomFieldsInput
+  ) {
+    addItemToOrder(
+      productVariantId: $productVariantId
+      quantity: $quantity
+      customFields: $customFields
+    ) {
       __typename
       ... on Order {
         id
@@ -39,7 +51,13 @@ const ADD_ITEM_MUTATION = `
 
 export async function POST(request: Request) {
   const payload = (await request.json().catch(() => null)) as
-    | { productVariantId?: string; quantity?: number }
+    | {
+        productVariantId?: string;
+        quantity?: number;
+        customFields?: {
+          configuration?: unknown;
+        } | null;
+      }
     | null;
 
   const productVariantId = payload?.productVariantId?.trim();
@@ -49,6 +67,20 @@ export async function POST(request: Request) {
 
   if (!productVariantId) {
     return NextResponse.json({ error: 'Missing productVariantId' }, { status: 400 });
+  }
+
+  let customFields: { configuration: string } | undefined;
+  const rawConfiguration = payload?.customFields?.configuration;
+
+  if (rawConfiguration !== undefined) {
+    const validation = validateAndNormalizeConfigurationInput(rawConfiguration, { requireComplete: true });
+    if (!validation.ok) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
+    }
+
+    customFields = {
+      configuration: serializeConfiguration(validation.value),
+    };
   }
 
   const headers: Record<string, string> = {
@@ -64,7 +96,7 @@ export async function POST(request: Request) {
     cache: 'no-store',
     body: JSON.stringify({
       query: ADD_ITEM_MUTATION,
-      variables: { productVariantId, quantity },
+      variables: { productVariantId, quantity, customFields },
     }),
   });
 

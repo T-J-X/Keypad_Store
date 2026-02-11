@@ -16,6 +16,9 @@ const ACTIVE_ORDER_QUERY = `
         id
         quantity
         linePriceWithTax
+        customFields {
+          configuration
+        }
         productVariant {
           id
           name
@@ -53,6 +56,9 @@ type ActiveOrderResponse = {
       id: string;
       quantity?: number | null;
       linePriceWithTax?: number | null;
+      customFields?: {
+        configuration?: string | null;
+      } | null;
       productVariant?: {
         id: string;
         name?: string | null;
@@ -110,6 +116,11 @@ export async function GET(request: Request) {
               id: line.id,
               quantity: normalizeInt(line.quantity),
               linePriceWithTax: normalizeInt(line.linePriceWithTax),
+              customFields: line.customFields
+                ? {
+                    configuration: line.customFields.configuration ?? null,
+                  }
+                : null,
               productVariant: line.productVariant
                 ? {
                     id: line.productVariant.id,

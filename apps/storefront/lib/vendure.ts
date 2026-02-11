@@ -7,11 +7,22 @@ export type VendureAsset = {
 
 export type VendureProductVariant = {
   id: string;
+  name?: string | null;
+  sku?: string | null;
   priceWithTax?: number | null;
   currencyCode?: string | null;
   stockLevel?: string | null;
   stockOnHand?: number | null;
   stockAllocated?: number | null;
+  customFields?: {
+    iconId?: string | null;
+    insertAssetId?: string | null;
+    sizeMm?: number | null;
+    iconType?: string | null;
+    keypadModelCode?: string | null;
+    slotMapKey?: string | null;
+    [key: string]: unknown;
+  } | null;
 };
 
 export type ProductCustomFields = {

@@ -1,7 +1,44 @@
 import Link from 'next/link';
+import { Suspense } from 'react';
 import GoogleLoginButton from '../../components/GoogleLoginButton';
+import { getSafeRelativePath } from '../../lib/googleAuth';
 
-export default function LoginPage() {
+type LoginSearchParams = {
+  redirectTo?: string | string[];
+  next?: string | string[];
+};
+
+function toStringParam(value?: string | string[]) {
+  if (typeof value === 'string') return value;
+  if (Array.isArray(value) && typeof value[0] === 'string') return value[0];
+  return '';
+}
+
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams?: Promise<LoginSearchParams>;
+}) {
+  return (
+    <Suspense fallback={<LoginPageContent redirectTo="/account" />}>
+      <LoginPageContent searchParamsPromise={searchParams} />
+    </Suspense>
+  );
+}
+
+async function LoginPageContent({
+  searchParamsPromise,
+  redirectTo: fallbackRedirectTo,
+}: {
+  searchParamsPromise?: Promise<LoginSearchParams>;
+  redirectTo?: string;
+}) {
+  const resolvedSearchParams = (await searchParamsPromise) ?? {};
+  const requestedRedirect = toStringParam(resolvedSearchParams.redirectTo)
+    || toStringParam(resolvedSearchParams.next);
+  const redirectTo = fallbackRedirectTo
+    ?? getSafeRelativePath(requestedRedirect, '/account');
+
   return (
     <div className="mx-auto flex w-full max-w-5xl flex-col gap-10 px-6 pb-20 pt-16 lg:flex-row lg:items-center">
       <div className="flex-1 space-y-4">
@@ -32,7 +69,7 @@ export default function LoginPage() {
               Or
             </span>
           </div>
-          <GoogleLoginButton />
+          <GoogleLoginButton redirectTo={redirectTo} />
           <div className="flex items-center justify-between text-xs text-ink/50">
             <span>Forgot your password?</span>
             <Link href="/signup" className="font-semibold text-moss">Create account</Link>

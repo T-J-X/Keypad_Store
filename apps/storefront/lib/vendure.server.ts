@@ -36,9 +36,19 @@ export async function vendureFetch<T>(query: string, variables?: Record<string, 
 
 const PRODUCT_VARIANT_FIELDS = `
   id
+  name
+  sku
   priceWithTax
   currencyCode
   stockLevel
+  customFields {
+    iconId
+    insertAssetId
+    sizeMm
+    iconType
+    keypadModelCode
+    slotMapKey
+  }
 `;
 
 const PRODUCT_VARIANT_FIELDS_WITH_NUMERIC_STOCK = `
