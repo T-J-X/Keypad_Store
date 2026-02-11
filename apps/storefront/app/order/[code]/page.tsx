@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import { Suspense } from 'react';
+import OrderTechnicalSpecification from '../../../components/order/OrderTechnicalSpecification';
 
 type OrderSearchParams = {
   payment?: string | string[];
@@ -59,6 +60,7 @@ async function OrderConfirmationContent({
         </div>
 
         <div className="mt-7 flex flex-wrap gap-3">
+          {orderCode ? <OrderTechnicalSpecification orderCode={orderCode} /> : null}
           <Link
             href="/account"
             className="inline-flex items-center justify-center rounded-full bg-ink px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"

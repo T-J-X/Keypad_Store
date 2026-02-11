@@ -1,9 +1,19 @@
 'use client';
 
+import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useEffect, useMemo, useState } from 'react';
+import ConfiguredKeypadThumbnail from '../../components/configurator/ConfiguredKeypadThumbnail';
 import { notifyCartUpdated } from '../../lib/cartEvents';
+import {
+  buildConfiguredIconLookupFromPayload,
+  countConfiguredSlots,
+  emptyPreviewConfiguration,
+  parseConfigurationForPreview,
+  type ConfiguredIconLookup,
+} from '../../lib/configuredKeypadPreview';
+import { assetUrl } from '../../lib/vendure';
 
 type ShippingMethodQuote = {
   id: string;
@@ -31,6 +41,28 @@ type CheckoutOrder = {
   subTotalWithTax: number;
   shippingWithTax: number;
   totalWithTax: number;
+  lines: Array<{
+    id: string;
+    quantity: number;
+    linePriceWithTax: number;
+    customFields?: {
+      configuration?: string | null;
+    } | null;
+    productVariant?: {
+      id: string;
+      name: string;
+      currencyCode: string;
+      product?: {
+        id: string;
+        slug: string | null;
+        name: string | null;
+        featuredAsset?: {
+          preview: string | null;
+          source: string | null;
+        } | null;
+      } | null;
+    } | null;
+  }>;
 };
 
 type CheckoutSessionPayload = {
@@ -38,6 +70,14 @@ type CheckoutSessionPayload = {
   shippingMethods?: ShippingMethodQuote[];
   paymentMethods?: PaymentMethodQuote[];
   error?: string;
+};
+
+type IconCatalogPayload = {
+  icons?: Array<{
+    iconId: string;
+    matteAssetPath: string | null;
+    categories: string[];
+  }>;
 };
 
 export default function CheckoutPage() {
@@ -50,6 +90,7 @@ export default function CheckoutPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [iconLookup, setIconLookup] = useState<ConfiguredIconLookup>(new Map());
 
   const [email, setEmail] = useState('');
   const [firstName, setFirstName] = useState('');
@@ -121,6 +162,35 @@ export default function CheckoutPage() {
     };
 
     void load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadIconCatalog = async () => {
+      try {
+        const response = await fetch('/api/configurator/icon-catalog', {
+          method: 'GET',
+          cache: 'no-store',
+        });
+
+        const payload = (await response.json().catch(() => ({}))) as IconCatalogPayload;
+        if (!response.ok) return;
+
+        if (!cancelled) {
+          const icons = payload.icons ?? [];
+          setIconLookup(buildConfiguredIconLookupFromPayload(icons));
+        }
+      } catch {
+        // Keep empty map and render graceful placeholders.
+      }
+    };
+
+    void loadIconCatalog();
 
     return () => {
       cancelled = true;
@@ -259,6 +329,63 @@ export default function CheckoutPage() {
       {!isLoading && !error && order ? (
         <form onSubmit={onSubmit} className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
           <section className="card-soft space-y-6 p-5">
+            {order.lines.length > 0 ? (
+              <div>
+                <h2 className="text-lg font-semibold text-ink">Configured line items</h2>
+                <div className="mt-3 space-y-3">
+                  {order.lines.map((line) => {
+                    const configurationRaw = line.customFields?.configuration ?? null;
+                    const hasConfiguration = typeof configurationRaw === 'string' && configurationRaw.trim().length > 0;
+                    const previewConfiguration = hasConfiguration
+                      ? parseConfigurationForPreview(configurationRaw)
+                      : null;
+                    const configuredSlots = countConfiguredSlots(previewConfiguration);
+                    const imagePath = line.productVariant?.product?.featuredAsset?.preview
+                      || line.productVariant?.product?.featuredAsset?.source
+                      || '';
+                    const imageSrc = imagePath ? assetUrl(imagePath) : '';
+
+                    return (
+                      <article key={line.id} className="flex items-start gap-3 rounded-2xl border border-ink/10 bg-white/75 p-3">
+                        <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-neutral-100">
+                          {hasConfiguration ? (
+                            <ConfiguredKeypadThumbnail
+                              shellAssetPath={imagePath || null}
+                              configuration={previewConfiguration ?? emptyPreviewConfiguration()}
+                              iconLookup={iconLookup}
+                              size="sm"
+                            />
+                          ) : imageSrc ? (
+                            <Image
+                              src={imageSrc}
+                              alt={line.productVariant?.name || 'Product image'}
+                              fill
+                              className="object-contain p-2"
+                              sizes="80px"
+                            />
+                          ) : null}
+                        </div>
+                        <div className="min-w-0 flex-1">
+                          <div className="text-sm font-semibold text-ink">
+                            {line.productVariant?.name || line.productVariant?.product?.name || 'Product'}
+                          </div>
+                          {hasConfiguration ? (
+                            <div className="mt-1 text-xs font-semibold uppercase tracking-[0.1em] text-[#1e3a66]">
+                              Custom configuration: {configuredSlots}/4 slots defined
+                            </div>
+                          ) : null}
+                          <div className="mt-1 text-xs text-ink/60">Qty {line.quantity}</div>
+                        </div>
+                        <div className="text-right text-xs font-semibold text-ink">
+                          {formatMinor(line.linePriceWithTax, line.productVariant?.currencyCode || order.currencyCode)}
+                        </div>
+                      </article>
+                    );
+                  })}
+                </div>
+              </div>
+            ) : null}
+
             <div>
               <h2 className="text-lg font-semibold text-ink">Contact</h2>
               <div className="mt-3 grid gap-3 sm:grid-cols-2">

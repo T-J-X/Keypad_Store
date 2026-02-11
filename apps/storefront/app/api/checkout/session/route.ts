@@ -13,6 +13,28 @@ const CHECKOUT_SESSION_QUERY = `
       shippingWithTax
       totalWithTax
       currencyCode
+      lines {
+        id
+        quantity
+        linePriceWithTax
+        customFields {
+          configuration
+        }
+        productVariant {
+          id
+          name
+          currencyCode
+          product {
+            id
+            slug
+            name
+            featuredAsset {
+              preview
+              source
+            }
+          }
+        }
+      }
     }
     eligibleShippingMethods {
       id
@@ -52,6 +74,28 @@ type CheckoutSessionResponse = {
     shippingWithTax?: number | null;
     totalWithTax?: number | null;
     currencyCode?: string | null;
+    lines?: Array<{
+      id: string;
+      quantity?: number | null;
+      linePriceWithTax?: number | null;
+      customFields?: {
+        configuration?: string | null;
+      } | null;
+      productVariant?: {
+        id: string;
+        name?: string | null;
+        currencyCode?: string | null;
+        product?: {
+          id: string;
+          slug?: string | null;
+          name?: string | null;
+          featuredAsset?: {
+            preview?: string | null;
+            source?: string | null;
+          } | null;
+        } | null;
+      } | null;
+    }> | null;
   } | null;
   eligibleShippingMethods?: Array<{
     id: string;
@@ -143,6 +187,36 @@ export async function GET(request: Request) {
           shippingWithTax: normalizeInt(order.shippingWithTax),
           totalWithTax: normalizeInt(order.totalWithTax),
           currencyCode: order.currencyCode ?? 'USD',
+          lines: (order.lines ?? []).map((line) => ({
+            id: line.id,
+            quantity: normalizeInt(line.quantity),
+            linePriceWithTax: normalizeInt(line.linePriceWithTax),
+            customFields: line.customFields
+              ? {
+                  configuration: line.customFields.configuration ?? null,
+                }
+              : null,
+            productVariant: line.productVariant
+              ? {
+                  id: line.productVariant.id,
+                  name: line.productVariant.name ?? 'Product variant',
+                  currencyCode: line.productVariant.currencyCode ?? order.currencyCode ?? 'USD',
+                  product: line.productVariant.product
+                    ? {
+                        id: line.productVariant.product.id,
+                        slug: line.productVariant.product.slug ?? null,
+                        name: line.productVariant.product.name ?? null,
+                        featuredAsset: line.productVariant.product.featuredAsset
+                          ? {
+                              preview: line.productVariant.product.featuredAsset.preview ?? null,
+                              source: line.productVariant.product.featuredAsset.source ?? null,
+                            }
+                          : null,
+                      }
+                    : null,
+                }
+              : null,
+          })),
         }
       : null,
     shippingMethods: eligibleShippingMethods,

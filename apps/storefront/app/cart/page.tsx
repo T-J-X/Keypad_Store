@@ -3,13 +3,24 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
+import ConfiguredKeypadThumbnail from '../../components/configurator/ConfiguredKeypadThumbnail';
 import { notifyCartUpdated } from '../../lib/cartEvents';
+import {
+  buildConfiguredIconLookupFromPayload,
+  countConfiguredSlots,
+  emptyPreviewConfiguration,
+  parseConfigurationForPreview,
+  type ConfiguredIconLookup,
+} from '../../lib/configuredKeypadPreview';
 import { assetUrl } from '../../lib/vendure';
 
 type CartOrderLine = {
   id: string;
   quantity: number;
   linePriceWithTax: number;
+  customFields?: {
+    configuration?: string | null;
+  } | null;
   productVariant: {
     id: string;
     name: string;
@@ -42,11 +53,21 @@ type CartPayload = {
   error?: string;
 };
 
+type IconCatalogPayload = {
+  icons?: Array<{
+    iconId: string;
+    matteAssetPath: string | null;
+    categories: string[];
+  }>;
+  error?: string;
+};
+
 export default function CartPage() {
   const [order, setOrder] = useState<CartOrder | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeLineId, setActiveLineId] = useState<string | null>(null);
+  const [iconLookup, setIconLookup] = useState<ConfiguredIconLookup>(new Map());
 
   const loadCart = useCallback(async () => {
     setIsLoading(true);
@@ -75,6 +96,35 @@ export default function CartPage() {
   useEffect(() => {
     void loadCart();
   }, [loadCart]);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const loadIconCatalog = async () => {
+      try {
+        const response = await fetch('/api/configurator/icon-catalog', {
+          method: 'GET',
+          cache: 'no-store',
+        });
+
+        const payload = (await response.json().catch(() => ({}))) as IconCatalogPayload;
+        if (!response.ok) return;
+
+        if (!cancelled) {
+          const icons = payload.icons ?? [];
+          setIconLookup(buildConfiguredIconLookupFromPayload(icons));
+        }
+      } catch {
+        // Keep empty map and fallback preview placeholders.
+      }
+    };
+
+    void loadIconCatalog();
+
+    return () => {
+      cancelled = true;
+    };
+  }, []);
 
   const hasLines = (order?.lines?.length ?? 0) > 0;
 
@@ -170,12 +220,25 @@ export default function CartPage() {
                   || line.productVariant?.product?.featuredAsset?.source
                   || '';
                 const imageSrc = imagePath ? assetUrl(imagePath) : '';
+                const configurationRaw = line.customFields?.configuration ?? null;
+                const hasConfiguration = typeof configurationRaw === 'string' && configurationRaw.trim().length > 0;
+                const previewConfiguration = hasConfiguration
+                  ? parseConfigurationForPreview(configurationRaw)
+                  : null;
+                const configuredSlots = countConfiguredSlots(previewConfiguration);
                 const isUpdatingLine = activeLineId === line.id;
 
                 return (
                   <li key={line.id} className="flex gap-4 p-4 sm:p-5">
                     <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-neutral-100">
-                      {imageSrc ? (
+                      {hasConfiguration ? (
+                        <ConfiguredKeypadThumbnail
+                          shellAssetPath={imagePath || null}
+                          configuration={previewConfiguration ?? emptyPreviewConfiguration()}
+                          iconLookup={iconLookup}
+                          size="sm"
+                        />
+                      ) : imageSrc ? (
                         <Image
                           src={imageSrc}
                           alt={line.productVariant?.name || 'Product image'}
@@ -196,6 +259,11 @@ export default function CartPage() {
                           {line.productVariant?.name || line.productVariant?.product?.name || 'Product'}
                         </div>
                       )}
+                      {hasConfiguration ? (
+                        <div className="mt-1 text-xs font-semibold uppercase tracking-[0.1em] text-[#1e3a66]">
+                          Custom configuration: {configuredSlots}/4 slots defined
+                        </div>
+                      ) : null}
 
                       <div className="mt-2 inline-flex items-center rounded-full border border-ink/12 bg-white">
                         <button
