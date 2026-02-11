@@ -178,9 +178,28 @@ export default function Navbar() {
   const accountMenuRef = useRef<HTMLDivElement | null>(null);
   const accountButtonRef = useRef<HTMLButtonElement | null>(null);
   const shopMenuRef = useRef<HTMLDivElement | null>(null);
+  const shopMenuCloseTimerRef = useRef<number | null>(null);
   const searchPanelRef = useRef<HTMLDivElement | null>(null);
   const searchButtonRef = useRef<HTMLButtonElement | null>(null);
   const searchInputRef = useRef<HTMLInputElement | null>(null);
+
+  const openShopMenu = useCallback(() => {
+    if (shopMenuCloseTimerRef.current != null) {
+      window.clearTimeout(shopMenuCloseTimerRef.current);
+      shopMenuCloseTimerRef.current = null;
+    }
+    setIsShopMenuOpen(true);
+  }, []);
+
+  const scheduleCloseShopMenu = useCallback(() => {
+    if (shopMenuCloseTimerRef.current != null) {
+      window.clearTimeout(shopMenuCloseTimerRef.current);
+    }
+    shopMenuCloseTimerRef.current = window.setTimeout(() => {
+      setIsShopMenuOpen(false);
+      shopMenuCloseTimerRef.current = null;
+    }, 180);
+  }, []);
 
   const refreshSessionSummary = useCallback(async () => {
     try {
@@ -392,6 +411,14 @@ export default function Navbar() {
     setIsSearchOpen(false);
   }, [isMenuOpen]);
 
+  useEffect(() => {
+    return () => {
+      if (shopMenuCloseTimerRef.current != null) {
+        window.clearTimeout(shopMenuCloseTimerRef.current);
+      }
+    };
+  }, []);
+
   const onLogout = async () => {
     if (isLoggingOut) return;
 
@@ -432,9 +459,8 @@ export default function Navbar() {
     return 'Your account';
   }, [sessionSummary.customer]);
 
-  const desktopPanelClass = isScrolled
-    ? 'border-white/15 bg-[#070a12]/94 text-white shadow-[0_24px_54px_rgba(0,0,0,0.55)]'
-    : 'border-ink/12 bg-white/96 text-ink shadow-[0_24px_54px_rgba(14,17,26,0.16)]';
+  const desktopPanelClass =
+    'border-white/18 bg-[rgba(7,12,20,0.78)] text-white shadow-[0_24px_54px_rgba(0,0,0,0.42)]';
 
   return (
     <>
@@ -442,7 +468,7 @@ export default function Navbar() {
         className={[
           'sticky top-0 z-50 transition-[background-color,border-color,box-shadow,backdrop-filter] duration-300',
           isScrolled
-            ? 'border-b border-white/10 bg-black/50 shadow-[0_20px_50px_rgba(2,6,23,0.48)] backdrop-blur-xl'
+            ? 'border-b border-white/14 bg-[rgba(6,10,18,0.34)] shadow-[0_16px_36px_rgba(2,8,24,0.3)] backdrop-blur-lg'
             : 'border-b border-transparent bg-transparent',
         ].join(' ')}
       >
@@ -484,15 +510,15 @@ export default function Navbar() {
               <div
                 ref={shopMenuRef}
                 className="relative"
-                onMouseEnter={() => setIsShopMenuOpen(true)}
-                onMouseLeave={() => setIsShopMenuOpen(false)}
+                onMouseEnter={openShopMenu}
+                onMouseLeave={scheduleCloseShopMenu}
               >
                 <button
                   type="button"
                   aria-haspopup="menu"
                   aria-expanded={isShopMenuOpen}
                   onClick={() => setIsShopMenuOpen((current) => !current)}
-                  onFocus={() => setIsShopMenuOpen(true)}
+                  onFocus={openShopMenu}
                   className={[
                     'group relative inline-flex items-center gap-1 text-sm font-medium tracking-tight transition-colors duration-200',
                     isScrolled ? 'text-white/80 hover:text-white' : 'text-ink/75 hover:text-ink',
@@ -509,6 +535,8 @@ export default function Navbar() {
                 <div
                   role="menu"
                   aria-label="Shop collections"
+                  onMouseEnter={openShopMenu}
+                  onMouseLeave={scheduleCloseShopMenu}
                   className={[
                     'absolute left-0 top-[calc(100%+14px)] z-30 w-[480px] rounded-2xl border p-4 backdrop-blur-xl transition-all duration-150',
                     desktopPanelClass,
@@ -524,16 +552,11 @@ export default function Navbar() {
                         onClick={() => setIsShopMenuOpen(false)}
                         className={[
                           'rounded-xl border px-3 py-3 transition-colors',
-                          isScrolled
-                            ? 'border-white/10 bg-white/[0.02] hover:border-white/30 hover:bg-white/[0.07]'
-                            : 'border-ink/10 bg-white hover:border-ink/25 hover:bg-ink/[0.03]',
+                          'border-white/12 bg-white/[0.03] hover:border-white/32 hover:bg-white/[0.1]',
                         ].join(' ')}
                       >
                         <div className="text-sm font-semibold tracking-tight">{item.label}</div>
-                        <div className={[
-                          'mt-1 text-xs',
-                          isScrolled ? 'text-white/65' : 'text-ink/55',
-                        ].join(' ')}>
+                        <div className="mt-1 text-xs text-white/70">
                           {item.description}
                         </div>
                       </Link>
@@ -577,18 +600,14 @@ export default function Navbar() {
                     aria-label="Search products"
                     className={[
                       'w-full rounded-full border px-4 py-2 text-sm outline-none transition',
-                      isScrolled
-                        ? 'border-white/15 bg-white/[0.06] text-white placeholder:text-white/50 focus:border-white/35 focus:ring-2 focus:ring-white/20'
-                        : 'border-ink/14 bg-white text-ink placeholder:text-ink/45 focus:border-ink/30 focus:ring-2 focus:ring-ink/15',
+                      'border-white/15 bg-white/[0.08] text-white placeholder:text-white/50 focus:border-white/35 focus:ring-2 focus:ring-white/20',
                     ].join(' ')}
                   />
                   <button
                     type="submit"
                     className={[
                       'inline-flex h-10 w-10 items-center justify-center rounded-full border transition',
-                      isScrolled
-                        ? 'border-white/20 bg-white/[0.08] text-white hover:bg-white/[0.14]'
-                        : 'border-ink/14 bg-white text-ink hover:bg-ink/[0.03]',
+                      'border-white/20 bg-white/[0.08] text-white hover:bg-white/[0.14]',
                     ].join(' ')}
                     aria-label="Submit product search"
                   >
@@ -619,28 +638,28 @@ export default function Navbar() {
                     isAccountMenuOpen ? 'pointer-events-auto translate-y-0 opacity-100' : 'pointer-events-none -translate-y-1 opacity-0',
                   ].join(' ')}
                 >
-                  <div className={['px-2 pb-2 pt-1 text-xs font-medium', isScrolled ? 'text-white/60' : 'text-ink/55'].join(' ')}>{customerLabel}</div>
+                  <div className="px-2 pb-2 pt-1 text-xs font-medium text-white/60">{customerLabel}</div>
                   <Link
                     role="menuitem"
                     href="/account"
                     onClick={() => setIsAccountMenuOpen(false)}
-                    className={[
-                      'block rounded-xl px-3 py-2 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7aa0e4]/45',
-                      isScrolled ? 'text-white/85 hover:bg-white/[0.08] hover:text-white' : 'text-ink/80 hover:bg-ink/[0.04] hover:text-ink',
-                    ].join(' ')}
-                  >
-                    Profile
-                  </Link>
+                  className={[
+                    'block rounded-xl px-3 py-2 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7aa0e4]/45',
+                    'text-white/85 hover:bg-white/[0.08] hover:text-white',
+                  ].join(' ')}
+                >
+                  Profile
+                </Link>
                   <button
                     role="menuitem"
                     type="button"
                     onClick={onLogout}
                     disabled={isLoggingOut}
-                    className={[
-                      'mt-1 block w-full rounded-xl px-3 py-2 text-left text-sm transition disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7aa0e4]/45',
-                      isScrolled ? 'text-white/85 hover:bg-white/[0.08] hover:text-white' : 'text-ink/80 hover:bg-ink/[0.04] hover:text-ink',
-                    ].join(' ')}
-                  >
+                  className={[
+                    'mt-1 block w-full rounded-xl px-3 py-2 text-left text-sm transition disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7aa0e4]/45',
+                    'text-white/85 hover:bg-white/[0.08] hover:text-white',
+                  ].join(' ')}
+                >
                     {isLoggingOut ? 'Logging out...' : 'Logout'}
                   </button>
                 </div>

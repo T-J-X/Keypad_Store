@@ -17,6 +17,15 @@ function hexToRgba(hex: string, alpha: number) {
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
 }
 
+function ringGlowShadow(color: string) {
+  return [
+    `inset 0 0 0 2px ${hexToRgba(color, 0.92)}`,
+    `0 0 8px ${hexToRgba(color, 0.92)}`,
+    `0 0 18px ${hexToRgba(color, 0.72)}`,
+    `0 0 30px ${hexToRgba(color, 0.48)}`,
+  ].join(', ');
+}
+
 export default function KeypadPreview({
   shellAssetPath,
   slots,
@@ -64,6 +73,8 @@ export default function KeypadPreview({
           const isActive = slotId === activeSlotId;
           const matteSrc = slot.matteAssetPath ? assetUrl(slot.matteAssetPath) : '';
           const ringColor = slot.color;
+          const ringDiameter = PKP_2200_SI_GEOMETRY.buttonVisual.ringDiameterPctOfSlot;
+          const iconDiameter = PKP_2200_SI_GEOMETRY.buttonVisual.iconDiameterPctOfSlot;
 
           return (
             <button
@@ -72,10 +83,10 @@ export default function KeypadPreview({
               onClick={() => onSlotClick(slotId)}
               aria-label={`Configure ${geometry.label}`}
               className={[
-                'absolute overflow-hidden rounded-[22%] border transition-[transform,border-color,box-shadow,background] duration-200',
+                'absolute overflow-hidden rounded-[18%] transition-[transform,box-shadow,background] duration-200',
                 isActive
-                  ? 'z-40 scale-[1.02] border-white/70 bg-white/14 shadow-[0_0_0_1px_rgba(255,255,255,0.5),0_0_0_8px_rgba(30,167,255,0.22)]'
-                  : 'z-30 border-white/35 bg-white/[0.09] hover:border-white/65 hover:bg-white/[0.16]',
+                  ? 'z-40 scale-[1.01] bg-white/[0.06] shadow-[0_0_0_1px_rgba(170,189,216,0.32),0_0_0_8px_rgba(30,167,255,0.14)]'
+                  : 'z-30 bg-transparent hover:bg-white/[0.04]',
               ].join(' ')}
               style={{
                 left: `${geometry.leftPct}%`,
@@ -84,37 +95,63 @@ export default function KeypadPreview({
                 height: `${geometry.heightPct}%`,
               }}
             >
-              <span className="pointer-events-none absolute left-2 top-1.5 z-30 rounded-full bg-[#04122d]/70 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-blue-50/85">
+              <span className="pointer-events-none absolute left-1.5 top-1.5 z-20 rounded-full bg-[#04122d]/70 px-1.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-blue-50/85">
                 {geometry.label}
               </span>
 
-              {matteSrc ? (
-                <Image
-                  src={matteSrc}
-                  alt={slot.iconName || slot.iconId || 'Selected matte insert'}
-                  fill
-                  sizes="(max-width: 1024px) 22vw, 110px"
-                  className="pointer-events-none absolute inset-0 z-20 object-contain p-[14%]"
+              <span
+                className="pointer-events-none absolute left-1/2 top-1/2 z-10 rounded-full"
+                style={{
+                  width: `${ringDiameter}%`,
+                  height: `${ringDiameter}%`,
+                  transform: 'translate(-50%, -50%)',
+                  boxShadow:
+                    'inset 0 0 0 1.5px rgba(164,176,196,0.42), inset 0 2px 2px rgba(255,255,255,0.08), inset 0 -4px 6px rgba(0,0,0,0.35)',
+                }}
+              />
+
+              {ringColor ? (
+                <span
+                  className="pointer-events-none absolute left-1/2 top-1/2 z-20 rounded-full"
+                  style={{
+                    width: `${ringDiameter}%`,
+                    height: `${ringDiameter}%`,
+                    transform: 'translate(-50%, -50%)',
+                    boxShadow: ringGlowShadow(ringColor),
+                    background: `radial-gradient(circle, transparent 62%, ${hexToRgba(ringColor, 0.28)} 76%, transparent 100%)`,
+                  }}
                 />
+              ) : null}
+
+              {matteSrc ? (
+                <span
+                  className="pointer-events-none absolute left-1/2 top-1/2 z-30"
+                  style={{
+                    width: `${iconDiameter}%`,
+                    height: `${iconDiameter}%`,
+                    transform: 'translate(-50%, -50%)',
+                  }}
+                >
+                  <Image
+                    src={matteSrc}
+                    alt={slot.iconName || slot.iconId || 'Selected matte insert'}
+                    fill
+                    sizes="(max-width: 1024px) 12vw, 48px"
+                    className="object-contain drop-shadow-[0_1px_2px_rgba(0,0,0,0.55)]"
+                  />
+                </span>
               ) : (
-                <span className="pointer-events-none absolute inset-0 z-20 grid place-items-center text-2xl font-semibold text-white/60">
+                <span
+                  className="pointer-events-none absolute left-1/2 top-1/2 z-30 grid place-items-center text-xl font-semibold text-white/60"
+                  style={{
+                    width: `${iconDiameter}%`,
+                    height: `${iconDiameter}%`,
+                    transform: 'translate(-50%, -50%)',
+                  }}
+                >
                   +
                 </span>
               )}
-
-              <span
-                className="pointer-events-none absolute inset-[2px] z-40 rounded-[22%]"
-                style={
-                  ringColor
-                    ? {
-                        boxShadow: `inset 0 0 0 2px ${ringColor}, 0 0 18px ${hexToRgba(ringColor, 0.75)}`,
-                        background: `radial-gradient(circle at 50% 50%, ${hexToRgba(ringColor, 0.12)} 0%, transparent 65%)`,
-                      }
-                    : {
-                        boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.32)',
-                      }
-                }
-              />
             </button>
           );
         })}

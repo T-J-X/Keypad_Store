@@ -27,7 +27,7 @@ type StaticProps = BaseProps & {
 type CategoryCardProps = ClickProps | LinkProps | StaticProps;
 
 const shellClass =
-  'group rounded-2xl border border-surface-border bg-[linear-gradient(160deg,#ffffff_0%,#f9fbff_100%)] p-4 text-left transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-1 hover:border-ink/20 hover:shadow-premium';
+  'group h-full w-full rounded-2xl border border-surface-border bg-[linear-gradient(160deg,#ffffff_0%,#f9fbff_100%)] p-4 text-left transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-1 hover:border-ink/20 hover:shadow-premium';
 
 export default function CategoryCard(props: CategoryCardProps) {
   const content = (

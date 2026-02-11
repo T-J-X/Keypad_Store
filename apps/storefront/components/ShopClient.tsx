@@ -785,18 +785,12 @@ export default function ShopClient({
               </button>
             </div>
             {landingDisciplineTiles.length > 0 ? (
-              <div className="grid auto-rows-fr gap-4 sm:grid-cols-2 xl:grid-cols-4">
-                {landingDisciplineTiles.map((tile, index) => {
+              <div className="grid auto-rows-fr gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+                {landingDisciplineTiles.map((tile) => {
                   const isInteractive = Boolean(tile.slug);
-                  const bentoSpanClass =
-                    index === 0
-                      ? 'sm:col-span-2 xl:col-span-2'
-                      : index % 5 === 4
-                        ? 'sm:col-span-2 xl:col-span-1'
-                        : '';
 
                   return (
-                    <div key={tile.id} className={bentoSpanClass}>
+                    <div key={tile.id} className="h-full">
                       {isInteractive ? (
                         <CategoryCard
                           label={tile.label}

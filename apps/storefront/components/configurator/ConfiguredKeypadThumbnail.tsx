@@ -6,6 +6,7 @@ import type { KeypadConfigurationDraft, SlotId } from '../../lib/keypadConfigura
 import { SLOT_IDS } from '../../lib/keypadConfiguration';
 import type { ConfiguredIconLookup, ConfiguredIconLookupEntry } from '../../lib/configuredKeypadPreview';
 import { assetUrl, categorySlug } from '../../lib/vendure';
+import { PKP_2200_SI_GEOMETRY } from '../../config/layouts/geometry';
 import { PKP_2200_SI_LAYOUT } from './pkp2200Layout';
 
 function resolveRingColor(value: string | null) {
@@ -22,6 +23,15 @@ function hexToRgba(hex: string, alpha: number) {
   const b = Number.parseInt(normalized.slice(4, 6), 16);
 
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function ringGlowShadow(color: string) {
+  return [
+    `inset 0 0 0 2px ${hexToRgba(color, 0.9)}`,
+    `0 0 6px ${hexToRgba(color, 0.88)}`,
+    `0 0 14px ${hexToRgba(color, 0.66)}`,
+    `0 0 24px ${hexToRgba(color, 0.44)}`,
+  ].join(', ');
 }
 
 function resolveMatteAssetPath(iconId: string | null, icon: ConfiguredIconLookupEntry | undefined) {
@@ -82,6 +92,8 @@ export default function ConfiguredKeypadThumbnail({
         const ringColor = resolveRingColor(slot?.color ?? null);
 
         const geometry = PKP_2200_SI_LAYOUT[slotId as SlotId];
+        const ringDiameter = PKP_2200_SI_GEOMETRY.buttonVisual.ringDiameterPctOfSlot;
+        const iconDiameter = PKP_2200_SI_GEOMETRY.buttonVisual.iconDiameterPctOfSlot;
         const style: CSSProperties = {
           left: `${geometry.leftPct}%`,
           top: `${geometry.topPct}%`,
@@ -92,7 +104,7 @@ export default function ConfiguredKeypadThumbnail({
         return (
           <div
             key={slotId}
-            className="absolute overflow-hidden rounded-[22%] border border-white/35 bg-white/[0.09]"
+            className="absolute overflow-hidden rounded-[18%]"
             style={style}
           >
             {showSlotLabels ? (
@@ -101,33 +113,59 @@ export default function ConfiguredKeypadThumbnail({
               </span>
             ) : null}
 
-            {matteSrc ? (
-              <Image
-                src={matteSrc}
-                alt={iconId ? `Icon ${iconId}` : 'Configured icon'}
-                fill
-                className="pointer-events-none absolute inset-0 z-20 object-contain p-[14%]"
-                sizes={size === 'lg' ? '80px' : '30px'}
+            <span
+              className="pointer-events-none absolute left-1/2 top-1/2 z-10 rounded-full"
+              style={{
+                width: `${ringDiameter}%`,
+                height: `${ringDiameter}%`,
+                transform: 'translate(-50%, -50%)',
+                boxShadow:
+                  'inset 0 0 0 1.5px rgba(164,176,196,0.4), inset 0 2px 2px rgba(255,255,255,0.08), inset 0 -4px 6px rgba(0,0,0,0.35)',
+              }}
+            />
+
+            {ringColor ? (
+              <span
+                className="pointer-events-none absolute left-1/2 top-1/2 z-20 rounded-full"
+                style={{
+                  width: `${ringDiameter}%`,
+                  height: `${ringDiameter}%`,
+                  transform: 'translate(-50%, -50%)',
+                  boxShadow: ringGlowShadow(ringColor),
+                  background: `radial-gradient(circle, transparent 62%, ${hexToRgba(ringColor, 0.24)} 76%, transparent 100%)`,
+                }}
               />
+            ) : null}
+
+            {matteSrc ? (
+              <span
+                className="pointer-events-none absolute left-1/2 top-1/2 z-30"
+                style={{
+                  width: `${iconDiameter}%`,
+                  height: `${iconDiameter}%`,
+                  transform: 'translate(-50%, -50%)',
+                }}
+              >
+                <Image
+                  src={matteSrc}
+                  alt={iconId ? `Icon ${iconId}` : 'Configured icon'}
+                  fill
+                  className="object-contain drop-shadow-[0_1px_2px_rgba(0,0,0,0.55)]"
+                  sizes={size === 'lg' ? '68px' : '26px'}
+                />
+              </span>
             ) : (
-              <span className="pointer-events-none absolute inset-0 z-20 grid place-items-center text-base font-semibold text-white/60">
+              <span
+                className="pointer-events-none absolute left-1/2 top-1/2 z-30 grid place-items-center text-base font-semibold text-white/60"
+                style={{
+                  width: `${iconDiameter}%`,
+                  height: `${iconDiameter}%`,
+                  transform: 'translate(-50%, -50%)',
+                }}
+              >
                 +
               </span>
             )}
-
-            <span
-              className="pointer-events-none absolute inset-[2px] z-30 rounded-[22%]"
-              style={
-                ringColor
-                  ? {
-                      boxShadow: `inset 0 0 0 2px ${ringColor}, 0 0 18px ${hexToRgba(ringColor, 0.72)}`,
-                      background: `radial-gradient(circle at 50% 50%, ${hexToRgba(ringColor, 0.12)} 0%, transparent 65%)`,
-                    }
-                  : {
-                      boxShadow: 'inset 0 0 0 1px rgba(255,255,255,0.28)',
-                    }
-              }
-            />
           </div>
         );
       })}
