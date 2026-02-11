@@ -2,6 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import type { KeypadProduct } from '../lib/vendure';
 import { assetUrl } from '../lib/vendure';
+import { resolvePkpModelCode } from '../lib/keypadUtils';
 import { buttonPrimaryClass, buttonSecondaryClass } from './buttonStyles';
 import {
   cardPlaceholderTextClass,
@@ -17,16 +18,6 @@ const keypadDescriptions: Record<string, string> = {
   'pkp-2600-si': 'Blink Marine CAN Keypad 12 Button 2x6',
   'pkp-3500-si': 'Blink Marine CAN Keypad 15 Button 3x5',
 };
-
-function resolveModelCode(product: KeypadProduct) {
-  const slugMatch = product.slug.match(/pkp-\d{4}-si/i);
-  if (slugMatch) return slugMatch[0].toUpperCase();
-
-  const nameMatch = product.name.match(/pkp[\s-]?(\d{4})[\s-]?si/i);
-  if (nameMatch) return `PKP-${nameMatch[1]}-SI`;
-
-  return product.name;
-}
 
 function resolveDescription(modelCode: string) {
   return keypadDescriptions[modelCode.toLowerCase()] || 'Keypad model ready for configuration.';
@@ -44,7 +35,7 @@ export default function KeypadCard({
   replaceDetailNavigation?: boolean;
 }) {
   const image = product.featuredAsset?.preview ?? product.featuredAsset?.source ?? '';
-  const modelCode = resolveModelCode(product);
+  const modelCode = resolvePkpModelCode(product.slug, product.name) || product.name;
   const description = resolveDescription(modelCode);
   const isShopCard = mode === 'shop';
   const detailHref = learnMoreHref ?? `/product/${product.slug}`;

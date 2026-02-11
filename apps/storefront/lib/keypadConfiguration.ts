@@ -16,7 +16,7 @@ export type SlotConfiguration = {
 
 export type KeypadConfiguration = Record<SlotId, SlotConfiguration>;
 
-const ICON_ID_PATTERN = /^[A-Za-z0-9]+$/;
+const ICON_ID_PATTERN = /^[A-Za-z0-9]{3,4}$/;
 const HEX_COLOR_PATTERN = /^#[0-9A-F]{6}$/;
 
 export function createEmptyConfigurationDraft(): KeypadConfigurationDraft {

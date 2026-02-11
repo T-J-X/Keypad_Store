@@ -2,15 +2,15 @@ import path from 'node:path';
 import { PluginCommonModule, VendurePlugin } from '@vendure/core';
 import type { AdminUiExtension } from '@vendure/ui-devkit/compiler';
 import gql from 'graphql-tag';
-import { BaseShopAdminResolver } from './base-shop.admin.resolver';
-import { BaseShopConfig } from './base-shop-config.entity';
-import { BaseShopService } from './base-shop.service';
-import { BaseShopShopResolver } from './base-shop.shop.resolver';
-import { OrderExportShopResolver } from './order-export.shop.resolver';
-import { OrderExportService } from './order-export.service';
-import { SavedConfiguration } from './saved-configuration.entity';
-import { SavedConfigurationShopResolver } from './saved-configuration.shop.resolver';
-import { SavedConfigurationService } from './saved-configuration.service';
+import { BaseShopAdminResolver } from './config/base-shop.admin.resolver';
+import { BaseShopConfig } from './config/base-shop-config.entity';
+import { BaseShopService } from './config/base-shop.service';
+import { BaseShopShopResolver } from './config/base-shop.shop.resolver';
+import { OrderExportShopResolver } from './export/order-export.shop.resolver';
+import { OrderExportService } from './export/order-export.service';
+import { SavedConfiguration } from './saved-designs/saved-configuration.entity';
+import { SavedConfigurationShopResolver } from './saved-designs/saved-configuration.shop.resolver';
+import { SavedConfigurationService } from './saved-designs/saved-configuration.service';
 
 const adminApiExtensions = gql`
   type BaseShopTopTile {

@@ -11,6 +11,7 @@ import {
   LanguageCode,
   LogLevel,
   NativeAuthenticationStrategy,
+  ProductService,
   VendureConfig,
 } from '@vendure/core';
 import {
@@ -21,6 +22,11 @@ import { AdminUiPlugin } from '@vendure/admin-ui-plugin';
 import { compileUiExtensions } from '@vendure/ui-devkit/compiler';
 import { BaseShopPlugin } from './plugins/base-shop';
 import { GoogleAuthenticationStrategy } from './auth/google-authentication-strategy';
+import {
+  ConfigurationValidationError,
+  findMissingIconIds,
+  parseAndValidateStrictConfiguration,
+} from './plugins/base-shop/saved-designs/keypad-configuration';
 
 const host = 'localhost';
 const port = 3000;
@@ -330,6 +336,30 @@ export const config: VendureConfig = {
           },
         ],
         ui: { component: 'json' },
+        validate: async (value, injector, ctx) => {
+          if (value == null || value === '') {
+            return;
+          }
+          if (typeof value !== 'string') {
+            return 'Configuration must be a JSON string.';
+          }
+
+          let strictConfiguration;
+          try {
+            strictConfiguration = parseAndValidateStrictConfiguration(value);
+          } catch (error) {
+            if (error instanceof ConfigurationValidationError) {
+              return error.message;
+            }
+            throw error;
+          }
+
+          const productService = injector.get(ProductService);
+          const missingIconIds = await findMissingIconIds(ctx, productService, strictConfiguration);
+          if (missingIconIds.length > 0) {
+            return `Unknown iconId(s): ${missingIconIds.join(', ')}.`;
+          }
+        },
       },
     ],
   },

@@ -161,7 +161,3 @@ export function assetUrl(input?: string | null) {
 
   return `${host}${normalized}`;
 }
-
-export function assetFromProduct(product: { featuredAsset?: VendureAsset | null }) {
-  return product.featuredAsset ?? null;
-}

@@ -12,6 +12,7 @@ type PopupView = 'icons' | 'swatches';
 
 export default function IconSelectionPopup({
   isOpen,
+  isMobile = false,
   slotLabel,
   icons,
   selectedIconId,
@@ -21,6 +22,7 @@ export default function IconSelectionPopup({
   onClose,
 }: {
   isOpen: boolean;
+  isMobile?: boolean;
   slotLabel: string;
   icons: IconCatalogItem[];
   selectedIconId: string | null;
@@ -76,11 +78,21 @@ export default function IconSelectionPopup({
   if (!isOpen) return null;
 
   const tabButtonClass =
-    'inline-flex min-h-10 min-w-[102px] items-center justify-center rounded-full border px-4 text-xs font-semibold uppercase tracking-[0.12em] transition';
+    'inline-flex min-h-11 min-w-[102px] items-center justify-center rounded-full border px-4 text-xs font-semibold uppercase tracking-[0.12em] transition';
+
+  const overlayClass = isMobile
+    ? 'fixed inset-0 z-[80] flex items-end bg-[#020a18]/72 px-0 py-0 backdrop-blur-[2px]'
+    : 'fixed inset-0 z-[80] flex items-center justify-center bg-[#020a18]/72 px-4 py-6 backdrop-blur-[2px]';
+  const panelClass = isMobile
+    ? 'h-[60vh] w-full overflow-hidden rounded-t-3xl border border-white/15 border-b-0 bg-[linear-gradient(180deg,#0d1f43_0%,#07132a_100%)] shadow-[0_-20px_80px_rgba(2,8,24,0.55)]'
+    : 'w-full max-w-5xl overflow-hidden rounded-3xl border border-white/15 bg-[linear-gradient(180deg,#0d1f43_0%,#07132a_100%)] shadow-[0_30px_80px_rgba(2,8,24,0.55)]';
+  const bodyClass = isMobile
+    ? 'grid h-[calc(60vh-132px)] grid-cols-1 gap-4 overflow-auto px-5 py-5 sm:px-6 lg:grid-cols-[220px_minmax(0,1fr)]'
+    : 'grid max-h-[70vh] grid-cols-1 gap-4 overflow-auto px-5 py-5 sm:px-6 lg:grid-cols-[220px_minmax(0,1fr)]';
 
   return (
-    <div className="fixed inset-0 z-[80] flex items-center justify-center bg-[#020a18]/72 px-4 py-6 backdrop-blur-[2px]">
-      <div className="w-full max-w-5xl overflow-hidden rounded-3xl border border-white/15 bg-[linear-gradient(180deg,#0d1f43_0%,#07132a_100%)] shadow-[0_30px_80px_rgba(2,8,24,0.55)]">
+    <div className={overlayClass}>
+      <div className={panelClass}>
         <div className="flex items-center justify-between border-b border-white/12 px-5 py-4 sm:px-6">
           <div>
             <div className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-100/80">Icon Library</div>
@@ -89,7 +101,7 @@ export default function IconSelectionPopup({
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-10 w-10 items-center justify-center rounded-full border border-white/20 text-white transition hover:border-white/50 hover:bg-white/10"
+            className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/20 text-white transition hover:border-white/50 hover:bg-white/10"
             aria-label="Close icon selector"
           >
             <X className="h-4 w-4" />
@@ -124,7 +136,7 @@ export default function IconSelectionPopup({
         </div>
 
         {activeView === 'icons' ? (
-          <div className="grid max-h-[70vh] grid-cols-1 gap-4 overflow-auto px-5 py-5 sm:px-6 lg:grid-cols-[220px_minmax(0,1fr)]">
+          <div className={bodyClass}>
             <aside className="space-y-2">
               <div className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-100/70">Categories</div>
               <div className="flex flex-wrap gap-2 lg:flex-col">
@@ -134,7 +146,7 @@ export default function IconSelectionPopup({
                     type="button"
                     onClick={() => setActiveCategorySlug(tab.slug)}
                     className={[
-                      'inline-flex min-h-10 items-center justify-center rounded-full border px-3 text-xs font-semibold tracking-wide transition lg:justify-start',
+                      'inline-flex min-h-11 items-center justify-center rounded-full border px-3 text-xs font-semibold tracking-wide transition lg:justify-start',
                       tab.slug === activeCategorySlug
                         ? 'border-[#79b8ff] bg-[#193665] text-white'
                         : 'border-white/20 bg-white/5 text-blue-100 hover:border-white/45 hover:bg-white/10',

@@ -14,12 +14,16 @@ import {
   isConfigurationComplete,
   serializeConfiguration,
   validateAndNormalizeConfigurationInput,
-  SLOT_IDS,
   type SlotId,
 } from '../../lib/keypadConfiguration';
+import ConfiguratorActions from './ConfiguratorActions';
+import ConfigurationSidebar from './ConfigurationSidebar';
 import KeypadPreview from './KeypadPreview';
 import IconSelectionPopup from './IconSelectionPopup';
 import { PKP_2200_SI_LAYOUT } from './pkp2200Layout';
+import PremiumToast, { type ToastPayload } from './PremiumToast';
+import SaveDesignModal from './SaveDesignModal';
+import type { PilotKeypadProduct, SavedConfigurationItem, StatusMessage } from './types';
 
 type IconCatalogPayload = {
   icons?: IconCatalogItem[];
@@ -31,27 +35,9 @@ type SessionSummaryPayload = {
   error?: string;
 };
 
-type SavedConfigurationItem = {
-  id: string;
-  name: string;
-  keypadModel: string;
-  configuration: string;
-  createdAt: string;
-  updatedAt: string;
-};
-
 type SavedConfigurationPayload = {
   item?: SavedConfigurationItem;
   error?: string;
-};
-
-export type PilotKeypadProduct = {
-  id: string;
-  slug: string;
-  name: string;
-  modelCode: string;
-  shellAssetPath: string | null;
-  productVariantId: string | null;
 };
 
 function buildDefaultSavedName(modelCode: string) {
@@ -80,10 +66,11 @@ export default function Pkp2200Configurator({
   const [icons, setIcons] = useState<IconCatalogItem[]>([]);
   const [iconsLoading, setIconsLoading] = useState(true);
   const [iconsError, setIconsError] = useState<string | null>(null);
+  const [isMobile, setIsMobile] = useState(false);
 
   const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
 
-  const [cartStatus, setCartStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [cartStatus, setCartStatus] = useState<StatusMessage | null>(null);
   const [addingToCart, setAddingToCart] = useState(false);
   const [lastOrderCode, setLastOrderCode] = useState<string | null>(null);
 
@@ -93,11 +80,13 @@ export default function Pkp2200Configurator({
 
   const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
   const [saveName, setSaveName] = useState('');
-  const [saveStatus, setSaveStatus] = useState<{ type: 'success' | 'error'; message: string } | null>(null);
+  const [saveStatus, setSaveStatus] = useState<StatusMessage | null>(null);
   const [savingToAccount, setSavingToAccount] = useState(false);
 
   const [downloadingPdf, setDownloadingPdf] = useState(false);
+  const [toast, setToast] = useState<ToastPayload | null>(null);
   const hydratedLoadIdRef = useRef<string | null>(null);
+  const resetScopeRef = useRef<string | null>(null);
 
   const loadSavedId = useMemo(() => {
     const value = searchParams.get('load');
@@ -106,10 +95,35 @@ export default function Pkp2200Configurator({
   }, [searchParams]);
 
   useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const mediaQuery = window.matchMedia('(max-width: 1023px)');
+    const updateMobile = () => setIsMobile(mediaQuery.matches);
+
+    updateMobile();
+    mediaQuery.addEventListener('change', updateMobile);
+    return () => {
+      mediaQuery.removeEventListener('change', updateMobile);
+    };
+  }, []);
+
+  useEffect(() => {
+    const resetScope = `${keypad.modelCode}::${loadSavedId ?? ''}`;
+    if (resetScopeRef.current === resetScope) return;
+
     reset(keypad.modelCode);
     setLoadedSavedConfig(null);
+    setSavedConfigError(null);
     hydratedLoadIdRef.current = null;
-  }, [keypad.modelCode, reset]);
+    resetScopeRef.current = resetScope;
+  }, [keypad.modelCode, loadSavedId, reset]);
+
+  useEffect(() => {
+    if (!toast) return;
+    const timer = window.setTimeout(() => setToast(null), 5500);
+    return () => {
+      window.clearTimeout(timer);
+    };
+  }, [toast]);
 
   useEffect(() => {
     let cancelled = false;
@@ -225,6 +239,7 @@ export default function Pkp2200Configurator({
           setLoadedSavedConfig(payload.item);
           setSaveName(payload.item.name);
           hydratedLoadIdRef.current = loadSavedId;
+          resetScopeRef.current = `${keypad.modelCode}::${loadSavedId ?? ''}`;
           setSaveStatus({ type: 'success', message: `Loaded saved design "${payload.item.name}".` });
         }
       } catch (error) {
@@ -297,11 +312,13 @@ export default function Pkp2200Configurator({
 
       notifyCartUpdated();
       setLastOrderCode(payload.orderCode ?? null);
-      setCartStatus({
-        type: 'success',
+      setCartStatus(null);
+      setToast({
         message: payload.orderCode
           ? `Configured keypad added. Order ${payload.orderCode} updated.`
           : 'Configured keypad added to cart.',
+        ctaHref: '/cart',
+        ctaLabel: 'View Cart',
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Could not add configured keypad to cart.';
@@ -367,11 +384,13 @@ export default function Pkp2200Configurator({
       }
 
       setLoadedSavedConfig(payload.item);
-      setSaveStatus({
-        type: 'success',
+      setSaveStatus(null);
+      setToast({
         message: loadedSavedConfig
           ? `Updated "${payload.item.name}".`
           : `Saved "${payload.item.name}" to your account.`,
+        ctaHref: '/account',
+        ctaLabel: 'View Account',
       });
       setIsSaveModalOpen(false);
     } catch (error) {
@@ -435,8 +454,12 @@ export default function Pkp2200Configurator({
     }
   };
 
+  const configurationJson = useMemo(() => serializeConfiguration(configurationDraft), [configurationDraft]);
+  const canOpenSaveAction = isAuthenticated !== null;
+  const canDownloadPdf = Boolean(lastOrderCode && strictConfiguration);
+
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 pb-20 pt-10 sm:px-6 lg:px-8">
+    <div className="mx-auto w-full max-w-7xl px-4 pb-28 pt-10 sm:px-6 lg:px-8 lg:pb-20">
       <div className="overflow-hidden rounded-3xl border border-[#0f2c5a] bg-[radial-gradient(130%_120%_at_50%_0%,#1e63bc_0%,#102d5a_36%,#060f24_100%)] p-6 shadow-[0_34px_100px_rgba(2,10,28,0.45)] sm:p-8">
         <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
           <div>
@@ -468,130 +491,76 @@ export default function Pkp2200Configurator({
             onSlotClick={openSlotPopup}
           />
 
-          <section className="card relative border border-white/20 bg-[linear-gradient(180deg,#f7fbff_0%,#ebf2ff_100%)] p-5 shadow-[0_18px_36px_rgba(6,22,47,0.24)] sm:p-6">
-            <h2 className="text-lg font-semibold tracking-tight text-[#10223f]">Slot Configuration</h2>
-            <p className="mt-1 text-sm text-[#3a4e72]">
-              Each slot requires a valid alphanumeric icon ID before checkout and account save.
-            </p>
-
-            <div className="mt-4 space-y-2">
-              {SLOT_IDS.map((slotId) => {
-                const slot = slots[slotId];
-                const label = PKP_2200_SI_LAYOUT[slotId].label;
-                const isAssigned = Boolean(slot.iconId);
-
-                return (
-                  <div
-                    key={slotId}
-                    className="flex items-center justify-between rounded-2xl border border-[#d5e2f5] bg-white px-3 py-3"
-                  >
-                    <div>
-                      <div className="text-xs font-semibold uppercase tracking-[0.14em] text-[#4c648a]">{label}</div>
-                      <div className="mt-1 text-sm font-semibold text-[#0f2241]">
-                        {slot.iconId || 'Empty'}
-                      </div>
-                      <div className="mt-0.5 text-xs text-[#4d5f7f]">
-                        {slot.color ? `Ring ${slot.color}` : 'No glow'}
-                      </div>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <button
-                        type="button"
-                        onClick={() => openSlotPopup(slotId)}
-                        className="inline-flex min-h-10 min-w-[86px] items-center justify-center rounded-full border border-[#0f3d7a] px-3 text-xs font-semibold uppercase tracking-[0.12em] text-[#0f3d7a] transition hover:bg-[#0f3d7a] hover:text-white"
-                      >
-                        {isAssigned ? 'Edit' : 'Assign'}
-                      </button>
-                      {isAssigned ? (
-                        <button
-                          type="button"
-                          onClick={() => clearSlot(slotId)}
-                          className="inline-flex min-h-10 min-w-[78px] items-center justify-center rounded-full border border-[#cdd9ec] px-3 text-xs font-semibold uppercase tracking-[0.12em] text-[#5c6f90] transition hover:border-[#8ea4c8] hover:text-[#1e3355]"
-                        >
-                          Clear
-                        </button>
-                      ) : null}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-
-            <div className="mt-5 rounded-2xl border border-dashed border-[#b8cce8] bg-[#f4f8ff] p-3">
-              <div className="text-xs font-semibold uppercase tracking-[0.14em] text-[#4f6387]">Configuration JSON</div>
-              <pre className="mt-2 overflow-auto text-[11px] leading-5 text-[#1f3357]">
-                {serializeConfiguration(configurationDraft)}
-              </pre>
-            </div>
-
-            <div className="mt-5 grid gap-2 sm:grid-cols-2">
-              <button
-                type="button"
-                onClick={onAddConfiguredKeypad}
-                disabled={!isComplete || !keypad.productVariantId || addingToCart}
-                className="inline-flex min-h-12 items-center justify-center rounded-full border border-transparent bg-[linear-gradient(90deg,#031331_0%,#0d2f63_58%,#1f59a6_100%)] px-5 text-sm font-semibold uppercase tracking-[0.13em] text-white transition hover:-translate-y-[1px] hover:shadow-[0_12px_28px_rgba(8,31,64,0.32)] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {addingToCart ? 'Adding...' : 'Add Configured Keypad'}
-              </button>
-
-              <button
-                type="button"
-                onClick={onOpenSaveModal}
-                disabled={!isComplete || savingToAccount || isAuthenticated === null}
-                className="inline-flex min-h-12 items-center justify-center rounded-full border border-[#0f3d7a] bg-white px-5 text-sm font-semibold uppercase tracking-[0.13em] text-[#0f3d7a] transition hover:bg-[#0f3d7a] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {loadedSavedConfig ? 'Update Saved Design' : 'Save To Account'}
-              </button>
-            </div>
-
-            <div className="mt-2 grid gap-2 sm:grid-cols-2">
-              <button
-                type="button"
-                onClick={onDownloadPdf}
-                disabled={!lastOrderCode || !strictConfiguration || downloadingPdf}
-                className="inline-flex min-h-11 items-center justify-center rounded-full border border-[#0d2f63] bg-[#e8f1ff] px-4 text-xs font-semibold uppercase tracking-[0.12em] text-[#0d2f63] transition hover:bg-[#d9e9ff] disabled:cursor-not-allowed disabled:opacity-50"
-              >
-                {downloadingPdf ? 'Generating...' : 'Download PDF'}
-              </button>
-              <Link
-                href="/account"
-                className="inline-flex min-h-11 items-center justify-center rounded-full border border-[#cdd9ec] px-4 text-xs font-semibold uppercase tracking-[0.12em] text-[#5c6f90] transition hover:border-[#8ea4c8] hover:text-[#1e3355]"
-              >
-                Open My Saved Designs
-              </Link>
-            </div>
-
-            {!isComplete ? (
-              <p className="mt-2 text-xs font-semibold text-[#8a2f2f]">
-                All 4 slots must be filled before Add to cart and Save to account.
-              </p>
-            ) : null}
-
-            {loadingSavedConfig ? <p className="mt-3 text-xs text-[#445f89]">Loading saved design...</p> : null}
-            {iconsLoading ? <p className="mt-3 text-xs text-[#445f89]">Loading icon catalog...</p> : null}
-            {iconsError ? <p className="mt-3 text-xs font-semibold text-rose-700">{iconsError}</p> : null}
-            {savedConfigError ? <p className="mt-3 text-xs font-semibold text-rose-700">{savedConfigError}</p> : null}
-            {cartStatus ? (
-              <p className={cartStatus.type === 'success' ? 'mt-3 text-sm font-semibold text-[#123f2f]' : 'mt-3 text-sm font-semibold text-rose-700'}>
-                {cartStatus.message}
-              </p>
-            ) : null}
-            {saveStatus ? (
-              <p className={saveStatus.type === 'success' ? 'mt-3 text-sm font-semibold text-[#123f2f]' : 'mt-3 text-sm font-semibold text-rose-700'}>
-                {saveStatus.message}
-              </p>
-            ) : null}
-            <div className="mt-4">
-              <Link href="/cart" className="text-sm font-semibold text-[#0f3d7a] underline underline-offset-4">
-                Review cart
-              </Link>
-            </div>
-          </section>
+          <ConfigurationSidebar
+            slots={slots}
+            configurationJson={configurationJson}
+            isComplete={isComplete}
+            loadingSavedConfig={loadingSavedConfig}
+            iconsLoading={iconsLoading}
+            iconsError={iconsError}
+            savedConfigError={savedConfigError}
+            cartStatus={cartStatus}
+            saveStatus={saveStatus}
+            onOpenSlotPopup={openSlotPopup}
+            onClearSlot={clearSlot}
+          >
+            {!isMobile ? (
+              <ConfiguratorActions
+                variant="inline"
+                isComplete={isComplete}
+                hasVariant={Boolean(keypad.productVariantId)}
+                addingToCart={addingToCart}
+                savingToAccount={savingToAccount}
+                downloadingPdf={downloadingPdf}
+                canOpenSave={canOpenSaveAction}
+                canDownloadPdf={canDownloadPdf}
+                hasLoadedSavedConfig={Boolean(loadedSavedConfig)}
+                onAddToCart={onAddConfiguredKeypad}
+                onOpenSaveModal={onOpenSaveModal}
+                onDownloadPdf={onDownloadPdf}
+              />
+            ) : (
+              <div className="mt-2 grid gap-2 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={onDownloadPdf}
+                  disabled={!canDownloadPdf || downloadingPdf}
+                  className="inline-flex min-h-11 items-center justify-center rounded-full border border-[#0d2f63] bg-[#e8f1ff] px-4 text-xs font-semibold uppercase tracking-[0.12em] text-[#0d2f63] transition hover:bg-[#d9e9ff] disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {downloadingPdf ? 'Generating...' : 'Download PDF'}
+                </button>
+                <Link
+                  href="/account"
+                  className="inline-flex min-h-11 items-center justify-center rounded-full border border-[#cdd9ec] px-4 text-xs font-semibold uppercase tracking-[0.12em] text-[#5c6f90] transition hover:border-[#8ea4c8] hover:text-[#1e3355]"
+                >
+                  Open My Saved Designs
+                </Link>
+              </div>
+            )}
+          </ConfigurationSidebar>
         </div>
       </div>
 
+      {isMobile ? (
+        <ConfiguratorActions
+          variant="sticky"
+          isComplete={isComplete}
+          hasVariant={Boolean(keypad.productVariantId)}
+          addingToCart={addingToCart}
+          savingToAccount={savingToAccount}
+          downloadingPdf={downloadingPdf}
+          canOpenSave={canOpenSaveAction}
+          canDownloadPdf={canDownloadPdf}
+          hasLoadedSavedConfig={Boolean(loadedSavedConfig)}
+          onAddToCart={onAddConfiguredKeypad}
+          onOpenSaveModal={onOpenSaveModal}
+          onDownloadPdf={onDownloadPdf}
+        />
+      ) : null}
+
       <IconSelectionPopup
         isOpen={popupSlotId != null}
+        isMobile={isMobile}
         slotLabel={popupSlotId ? PKP_2200_SI_LAYOUT[popupSlotId].label : 'Slot'}
         icons={icons}
         selectedIconId={popupSlotId ? slots[popupSlotId].iconId : null}
@@ -607,42 +576,17 @@ export default function Pkp2200Configurator({
         onClose={closePopup}
       />
 
-      {isSaveModalOpen ? (
-        <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/55 px-4 py-6">
-          <div className="w-full max-w-md rounded-3xl border border-white/20 bg-white p-6 shadow-[0_24px_60px_rgba(0,0,0,0.35)]">
-            <h3 className="text-lg font-semibold text-ink">Name your configuration</h3>
-            <p className="mt-1 text-sm text-ink/60">This name appears in your account under My Saved Designs.</p>
+      <SaveDesignModal
+        isOpen={isSaveModalOpen}
+        saveName={saveName}
+        onSaveNameChange={setSaveName}
+        savingToAccount={savingToAccount}
+        hasLoadedSavedConfig={Boolean(loadedSavedConfig)}
+        onClose={() => setIsSaveModalOpen(false)}
+        onSubmit={() => void onSubmitSave()}
+      />
 
-            <input
-              type="text"
-              value={saveName}
-              onChange={(event) => setSaveName(event.target.value)}
-              maxLength={160}
-              className="mt-4 w-full rounded-full border border-ink/15 px-4 py-2 text-sm text-ink outline-none focus:border-ink/30"
-              placeholder="My Racing Setup"
-            />
-
-            <div className="mt-4 flex justify-end gap-2">
-              <button
-                type="button"
-                onClick={() => setIsSaveModalOpen(false)}
-                className="rounded-full border border-ink/15 px-4 py-2 text-sm font-semibold text-ink"
-                disabled={savingToAccount}
-              >
-                Cancel
-              </button>
-              <button
-                type="button"
-                onClick={() => void onSubmitSave()}
-                disabled={savingToAccount}
-                className="rounded-full bg-ink px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
-              >
-                {savingToAccount ? 'Saving...' : loadedSavedConfig ? 'Update' : 'Save'}
-              </button>
-            </div>
-          </div>
-        </div>
-      ) : null}
+      <PremiumToast toast={toast} onClose={() => setToast(null)} offsetBottom={isMobile} />
     </div>
   );
 }

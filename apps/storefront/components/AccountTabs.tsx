@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { notifyCartUpdated } from '../lib/cartEvents';
+import { modelCodeToPkpSlug } from '../lib/keypadUtils';
 import {
   SLOT_IDS,
   validateAndNormalizeConfigurationInput,
@@ -350,7 +351,7 @@ function SavedDesignsPanel({
 
       <div className="grid gap-3">
         {items.map((item) => {
-          const modelSlug = modelCodeToSlug(item.keypadModel);
+          const modelSlug = modelCodeToPkpSlug(item.keypadModel);
           const editHref = modelSlug
             ? `/configurator/${modelSlug}?load=${encodeURIComponent(item.id)}`
             : null;
@@ -517,13 +518,6 @@ function EnquireModal({
       </div>
     </div>
   );
-}
-
-function modelCodeToSlug(modelCode: string) {
-  const normalized = modelCode.trim().toUpperCase();
-  if (!normalized) return null;
-  if (!/^PKP-\d{4}-SI$/.test(normalized)) return null;
-  return normalized.toLowerCase();
 }
 
 function formatDate(value: string) {

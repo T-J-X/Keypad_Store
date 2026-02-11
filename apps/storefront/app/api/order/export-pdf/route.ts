@@ -5,6 +5,7 @@ import {
   validateAndNormalizeConfigurationInput,
   type SlotId,
 } from '../../../../lib/keypadConfiguration';
+
 const SHOP_API = process.env.VENDURE_SHOP_API_URL || 'http://localhost:3000/shop-api';
 const VENDURE_HOST = process.env.NEXT_PUBLIC_VENDURE_HOST || 'http://localhost:3000';
 
@@ -206,7 +207,7 @@ export async function POST(request: Request) {
   const missingIconId = iconIds.find((iconId) => !iconAssetMap.has(iconId));
   if (missingIconId) {
     return withSessionCookie(
-      NextResponse.json({ error: `Asset Not Found: matte asset missing for iconId ${missingIconId}` }, { status: 422 }),
+      NextResponse.json({ error: `AssetPathError: matte asset missing for iconId ${missingIconId}` }, { status: 422 }),
       orderExportResponse.rawResponse,
     );
   }

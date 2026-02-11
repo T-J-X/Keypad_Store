@@ -2,20 +2,18 @@ import { Injectable } from '@nestjs/common';
 import {
   Customer,
   ForbiddenError,
+  ProductService,
   RequestContext,
   TransactionalConnection,
   UserInputError,
 } from '@vendure/core';
+import {
+  ConfigurationValidationError,
+  findMissingIconIds,
+  parseAndValidateStrictConfiguration,
+  type StrictConfiguration,
+} from './keypad-configuration';
 import { SavedConfiguration } from './saved-configuration.entity';
-
-type SlotId = 'slot_1' | 'slot_2' | 'slot_3' | 'slot_4';
-
-type SlotConfig = {
-  iconId: string;
-  color: string | null;
-};
-
-type StrictConfig = Record<SlotId, SlotConfig>;
 
 export type SaveConfigurationInput = {
   name: string;
@@ -29,13 +27,12 @@ export type UpdateConfigurationInput = {
   configuration: string;
 };
 
-const SLOT_IDS: SlotId[] = ['slot_1', 'slot_2', 'slot_3', 'slot_4'];
-const ICON_ID_PATTERN = /^[A-Za-z0-9]+$/;
-const HEX_COLOR_PATTERN = /^#[0-9A-F]{6}$/;
-
 @Injectable()
 export class SavedConfigurationService {
-  constructor(private connection: TransactionalConnection) {}
+  constructor(
+    private connection: TransactionalConnection,
+    private productService: ProductService,
+  ) {}
 
   async getSavedConfigurations(ctx: RequestContext): Promise<SavedConfiguration[]> {
     const customer = await this.getActiveCustomerOrThrow(ctx);
@@ -60,6 +57,7 @@ export class SavedConfigurationService {
     const normalizedName = this.normalizeName(input.name);
     const keypadModel = this.normalizeKeypadModel(input.keypadModel);
     const strictConfiguration = this.parseAndValidateConfiguration(input.configuration);
+    await this.assertIconIdsExist(ctx, strictConfiguration);
 
     const repo = this.connection.getRepository(ctx, SavedConfiguration);
     const entity = repo.create({
@@ -81,7 +79,9 @@ export class SavedConfigurationService {
 
     const existing = await this.getOwnedConfigurationOrThrow(ctx, String(customer.id), normalizedId);
     existing.name = this.normalizeName(input.name);
-    existing.configuration = JSON.stringify(this.parseAndValidateConfiguration(input.configuration));
+    const strictConfiguration = this.parseAndValidateConfiguration(input.configuration);
+    await this.assertIconIdsExist(ctx, strictConfiguration);
+    existing.configuration = JSON.stringify(strictConfiguration);
 
     return this.connection.getRepository(ctx, SavedConfiguration).save(existing);
   }
@@ -154,64 +154,21 @@ export class SavedConfigurationService {
     return model.slice(0, 64);
   }
 
-  private parseAndValidateConfiguration(raw: string): StrictConfig {
-    let parsed: unknown;
-
+  private parseAndValidateConfiguration(raw: string): StrictConfiguration {
     try {
-      parsed = JSON.parse(raw);
-    } catch {
-      throw new UserInputError('Configuration must be valid JSON.');
+      return parseAndValidateStrictConfiguration(raw);
+    } catch (error) {
+      if (error instanceof ConfigurationValidationError) {
+        throw new UserInputError(error.message);
+      }
+      throw error;
     }
+  }
 
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-      throw new UserInputError('Configuration must be an object keyed by slot IDs.');
+  private async assertIconIdsExist(ctx: RequestContext, configuration: StrictConfiguration) {
+    const missingIconIds = await findMissingIconIds(ctx, this.productService, configuration);
+    if (missingIconIds.length > 0) {
+      throw new UserInputError(`Unknown iconId(s): ${missingIconIds.join(', ')}.`);
     }
-
-    const payload = parsed as Record<string, unknown>;
-
-    for (const key of Object.keys(payload)) {
-      if (!SLOT_IDS.includes(key as SlotId)) {
-        throw new UserInputError(`Unexpected slot key "${key}" in configuration.`);
-      }
-    }
-
-    const strictConfig = {} as StrictConfig;
-
-    for (const slotId of SLOT_IDS) {
-      if (!(slotId in payload)) {
-        throw new UserInputError(`Missing required slot "${slotId}" in configuration.`);
-      }
-
-      const rawSlot = payload[slotId];
-      if (!rawSlot || typeof rawSlot !== 'object' || Array.isArray(rawSlot)) {
-        throw new UserInputError(`Slot "${slotId}" must be an object with iconId and color.`);
-      }
-
-      const slot = rawSlot as Record<string, unknown>;
-      const iconId = typeof slot.iconId === 'string' ? slot.iconId.trim() : '';
-      if (!iconId || !ICON_ID_PATTERN.test(iconId)) {
-        throw new UserInputError(`Slot "${slotId}" has an invalid iconId.`);
-      }
-
-      let color: string | null = null;
-      if (slot.color != null && slot.color !== '') {
-        if (typeof slot.color !== 'string') {
-          throw new UserInputError(`Slot "${slotId}" has an invalid color. Use #RRGGBB.`);
-        }
-
-        const normalizedColor = slot.color.trim().toUpperCase();
-        if (!HEX_COLOR_PATTERN.test(normalizedColor)) {
-          throw new UserInputError(`Slot "${slotId}" has an invalid color. Use #RRGGBB.`);
-        }
-        color = normalizedColor;
-      }
-
-      strictConfig[slotId] = {
-        iconId,
-        color,
-      };
-    }
-
-    return strictConfig;
   }
 }

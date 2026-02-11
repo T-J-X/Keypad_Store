@@ -3,8 +3,11 @@ import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import ButtonInsertPdp from '../../../components/ProductPdp/ButtonInsertPdp';
 import KeypadPdp from '../../../components/ProductPdp/KeypadPdp';
+import ProductJsonLd from '../../../components/ProductPdp/ProductJsonLd';
 import PriceAndStock from '../../../components/ProductPdp/PriceAndStock';
 import ShopHubBackAnchor from '../../../components/ShopHubBackAnchor';
+import { resolvePkpModelCode } from '../../../lib/keypadUtils';
+import { resolveSeoDescription } from '../../../lib/productSeo';
 import { type CatalogProduct, type IconProduct } from '../../../lib/vendure';
 import { fetchIconProducts, fetchProductBySlug } from '../../../lib/vendure.server';
 
@@ -74,23 +77,6 @@ function toCategoryLabelFromSlug(slug: string) {
     .filter(Boolean)
     .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(' ');
-}
-
-function stripHtml(input: string) {
-  return input.replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
-}
-
-function truncate(input: string, maxLength: number) {
-  if (input.length <= maxLength) return input;
-  return `${input.slice(0, Math.max(0, maxLength - 3)).trim()}...`;
-}
-
-function resolveSeoDescription(product: CatalogProduct) {
-  const seoDescription = toTrimmedString(product.customFields?.seoDescription);
-  if (seoDescription) return seoDescription;
-  const productDescription = stripHtml(product.description ?? '');
-  if (productDescription) return truncate(productDescription, 160);
-  return `Explore ${product.name} at Keypad Store.`;
 }
 
 function resolveCanonicalUrl(product: CatalogProduct, fallbackSlug: string) {
@@ -176,16 +162,6 @@ function buildShopHref({
   if (section && take && take > 0) params.set('take', String(take));
   const query = params.toString();
   return `/shop${query ? `?${query}` : ''}`;
-}
-
-function resolveModelCode(product: CatalogProduct) {
-  const slugMatch = product.slug.match(/pkp-\d{4}-si/i);
-  if (slugMatch) return slugMatch[0].toUpperCase();
-
-  const nameMatch = product.name.match(/pkp[\s-]?(\d{4})[\s-]?si/i);
-  if (nameMatch) return `PKP-${nameMatch[1]}-SI`;
-
-  return product.name;
 }
 
 function isButtonInsertProduct(product: CatalogProduct) {
@@ -346,6 +322,7 @@ async function ProductDetailContent({
 
     return (
       <>
+        <ProductJsonLd product={product} />
         <ShopHubBackAnchor enabled={!hubReady} />
         <ButtonInsertPdp
           product={product}
@@ -363,11 +340,12 @@ async function ProductDetailContent({
   }
   return (
     <>
+      <ProductJsonLd product={product} />
       <ShopHubBackAnchor enabled={!hubReady} />
       <KeypadPdp
         product={product}
         breadcrumbs={breadcrumbs}
-        modelCode={resolveModelCode(product)}
+        modelCode={resolvePkpModelCode(product.slug, product.name) || product.name}
         priceAndStockSlot={(
           <Suspense fallback={<PriceAndStockFallback />}>
             <PriceAndStock slug={product.slug} showStock={false} />

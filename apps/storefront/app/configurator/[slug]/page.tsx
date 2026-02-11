@@ -2,18 +2,8 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import Pkp2200Configurator from '../../../components/configurator/Pkp2200Configurator';
-import type { CatalogProduct } from '../../../lib/vendure';
+import { resolvePkpModelCode } from '../../../lib/keypadUtils';
 import { fetchProductBySlug } from '../../../lib/vendure.server';
-
-function resolveModelCode(product: CatalogProduct) {
-  const slugMatch = product.slug.match(/pkp-\d{4}-si/i);
-  if (slugMatch) return slugMatch[0].toUpperCase();
-
-  const nameMatch = product.name.match(/pkp[\s-]?(\d{4})[\s-]?si/i);
-  if (nameMatch) return `PKP-${nameMatch[1]}-SI`;
-
-  return product.name.toUpperCase();
-}
 
 export default function ConfiguratorModelPage({
   params,
@@ -44,7 +34,7 @@ async function ConfiguratorModelContent({
   const product = await fetchProductBySlug(resolved.slug);
   if (!product) return notFound();
 
-  const modelCode = resolveModelCode(product);
+  const modelCode = resolvePkpModelCode(product.slug, product.name) || product.name.toUpperCase();
 
   if (modelCode !== 'PKP-2200-SI') {
     return (

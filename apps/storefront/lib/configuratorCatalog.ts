@@ -27,7 +27,3 @@ export const RING_GLOW_OPTIONS: RingGlowOption[] = [
   { label: 'Cyan', value: '#00E5FF' },
   { label: 'Pink', value: '#FF2D55' },
 ];
-
-export function primaryCategory(categories: string[]) {
-  return categories[0] ?? 'Uncategorised';
-}

@@ -7,15 +7,11 @@ import {
   TransactionalConnection,
   UserInputError,
 } from '@vendure/core';
-
-type SlotId = 'slot_1' | 'slot_2' | 'slot_3' | 'slot_4';
-
-type SlotConfig = {
-  iconId: string;
-  color: string | null;
-};
-
-export type StrictConfiguration = Record<SlotId, SlotConfig>;
+import {
+  ConfigurationValidationError,
+  parseAndValidateStrictConfiguration,
+  type StrictConfiguration,
+} from '../saved-designs/keypad-configuration';
 
 export type OrderPdfExportLine = {
   lineId: string;
@@ -35,10 +31,6 @@ export type OrderPdfExportPayload = {
   customerName: string | null;
   lines: OrderPdfExportLine[];
 };
-
-const SLOT_IDS: SlotId[] = ['slot_1', 'slot_2', 'slot_3', 'slot_4'];
-const ICON_ID_PATTERN = /^[A-Za-z0-9]+$/;
-const HEX_COLOR_PATTERN = /^#[0-9A-F]{6}$/;
 
 @Injectable()
 export class OrderExportService {
@@ -125,52 +117,13 @@ export class OrderExportService {
   }
 
   private parseAndValidateConfiguration(raw: string): StrictConfiguration {
-    let parsed: unknown;
-
     try {
-      parsed = JSON.parse(raw);
-    } catch {
-      throw new UserInputError('Stored order configuration is invalid JSON.');
-    }
-
-    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
-      throw new UserInputError('Stored order configuration is invalid.');
-    }
-
-    const payload = parsed as Record<string, unknown>;
-    const strictConfiguration = {} as StrictConfiguration;
-
-    for (const slotId of SLOT_IDS) {
-      const rawSlot = payload[slotId];
-      if (!rawSlot || typeof rawSlot !== 'object' || Array.isArray(rawSlot)) {
-        throw new UserInputError(`Stored order configuration missing ${slotId}.`);
+      return parseAndValidateStrictConfiguration(raw, 'Stored order configuration');
+    } catch (error) {
+      if (error instanceof ConfigurationValidationError) {
+        throw new UserInputError(error.message);
       }
-
-      const slot = rawSlot as Record<string, unknown>;
-      const iconId = typeof slot.iconId === 'string' ? slot.iconId.trim() : '';
-      if (!iconId || !ICON_ID_PATTERN.test(iconId)) {
-        throw new UserInputError(`Stored order configuration has invalid iconId in ${slotId}.`);
-      }
-
-      let color: string | null = null;
-      if (slot.color != null && slot.color !== '') {
-        if (typeof slot.color !== 'string') {
-          throw new UserInputError(`Stored order configuration has invalid color in ${slotId}.`);
-        }
-
-        const normalizedColor = slot.color.trim().toUpperCase();
-        if (!HEX_COLOR_PATTERN.test(normalizedColor)) {
-          throw new UserInputError(`Stored order configuration has invalid color in ${slotId}.`);
-        }
-        color = normalizedColor;
-      }
-
-      strictConfiguration[slotId] = {
-        iconId,
-        color,
-      };
+      throw error;
     }
-
-    return strictConfiguration;
   }
 }

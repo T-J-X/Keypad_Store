@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { resolvePkpModelCode } from '../../../../lib/keypadUtils';
 import {
   serializeConfiguration,
   validateAndNormalizeConfigurationInput,
@@ -233,21 +234,11 @@ function buildKeypadVariantMap(
   const map = new Map<string, string>();
 
   for (const product of products) {
-    const modelCode = resolveModelCode(product.slug ?? '', product.name ?? '');
+    const modelCode = resolvePkpModelCode(product.slug ?? '', product.name ?? '');
     const variantId = product.variants?.[0]?.id ?? null;
     if (!modelCode || !variantId) continue;
     map.set(modelCode, variantId);
   }
 
   return map;
-}
-
-function resolveModelCode(slug: string, name: string) {
-  const slugMatch = slug.match(/pkp-\d{4}-si/i);
-  if (slugMatch) return slugMatch[0].toUpperCase();
-
-  const nameMatch = name.match(/pkp[\s-]?(\d{4})[\s-]?si/i);
-  if (nameMatch) return `PKP-${nameMatch[1]}-SI`;
-
-  return '';
 }
