@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
+import { Gauge, ShieldCheck, SlidersHorizontal } from 'lucide-react';
 import Accordion from '../faq/Accordion';
 import DownloadsList from './DownloadsList';
 import KeypadImageGallery from './KeypadImageGallery';
@@ -12,10 +13,22 @@ type BreadcrumbItem = {
   href?: string;
 };
 
-const WHY_CHOOSE_KEYPAD_COPY = [
-  'PKP-SI keypads are designed for dependable operation in compact control panels where tactile confidence and icon clarity are critical.',
-  'The housing and button geometry support demanding environments while preserving quick visual recognition across custom icon sets.',
-  'You can configure per-button behavior and pair inserts for clean, repeatable control layouts across fleets, vessels, and race programs.',
+const WHY_CHOOSE_KEYPAD_ITEMS = [
+  {
+    icon: ShieldCheck,
+    title: 'Rugged Reliability',
+    body: 'PKP-SI hardware is tuned for compact panels where dependable actuation is mission-critical.',
+  },
+  {
+    icon: Gauge,
+    title: 'Fast Operator Readability',
+    body: 'Button spacing and legend contrast support quick visual parsing under pressure.',
+  },
+  {
+    icon: SlidersHorizontal,
+    title: 'Configuration Flexibility',
+    body: 'Pair inserts and per-button behavior to standardize controls across vehicles and fleets.',
+  },
 ] as const;
 
 export default function KeypadPdp({
@@ -59,15 +72,26 @@ export default function KeypadPdp({
 
           <div aria-hidden className="border-t border-ink/10" />
 
-          <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
-            <div className="flex items-center">
+          <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
+            <div className="space-y-2 text-left">
               <h3 className="text-3xl font-semibold tracking-tight text-ink">Why Choose PKP-SI Keypads</h3>
+              <p className="text-sm text-ink/62">Purpose-built for repeatable control workflows and long service life.</p>
             </div>
-            <ul className="list-disc space-y-4 pl-5 text-base leading-7 text-ink/72">
-              {WHY_CHOOSE_KEYPAD_COPY.map((paragraph, index) => (
-                <li key={index}>{paragraph}</li>
+            <div className="grid gap-3">
+              {WHY_CHOOSE_KEYPAD_ITEMS.map((item) => (
+                <article key={item.title} className="rounded-2xl border border-surface-border bg-surface p-4 text-left">
+                  <div className="flex items-start gap-3">
+                    <span className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-ink/15 bg-surface-alt text-ink">
+                      <item.icon className="h-4 w-4" aria-hidden="true" />
+                    </span>
+                    <div>
+                      <h4 className="text-sm font-semibold tracking-tight text-ink">{item.title}</h4>
+                      <p className="mt-1 text-sm leading-6 text-ink/65">{item.body}</p>
+                    </div>
+                  </div>
+                </article>
               ))}
-            </ul>
+            </div>
           </div>
 
           <div className="card-soft rounded-3xl border border-dashed border-ink/25 p-8">
@@ -191,61 +215,63 @@ export default function KeypadPdp({
         </nav>
       </div>
 
-      <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+      <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
         <div>
-          <div className="card-soft rounded-3xl p-8">
+          <div className="card-soft rounded-[28px] p-10 md:p-12">
             <KeypadImageGallery images={galleryImages} productName={product.name} />
           </div>
         </div>
 
-        <section className="card-soft space-y-4 p-4">
-          <div>
-            <h1 className="text-3xl font-semibold tracking-tight text-ink md:text-4xl">{product.name}</h1>
-            <p className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-ink/55">Keypad Product</p>
-          </div>
-
-          <dl className="space-y-3 text-sm text-ink/75">
-            <div className="flex flex-col gap-1">
-              <dt className="font-semibold text-ink">Model</dt>
-              <dd className="text-ink/80">{modelCode || '—'}</dd>
+        <div className="lg:sticky lg:top-32">
+          <section className="card-soft space-y-4 p-5">
+            <div>
+              <h1 className="text-3xl font-semibold tracking-tight text-ink md:text-4xl">{product.name}</h1>
+              <p className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-ink/55">Keypad Product</p>
             </div>
-            <div className="flex flex-col gap-1">
-              <dt className="font-semibold text-ink">Compatibility</dt>
-              <dd>
-                <Link
-                  href="/shop?section=button-inserts"
-                  className="text-ink underline underline-offset-4 hover:text-ink/75"
-                >
-                  Compatible with PKP-SI 15mm Button Inserts
-                </Link>
-              </dd>
-            </div>
-          </dl>
 
-          {priceAndStockSlot ? (
-            priceAndStockSlot
-          ) : (
-            <div className="space-y-1">
-              <div className="text-sm font-semibold uppercase tracking-wide text-ink/55">Price</div>
-              <div className="flex items-end gap-2">
-                <div className="text-3xl font-semibold tracking-tight text-ink">{priceWithVatLabel ?? priceExVatLabel}</div>
-                <div className="pb-1 text-xs font-semibold tracking-wide text-ink/60">(INCL VAT)</div>
+            <dl className="space-y-3 text-sm text-ink/75">
+              <div className="flex flex-col gap-1">
+                <dt className="font-semibold text-ink">Model</dt>
+                <dd className="text-ink/80">{modelCode || '—'}</dd>
               </div>
-              <div className="text-xs font-semibold tracking-wide text-ink/55">{priceExVatLabel} (EXCL VAT)</div>
-            </div>
-          )}
+              <div className="flex flex-col gap-1">
+                <dt className="font-semibold text-ink">Compatibility</dt>
+                <dd>
+                  <Link
+                    href="/shop?section=button-inserts"
+                    className="text-ink underline underline-offset-4 hover:text-ink/75"
+                  >
+                    Compatible with PKP-SI 15mm Button Inserts
+                  </Link>
+                </dd>
+              </div>
+            </dl>
 
-          <div className="pt-2">
-            <Link
-              href={`/configurator/${product.slug}`}
-              className="group relative isolate inline-flex w-full items-center justify-center gap-2 rounded-full border border-transparent px-6 py-4 text-sm font-medium text-white bg-[linear-gradient(90deg,#040F2E_0%,#112B5D_55%,#29457A_100%),linear-gradient(90deg,#203f7a_0%,#2f5da8_55%,#4b7fca_100%)] [background-origin:padding-box,border-box] [background-clip:padding-box,border-box] transition-[background,box-shadow,transform] duration-300 hover:-translate-y-[1px] hover:bg-[linear-gradient(270deg,#040F2E_0%,#112B5D_55%,#29457A_100%),linear-gradient(90deg,#24497d_0%,#39629a_55%,#537bb0_100%)] hover:shadow-[0_0_0_1px_rgba(72,116,194,0.56),0_10px_24px_rgba(4,15,46,0.29)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#29457A]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
-            >
-              <span className="pointer-events-none absolute inset-0 rounded-full bg-[linear-gradient(270deg,rgba(255,255,255,0.10)_0%,rgba(255,255,255,0.02)_45%,rgba(255,255,255,0.08)_100%)] opacity-0 transition-opacity duration-300 group-hover:opacity-45" />
-              <span className="pointer-events-none absolute -inset-[1px] -z-10 rounded-full bg-[linear-gradient(90deg,rgba(11,27,58,0.44)_0%,rgba(27,52,95,0.30)_55%,rgba(58,116,198,0.30)_100%)] opacity-0 transition-opacity duration-300 group-hover:opacity-55" />
-              <span className="relative z-10">Customize keypad</span>
-            </Link>
-          </div>
-        </section>
+            {priceAndStockSlot ? (
+              priceAndStockSlot
+            ) : (
+              <div className="space-y-1">
+                <div className="text-sm font-semibold uppercase tracking-wide text-ink/55">Price</div>
+                <div className="flex items-end gap-2">
+                  <div className="text-3xl font-semibold tracking-tight text-ink">{priceWithVatLabel ?? priceExVatLabel}</div>
+                  <div className="pb-1 text-xs font-semibold tracking-wide text-ink/60">(INCL VAT)</div>
+                </div>
+                <div className="text-xs font-semibold tracking-wide text-ink/55">{priceExVatLabel} (EXCL VAT)</div>
+              </div>
+            )}
+
+            <div className="pt-2">
+              <Link
+                href={`/configurator/${product.slug}`}
+                className="group relative isolate inline-flex w-full items-center justify-center gap-2 rounded-full border border-transparent px-6 py-4 text-sm font-medium text-white bg-[linear-gradient(90deg,#040F2E_0%,#112B5D_55%,#29457A_100%),linear-gradient(90deg,#203f7a_0%,#2f5da8_55%,#4b7fca_100%)] [background-origin:padding-box,border-box] [background-clip:padding-box,border-box] transition-[background,box-shadow,transform] duration-300 hover:-translate-y-[1px] hover:bg-[linear-gradient(270deg,#040F2E_0%,#112B5D_55%,#29457A_100%),linear-gradient(90deg,#24497d_0%,#39629a_55%,#537bb0_100%)] hover:shadow-[0_0_0_1px_rgba(72,116,194,0.56),0_10px_24px_rgba(4,15,46,0.29)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#29457A]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+              >
+                <span className="pointer-events-none absolute inset-0 rounded-full bg-[linear-gradient(270deg,rgba(255,255,255,0.10)_0%,rgba(255,255,255,0.02)_45%,rgba(255,255,255,0.08)_100%)] opacity-0 transition-opacity duration-300 group-hover:opacity-45" />
+                <span className="pointer-events-none absolute -inset-[1px] -z-10 rounded-full bg-[linear-gradient(90deg,rgba(11,27,58,0.44)_0%,rgba(27,52,95,0.30)_55%,rgba(58,116,198,0.30)_100%)] opacity-0 transition-opacity duration-300 group-hover:opacity-55" />
+                <span className="relative z-10">Customize keypad</span>
+              </Link>
+            </div>
+          </section>
+        </div>
       </div>
 
       <div className="mt-[75px] space-y-12">

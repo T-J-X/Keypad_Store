@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { notifyCartUpdated } from '../lib/cartEvents';
 
 export default function PdpAddToCartButton({
   productVariantId,
@@ -28,6 +29,7 @@ export default function PdpAddToCartButton({
         throw new Error(payload.error || 'Could not add this button insert to cart.');
       }
 
+      notifyCartUpdated();
       setFeedback({ message: 'Added to cart', type: 'success' });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Could not add this button insert to cart.';

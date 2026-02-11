@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { categorySlug } from '../../lib/vendure';
+import { notifyCartUpdated } from '../../lib/cartEvents';
 
 type StockSummary = {
   label: string;
@@ -93,6 +94,7 @@ export default function PurchasePanel({
     if (!response.ok) {
       throw new Error(payload.error || 'Could not add this item to cart.');
     }
+    notifyCartUpdated();
   };
 
   const onAddToCart = async () => {
@@ -353,6 +355,7 @@ function isAuthenticated() {
   if (typeof document === 'undefined') return false;
   const cookie = document.cookie.toLowerCase();
   return (
+    cookie.includes('vendure-auth=') ||
     cookie.includes('vendure-auth-token=') ||
     cookie.includes('auth_token=') ||
     cookie.includes('customer_token=') ||

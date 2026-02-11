@@ -34,18 +34,18 @@ export default function ProductHero({
   const renderImage = renderAsset?.preview ?? renderAsset?.source ?? '';
 
   return (
-    <div className="grid gap-8 lg:grid-cols-[1.1fr_0.9fr]">
+    <div className="grid gap-10 lg:grid-cols-[1.15fr_0.85fr] lg:items-start">
       <div>
-        <div className="card-soft rounded-3xl p-8">
-          <div className="flex h-[460px] w-full items-center justify-center overflow-hidden rounded-3xl bg-white">
-            <div className="flex h-[200px] w-[200px] items-center justify-center">
+        <div className="card-soft rounded-[28px] p-10 md:p-12">
+          <div className="flex h-[520px] w-full items-center justify-center overflow-hidden rounded-3xl bg-white">
+            <div className="flex h-[260px] w-[260px] items-center justify-center">
               {renderImage ? (
                 <Image
                   src={assetUrl(renderImage)}
                   alt={product.name}
-                  width={200}
-                  height={200}
-                  sizes="200px"
+                  width={260}
+                  height={260}
+                  sizes="260px"
                   className="h-full w-full object-contain drop-shadow-[0_5px_12px_rgba(41,69,122,0.30)]"
                   draggable={false}
                 />
@@ -57,7 +57,7 @@ export default function ProductHero({
         </div>
       </div>
 
-      <div>
+      <div className="lg:sticky lg:top-32">
         <PurchasePanel
           productName={product.name}
           productTypeLabel={productTypeLabel}

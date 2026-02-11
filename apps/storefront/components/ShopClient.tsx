@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -15,9 +16,9 @@ import {
 import { useShopLandingSubcategoryIcons } from '../lib/useShopLandingSubcategoryIcons';
 import { ensureShopHubAnchor } from '../lib/shopHistory';
 import BaseShopHero from './BaseShopHero';
+import CategoryCard from './CategoryCard';
 import KeypadCard from './KeypadCard';
 import ProductCard from './ProductCard';
-import ShopCategoryIcon from './ShopCategoryIcon';
 
 const PAGE_SIZE_OPTIONS = [24, 48, 96] as const;
 const ringBlueHoverClass =
@@ -526,14 +527,6 @@ export default function ShopClient({
     })),
   ];
   const hasActiveFilters = query.trim().length > 0 || activeCategorySlugs.length > 0;
-  const sidebarButtonBase =
-    'flex w-full min-h-11 items-center justify-between rounded-xl px-3 py-2 text-sm font-semibold transition-[background,box-shadow,color,transform] duration-200';
-  const sidebarButtonLabel = 'min-w-0 flex-1 whitespace-normal break-words text-left leading-snug';
-  const sidebarButtonCount = 'ml-2 shrink-0 whitespace-nowrap text-[11px]';
-  const sidebarActive = 'border-2 border-ink bg-ink text-white';
-  const sidebarInactive =
-    'border-2 border-transparent text-ink/60 bg-[linear-gradient(#ffffff,#ffffff),linear-gradient(#d7dde7,#d7dde7)] [background-origin:border-box] [background-clip:padding-box,border-box] hover:text-ink hover:bg-[linear-gradient(#ffffff,#ffffff),linear-gradient(90deg,#4e84d8_0%,#6da5f5_55%,#8ab8ff_100%)] hover:shadow-[0_8px_18px_rgba(4,15,46,0.14)]';
-
   useEffect(() => {
     if (!(isIconsSection || isAllSection)) return;
     if (page > totalPages) {
@@ -717,11 +710,12 @@ export default function ShopClient({
                 const content = (
                   <div className={`relative h-64 w-full ${tileImage ? '' : 'bg-[linear-gradient(145deg,#e8eef9_0%,#f7fbff_48%,#e1ebfa_100%)]'}`}>
                     {tileImage ? (
-                      <img
+                      <Image
                         src={tileImageUrl}
                         alt={tileTitle}
-                        className="h-full w-full object-cover"
-                        loading="lazy"
+                        fill
+                        sizes="(max-width: 1024px) 100vw, 33vw"
+                        className="object-cover"
                       />
                     ) : (
                       <div className="pointer-events-none absolute -right-16 -top-12 h-40 w-40 rounded-full bg-white/70 blur-2xl" />
@@ -791,46 +785,31 @@ export default function ShopClient({
               </button>
             </div>
             {landingDisciplineTiles.length > 0 ? (
-              <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {landingDisciplineTiles.map((tile) => {
+              <div className="grid auto-rows-fr gap-4 sm:grid-cols-2 xl:grid-cols-4">
+                {landingDisciplineTiles.map((tile, index) => {
                   const isInteractive = Boolean(tile.slug);
-                  const cardClass = isInteractive
-                    ? 'group rounded-2xl border border-[#d6deeb] bg-[linear-gradient(160deg,#ffffff_0%,#f4f8ff_100%)] text-left transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-0.5 hover:border-[#88b5fb] hover:shadow-[0_12px_24px_rgba(7,22,56,0.16)]'
-                    : 'rounded-2xl border border-[#d6deeb] bg-[linear-gradient(160deg,#ffffff_0%,#f4f8ff_100%)] text-left';
+                  const bentoSpanClass =
+                    index === 0
+                      ? 'sm:col-span-2 xl:col-span-2'
+                      : index % 5 === 4
+                        ? 'sm:col-span-2 xl:col-span-1'
+                        : '';
+
                   return (
-                    <div key={tile.id} className={cardClass}>
+                    <div key={tile.id} className={bentoSpanClass}>
                       {isInteractive ? (
-                        <button
-                          type="button"
+                        <CategoryCard
+                          label={tile.label}
+                          count={tile.count}
+                          image={tile.image}
                           onClick={() => onDisciplineTileSelect(tile)}
-                          className="w-full text-left px-4 py-4"
-                        >
-                          <div className="flex min-h-[94px] items-center justify-between gap-4">
-                            <div className="min-w-0">
-                              <div className="truncate text-base font-semibold text-ink">{tile.label}</div>
-                              <div className="mt-2 text-xs font-medium text-ink/55">
-                                {typeof tile.count === 'number' ? `${tile.count} inserts` : 'Explore inserts'}
-                              </div>
-                            </div>
-                            <div className="shrink-0">
-                              <ShopCategoryIcon image={tile.image} alt={tile.label} />
-                            </div>
-                          </div>
-                        </button>
+                        />
                       ) : (
-                        <div className="px-4 py-4">
-                          <div className="flex min-h-[94px] items-center justify-between gap-4">
-                            <div className="min-w-0">
-                              <div className="truncate text-base font-semibold text-ink">{tile.label}</div>
-                              <div className="mt-2 text-xs font-medium text-ink/55">
-                                {typeof tile.count === 'number' ? `${tile.count} inserts` : 'Explore inserts'}
-                              </div>
-                            </div>
-                            <div className="shrink-0">
-                              <ShopCategoryIcon image={tile.image} alt={tile.label} />
-                            </div>
-                          </div>
-                        </div>
+                        <CategoryCard
+                          label={tile.label}
+                          count={tile.count}
+                          image={tile.image}
+                        />
                       )}
                     </div>
                   );
@@ -881,29 +860,31 @@ export default function ShopClient({
         <div className="grid gap-8 md:grid-cols-[260px_minmax(0,1fr)] md:items-start">
           <aside className="space-y-6 md:sticky md:top-24 md:self-start">
             <div className="card md:max-h-[calc(100vh-7rem)] md:overflow-y-auto md:pr-1">
-              <div className="px-4 py-3">
-                <div className="text-xs font-semibold uppercase tracking-wide text-ink/40">
-                  Categories
+              <div className="px-4 py-4">
+                <div className="text-[10px] font-semibold uppercase tracking-widest text-ink-subtle">
+                  Browse
                 </div>
-                <div className="mt-4 space-y-2">
+                <div className="mt-3 space-y-2">
                   <button
                     type="button"
                     onClick={onShopHome}
-                    className={`${sidebarButtonBase} ${sidebarInactive}`}
+                    className="flex w-full items-center justify-between rounded-xl border border-surface-border bg-surface px-3 py-2 text-sm font-semibold tracking-tight text-ink transition hover:border-ink/25 hover:bg-surface-alt"
                   >
-                    <span className={sidebarButtonLabel}>Shop Home</span>
+                    <span>Shop Home</span>
                   </button>
 
                   <button
                     type="button"
                     aria-pressed={isAllSection}
                     onClick={() => onSectionChange('all', { scrollToTop: true })}
-                    className={`${sidebarButtonBase} ${
-                      isAllSection ? sidebarActive : sidebarInactive
+                    className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-sm font-semibold tracking-tight transition ${
+                      isAllSection
+                        ? 'border-ink bg-ink text-white'
+                        : 'border-surface-border bg-surface text-ink hover:border-ink/25 hover:bg-surface-alt'
                     }`}
                   >
-                    <span className={sidebarButtonLabel}>All products</span>
-                    <span className={`${sidebarButtonCount} ${isAllSection ? 'text-white/75' : 'text-ink/45'}`}>
+                    <span>All products</span>
+                    <span className={`text-[11px] ${isAllSection ? 'text-white/75' : 'text-ink/45'}`}>
                       {totalIconCount + keypads.length}
                     </span>
                   </button>
@@ -911,100 +892,92 @@ export default function ShopClient({
                   <button
                     type="button"
                     aria-pressed={isIconsSection}
-                    aria-expanded={iconsGroupOpen}
-                    aria-controls="icons-subcategories"
-                    onClick={() => {
-                      if (!isIconsSection) {
-                        setActiveSection('button-inserts');
-                        setPage(1);
-                        scrollToPageTop();
-                      }
-                      setIconsGroupOpen((prev) => !prev);
-                    }}
-                    className={`${sidebarButtonBase} ${
-                      isIconsSection ? sidebarActive : sidebarInactive
+                    onClick={() => onSectionChange('button-inserts', { scrollToTop: true })}
+                    className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-sm font-semibold tracking-tight transition ${
+                      isIconsSection
+                        ? 'border-ink bg-ink text-white'
+                        : 'border-surface-border bg-surface text-ink hover:border-ink/25 hover:bg-surface-alt'
                     }`}
                   >
-                    <span className={sidebarButtonLabel}>Button Inserts</span>
-                    <span
-                      className={`ml-2 flex shrink-0 items-center gap-2 whitespace-nowrap ${
-                        isIconsSection ? 'text-white/75' : 'text-ink/45'
-                      }`}
-                    >
-                      <span className={sidebarButtonCount}>{totalIconCount}</span>
-                      <span className={`text-base transition ${iconsGroupOpen ? 'rotate-90' : ''}`}>&gt;</span>
-                    </span>
+                    <span>Button Inserts</span>
+                    <span className={`text-[11px] ${isIconsSection ? 'text-white/75' : 'text-ink/45'}`}>{totalIconCount}</span>
                   </button>
-
-                  {isIconsSection && iconsGroupOpen && (
-                    <div id="icons-subcategories" className="w-full space-y-2 pl-2.5">
-                      <button
-                        type="button"
-                        onClick={() => {
-                          setActiveCategorySlugs([]);
-                          setPage(1);
-                          scrollToPageTop();
-                        }}
-                        className={`${sidebarButtonBase} ${
-                          activeCategorySlugs.length === 0 ? sidebarActive : sidebarInactive
-                        }`}
-                      >
-                        <span className={sidebarButtonLabel}>All button inserts</span>
-                        <span
-                          className={`${sidebarButtonCount} ${
-                            activeCategorySlugs.length === 0 ? 'text-white/75' : 'text-ink/45'
-                          }`}
-                        >
-                          {totalIconCount}
-                        </span>
-                      </button>
-
-                      {categories.map((category) => (
-                        <button
-                          key={category.slug}
-                          type="button"
-                          onClick={() => {
-                            setActiveCategorySlugs((current) => {
-                              if (current.includes(category.slug)) {
-                                return current.filter((slug) => slug !== category.slug);
-                              }
-                              return [...current, category.slug];
-                            });
-                            setPage(1);
-                          }}
-                          className={`${sidebarButtonBase} ${
-                            activeCategorySlugs.includes(category.slug) ? sidebarActive : sidebarInactive
-                          }`}
-                        >
-                          <span className={sidebarButtonLabel}>{category.name}</span>
-                          <span
-                            className={`${sidebarButtonCount} ${
-                              activeCategorySlugs.includes(category.slug) ? 'text-white/75' : 'text-ink/45'
-                            }`}
-                          >
-                            {category.count}
-                          </span>
-                        </button>
-                      ))}
-                    </div>
-                  )}
-
-                  <div aria-hidden className="my-2 border-t border-ink/10" />
 
                   <button
                     type="button"
                     aria-pressed={isKeypadsSection}
                     onClick={() => onSectionChange('keypads', { scrollToTop: true })}
-                    className={`${sidebarButtonBase} ${
-                      isKeypadsSection ? sidebarActive : sidebarInactive
+                    className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-sm font-semibold tracking-tight transition ${
+                      isKeypadsSection
+                        ? 'border-ink bg-ink text-white'
+                        : 'border-surface-border bg-surface text-ink hover:border-ink/25 hover:bg-surface-alt'
                     }`}
                   >
-                    <span className={sidebarButtonLabel}>Keypads</span>
-                    <span className={`${sidebarButtonCount} ${isKeypadsSection ? 'text-white/75' : 'text-ink/45'}`}>
-                      {keypads.length}
-                    </span>
+                    <span>Keypads</span>
+                    <span className={`text-[11px] ${isKeypadsSection ? 'text-white/75' : 'text-ink/45'}`}>{keypads.length}</span>
                   </button>
                 </div>
+              </div>
+
+              <div className="border-t border-surface-border px-4 py-4">
+                <button
+                  type="button"
+                  aria-expanded={iconsGroupOpen}
+                  aria-controls="icons-subcategories"
+                  onClick={() => setIconsGroupOpen((prev) => !prev)}
+                  className="flex w-full items-center justify-between rounded-xl border border-surface-border bg-surface px-3 py-2 text-left text-sm font-semibold tracking-tight text-ink transition hover:border-ink/25 hover:bg-surface-alt"
+                >
+                  <span>Insert filters</span>
+                  <span className={`transition ${iconsGroupOpen ? 'rotate-180' : ''}`}>⌄</span>
+                </button>
+
+                {iconsGroupOpen ? (
+                  <div id="icons-subcategories" className="mt-3 space-y-2">
+                    <label className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-surface-border bg-surface px-3 py-2 text-sm text-ink transition hover:border-ink/20">
+                      <span className="flex items-center gap-2">
+                        <input
+                          type="checkbox"
+                          className="h-4 w-4 rounded border-surface-border text-ink focus:ring-ink/25"
+                          checked={activeCategorySlugs.length === 0}
+                          onChange={() => {
+                            setActiveSection('button-inserts');
+                            setActiveCategorySlugs([]);
+                            setPage(1);
+                            scrollToPageTop();
+                          }}
+                        />
+                        <span className="font-medium">All button inserts</span>
+                      </span>
+                      <span className="text-[11px] text-ink/45">{totalIconCount}</span>
+                    </label>
+
+                    {categories.map((category) => (
+                      <label
+                        key={category.slug}
+                        className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-surface-border bg-surface px-3 py-2 text-sm text-ink transition hover:border-ink/20"
+                      >
+                        <span className="flex items-center gap-2">
+                          <input
+                            type="checkbox"
+                            className="h-4 w-4 rounded border-surface-border text-ink focus:ring-ink/25"
+                            checked={activeCategorySlugs.includes(category.slug)}
+                            onChange={(event) => {
+                              const { checked } = event.target;
+                              setActiveSection('button-inserts');
+                              setPage(1);
+                              setActiveCategorySlugs((current) => {
+                                if (checked) return Array.from(new Set([...current, category.slug]));
+                                return current.filter((slug) => slug !== category.slug);
+                              });
+                            }}
+                          />
+                          <span className="font-medium">{category.name}</span>
+                        </span>
+                        <span className="text-[11px] text-ink/45">{category.count}</span>
+                      </label>
+                    ))}
+                  </div>
+                ) : null}
               </div>
             </div>
           </aside>

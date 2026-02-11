@@ -33,6 +33,7 @@ const nextConfig = {
   reactStrictMode: true,
   cacheComponents: true,
   images: {
+    dangerouslyAllowLocalIP: process.env.NODE_ENV !== 'production',
     remotePatterns,
   },
 };

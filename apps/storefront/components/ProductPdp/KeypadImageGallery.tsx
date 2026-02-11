@@ -70,7 +70,7 @@ export default function KeypadImageGallery({
 
   return (
     <div
-      className="relative h-[460px] w-full touch-pan-y"
+      className="relative h-[520px] w-full touch-pan-y"
       onPointerDown={onPointerDown}
       onPointerUp={onPointerUp}
       onPointerCancel={() => {

@@ -39,11 +39,11 @@ export default function PdpTabs({
   if (!activePanel) return null;
 
   return (
-    <div className="space-y-12">
+    <div className="space-y-10">
       <nav
         aria-label="Product detail sections"
         role="tablist"
-        className="mx-auto grid w-full max-w-5xl grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-5"
+        className="mx-auto flex w-full max-w-5xl flex-wrap items-center gap-1 border-b border-surface-border pb-2"
       >
         {panels.map((panel) => {
           const isActive = panel.id === activeTabId;
@@ -65,8 +65,8 @@ export default function PdpTabs({
               }}
               className={
                 isActive
-                  ? 'w-full touch-manipulation select-none rounded-full bg-[linear-gradient(90deg,#040F2E_0%,#112B5D_55%,#29457A_100%)] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_8px_20px_rgba(5,15,46,0.28)]'
-                  : 'w-full touch-manipulation select-none rounded-full bg-[#E0E0E0] px-4 py-2.5 text-sm font-semibold text-ink/85 shadow-[0_1px_2px_rgba(12,17,26,0.14)] transition hover:bg-[#112B5D] hover:text-white'
+                  ? 'touch-manipulation select-none rounded-full border border-ink bg-ink px-4 py-2 text-[11px] font-semibold uppercase tracking-widest text-white'
+                  : 'touch-manipulation select-none rounded-full border border-transparent px-4 py-2 text-[11px] font-semibold uppercase tracking-widest text-ink/55 transition hover:border-surface-border hover:bg-surface hover:text-ink'
               }
             >
               {panel.label}
@@ -79,7 +79,7 @@ export default function PdpTabs({
         id={`pdp-tabpanel-${tabSetId}-${activePanel.id}`}
         role="tabpanel"
         aria-labelledby={`pdp-tab-${tabSetId}-${activePanel.id}`}
-        className="border-t border-ink/10 pt-12"
+        className="pt-8"
       >
         {activePanel.content}
       </div>

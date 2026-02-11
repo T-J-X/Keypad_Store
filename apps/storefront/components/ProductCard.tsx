@@ -5,6 +5,7 @@ import Image from 'next/image';
 import { useEffect, useState } from 'react';
 import type { IconProduct } from '../lib/vendure';
 import { assetUrl } from '../lib/vendure';
+import { notifyCartUpdated } from '../lib/cartEvents';
 import {
   cardIdentifierTextClass,
   cardPlaceholderTextClass,
@@ -14,7 +15,7 @@ import {
 
 const placeholder = (
   <div
-    className={`flex h-40 items-center justify-center rounded-2xl bg-gradient-to-br from-slate-100 via-white to-slate-200 ${cardPlaceholderTextClass}`}
+    className={`flex aspect-square items-center justify-center rounded-2xl bg-gradient-to-br from-slate-100 via-white to-slate-200 ${cardPlaceholderTextClass}`}
   >
     Render pending
   </div>
@@ -56,6 +57,7 @@ export default function ProductCard({
       if (!response.ok) {
         throw new Error(payload.error || 'Could not add this button insert to cart.');
       }
+      notifyCartUpdated();
       setFeedback({ message: 'Added to cart', type: 'success' });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Could not add this button insert to cart.';
@@ -83,42 +85,41 @@ export default function ProductCard({
   ].join(' ');
 
   return (
-    <div className="card-soft group relative flex h-full flex-col gap-4 p-4 transition hover:-translate-y-1 hover:shadow-soft">
+    <div className="card-soft group relative flex h-full flex-col gap-5 border border-surface-border/80 p-5 transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-1 hover:border-ink/15 hover:shadow-premium">
       <Link
         href={productHref ?? `/product/${product.slug}`}
         replace={replaceProductNavigation}
         aria-label={`View ${product.name}`}
         className="absolute inset-0 z-0 rounded-2xl"
       />
-      <div className="relative z-10 pointer-events-none flex flex-1 flex-col gap-4">
+      <div className="pointer-events-none relative z-10 flex flex-1 flex-col gap-4">
         {image ? (
-          <div className="overflow-hidden rounded-2xl bg-[linear-gradient(to_bottom,#f4f4f5_0%,#e4e4e7_50%,#ffffff_100%)]">
+          <div className="relative aspect-square overflow-hidden rounded-2xl bg-[linear-gradient(to_bottom,#f4f4f5_0%,#e4e4e7_50%,#ffffff_100%)]">
             <Image
               src={assetUrl(image)}
               alt={product.name}
-              width={320}
-              height={160}
-              sizes="(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 25vw"
-              className="h-40 w-full object-contain p-4"
+              fill
+              sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 25vw"
+              className="object-contain p-6 transition-transform duration-300 group-hover:scale-[1.03]"
               loading="lazy"
             />
           </div>
         ) : (
           placeholder
         )}
-        <div className="space-y-1">
+        <div className="space-y-1.5">
           <div className={cardTitleTextClass}>{product.name}</div>
           <div className={cardIdentifierTextClass}>{iconId}</div>
           {categoryHref ? (
             <Link
               href={categoryHref}
               onClick={(event) => event.stopPropagation()}
-              className={`${cardSupportingTextClass} pointer-events-auto relative z-20 inline-flex transition hover:text-ink hover:underline`}
+              className={`${cardSupportingTextClass} pointer-events-auto relative z-20 inline-flex text-[11px] uppercase tracking-widest text-ink-subtle transition hover:text-ink hover:underline`}
             >
               {categoryLabel}
             </Link>
           ) : (
-            <div className={cardSupportingTextClass}>{categoryLabel}</div>
+            <div className={`${cardSupportingTextClass} text-[11px] uppercase tracking-widest text-ink-subtle`}>{categoryLabel}</div>
           )}
         </div>
       </div>

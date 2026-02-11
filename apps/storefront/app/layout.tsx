@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
 import './globals.css';
-import Header from '../components/Header';
+import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import { resolveMetadataBase } from '../lib/siteUrl';
 
@@ -17,7 +17,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
       <body>
         <div className="page-shell">
-          <Header />
+          <Navbar />
           <main className="flex-1">{children}</main>
           <Footer />
         </div>

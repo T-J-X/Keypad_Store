@@ -175,8 +175,9 @@ export default function ShopPage({
 
 function ShopPageFallback() {
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 py-10 sm:px-6 lg:px-8">
-      <div className="mb-8 h-10 w-56 animate-pulse rounded bg-gray-200" />
+    <div className="mx-auto w-full max-w-[88rem] px-6 py-12">
+      <div className="mb-3 h-3 w-28 animate-pulse rounded-full bg-gray-200" />
+      <div className="mb-8 h-10 w-72 animate-pulse rounded bg-gray-200" />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {Array.from({ length: 8 }).map((_, index) => (
           <div key={index} className="card-soft h-[360px] animate-pulse rounded-3xl bg-gray-200" />

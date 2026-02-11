@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
+import { Layers3, ShieldCheck, Wrench } from 'lucide-react';
 import RelatedProducts from '../RelatedProducts';
 import {
   iconCategoriesFromProduct,
@@ -18,10 +19,22 @@ type BreadcrumbItem = {
   href?: string;
 };
 
-const WHY_CHOOSE_COPY = [
-  'PKP 15mm inserts are purpose-built for high-visibility switching on compact keypad surfaces. The geometry is tuned for repeatable fitment and fast identification under pressure.',
-  'Laser-etched legends and robust plastics help keep icons legible over time in automotive, marine, and industrial environments where vibration and exposure are common.',
-  'Each insert can be swapped without redesigning your entire panel workflow, so teams can evolve labeling standards and service equipment with minimal downtime.',
+const WHY_CHOOSE_ITEMS = [
+  {
+    icon: ShieldCheck,
+    title: 'Built for Harsh Use',
+    body: 'Legends stay clear in marine, motorsport, and industrial conditions where vibration and exposure are common.',
+  },
+  {
+    icon: Layers3,
+    title: 'Fast Visual Recognition',
+    body: 'High-contrast icon geometry keeps controls identifiable at a glance, even on dense keypad layouts.',
+  },
+  {
+    icon: Wrench,
+    title: 'Service-Friendly',
+    body: 'Inserts swap quickly so teams can evolve labeling standards without redesigning complete panels.',
+  },
 ] as const;
 
 function resolveStockSummary(variant?: VendureProductVariant) {
@@ -128,15 +141,26 @@ export default function ButtonInsertPdp({
 
           <div aria-hidden className="border-t border-ink/10" />
 
-          <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
-            <div className="flex items-center">
+          <div className="grid gap-8 lg:grid-cols-[0.9fr_1.1fr] lg:items-start">
+            <div className="space-y-2 text-left">
               <h3 className="text-3xl font-semibold tracking-tight text-ink">Why Choose 15mm PKP Inserts</h3>
+              <p className="text-sm text-ink/62">Engineered for tactile workflows where reliability and legibility matter.</p>
             </div>
-            <ul className="list-disc space-y-4 pl-5 text-base leading-7 text-ink/72">
-              {WHY_CHOOSE_COPY.map((paragraph, index) => (
-                <li key={index}>{paragraph}</li>
+            <div className="grid gap-3">
+              {WHY_CHOOSE_ITEMS.map((item) => (
+                <article key={item.title} className="rounded-2xl border border-surface-border bg-surface p-4 text-left">
+                  <div className="flex items-start gap-3">
+                    <span className="inline-flex h-9 w-9 items-center justify-center rounded-full border border-ink/15 bg-surface-alt text-ink">
+                      <item.icon className="h-4 w-4" aria-hidden="true" />
+                    </span>
+                    <div>
+                      <h4 className="text-sm font-semibold tracking-tight text-ink">{item.title}</h4>
+                      <p className="mt-1 text-sm leading-6 text-ink/65">{item.body}</p>
+                    </div>
+                  </div>
+                </article>
               ))}
-            </ul>
+            </div>
           </div>
 
           <div className="card-soft rounded-3xl border border-dashed border-ink/25 p-8">

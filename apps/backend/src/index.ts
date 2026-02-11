@@ -10,6 +10,7 @@ import {
   DefaultSearchPlugin,
   LanguageCode,
   LogLevel,
+  NativeAuthenticationStrategy,
   VendureConfig,
 } from '@vendure/core';
 import {
@@ -19,6 +20,7 @@ import {
 import { AdminUiPlugin } from '@vendure/admin-ui-plugin';
 import { compileUiExtensions } from '@vendure/ui-devkit/compiler';
 import { BaseShopPlugin } from './plugins/base-shop';
+import { GoogleAuthenticationStrategy } from './auth/google-authentication-strategy';
 
 const host = 'localhost';
 const port = 3000;
@@ -88,6 +90,10 @@ export const config: VendureConfig = {
   authOptions: {
     // Use cookie-based sessions for the Admin UI.
     tokenMethod: 'cookie',
+    shopAuthenticationStrategy: [
+      new NativeAuthenticationStrategy(),
+      new GoogleAuthenticationStrategy(),
+    ],
     superadminCredentials: {
       identifier: superadminIdentifier,
       password: superadminPassword,

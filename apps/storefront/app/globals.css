@@ -4,9 +4,13 @@
 
 :root {
   color-scheme: light;
-  --ink: #0c111a;
+  --ink: #0e111a;
+  --ink-muted: #525866;
+  --ink-subtle: #99a0ae;
   --mist: #ffffff;
   --shell: #ffffff;
+  --surface-alt: #f7f8fa;
+  --surface-border: #e2e4e9;
   --cloud: #e7ecf3;
   --moss: #1b7f6a;
   --coral: #ff6b57;
@@ -28,7 +32,7 @@ body {
   margin: 0;
   font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   color: var(--ink);
-  background: #fff;
+  background: linear-gradient(180deg, #ffffff 0%, #fbfcfe 48%, #f9fbff 100%);
   min-height: 100vh;
 }
 
@@ -60,7 +64,9 @@ img {
   flex-direction: column;
   position: relative;
   overflow-x: clip;
-  background: #fff;
+  background:
+    radial-gradient(140% 72% at 50% -22%, rgba(12, 17, 26, 0.05) 0%, rgba(12, 17, 26, 0) 58%),
+    linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
 }
 
 :where(
@@ -115,17 +121,17 @@ ul.list-disc.space-y-3.pl-5.text-base.leading-7.text-ink\/75 li > span {
 @layer components {
   .card {
     background: var(--shell);
-    border: 1px solid rgba(12, 17, 26, 0.08);
+    border: 1px solid rgba(12, 17, 26, 0.09);
     border-radius: 20px;
     box-shadow: 0 16px 40px var(--shadow);
   }
 
   .card-soft {
-    background: rgba(255, 255, 255, 0.75);
-    border: 1px solid rgba(12, 17, 26, 0.06);
+    background: rgba(255, 255, 255, 0.76);
+    border: 1px solid rgba(12, 17, 26, 0.08);
     border-radius: 20px;
-    box-shadow: 0 12px 30px var(--shadow);
-    backdrop-filter: blur(12px);
+    box-shadow: 0 18px 42px rgba(14, 17, 26, 0.08);
+    backdrop-filter: blur(16px);
   }
 
   .pill {
@@ -170,7 +176,7 @@ ul.list-disc.space-y-3.pl-5.text-base.leading-7.text-ink\/75 li > span {
   .input {
     width: 100%;
     border-radius: 999px;
-    border: 1px solid rgba(12, 17, 26, 0.14);
+    border: 1px solid var(--surface-border);
     padding: 12px 16px;
     font-size: 14px;
     background: #ffffff;
@@ -179,7 +185,7 @@ ul.list-disc.space-y-3.pl-5.text-base.leading-7.text-ink\/75 li > span {
   }
 
   .input::placeholder {
-    color: rgba(12, 17, 26, 0.6);
+    color: rgba(12, 17, 26, 0.52);
   }
 
   .input:focus {

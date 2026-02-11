@@ -1,5 +1,6 @@
 'use client';
 
+import Image from 'next/image';
 import { useRef, useState, type MouseEvent } from 'react';
 
 const ZOOM_SCALE = 2.6;
@@ -79,13 +80,15 @@ export default function MagnifyImageBox({
       onMouseLeave={() => setActive(false)}
       onMouseMove={onMouseMove}
     >
-      <img
+      <Image
         src={src}
         alt={alt}
-        className="h-full w-full object-contain drop-shadow-[0_5px_12px_rgba(41,69,122,0.30)]"
+        fill
+        sizes="(max-width: 1024px) 100vw, 50vw"
+        className="object-contain drop-shadow-[0_5px_12px_rgba(41,69,122,0.30)]"
         draggable={false}
         onLoad={(event) => {
-          const target = event.currentTarget;
+          const target = event.currentTarget as HTMLImageElement;
           setNaturalSize({
             width: target.naturalWidth || 0,
             height: target.naturalHeight || 0,
