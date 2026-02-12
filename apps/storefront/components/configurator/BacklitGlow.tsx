@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { GLOBAL_GLOW_PHYSICS } from '../../config/layouts/geometry';
+import { CONFIGURATOR_THEME } from '../../config/configurator/theme';
 
 type BacklitGlowProps = {
   idBase: string;
@@ -80,9 +80,12 @@ function buildGlowTarget(
 ): GlowFrame {
   const [r, g, b] = parseHexColor(color) ?? [30, 167, 255];
   const lum = luminance(r, g, b);
-  const blurNear = Math.max(GLOBAL_GLOW_PHYSICS.haloNearBlurMin, buttonDiameterPx * GLOBAL_GLOW_PHYSICS.haloNearBlurFactor);
-  const blurFar = Math.max(GLOBAL_GLOW_PHYSICS.haloFarBlurMin, buttonDiameterPx * GLOBAL_GLOW_PHYSICS.haloFarBlurFactor);
-  const intensity = GLOBAL_GLOW_PHYSICS.intensityBase + ((1 - lum) * GLOBAL_GLOW_PHYSICS.intensityByDarkness);
+  const blurNear = Math.max(
+    CONFIGURATOR_THEME.glow.haloStdDeviation,
+    buttonDiameterPx * CONFIGURATOR_THEME.glow.haloNearBlurFactor,
+  );
+  const blurFar = Math.max(blurNear, blurNear * CONFIGURATOR_THEME.glow.haloFarBlurMultiplier);
+  const intensity = CONFIGURATOR_THEME.glow.intensityBase + ((1 - lum) * CONFIGURATOR_THEME.glow.intensityByDarkness);
 
   return {
     r,
@@ -103,7 +106,7 @@ export default function BacklitGlow({
   rInner,
   buttonDiameterPx,
   color,
-  opacity = GLOBAL_GLOW_PHYSICS.defaultAlpha,
+  opacity = CONFIGURATOR_THEME.glow.defaultAlpha,
   transitionMs = 190,
 }: BacklitGlowProps) {
   const glowPath = useMemo(() => donutPath(cx, cy, rOuter, rInner), [cx, cy, rOuter, rInner]);
@@ -169,8 +172,8 @@ export default function BacklitGlow({
   const colorMatrixValues = useMemo(() => {
     const colorGain = frame.intensity / 255;
     const alphaGain = Math.max(
-      GLOBAL_GLOW_PHYSICS.colorMatrixAlphaFloor,
-      frame.alpha * GLOBAL_GLOW_PHYSICS.colorMatrixAlphaMultiplier,
+      CONFIGURATOR_THEME.glow.colorMatrixAlphaFloor,
+      frame.alpha * CONFIGURATOR_THEME.glow.colorMatrixAlphaMultiplier,
     );
     return [
       `0 0 0 ${frame.r * colorGain} 0`,
@@ -183,7 +186,7 @@ export default function BacklitGlow({
   const cssColor = `rgb(${Math.round(frame.r)} ${Math.round(frame.g)} ${Math.round(frame.b)})`;
 
   return (
-    <g className="backlit-glow-pulse" style={{ mixBlendMode: 'screen', pointerEvents: 'none' }}>
+    <g className="backlit-glow-pulse" style={{ mixBlendMode: CONFIGURATOR_THEME.glow.blendMode, pointerEvents: 'none' }}>
       <defs>
         <filter
           id={`${idBase}-backlit`}

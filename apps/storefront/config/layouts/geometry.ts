@@ -1,20 +1,7 @@
 import type { SlotId } from '../../lib/keypadConfiguration';
+import { CONFIGURATOR_THEME } from '../configurator/theme';
 
 export type SlotCoordMode = 'center' | 'topLeft';
-
-export type GlowPhysics = {
-  defaultAlpha: number;
-  thumbnailAlpha: number;
-  haloNearBlurFactor: number;
-  haloFarBlurFactor: number;
-  haloNearBlurMin: number;
-  haloFarBlurMin: number;
-  intensityBase: number;
-  intensityByDarkness: number;
-  colorMatrixAlphaFloor: number;
-  colorMatrixAlphaMultiplier: number;
-  matteIconFitPct: number;
-};
 
 export type SlotSafeZone = {
   // Offsets measured inside the slot box.
@@ -65,21 +52,7 @@ export const DEFAULT_SLOT_SAFE_ZONE: SlotSafeZone = {
   wellDiameterPctOfSlot: 145,
   ledOuterPctOfWell: 94,
   ledInnerPctOfWell: 80,
-  iconDiameterPctOfSlot: 60,
-};
-
-export const GLOBAL_GLOW_PHYSICS: GlowPhysics = {
-  defaultAlpha: 0.46,
-  thumbnailAlpha: 0.42,
-  haloNearBlurFactor: 0.022,
-  haloFarBlurFactor: 0.062,
-  haloNearBlurMin: 1.1,
-  haloFarBlurMin: 2.1,
-  intensityBase: 1.1,
-  intensityByDarkness: 0.55,
-  colorMatrixAlphaFloor: 0.85,
-  colorMatrixAlphaMultiplier: 2.25,
-  matteIconFitPct: 58,
+  iconDiameterPctOfSlot: CONFIGURATOR_THEME.iconFitPercent,
 };
 
 export function slotGeometryToPercentBox(slot: SlotGeometry) {
@@ -159,6 +132,6 @@ export const PKP_2200_SI_GEOMETRY: KeypadModelGeometry = {
     // Tuned against 12.4% slot boxes so ring sits on the outer grey channel
     // and matte symbols do not render undersized.
     ringDiameterPctOfSlot: 136.3,
-    iconDiameterPctOfSlot: 60,
+    iconDiameterPctOfSlot: CONFIGURATOR_THEME.iconFitPercent,
   },
 };

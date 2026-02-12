@@ -3,13 +3,13 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import {
   DEFAULT_SLOT_SAFE_ZONE,
-  GLOBAL_GLOW_PHYSICS,
   type KeypadModelGeometry,
   PKP_2200_SI_GEOMETRY,
   type SlotCoordMode,
   type SlotGeometry,
   type SlotSafeZone,
 } from '../../config/layouts/geometry';
+import { CONFIGURATOR_THEME } from '../../config/configurator/theme';
 import type { SlotVisualState } from '../../lib/configuratorStore';
 import { SLOT_IDS, type SlotId } from '../../lib/keypadConfiguration';
 import { assetUrl } from '../../lib/vendure';
@@ -41,9 +41,9 @@ type SvgSlotMetrics = {
 
 const ROTATION_ANIMATION_MS = 360;
 const WHITE_GLOW_LUMINANCE_THRESHOLD = 0.92;
-const DEFAULT_ICON_SCALE = 0.94;
+const DEFAULT_ICON_SCALE = 1;
 const MIN_ICON_SCALE = 0.4;
-const MAX_EFFECTIVE_ICON_SCALE = 1.34;
+const MAX_EFFECTIVE_ICON_SCALE = 1;
 const MIN_VISIBLE_ICON_RATIO = 0.08;
 const ICON_CLIP_RADIUS_PCT_OF_SLOT = 47;
 
@@ -560,7 +560,7 @@ export default function KeypadPreview({
                     MAX_EFFECTIVE_ICON_SCALE,
                     iconScaleValue / Math.max(MIN_VISIBLE_ICON_RATIO, visibleIconRatio),
                   );
-                  const iconBaseDiameter = metrics.sizePx * (GLOBAL_GLOW_PHYSICS.matteIconFitPct / 100);
+                  const iconBaseDiameter = metrics.sizePx * (CONFIGURATOR_THEME.iconFitPercent / 100);
                   const iconSize = Math.min(metrics.clipRadius * 2, iconBaseDiameter * effectiveIconScale);
                   const iconX = metrics.cx - (iconSize / 2);
                   const iconY = metrics.cy - (iconSize / 2);

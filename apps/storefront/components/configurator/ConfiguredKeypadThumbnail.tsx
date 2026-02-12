@@ -6,7 +6,8 @@ import type { KeypadConfigurationDraft, SlotId } from '../../lib/keypadConfigura
 import { SLOT_IDS } from '../../lib/keypadConfiguration';
 import type { ConfiguredIconLookup, ConfiguredIconLookupEntry } from '../../lib/configuredKeypadPreview';
 import { assetUrl, categorySlug } from '../../lib/vendure';
-import { GLOBAL_GLOW_PHYSICS, PKP_2200_SI_GEOMETRY } from '../../config/layouts/geometry';
+import { PKP_2200_SI_GEOMETRY } from '../../config/layouts/geometry';
+import { CONFIGURATOR_THEME } from '../../config/configurator/theme';
 
 function resolveRingColor(value: string | null) {
   if (!value) return null;
@@ -85,12 +86,12 @@ export default function ConfiguredKeypadThumbnail({
 
           const geometry = PKP_2200_SI_GEOMETRY.slots[slotId as SlotId];
           const ringDiameter = PKP_2200_SI_GEOMETRY.buttonVisual.ringDiameterPctOfSlot;
-          const iconDiameter = Math.max(55, GLOBAL_GLOW_PHYSICS.matteIconFitPct);
+          const iconDiameter = CONFIGURATOR_THEME.iconFitPercent;
           const thumbnailGlowBlurPx = Math.max(
             2.5,
-            GLOBAL_GLOW_PHYSICS.haloFarBlurMin * 1.8,
+            CONFIGURATOR_THEME.glow.haloStdDeviation * 0.5,
           );
-          const thumbnailGlowAlpha = Math.max(0.18, GLOBAL_GLOW_PHYSICS.thumbnailAlpha);
+          const thumbnailGlowAlpha = Math.max(0.18, CONFIGURATOR_THEME.glow.thumbnailAlpha);
           const style: CSSProperties = {
             left: `${geometry.cx * 100}%`,
             top: `${geometry.cy * 100}%`,
