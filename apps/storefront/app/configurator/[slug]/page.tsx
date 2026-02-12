@@ -61,6 +61,7 @@ async function ConfiguratorModelContent({
         slug: product.slug,
         name: product.name,
         modelCode,
+        description: product.description ?? null,
         shellAssetPath: product.featuredAsset?.source ?? product.featuredAsset?.preview ?? null,
         productVariantId: product.variants?.[0]?.id ?? null,
       }}

@@ -12,7 +12,6 @@ import {
 import {
   asStrictConfiguration,
   isConfigurationComplete,
-  serializeConfiguration,
   validateAndNormalizeConfigurationInput,
   type SlotId,
 } from '../../lib/keypadConfiguration';
@@ -44,6 +43,18 @@ function buildDefaultSavedName(modelCode: string) {
   const now = new Date();
   const stamp = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
   return `${modelCode} ${stamp}`;
+}
+
+function toPlainText(value: string | null | undefined) {
+  if (!value) return '';
+  return value
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/&quot;/gi, '"')
+    .replace(/&#39;/gi, "'")
+    .replace(/\s+/g, ' ')
+    .trim();
 }
 
 export default function Pkp2200Configurator({
@@ -93,6 +104,29 @@ export default function Pkp2200Configurator({
     const normalized = value?.trim() || '';
     return normalized || null;
   }, [searchParams]);
+
+  const debugSlots = useMemo(() => searchParams.get('debugSlots') === '1', [searchParams]);
+  const previewRotationFromQuery = useMemo(() => {
+    const value = Number.parseFloat(searchParams.get('rotationDeg') || '0');
+    if (!Number.isFinite(value)) return 0;
+    return Math.max(-180, Math.min(180, value));
+  }, [searchParams]);
+  const previewIconScale = useMemo(() => {
+    const value = Number.parseFloat(searchParams.get('iconScale') || '');
+    if (!Number.isFinite(value) || value <= 0) return 0.94;
+    return value;
+  }, [searchParams]);
+  const showGlowsFromQuery = useMemo(() => searchParams.get('showGlows') !== '0', [searchParams]);
+  const [previewRotationDeg, setPreviewRotationDeg] = useState(previewRotationFromQuery);
+  const [previewShowGlows, setPreviewShowGlows] = useState(showGlowsFromQuery);
+
+  useEffect(() => {
+    setPreviewRotationDeg(previewRotationFromQuery);
+  }, [previewRotationFromQuery]);
+
+  useEffect(() => {
+    setPreviewShowGlows(showGlowsFromQuery);
+  }, [showGlowsFromQuery]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -272,6 +306,14 @@ export default function Pkp2200Configurator({
   const closePopup = () => {
     setPopupSlotId(null);
     setActiveSlotId(null);
+  };
+
+  const rotatePreview = () => {
+    setPreviewRotationDeg((current) => (Math.abs(current) === 90 ? 0 : 90));
+  };
+
+  const togglePreviewGlows = () => {
+    setPreviewShowGlows((current) => !current);
   };
 
   const onAddConfiguredKeypad = async () => {
@@ -455,7 +497,7 @@ export default function Pkp2200Configurator({
     }
   };
 
-  const configurationJson = useMemo(() => serializeConfiguration(configurationDraft), [configurationDraft]);
+  const keypadDescription = useMemo(() => toPlainText(keypad.description), [keypad.description]);
   const canOpenSaveAction = isAuthenticated !== null;
   const canDownloadPdf = Boolean(strictConfiguration);
 
@@ -486,15 +528,22 @@ export default function Pkp2200Configurator({
 
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
           <KeypadPreview
+            modelCode={keypad.modelCode}
             shellAssetPath={keypad.shellAssetPath}
             slots={slots}
             activeSlotId={popupSlotId}
             onSlotClick={openSlotPopup}
+            rotationDeg={previewRotationDeg}
+            debugSlots={debugSlots}
+            iconScale={previewIconScale}
+            descriptionText={keypadDescription}
+            showGlows={previewShowGlows}
+            onRotate={rotatePreview}
+            onToggleGlows={togglePreviewGlows}
           />
 
           <ConfigurationSidebar
             slots={slots}
-            configurationJson={configurationJson}
             isComplete={isComplete}
             loadingSavedConfig={loadingSavedConfig}
             iconsLoading={iconsLoading}

@@ -8,6 +8,66 @@ import { assetUrl, categorySlug } from '../../lib/vendure';
 
 type PopupView = 'icons' | 'swatches';
 
+function normalizeSearchText(value: string) {
+  return value
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, ' ')
+    .trim();
+}
+
+function tokenizeSearchText(value: string) {
+  const normalized = normalizeSearchText(value);
+  return normalized ? normalized.split(/\s+/g).filter(Boolean) : [];
+}
+
+function isSubsequence(term: string, token: string) {
+  let termIndex = 0;
+  for (let i = 0; i < token.length && termIndex < term.length; i += 1) {
+    if (token[i] === term[termIndex]) termIndex += 1;
+  }
+  return termIndex === term.length;
+}
+
+function boundedLevenshtein(a: string, b: string, maxDistance: number) {
+  if (Math.abs(a.length - b.length) > maxDistance) return maxDistance + 1;
+
+  let prev = new Array<number>(b.length + 1);
+  let curr = new Array<number>(b.length + 1);
+  for (let j = 0; j <= b.length; j += 1) prev[j] = j;
+
+  for (let i = 1; i <= a.length; i += 1) {
+    curr[0] = i;
+    let rowMin = curr[0];
+    for (let j = 1; j <= b.length; j += 1) {
+      const cost = a[i - 1] === b[j - 1] ? 0 : 1;
+      curr[j] = Math.min(
+        prev[j] + 1,
+        curr[j - 1] + 1,
+        prev[j - 1] + cost,
+      );
+      if (curr[j] < rowMin) rowMin = curr[j];
+    }
+    if (rowMin > maxDistance) return maxDistance + 1;
+    const swap = prev;
+    prev = curr;
+    curr = swap;
+  }
+  return prev[b.length];
+}
+
+function tokenFuzzyMatch(term: string, token: string) {
+  if (token.includes(term) || token.startsWith(term)) return true;
+  if (term.length >= 3 && isSubsequence(term, token)) return true;
+  if (term.length < 3) return false;
+  const maxDistance = term.length >= 6 ? 2 : 1;
+  return boundedLevenshtein(term, token, maxDistance) <= maxDistance;
+}
+
+function matchesSearchTerms(tokens: string[], queryTerms: string[]) {
+  if (queryTerms.length === 0) return true;
+  return queryTerms.every((term) => tokens.some((token) => tokenFuzzyMatch(term, token)));
+}
+
 export default function IconSelectionPopup({
   isOpen,
   isMobile = false,
@@ -33,6 +93,7 @@ export default function IconSelectionPopup({
 }) {
   const [activeView, setActiveView] = useState<PopupView>('icons');
   const [activeCategorySlug, setActiveCategorySlug] = useState('all');
+  const [searchQuery, setSearchQuery] = useState('');
 
   const sizeMatchedIcons = useMemo(
     () => icons.filter((icon) => icon.sizeMm === slotSizeMm),
@@ -58,6 +119,7 @@ export default function IconSelectionPopup({
   useEffect(() => {
     if (!isOpen) return;
     setActiveView('icons');
+    setSearchQuery('');
   }, [isOpen]);
 
   useEffect(() => {
@@ -68,18 +130,32 @@ export default function IconSelectionPopup({
     }
   }, [activeCategorySlug, categoryTabs, isOpen]);
 
+  const queryTerms = useMemo(() => tokenizeSearchText(searchQuery), [searchQuery]);
+
+  const iconSearchIndex = useMemo(() => {
+    return sizeMatchedIcons.map((icon) => ({
+      icon,
+      tokens: tokenizeSearchText(
+        `${icon.name} ${icon.iconId} ${icon.sku ?? ''} ${icon.categories.join(' ')}`,
+      ),
+    }));
+  }, [sizeMatchedIcons]);
+
   const filteredIcons = useMemo(() => {
-    const scoped =
+    const categoryScoped =
       activeCategorySlug === 'all'
-        ? sizeMatchedIcons
-        : sizeMatchedIcons.filter((icon) =>
+        ? iconSearchIndex
+        : iconSearchIndex.filter(({ icon }) =>
             icon.categories.some((category) => categorySlug(category) === activeCategorySlug),
           );
 
-    return scoped
-      .slice()
+    const searchBase = queryTerms.length > 0 ? iconSearchIndex : categoryScoped;
+
+    return searchBase
+      .filter(({ tokens }) => matchesSearchTerms(tokens, queryTerms))
+      .map(({ icon }) => icon)
       .sort((a, b) => a.iconId.localeCompare(b.iconId));
-  }, [activeCategorySlug, sizeMatchedIcons]);
+  }, [activeCategorySlug, iconSearchIndex, queryTerms]);
 
   if (!isOpen) return null;
 
@@ -139,6 +215,22 @@ export default function IconSelectionPopup({
               Ring Glow
             </button>
           </div>
+
+          {activeView === 'icons' ? (
+            <div className="mt-3">
+              <label htmlFor="icon-search" className="mb-1 block text-[11px] font-semibold uppercase tracking-[0.14em] text-blue-100/70">
+                Search icons
+              </label>
+              <input
+                id="icon-search"
+                type="search"
+                value={searchQuery}
+                onChange={(event) => setSearchQuery(event.target.value)}
+                placeholder="Search by name, ID, SKU, category"
+                className="h-11 w-full rounded-full border border-white/22 bg-white/[0.08] px-4 text-sm text-blue-50 placeholder:text-blue-100/60 outline-none backdrop-blur-[6px] transition focus:border-[#8cc8ff] focus:bg-white/[0.12]"
+              />
+            </div>
+          ) : null}
         </div>
 
         {activeView === 'icons' ? (
@@ -167,7 +259,9 @@ export default function IconSelectionPopup({
             <section>
               {filteredIcons.length === 0 ? (
                 <div className="rounded-2xl border border-dashed border-white/25 bg-white/5 p-8 text-sm text-blue-100/80">
-                  {`No ${slotSizeMm}mm icons available for this category.`}
+                  {searchQuery.trim()
+                    ? `No ${slotSizeMm}mm icons match "${searchQuery.trim()}" across all categories.`
+                    : `No ${slotSizeMm}mm icons available for this category.`}
                 </div>
               ) : (
                 <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 xl:grid-cols-4">

@@ -433,18 +433,20 @@ function renderPdfHtml({
     .map((row) => {
       const geometry = PKP_2200_SI_GEOMETRY.slots[row.slotId];
       const position = {
-        left: `${geometry.leftPct}%`,
-        top: `${geometry.topPct}%`,
-        width: `${geometry.widthPct}%`,
-        height: `${geometry.heightPct}%`,
+        left: `${geometry.cx * 100}%`,
+        top: `${geometry.cy * 100}%`,
+        width: `${geometry.r * 200}%`,
+        height: `${geometry.r * 200}%`,
       };
 
-      const glow = row.color !== 'No glow'
-        ? `box-shadow: inset 0 0 0 2px ${row.color}, 0 0 20px ${row.color}66;`
-        : 'box-shadow: inset 0 0 0 1px rgba(255,255,255,0.25);';
-
       return `
-        <div class="slot" style="left:${position.left};top:${position.top};width:${position.width};height:${position.height};${glow}">
+        <div class="slot" style="left:${position.left};top:${position.top};width:${position.width};height:${position.height};transform:translate(-50%, -50%);">
+          <span class="slot-ring-base"></span>
+          ${
+            row.color !== 'No glow'
+              ? `<span class="slot-ring-glow" style="${ringGlowInlineStyle(row.color)}"></span>`
+              : ''
+          }
           <img src="${row.matteAssetUrl}" alt="${escapeHtml(row.iconId)}" />
           <span class="slot-label">${escapeHtml(row.slotId.replace('_', ' '))}</span>
         </div>
@@ -464,6 +466,9 @@ function renderPdfHtml({
     `,
     )
     .join('');
+
+  const visualWidthPx = 420;
+  const visualHeightPx = Math.round(visualWidthPx / PKP_2200_SI_GEOMETRY.aspectRatio);
 
   return `
     <!doctype html>
@@ -516,27 +521,46 @@ function renderPdfHtml({
           .visual {
             position: relative;
             margin: 0 auto;
-            width: 360px;
-            height: 360px;
+            width: ${visualWidthPx}px;
+            height: ${visualHeightPx}px;
             border: 1px solid rgba(255,255,255,0.35);
             border-radius: 18px;
             background: #030a18;
           }
           .slot {
             position: absolute;
-            width: 24%;
-            height: 24%;
-            border-radius: 22%;
-            border: 1px solid rgba(255,255,255,0.4);
-            background: rgba(255,255,255,0.10);
-            overflow: hidden;
+            border-radius: 18%;
+            background: transparent;
+            overflow: visible;
+          }
+          .slot-ring-base {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: ${PKP_2200_SI_GEOMETRY.buttonVisual.ringDiameterPctOfSlot}%;
+            height: ${PKP_2200_SI_GEOMETRY.buttonVisual.ringDiameterPctOfSlot}%;
+            transform: translate(-50%, -50%);
+            border-radius: 999px;
+            box-shadow: inset 0 0 0 1.5px rgba(164,176,196,0.42), inset 0 2px 2px rgba(255,255,255,0.08), inset 0 -4px 6px rgba(0,0,0,0.35);
+          }
+          .slot-ring-glow {
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: ${PKP_2200_SI_GEOMETRY.buttonVisual.ringDiameterPctOfSlot}%;
+            height: ${PKP_2200_SI_GEOMETRY.buttonVisual.ringDiameterPctOfSlot}%;
+            transform: translate(-50%, -50%);
+            border-radius: 999px;
           }
           .slot img {
-            width: 100%;
-            height: 100%;
+            position: absolute;
+            left: 50%;
+            top: 50%;
+            width: ${PKP_2200_SI_GEOMETRY.buttonVisual.iconDiameterPctOfSlot}%;
+            height: ${PKP_2200_SI_GEOMETRY.buttonVisual.iconDiameterPctOfSlot}%;
+            transform: translate(-50%, -50%);
             object-fit: contain;
-            padding: 12%;
-            box-sizing: border-box;
+            filter: drop-shadow(0 1px 2px rgba(0,0,0,0.55));
           }
           .slot-label {
             position: absolute;
@@ -644,6 +668,24 @@ function escapeHtml(value: string) {
     .replaceAll('>', '&gt;')
     .replaceAll('"', '&quot;')
     .replaceAll("'", '&#39;');
+}
+
+function hexToRgba(hex: string, alpha: number) {
+  const normalized = hex.replace('#', '');
+  if (normalized.length !== 6) return `rgba(30, 167, 255, ${alpha})`;
+
+  const r = Number.parseInt(normalized.slice(0, 2), 16);
+  const g = Number.parseInt(normalized.slice(2, 4), 16);
+  const b = Number.parseInt(normalized.slice(4, 6), 16);
+
+  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+}
+
+function ringGlowInlineStyle(color: string) {
+  return [
+    `box-shadow: inset 0 0 0 2px ${hexToRgba(color, 0.92)}, 0 0 8px ${hexToRgba(color, 0.92)}, 0 0 18px ${hexToRgba(color, 0.72)}, 0 0 30px ${hexToRgba(color, 0.48)};`,
+    `background: radial-gradient(circle, transparent 62%, ${hexToRgba(color, 0.28)} 76%, transparent 100%);`,
+  ].join(' ');
 }
 
 async function queryShopApi<T>(

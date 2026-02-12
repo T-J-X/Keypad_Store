@@ -17,6 +17,7 @@ export type PilotKeypadProduct = {
   slug: string;
   name: string;
   modelCode: string;
+  description?: string | null;
   shellAssetPath: string | null;
   productVariantId: string | null;
 };
