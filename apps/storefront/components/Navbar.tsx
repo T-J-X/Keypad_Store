@@ -513,11 +513,11 @@ export default function Navbar() {
                 onMouseEnter={openShopMenu}
                 onMouseLeave={scheduleCloseShopMenu}
               >
-                <button
-                  type="button"
+                <Link
+                  href="/shop"
                   aria-haspopup="menu"
                   aria-expanded={isShopMenuOpen}
-                  onClick={() => setIsShopMenuOpen((current) => !current)}
+                  onClick={() => setIsShopMenuOpen(false)}
                   onFocus={openShopMenu}
                   className={[
                     'group relative inline-flex items-center gap-1 text-sm font-medium tracking-tight transition-colors duration-200',
@@ -530,7 +530,7 @@ export default function Navbar() {
                     'absolute -bottom-1 left-0 h-px w-0 transition-all duration-300 group-hover:w-full',
                     isScrolled ? 'bg-white' : 'bg-ink',
                   ].join(' ')} />
-                </button>
+                </Link>
 
                 <div
                   role="menu"

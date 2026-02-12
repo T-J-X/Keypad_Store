@@ -106,6 +106,13 @@ export default function Pkp2200Configurator({
   }, [searchParams]);
 
   const debugSlots = useMemo(() => searchParams.get('debugSlots') === '1', [searchParams]);
+  const previewIconScaleFromQuery = useMemo(() => {
+    const raw = searchParams.get('iconScale');
+    if (!raw) return undefined;
+    const value = Number.parseFloat(raw);
+    if (!Number.isFinite(value) || value <= 0) return undefined;
+    return Math.max(0.4, Math.min(1.26, value));
+  }, [searchParams]);
   const previewRotationFromQuery = useMemo(() => {
     const value = Number.parseFloat(searchParams.get('rotationDeg') || '0');
     if (!Number.isFinite(value)) return 0;
@@ -521,6 +528,7 @@ export default function Pkp2200Configurator({
             activeSlotId={popupSlotId}
             onSlotClick={openSlotPopup}
             rotationDeg={previewRotationDeg}
+            iconScale={previewIconScaleFromQuery}
             debugSlots={debugSlots}
             descriptionText={keypadDescription}
             showGlows={previewShowGlows}

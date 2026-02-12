@@ -40,6 +40,11 @@ type SvgSlotMetrics = {
 
 const ROTATION_ANIMATION_MS = 360;
 const WHITE_GLOW_LUMINANCE_THRESHOLD = 0.92;
+const DEFAULT_ICON_SCALE = 0.94;
+const MIN_ICON_SCALE = 0.4;
+const MAX_EFFECTIVE_ICON_SCALE = 1.68;
+const MIN_VISIBLE_ICON_RATIO = 0.08;
+const ICON_CLIP_RADIUS_PCT_OF_SLOT = 47;
 
 const MODEL_FALLBACK_SIZES: Record<string, IntrinsicSize> = {
   [PKP_2200_SI_GEOMETRY.modelCode]: PKP_2200_SI_GEOMETRY.intrinsicSize,
@@ -51,6 +56,15 @@ const MODEL_GEOMETRIES: Record<string, KeypadModelGeometry> = {
 
 function resolveModelGeometry(modelCode: string) {
   return MODEL_GEOMETRIES[modelCode] ?? PKP_2200_SI_GEOMETRY;
+}
+
+function clamp(value: number, min: number, max: number) {
+  return Math.max(min, Math.min(max, value));
+}
+
+function normalizeIconScale(input: number | undefined) {
+  if (!Number.isFinite(input)) return DEFAULT_ICON_SCALE;
+  return clamp(input as number, MIN_ICON_SCALE, MAX_EFFECTIVE_ICON_SCALE);
 }
 
 function parseHexColor(input: string | null | undefined): [number, number, number] | null {
@@ -85,6 +99,70 @@ function colorLuminance(color: string | null | undefined) {
   return ((0.2126 * r) + (0.7152 * g) + (0.0722 * b)) / 255;
 }
 
+async function measureVisibleIconRatio(src: string): Promise<number> {
+  if (typeof window === 'undefined') return 1;
+
+  return new Promise((resolve) => {
+    const image = new window.Image();
+    image.decoding = 'async';
+    image.crossOrigin = 'anonymous';
+    image.onload = () => {
+      const width = image.naturalWidth;
+      const height = image.naturalHeight;
+      if (!width || !height) {
+        resolve(1);
+        return;
+      }
+
+      const canvas = window.document.createElement('canvas');
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d', { willReadFrequently: true });
+      if (!ctx) {
+        resolve(1);
+        return;
+      }
+
+      ctx.drawImage(image, 0, 0, width, height);
+
+      try {
+        const data = ctx.getImageData(0, 0, width, height).data;
+        let minX = width;
+        let minY = height;
+        let maxX = -1;
+        let maxY = -1;
+
+        for (let index = 3; index < data.length; index += 4) {
+          if (data[index] <= 8) continue;
+
+          const pixelIndex = (index - 3) / 4;
+          const x = pixelIndex % width;
+          const y = Math.floor(pixelIndex / width);
+
+          if (x < minX) minX = x;
+          if (y < minY) minY = y;
+          if (x > maxX) maxX = x;
+          if (y > maxY) maxY = y;
+        }
+
+        if (maxX < 0 || maxY < 0) {
+          resolve(1);
+          return;
+        }
+
+        const visibleWidth = maxX - minX + 1;
+        const visibleHeight = maxY - minY + 1;
+        const ratio = Math.max(visibleWidth / width, visibleHeight / height);
+        resolve(clamp(ratio, MIN_VISIBLE_ICON_RATIO, 1));
+      } catch {
+        resolve(1);
+      }
+    };
+    image.onerror = () => resolve(1);
+    image.src = src;
+  });
+}
+
 function buildSlotMetrics(
   slot: SlotGeometry,
   baseW: number,
@@ -94,7 +172,6 @@ function buildSlotMetrics(
   const safeZone = {
     ...DEFAULT_SLOT_SAFE_ZONE,
     ...(slot.safeZone ?? {}),
-    iconDiameterPctOfSlot: DEFAULT_SLOT_SAFE_ZONE.iconDiameterPctOfSlot,
   };
   const coordMode = slot.coordMode ?? defaultCoordMode;
   const sizePct = Number.isFinite(slot.sizePct) ? slot.sizePct : slot.r * 200;
@@ -132,8 +209,8 @@ function buildSlotMetrics(
   const buttonRadiusPx = wellDiameterPx / 2;
   const rOuter = buttonRadiusPx * (safeZone.ledOuterPctOfWell / 100);
   const rInner = buttonRadiusPx * (safeZone.ledInnerPctOfWell / 100);
-  const iconDiameterPx = sizePx * (safeZone.iconDiameterPctOfSlot / 100);
-  const clipRadius = iconDiameterPx / 2;
+  const clipRadius = sizePx * (ICON_CLIP_RADIUS_PCT_OF_SLOT / 100);
+  const iconDiameterPx = clipRadius * 2;
 
   return {
     label: slot.label,
@@ -166,6 +243,7 @@ export default function KeypadPreview({
   activeSlotId,
   onSlotClick,
   rotationDeg = 0,
+  iconScale = DEFAULT_ICON_SCALE,
   debugSlots = false,
   descriptionText,
   showGlows = true,
@@ -178,6 +256,7 @@ export default function KeypadPreview({
   activeSlotId: SlotId | null;
   onSlotClick: (slotId: SlotId) => void;
   rotationDeg?: number;
+  iconScale?: number;
   debugSlots?: boolean;
   descriptionText?: string | null;
   showGlows?: boolean;
@@ -195,6 +274,10 @@ export default function KeypadPreview({
   const [displayRotationDeg, setDisplayRotationDeg] = useState(rotationDeg);
   const displayRotationRef = useRef(rotationDeg);
   const rotationFrameRef = useRef<number | null>(null);
+  const matteVisibleRatioCacheRef = useRef<Map<string, number>>(new Map());
+  const pendingMatteRatioBySrcRef = useRef<Set<string>>(new Set());
+  const [matteVisibleRatioBySrc, setMatteVisibleRatioBySrc] = useState<Record<string, number>>({});
+  const iconScaleValue = useMemo(() => normalizeIconScale(iconScale), [iconScale]);
 
   useEffect(() => {
     setBaseSize((previous) => {
@@ -245,12 +328,61 @@ export default function KeypadPreview({
   const canvasSize = Math.max(baseW, baseH);
   const canvasOffsetX = (canvasSize - baseW) / 2;
   const canvasOffsetY = (canvasSize - baseH) / 2;
+  const matteSrcBySlotId = useMemo(() => {
+    const map = new Map<SlotId, string>();
+    for (const slotId of SLOT_IDS) {
+      const matteAssetPath = slots[slotId].matteAssetPath;
+      if (!matteAssetPath) continue;
+      map.set(slotId, assetUrl(matteAssetPath));
+    }
+    return map;
+  }, [slots]);
+  const matteSources = useMemo(() => Array.from(new Set(matteSrcBySlotId.values())), [matteSrcBySlotId]);
 
   useEffect(() => {
     if (activeSlotId != null) {
       setHoveredSlotId(null);
     }
   }, [activeSlotId]);
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    let cancelled = false;
+
+    for (const src of matteSources) {
+      if (matteVisibleRatioCacheRef.current.has(src)) {
+        continue;
+      }
+      if (pendingMatteRatioBySrcRef.current.has(src)) {
+        continue;
+      }
+
+      pendingMatteRatioBySrcRef.current.add(src);
+      void measureVisibleIconRatio(src)
+        .then((ratio) => {
+          pendingMatteRatioBySrcRef.current.delete(src);
+          matteVisibleRatioCacheRef.current.set(src, ratio);
+          if (cancelled) return;
+          setMatteVisibleRatioBySrc((previous) => {
+            if (previous[src] === ratio) return previous;
+            return { ...previous, [src]: ratio };
+          });
+        })
+        .catch(() => {
+          pendingMatteRatioBySrcRef.current.delete(src);
+          matteVisibleRatioCacheRef.current.set(src, 1);
+          if (cancelled) return;
+          setMatteVisibleRatioBySrc((previous) => {
+            if (previous[src] === 1) return previous;
+            return { ...previous, [src]: 1 };
+          });
+        });
+    }
+
+    return () => {
+      cancelled = true;
+    };
+  }, [matteSources]);
 
   useEffect(() => {
     displayRotationRef.current = displayRotationDeg;
@@ -403,7 +535,7 @@ export default function KeypadPreview({
 
                 {slotMetrics.map(({ slotId, metrics }) => {
                   const slot = slots[slotId];
-                  const matteSrc = slot.matteAssetPath ? assetUrl(slot.matteAssetPath) : '';
+                  const matteSrc = matteSrcBySlotId.get(slotId) ?? '';
                   const isEmptySlot = !matteSrc;
                   const showHoverPrompt = isEmptySlot && hoveredSlotId === slotId && activeSlotId == null;
                   const hoverPromptWidth = Math.max(166, metrics.sizePx * 1.72);
@@ -420,7 +552,14 @@ export default function KeypadPreview({
                   const arrowCenterX = hoverPromptX + (hoverPromptWidth / 2);
                   const textCenterX = hoverPromptX + (hoverPromptWidth / 2);
                   const textBaselineY = hoverPromptY + (hoverPromptHeight / 2) + Math.max(4, hoverPromptHeight * 0.08);
-                  const iconSize = metrics.iconDiameterPx;
+                  const visibleIconRatio = matteSrc
+                    ? (matteVisibleRatioBySrc[matteSrc] ?? matteVisibleRatioCacheRef.current.get(matteSrc) ?? 1)
+                    : 1;
+                  const effectiveIconScale = Math.min(
+                    MAX_EFFECTIVE_ICON_SCALE,
+                    iconScaleValue / Math.max(MIN_VISIBLE_ICON_RATIO, visibleIconRatio),
+                  );
+                  const iconSize = Math.min(metrics.clipRadius * 2.18, metrics.sizePx * effectiveIconScale);
                   const iconX = metrics.cx - (iconSize / 2);
                   const iconY = metrics.cy - (iconSize / 2);
                   const ringColor = slot.color;
