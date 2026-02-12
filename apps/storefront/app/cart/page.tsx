@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import ConfiguredKeypadThumbnail from '../../components/configurator/ConfiguredKeypadThumbnail';
 import { notifyCartUpdated } from '../../lib/cartEvents';
+import { RING_GLOW_OPTIONS } from '../../lib/configuratorCatalog';
 import {
   buildConfiguredIconLookupFromPayload,
   countConfiguredSlots,
@@ -12,7 +13,9 @@ import {
   parseConfigurationForPreview,
   type ConfiguredIconLookup,
 } from '../../lib/configuredKeypadPreview';
+import { SLOT_IDS, type SlotId } from '../../lib/keypadConfiguration';
 import { assetUrl } from '../../lib/vendure';
+import { PKP_2200_SI_LAYOUT } from '../../components/configurator/pkp2200Layout';
 
 type CartOrderLine = {
   id: string;
@@ -62,6 +65,29 @@ type IconCatalogPayload = {
   }>;
   error?: string;
 };
+
+const SWATCH_LABEL_BY_HEX = new Map(
+  RING_GLOW_OPTIONS
+    .filter((option): option is { label: string; value: string } => typeof option.value === 'string')
+    .map((option) => [option.value.toUpperCase(), option.label]),
+);
+
+function slotLabel(slotId: SlotId) {
+  return PKP_2200_SI_LAYOUT[slotId]?.label ?? slotId.replace('_', ' ');
+}
+
+function normalizeHex(value: string | null | undefined) {
+  if (!value) return null;
+  const normalized = value.trim().toUpperCase();
+  return /^#[0-9A-F]{6}$/.test(normalized) ? normalized : null;
+}
+
+function swatchDescription(value: string | null | undefined) {
+  const hex = normalizeHex(value);
+  if (!hex) return 'No glow';
+  const label = SWATCH_LABEL_BY_HEX.get(hex);
+  return label ? `${label} (${hex})` : `Custom (${hex})`;
+}
 
 export default function CartPage() {
   const [order, setOrder] = useState<CartOrder | null>(null);
@@ -175,46 +201,47 @@ export default function CartPage() {
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 pb-16 pt-10 sm:px-6 lg:px-8">
-      <div className="mb-8 flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-ink md:text-4xl">Cart</h1>
-          <p className="mt-1 text-sm text-ink/60">Review your selected keypad components before checkout.</p>
-        </div>
-        <Link
-          href="/shop"
-          className="inline-flex items-center justify-center rounded-full border border-ink/15 px-4 py-2 text-sm font-semibold text-ink transition hover:border-ink/30 hover:bg-white"
-        >
-          Continue shopping
-        </Link>
-      </div>
-
-      {isLoading ? (
-        <div className="card-soft p-6 text-sm text-ink/60">Loading your cart...</div>
-      ) : null}
-
-      {!isLoading && error ? (
-        <div className="card-soft border border-rose-200 p-6 text-sm font-medium text-rose-700">{error}</div>
-      ) : null}
-
-      {!isLoading && !error && !hasLines ? (
-        <div className="card-soft p-8 text-center">
-          <p className="text-base font-semibold text-ink">Your cart is empty.</p>
-          <p className="mt-2 text-sm text-ink/60">Add products from the shop to see them here.</p>
-          <div className="mt-5">
-            <Link
-              href="/shop"
-              className="inline-flex items-center justify-center rounded-full bg-ink px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
-            >
-              Browse products
-            </Link>
+      <div className="rounded-3xl border border-[#0f2c5a] bg-[radial-gradient(130%_130%_at_50%_0%,#1b5dae_0%,#0e2a55_36%,#050f23_100%)] p-5 shadow-[0_34px_100px_rgba(2,10,28,0.45)] sm:p-6">
+        <div className="mb-8 flex items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">Cart</h1>
+            <p className="mt-1 text-sm text-blue-100/80">Review your selected keypad components before checkout.</p>
           </div>
+          <Link
+            href="/shop"
+            className="inline-flex items-center justify-center rounded-full border border-white/30 px-4 py-2 text-sm font-semibold text-blue-50 transition hover:border-white hover:bg-white/10"
+          >
+            Continue shopping
+          </Link>
         </div>
-      ) : null}
 
-      {!isLoading && !error && hasLines && order ? (
-        <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
-          <section className="card-soft overflow-hidden">
-            <ul className="divide-y divide-ink/8">
+        {isLoading ? (
+          <div className="card-soft border-white/12 bg-[#081a35]/72 p-6 text-sm text-blue-100/80">Loading your cart...</div>
+        ) : null}
+
+        {!isLoading && error ? (
+          <div className="card-soft border border-rose-400/45 bg-rose-950/35 p-6 text-sm font-medium text-rose-100">{error}</div>
+        ) : null}
+
+        {!isLoading && !error && !hasLines ? (
+          <div className="card-soft border-white/12 bg-[#081a35]/72 p-8 text-center">
+            <p className="text-base font-semibold text-white">Your cart is empty.</p>
+            <p className="mt-2 text-sm text-blue-100/75">Add products from the shop to see them here.</p>
+            <div className="mt-5">
+              <Link
+                href="/shop"
+                className="inline-flex items-center justify-center rounded-full border border-[#1EA7FF]/45 bg-[#1EA7FF]/12 px-5 py-2.5 text-sm font-semibold text-blue-50 transition hover:bg-[#1EA7FF]/24"
+              >
+                Browse products
+              </Link>
+            </div>
+          </div>
+        ) : null}
+
+        {!isLoading && !error && hasLines && order ? (
+          <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+          <section className="card-soft overflow-hidden border-white/12 bg-[#081a35]/72">
+            <ul className="divide-y divide-white/10">
               {order.lines.map((line) => {
                 const productSlug = line.productVariant?.product?.slug;
                 const imagePath = line.productVariant?.product?.featuredAsset?.preview
@@ -227,11 +254,36 @@ export default function CartPage() {
                   ? parseConfigurationForPreview(configurationRaw)
                   : null;
                 const configuredSlots = countConfiguredSlots(previewConfiguration);
+                const configurationRows = previewConfiguration
+                  ? SLOT_IDS.map((slotId) => {
+                      const row = previewConfiguration[slotId];
+                      const iconId = row?.iconId?.trim() || null;
+                      if (!iconId) return null;
+                      const iconEntry = iconLookup.get(iconId);
+                      const iconName = iconEntry?.iconName?.trim() || iconId;
+                      return {
+                        slotId,
+                        label: slotLabel(slotId),
+                        iconId,
+                        iconName,
+                        glow: swatchDescription(row?.color ?? null),
+                      };
+                    }).filter((row): row is {
+                      slotId: SlotId;
+                      label: string;
+                      iconId: string;
+                      iconName: string;
+                      glow: string;
+                    } => Boolean(row))
+                  : [];
+                const editConfigurationHref = hasConfiguration && productSlug
+                  ? `/configurator/${productSlug}?lineId=${encodeURIComponent(line.id)}`
+                  : null;
                 const isUpdatingLine = activeLineId === line.id;
 
                 return (
                   <li key={line.id} className="flex gap-4 p-4 sm:p-5">
-                    <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-neutral-100">
+                    <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-white/15 bg-[#020916]">
                       {hasConfiguration ? (
                         <ConfiguredKeypadThumbnail
                           shellAssetPath={imagePath || null}
@@ -252,53 +304,78 @@ export default function CartPage() {
 
                     <div className="min-w-0 flex-1">
                       {productSlug ? (
-                        <Link href={`/product/${productSlug}`} className="text-sm font-semibold text-ink transition hover:underline">
+                        <Link href={`/product/${productSlug}`} className="text-sm font-semibold text-white transition hover:underline">
                           {line.productVariant?.name || line.productVariant?.product?.name || 'Product'}
                         </Link>
                       ) : (
-                        <div className="text-sm font-semibold text-ink">
+                        <div className="text-sm font-semibold text-white">
                           {line.productVariant?.name || line.productVariant?.product?.name || 'Product'}
                         </div>
                       )}
                       {hasConfiguration ? (
-                        <div className="mt-1 text-xs font-semibold uppercase tracking-[0.1em] text-[#1e3a66]">
+                        <div className="mt-1 text-xs font-semibold uppercase tracking-[0.1em] text-[#9dcfff]">
                           Custom configuration: {configuredSlots}/4 slots defined
                         </div>
                       ) : null}
 
-                      <div className="mt-2 inline-flex items-center rounded-full border border-ink/12 bg-white">
+                      {configurationRows.length > 0 ? (
+                        <div className="mt-2 rounded-xl border border-white/14 bg-[#081831]/65 p-2.5">
+                          <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-blue-100/70">
+                            Engineering spec
+                          </div>
+                          <ul className="space-y-1.5">
+                            {configurationRows.map((row) => (
+                              <li key={`${line.id}-${row.slotId}`} className="text-[11px] text-blue-50/90">
+                                <span className="font-semibold text-white">{row.label}:</span>{' '}
+                                {row.iconName} [{row.iconId}] · {row.glow}
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      ) : null}
+
+                      <div className="mt-3 inline-flex items-center rounded-full border border-white/20 bg-white/[0.08]">
                         <button
                           type="button"
                           aria-label="Decrease quantity"
                           onClick={() => updateLine(line.id, Math.max(1, line.quantity - 1))}
                           disabled={isUpdatingLine || line.quantity <= 1}
-                          className="h-8 w-8 rounded-l-full text-sm text-ink transition hover:bg-ink hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                          className="h-8 w-8 rounded-l-full text-sm text-blue-50 transition hover:bg-white/20 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
                         >
                           -
                         </button>
-                        <span className="min-w-[2.2rem] px-2 text-center text-sm font-semibold text-ink">{line.quantity}</span>
+                        <span className="min-w-[2.2rem] px-2 text-center text-sm font-semibold text-white">{line.quantity}</span>
                         <button
                           type="button"
                           aria-label="Increase quantity"
                           onClick={() => updateLine(line.id, line.quantity + 1)}
                           disabled={isUpdatingLine}
-                          className="h-8 w-8 rounded-r-full text-sm text-ink transition hover:bg-ink hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                          className="h-8 w-8 rounded-r-full text-sm text-blue-50 transition hover:bg-white/20 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
                         >
                           +
                         </button>
                       </div>
 
+                      {editConfigurationHref ? (
+                        <Link
+                          href={editConfigurationHref}
+                          className="ml-3 inline-flex items-center rounded-full border border-[#1EA7FF]/45 bg-[#1EA7FF]/10 px-3 py-1.5 text-[11px] font-semibold uppercase tracking-[0.11em] text-[#b7e7ff] transition hover:border-[#6fd0ff] hover:bg-[#1EA7FF]/20"
+                        >
+                          Edit Configuration
+                        </Link>
+                      ) : null}
+
                       <button
                         type="button"
                         onClick={() => updateLine(line.id, 0)}
                         disabled={isUpdatingLine}
-                        className="ml-3 text-xs font-semibold text-ink/55 underline-offset-4 transition hover:text-rose-700 hover:underline disabled:cursor-not-allowed disabled:opacity-40"
+                        className="ml-3 text-xs font-semibold text-blue-100/70 underline-offset-4 transition hover:text-rose-300 hover:underline disabled:cursor-not-allowed disabled:opacity-40"
                       >
                         Remove
                       </button>
                     </div>
 
-                    <div className="text-right text-sm font-semibold text-ink">
+                    <div className="text-right text-sm font-semibold text-white">
                       {formatMinor(line.linePriceWithTax, line.productVariant?.currencyCode || order.currencyCode)}
                     </div>
                   </li>
@@ -307,10 +384,10 @@ export default function CartPage() {
             </ul>
           </section>
 
-          <aside className="card-soft h-fit p-5">
-            <h2 className="text-base font-semibold text-ink">Order summary</h2>
-            <div className="mt-1 text-xs text-ink/55">Order code: {order.code}</div>
-            <div className="mt-4 space-y-2 text-sm text-ink/75">
+          <aside className="card-soft h-fit border-white/12 bg-[#081a35]/72 p-5">
+            <h2 className="text-base font-semibold text-white">Order summary</h2>
+            <div className="mt-1 text-xs text-blue-100/70">Order code: {order.code}</div>
+            <div className="mt-4 space-y-2 text-sm text-blue-100/85">
               <div className="flex items-center justify-between">
                 <span>Items ({order.totalQuantity})</span>
                 <span>{orderTotals.subTotal}</span>
@@ -320,20 +397,21 @@ export default function CartPage() {
                 <span>{orderTotals.shipping}</span>
               </div>
             </div>
-            <div className="my-4 h-px bg-ink/10" />
-            <div className="flex items-center justify-between text-base font-semibold text-ink">
+            <div className="my-4 h-px bg-white/12" />
+            <div className="flex items-center justify-between text-base font-semibold text-white">
               <span>Total</span>
               <span>{orderTotals.total}</span>
             </div>
             <Link
               href="/checkout"
-              className="mt-5 inline-flex w-full items-center justify-center rounded-full bg-ink px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90"
+              className="mt-5 inline-flex w-full items-center justify-center rounded-full border border-[#1EA7FF]/45 bg-[#1EA7FF]/12 px-5 py-3 text-sm font-semibold text-blue-50 transition hover:bg-[#1EA7FF]/24"
             >
               Proceed to checkout
             </Link>
           </aside>
-        </div>
-      ) : null}
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }

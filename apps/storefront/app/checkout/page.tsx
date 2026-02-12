@@ -291,35 +291,36 @@ export default function CheckoutPage() {
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 pb-20 pt-10 sm:px-6 lg:px-8">
+      <div className="rounded-3xl border border-[#0f2c5a] bg-[radial-gradient(130%_130%_at_50%_0%,#1b5dae_0%,#0e2a55_36%,#050f23_100%)] p-5 shadow-[0_34px_100px_rgba(2,10,28,0.45)] sm:p-6">
       <div className="mb-8 flex items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-ink md:text-4xl">Checkout</h1>
-          <p className="mt-1 text-sm text-ink/60">Enter shipping and payment details to confirm your order.</p>
+          <h1 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">Checkout</h1>
+          <p className="mt-1 text-sm text-blue-100/80">Enter shipping and payment details to confirm your order.</p>
         </div>
         <Link
           href="/cart"
-          className="inline-flex items-center justify-center rounded-full border border-ink/15 px-4 py-2 text-sm font-semibold text-ink transition hover:border-ink/30 hover:bg-white"
+          className="inline-flex items-center justify-center rounded-full border border-white/30 px-4 py-2 text-sm font-semibold text-blue-50 transition hover:border-white hover:bg-white/10"
         >
           Back to cart
         </Link>
       </div>
 
       {isLoading ? (
-        <div className="card-soft p-6 text-sm text-ink/60">Loading checkout...</div>
+        <div className="card-soft border-white/12 bg-[#081a35]/72 p-6 text-sm text-blue-100/80">Loading checkout...</div>
       ) : null}
 
       {!isLoading && error ? (
-        <div className="card-soft border border-rose-200 p-6 text-sm font-medium text-rose-700">{error}</div>
+        <div className="card-soft border border-rose-400/45 bg-rose-950/35 p-6 text-sm font-medium text-rose-100">{error}</div>
       ) : null}
 
       {!isLoading && !error && !order ? (
-        <div className="card-soft p-8 text-center">
-          <p className="text-base font-semibold text-ink">Your cart is empty.</p>
-          <p className="mt-2 text-sm text-ink/60">Add items before starting checkout.</p>
+        <div className="card-soft border-white/12 bg-[#081a35]/72 p-8 text-center">
+          <p className="text-base font-semibold text-white">Your cart is empty.</p>
+          <p className="mt-2 text-sm text-blue-100/75">Add items before starting checkout.</p>
           <div className="mt-5">
             <Link
               href="/shop"
-              className="inline-flex items-center justify-center rounded-full bg-ink px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
+              className="inline-flex items-center justify-center rounded-full border border-[#1EA7FF]/45 bg-[#1EA7FF]/12 px-5 py-2.5 text-sm font-semibold text-blue-50 transition hover:bg-[#1EA7FF]/24"
             >
               Browse products
             </Link>
@@ -329,10 +330,10 @@ export default function CheckoutPage() {
 
       {!isLoading && !error && order ? (
         <form onSubmit={onSubmit} className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
-          <section className="card-soft space-y-6 p-5">
+          <section className="card-soft space-y-6 border-white/12 bg-[#081a35]/72 p-5 text-blue-50">
             {order.lines.length > 0 ? (
               <div>
-                <h2 className="text-lg font-semibold text-ink">Configured line items</h2>
+                <h2 className="text-lg font-semibold text-white">Configured line items</h2>
                 <div className="mt-3 space-y-3">
                   {order.lines.map((line) => {
                     const configurationRaw = line.customFields?.configuration ?? null;
@@ -347,7 +348,7 @@ export default function CheckoutPage() {
                     const imageSrc = imagePath ? assetUrl(imagePath) : '';
 
                     return (
-                      <article key={line.id} className="flex items-start gap-3 rounded-2xl border border-ink/10 bg-white/75 p-3">
+                      <article key={line.id} className="flex items-start gap-3 rounded-2xl border border-white/12 bg-[#081831]/65 p-3">
                         <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-neutral-100">
                           {hasConfiguration ? (
                             <ConfiguredKeypadThumbnail
@@ -367,17 +368,17 @@ export default function CheckoutPage() {
                           ) : null}
                         </div>
                         <div className="min-w-0 flex-1">
-                          <div className="text-sm font-semibold text-ink">
+                          <div className="text-sm font-semibold text-white">
                             {line.productVariant?.name || line.productVariant?.product?.name || 'Product'}
                           </div>
                           {hasConfiguration ? (
-                            <div className="mt-1 text-xs font-semibold uppercase tracking-[0.1em] text-[#1e3a66]">
+                            <div className="mt-1 text-xs font-semibold uppercase tracking-[0.1em] text-[#9dcfff]">
                               Custom configuration: {configuredSlots}/4 slots defined
                             </div>
                           ) : null}
-                          <div className="mt-1 text-xs text-ink/60">Qty {line.quantity}</div>
+                          <div className="mt-1 text-xs text-blue-100/70">Qty {line.quantity}</div>
                         </div>
-                        <div className="text-right text-xs font-semibold text-ink">
+                        <div className="text-right text-xs font-semibold text-white">
                           {formatMinor(line.linePriceWithTax, line.productVariant?.currencyCode || order.currencyCode)}
                         </div>
                       </article>
@@ -388,10 +389,10 @@ export default function CheckoutPage() {
             ) : null}
 
             <div>
-              <h2 className="text-lg font-semibold text-ink">Contact</h2>
+              <h2 className="text-lg font-semibold text-white">Contact</h2>
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 <label className="sm:col-span-2">
-                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-ink/50">Email</span>
+                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-blue-100/70">Email</span>
                   <input
                     type="email"
                     value={email}
@@ -402,45 +403,45 @@ export default function CheckoutPage() {
                   />
                 </label>
                 <label>
-                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-ink/50">First name</span>
+                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-blue-100/70">First name</span>
                   <input type="text" value={firstName} onChange={(event) => setFirstName(event.target.value)} required className="input" />
                 </label>
                 <label>
-                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-ink/50">Last name</span>
+                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-blue-100/70">Last name</span>
                   <input type="text" value={lastName} onChange={(event) => setLastName(event.target.value)} required className="input" />
                 </label>
                 <label className="sm:col-span-2">
-                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-ink/50">Phone (optional)</span>
+                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-blue-100/70">Phone (optional)</span>
                   <input type="tel" value={phoneNumber} onChange={(event) => setPhoneNumber(event.target.value)} className="input" />
                 </label>
               </div>
             </div>
 
             <div>
-              <h2 className="text-lg font-semibold text-ink">Shipping address</h2>
+              <h2 className="text-lg font-semibold text-white">Shipping address</h2>
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 <label className="sm:col-span-2">
-                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-ink/50">Address line 1</span>
+                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-blue-100/70">Address line 1</span>
                   <input type="text" value={streetLine1} onChange={(event) => setStreetLine1(event.target.value)} required className="input" />
                 </label>
                 <label className="sm:col-span-2">
-                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-ink/50">Address line 2 (optional)</span>
+                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-blue-100/70">Address line 2 (optional)</span>
                   <input type="text" value={streetLine2} onChange={(event) => setStreetLine2(event.target.value)} className="input" />
                 </label>
                 <label>
-                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-ink/50">City</span>
+                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-blue-100/70">City</span>
                   <input type="text" value={city} onChange={(event) => setCity(event.target.value)} required className="input" />
                 </label>
                 <label>
-                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-ink/50">Province/State</span>
+                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-blue-100/70">Province/State</span>
                   <input type="text" value={province} onChange={(event) => setProvince(event.target.value)} className="input" />
                 </label>
                 <label>
-                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-ink/50">Postal code</span>
+                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-blue-100/70">Postal code</span>
                   <input type="text" value={postalCode} onChange={(event) => setPostalCode(event.target.value)} required className="input" />
                 </label>
                 <label>
-                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-ink/50">Country</span>
+                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-blue-100/70">Country</span>
                   <select value={countryCode} onChange={(event) => setCountryCode(event.target.value)} className="input" required>
                     <option value="US">United States</option>
                     <option value="GB">United Kingdom</option>
@@ -452,11 +453,11 @@ export default function CheckoutPage() {
             </div>
 
             <div>
-              <h2 className="text-lg font-semibold text-ink">Shipping method</h2>
+              <h2 className="text-lg font-semibold text-white">Shipping method</h2>
               <div className="mt-3 grid gap-2">
                 {shippingMethods.length > 0 ? (
                   shippingMethods.map((method) => (
-                    <label key={method.id} className="inline-flex items-start gap-2 rounded-xl border border-ink/12 px-3 py-2 text-sm">
+                    <label key={method.id} className="inline-flex items-start gap-2 rounded-xl border border-white/14 bg-[#081831]/55 px-3 py-2 text-sm">
                       <input
                         type="radio"
                         name="shippingMethod"
@@ -466,14 +467,14 @@ export default function CheckoutPage() {
                         required
                       />
                       <span>
-                        <span className="block font-semibold text-ink">{method.name}</span>
-                        <span className="block text-xs text-ink/60">{method.description || method.code}</span>
-                        <span className="block text-xs font-semibold text-ink/70">{formatMinor(method.priceWithTax, order.currencyCode)}</span>
+                        <span className="block font-semibold text-white">{method.name}</span>
+                        <span className="block text-xs text-blue-100/70">{method.description || method.code}</span>
+                        <span className="block text-xs font-semibold text-blue-100/85">{formatMinor(method.priceWithTax, order.currencyCode)}</span>
                       </span>
                     </label>
                   ))
                 ) : (
-                  <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+                  <div className="rounded-xl border border-rose-400/45 bg-rose-950/35 px-3 py-2 text-sm text-rose-100">
                     No eligible shipping methods available for this order yet.
                   </div>
                 )}
@@ -481,11 +482,11 @@ export default function CheckoutPage() {
             </div>
 
             <div>
-              <h2 className="text-lg font-semibold text-ink">Payment</h2>
+              <h2 className="text-lg font-semibold text-white">Payment</h2>
               <div className="mt-3 grid gap-2">
                 {paymentMethods.length > 0 ? (
                   paymentMethods.map((method) => (
-                    <label key={method.code} className="inline-flex items-start gap-2 rounded-xl border border-ink/12 px-3 py-2 text-sm">
+                    <label key={method.code} className="inline-flex items-start gap-2 rounded-xl border border-white/14 bg-[#081831]/55 px-3 py-2 text-sm">
                       <input
                         type="radio"
                         name="paymentMethod"
@@ -495,13 +496,13 @@ export default function CheckoutPage() {
                         required
                       />
                       <span>
-                        <span className="block font-semibold text-ink">{method.name}</span>
-                        <span className="block text-xs text-ink/60">{method.description || method.code}</span>
+                        <span className="block font-semibold text-white">{method.name}</span>
+                        <span className="block text-xs text-blue-100/70">{method.description || method.code}</span>
                       </span>
                     </label>
                   ))
                 ) : (
-                  <div className="rounded-xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">
+                  <div className="rounded-xl border border-rose-400/45 bg-rose-950/35 px-3 py-2 text-sm text-rose-100">
                     No eligible payment methods available for this order.
                   </div>
                 )}
@@ -509,10 +510,10 @@ export default function CheckoutPage() {
             </div>
           </section>
 
-          <aside className="card-soft h-fit p-5">
-            <h2 className="text-base font-semibold text-ink">Order summary</h2>
-            <div className="mt-1 text-xs text-ink/55">Order code: {order.code}</div>
-            <div className="mt-4 space-y-2 text-sm text-ink/75">
+          <aside className="card-soft h-fit border-white/12 bg-[#081a35]/72 p-5 text-blue-50">
+            <h2 className="text-base font-semibold text-white">Order summary</h2>
+            <div className="mt-1 text-xs text-blue-100/70">Order code: {order.code}</div>
+            <div className="mt-4 space-y-2 text-sm text-blue-100/85">
               <div className="flex items-center justify-between">
                 <span>Items ({order.totalQuantity})</span>
                 <span>{totals.subTotal}</span>
@@ -522,21 +523,22 @@ export default function CheckoutPage() {
                 <span>{totals.shipping}</span>
               </div>
             </div>
-            <div className="my-4 h-px bg-ink/10" />
-            <div className="flex items-center justify-between text-base font-semibold text-ink">
+            <div className="my-4 h-px bg-white/12" />
+            <div className="flex items-center justify-between text-base font-semibold text-white">
               <span>Total</span>
               <span>{totals.total}</span>
             </div>
             <button
               type="submit"
               disabled={isSubmitting || !canSubmit}
-              className="mt-5 inline-flex w-full items-center justify-center rounded-full bg-ink px-5 py-3 text-sm font-semibold text-white transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+              className="mt-5 inline-flex w-full items-center justify-center rounded-full border border-[#1EA7FF]/45 bg-[#1EA7FF]/12 px-5 py-3 text-sm font-semibold text-blue-50 transition hover:bg-[#1EA7FF]/24 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isSubmitting ? 'Placing order...' : 'Place order'}
             </button>
           </aside>
         </form>
       ) : null}
+      </div>
     </div>
   );
 }

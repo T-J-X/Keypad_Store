@@ -35,7 +35,7 @@ export type SlotGeometry = {
   cx: number;
   cy: number;
   r: number;
-  // Blink slot placement used by the SVG preview pipeline.
+  // Slot placement used by the SVG preview pipeline.
   leftPct: number;
   topPct: number;
   sizePct: number;

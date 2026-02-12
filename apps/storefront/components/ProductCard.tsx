@@ -74,7 +74,7 @@ export default function ProductCard({
   };
 
   const addToCartClass = [
-    'group relative isolate inline-flex items-center justify-center gap-2 rounded-full border border-transparent px-4 py-2 text-sm font-medium text-white md:text-base',
+    'group relative isolate inline-flex items-center justify-center gap-2 rounded-full border border-transparent px-3 py-1.5 text-xs font-medium text-white sm:px-4 sm:py-2 sm:text-sm md:text-base',
     'bg-[linear-gradient(90deg,#040F2E_0%,#112B5D_55%,#29457A_100%),linear-gradient(90deg,#203f7a_0%,#2f5da8_55%,#4b7fca_100%)] [background-origin:padding-box,border-box] [background-clip:padding-box,border-box]',
     'transition-[background,box-shadow,transform] duration-300',
     'hover:-translate-y-[1px] hover:bg-[linear-gradient(270deg,#040F2E_0%,#112B5D_55%,#29457A_100%),linear-gradient(90deg,#24497d_0%,#39629a_55%,#537bb0_100%)] hover:shadow-[0_0_0_1px_rgba(72,116,194,0.56),0_10px_24px_rgba(4,15,46,0.29)]',
@@ -83,7 +83,7 @@ export default function ProductCard({
   ].join(' ');
 
   return (
-    <div className="card-soft group relative flex h-full flex-col gap-5 p-5 transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-1 hover:shadow-premium">
+    <div className="card-soft group relative flex h-full flex-col gap-3 p-3.5 transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-1 hover:shadow-premium sm:gap-5 sm:p-5">
       <Link
         href={productHref ?? `/product/${product.slug}`}
         replace={replaceProductNavigation}
@@ -98,7 +98,7 @@ export default function ProductCard({
               alt={product.name}
               fill
               sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 25vw"
-              className="object-contain p-6 transition-transform duration-300 group-hover:scale-[1.03]"
+              className="object-contain p-3 transition-transform duration-300 group-hover:scale-[1.03] sm:p-6"
               loading="lazy"
             />
           </div>

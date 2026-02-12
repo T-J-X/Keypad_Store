@@ -6,6 +6,7 @@ type ConfiguratorActionsProps = {
   variant: 'inline' | 'sticky';
   isComplete: boolean;
   hasVariant: boolean;
+  isEditingLine: boolean;
   addingToCart: boolean;
   savingToAccount: boolean;
   downloadingPdf: boolean;
@@ -17,7 +18,7 @@ type ConfiguratorActionsProps = {
   onDownloadPdf: () => void;
 };
 
-const aimshopPrimaryClass = [
+const primaryActionClass = [
   'group relative isolate inline-flex items-center justify-center rounded-full border border-transparent text-white',
   'bg-[linear-gradient(90deg,#040F2E_0%,#112B5D_55%,#29457A_100%),linear-gradient(90deg,#203f7a_0%,#2f5da8_55%,#4b7fca_100%)] [background-origin:padding-box,border-box] [background-clip:padding-box,border-box]',
   'transition-[background,box-shadow,transform] duration-300',
@@ -49,6 +50,7 @@ export default function ConfiguratorActions({
   variant,
   isComplete,
   hasVariant,
+  isEditingLine,
   addingToCart,
   savingToAccount,
   downloadingPdf,
@@ -67,15 +69,17 @@ export default function ConfiguratorActions({
             type="button"
             onClick={onAddToCart}
             disabled={!isComplete || !hasVariant || addingToCart}
-            className={`${aimshopPrimaryClass} min-h-12 px-3 text-xs font-semibold uppercase tracking-[0.12em]`}
+            className={`${primaryActionClass} min-h-11 px-3 text-[11px] font-semibold uppercase tracking-[0.11em]`}
           >
-            <PrimaryButtonLabel label={addingToCart ? 'Adding...' : 'Add To Cart'} />
+            <PrimaryButtonLabel
+              label={addingToCart ? (isEditingLine ? 'Updating...' : 'Adding...') : (isEditingLine ? 'Update Cart' : 'Add To Cart')}
+            />
           </button>
           <button
             type="button"
             onClick={onOpenSaveModal}
             disabled={!isComplete || savingToAccount || !canOpenSave}
-            className={`${aimshopPrimaryClass} min-h-12 px-3 text-xs font-semibold uppercase tracking-[0.12em]`}
+            className={`${primaryActionClass} min-h-11 px-3 text-[11px] font-semibold uppercase tracking-[0.11em]`}
           >
             <PrimaryButtonLabel label={hasLoadedSavedConfig ? 'Update Save' : 'Save To Account'} />
           </button>
@@ -91,16 +95,20 @@ export default function ConfiguratorActions({
           type="button"
           onClick={onAddToCart}
           disabled={!isComplete || !hasVariant || addingToCart}
-          className={`${aimshopPrimaryClass} min-h-12 px-5 text-sm font-semibold uppercase tracking-[0.13em]`}
+          className={`${primaryActionClass} min-h-11 px-4 text-xs font-semibold uppercase tracking-[0.12em]`}
         >
-          <PrimaryButtonLabel label={addingToCart ? 'Adding...' : 'Add Configured Keypad'} />
+          <PrimaryButtonLabel
+            label={addingToCart
+              ? (isEditingLine ? 'Updating...' : 'Adding...')
+              : (isEditingLine ? 'Update Cart Line' : 'Add Configured Keypad')}
+          />
         </button>
 
         <button
           type="button"
           onClick={onOpenSaveModal}
           disabled={!isComplete || savingToAccount || !canOpenSave}
-          className={`${aimshopPrimaryClass} min-h-12 px-5 text-sm font-semibold uppercase tracking-[0.13em]`}
+          className={`${primaryActionClass} min-h-11 px-4 text-xs font-semibold uppercase tracking-[0.12em]`}
         >
           <PrimaryButtonLabel label={hasLoadedSavedConfig ? 'Update Saved Design' : 'Save To Account'} />
         </button>

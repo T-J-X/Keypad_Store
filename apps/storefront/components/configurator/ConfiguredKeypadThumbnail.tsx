@@ -6,7 +6,7 @@ import type { KeypadConfigurationDraft, SlotId } from '../../lib/keypadConfigura
 import { SLOT_IDS } from '../../lib/keypadConfiguration';
 import type { ConfiguredIconLookup, ConfiguredIconLookupEntry } from '../../lib/configuredKeypadPreview';
 import { assetUrl, categorySlug } from '../../lib/vendure';
-import { PKP_2200_SI_GEOMETRY } from '../../config/layouts/geometry';
+import { GLOBAL_GLOW_PHYSICS, PKP_2200_SI_GEOMETRY } from '../../config/layouts/geometry';
 
 function resolveRingColor(value: string | null) {
   if (!value) return null;
@@ -22,15 +22,6 @@ function hexToRgba(hex: string, alpha: number) {
   const b = Number.parseInt(normalized.slice(4, 6), 16);
 
   return `rgba(${r}, ${g}, ${b}, ${alpha})`;
-}
-
-function ringGlowShadow(color: string) {
-  return [
-    `inset 0 0 0 1px ${hexToRgba(color, 0.42)}`,
-    `0 0 8px ${hexToRgba(color, 0.34)}`,
-    `0 0 16px ${hexToRgba(color, 0.24)}`,
-    `0 0 26px ${hexToRgba(color, 0.16)}`,
-  ].join(', ');
 }
 
 function resolveMatteAssetPath(iconId: string | null, icon: ConfiguredIconLookupEntry | undefined) {
@@ -94,7 +85,12 @@ export default function ConfiguredKeypadThumbnail({
 
           const geometry = PKP_2200_SI_GEOMETRY.slots[slotId as SlotId];
           const ringDiameter = PKP_2200_SI_GEOMETRY.buttonVisual.ringDiameterPctOfSlot;
-          const iconDiameter = PKP_2200_SI_GEOMETRY.buttonVisual.iconDiameterPctOfSlot;
+          const iconDiameter = Math.max(55, GLOBAL_GLOW_PHYSICS.matteIconFitPct);
+          const thumbnailGlowBlurPx = Math.max(
+            2.5,
+            GLOBAL_GLOW_PHYSICS.haloFarBlurMin * 1.8,
+          );
+          const thumbnailGlowAlpha = Math.max(0.18, GLOBAL_GLOW_PHYSICS.thumbnailAlpha);
           const style: CSSProperties = {
             left: `${geometry.cx * 100}%`,
             top: `${geometry.cy * 100}%`,
@@ -133,9 +129,9 @@ export default function ConfiguredKeypadThumbnail({
                     width: `${ringDiameter}%`,
                     height: `${ringDiameter}%`,
                     transform: 'translate(-50%, -50%)',
-                    boxShadow: ringGlowShadow(ringColor),
-                    background: `radial-gradient(circle, transparent 52%, ${hexToRgba(ringColor, 0.34)} 63%, ${hexToRgba(ringColor, 0.08)} 74%, transparent 84%)`,
-                    filter: 'blur(4px)',
+                    background: `radial-gradient(circle, transparent 51%, ${hexToRgba(ringColor, 0.30)} 63%, ${hexToRgba(ringColor, 0.06)} 74%, transparent 84%)`,
+                    filter: `blur(${thumbnailGlowBlurPx}px)`,
+                    opacity: thumbnailGlowAlpha,
                     mixBlendMode: 'screen',
                   }}
                 />
@@ -161,7 +157,7 @@ export default function ConfiguredKeypadThumbnail({
                 </div>
               ) : (
                 <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center">
-                  <span className="grid h-[56%] w-[56%] place-items-center text-base font-semibold text-white/60">+</span>
+                  <span className="grid h-[55%] w-[55%] place-items-center text-base font-semibold text-white/60">+</span>
                 </div>
               )}
             </div>

@@ -15,6 +15,7 @@ import {
   validateAndNormalizeConfigurationInput,
   type SlotId,
 } from '../../lib/keypadConfiguration';
+import { resolvePkpModelCode } from '../../lib/keypadUtils';
 import ConfiguratorActions from './ConfiguratorActions';
 import ConfigurationSidebar from './ConfigurationSidebar';
 import KeypadPreview from './KeypadPreview';
@@ -36,6 +37,26 @@ type SessionSummaryPayload = {
 
 type SavedConfigurationPayload = {
   item?: SavedConfigurationItem;
+  error?: string;
+};
+
+type ActiveCartPayload = {
+  order?: {
+    lines?: Array<{
+      id: string;
+      quantity?: number | null;
+      customFields?: {
+        configuration?: string | null;
+      } | null;
+      productVariant?: {
+        name?: string | null;
+        product?: {
+          slug?: string | null;
+          name?: string | null;
+        } | null;
+      } | null;
+    }> | null;
+  } | null;
   error?: string;
 };
 
@@ -96,11 +117,23 @@ export default function Pkp2200Configurator({
 
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const hydratedLoadIdRef = useRef<string | null>(null);
+  const hydratedLineIdRef = useRef<string | null>(null);
   const resetScopeRef = useRef<string | null>(null);
   const showToast = useUIStore((state) => state.showToast);
+  const [editLineQuantity, setEditLineQuantity] = useState(1);
+  const [recommendationSeedIconId, setRecommendationSeedIconId] = useState<string | null>(null);
+  const selectedIconIds = useMemo(
+    () => Object.values(slots).map((slot) => slot.iconId ?? '').filter(Boolean) as string[],
+    [slots],
+  );
 
   const loadSavedId = useMemo(() => {
     const value = searchParams.get('load');
+    const normalized = value?.trim() || '';
+    return normalized || null;
+  }, [searchParams]);
+  const editLineId = useMemo(() => {
+    const value = searchParams.get('lineId');
     const normalized = value?.trim() || '';
     return normalized || null;
   }, [searchParams]);
@@ -143,15 +176,20 @@ export default function Pkp2200Configurator({
   }, []);
 
   useEffect(() => {
-    const resetScope = `${keypad.modelCode}::${loadSavedId ?? ''}`;
+    const resetScope = `${keypad.modelCode}::${loadSavedId ?? ''}::${editLineId ?? ''}`;
     if (resetScopeRef.current === resetScope) return;
 
     reset(keypad.modelCode);
     setLoadedSavedConfig(null);
     setSavedConfigError(null);
+    setSaveStatus(null);
+    setCartStatus(null);
+    setEditLineQuantity(1);
+    setRecommendationSeedIconId(null);
     hydratedLoadIdRef.current = null;
+    hydratedLineIdRef.current = null;
     resetScopeRef.current = resetScope;
-  }, [keypad.modelCode, loadSavedId, reset]);
+  }, [editLineId, keypad.modelCode, loadSavedId, reset]);
 
   useEffect(() => {
     let cancelled = false;
@@ -224,6 +262,11 @@ export default function Pkp2200Configurator({
   }, []);
 
   useEffect(() => {
+    if (editLineId) {
+      hydratedLoadIdRef.current = null;
+      return;
+    }
+
     if (!loadSavedId) {
       hydratedLoadIdRef.current = null;
       setSavedConfigError(null);
@@ -266,8 +309,13 @@ export default function Pkp2200Configurator({
           hydrateFromSavedConfiguration(parsed.value, icons);
           setLoadedSavedConfig(payload.item);
           setSaveName(payload.item.name);
+          const lastConfiguredIconId = Object.values(parsed.value)
+            .map((slot) => slot.iconId ?? '')
+            .filter(Boolean)
+            .at(-1) ?? null;
+          setRecommendationSeedIconId(lastConfiguredIconId);
           hydratedLoadIdRef.current = loadSavedId;
-          resetScopeRef.current = `${keypad.modelCode}::${loadSavedId ?? ''}`;
+          resetScopeRef.current = `${keypad.modelCode}::${loadSavedId ?? ''}::${editLineId ?? ''}`;
           setSaveStatus({ type: 'success', message: `Loaded saved design "${payload.item.name}".` });
         }
       } catch (error) {
@@ -286,7 +334,87 @@ export default function Pkp2200Configurator({
     return () => {
       cancelled = true;
     };
-  }, [hydrateFromSavedConfiguration, icons, keypad.modelCode, loadSavedId]);
+  }, [editLineId, hydrateFromSavedConfiguration, icons, keypad.modelCode, loadSavedId]);
+
+  useEffect(() => {
+    if (!editLineId) {
+      hydratedLineIdRef.current = null;
+      return;
+    }
+
+    if (icons.length === 0) return;
+    if (hydratedLineIdRef.current === editLineId) return;
+
+    let cancelled = false;
+
+    const loadConfigurationFromCartLine = async () => {
+      setLoadingSavedConfig(true);
+      setSavedConfigError(null);
+
+      try {
+        const response = await fetch('/api/cart/active', {
+          method: 'GET',
+          cache: 'no-store',
+        });
+        const payload = (await response.json().catch(() => ({}))) as ActiveCartPayload;
+        if (!response.ok) {
+          throw new Error(payload.error || 'Could not load your active cart.');
+        }
+
+        const line = payload.order?.lines?.find((candidate) => candidate.id === editLineId);
+        if (!line) {
+          throw new Error(`Cart line "${editLineId}" was not found in your active order.`);
+        }
+
+        const resolvedLineModelCode = resolvePkpModelCode(
+          line.productVariant?.product?.slug ?? '',
+          line.productVariant?.product?.name ?? line.productVariant?.name ?? '',
+        );
+        if (resolvedLineModelCode && resolvedLineModelCode !== keypad.modelCode) {
+          throw new Error(
+            `Cart line belongs to ${resolvedLineModelCode}, not ${keypad.modelCode}.`,
+          );
+        }
+
+        const configurationRaw = line.customFields?.configuration ?? null;
+        if (typeof configurationRaw !== 'string' || configurationRaw.trim().length === 0) {
+          throw new Error('Selected cart line has no saved configuration.');
+        }
+
+        const parsed = validateAndNormalizeConfigurationInput(configurationRaw, { requireComplete: false });
+        if (!parsed.ok) {
+          throw new Error(parsed.error);
+        }
+
+        if (!cancelled) {
+          hydrateFromSavedConfiguration(parsed.value, icons);
+          setEditLineQuantity(Math.max(1, Math.floor(line.quantity ?? 1)));
+          const lastConfiguredIconId = Object.values(parsed.value)
+            .map((slot) => slot.iconId ?? '')
+            .filter(Boolean)
+            .at(-1) ?? null;
+          setRecommendationSeedIconId(lastConfiguredIconId);
+          setSaveStatus({ type: 'success', message: 'Loaded cart line configuration for editing.' });
+          hydratedLineIdRef.current = editLineId;
+          resetScopeRef.current = `${keypad.modelCode}::${loadSavedId ?? ''}::${editLineId}`;
+        }
+      } catch (error) {
+        if (cancelled) return;
+        const message = error instanceof Error ? error.message : 'Could not load this cart line configuration.';
+        setSavedConfigError(message);
+      } finally {
+        if (!cancelled) {
+          setLoadingSavedConfig(false);
+        }
+      }
+    };
+
+    void loadConfigurationFromCartLine();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [editLineId, hydrateFromSavedConfiguration, icons, keypad.modelCode, loadSavedId]);
 
   const configurationDraft = useMemo(() => buildConfigurationDraftFromSlots(slots), [slots]);
   const strictConfiguration = useMemo(() => asStrictConfiguration(configurationDraft), [configurationDraft]);
@@ -311,13 +439,18 @@ export default function Pkp2200Configurator({
   };
 
   const onAddConfiguredKeypad = async () => {
-    if (!keypad.productVariantId) {
+    if (!editLineId && !keypad.productVariantId) {
       setCartStatus({ type: 'error', message: 'This keypad variant is unavailable for checkout.' });
       return;
     }
 
     if (!strictConfiguration) {
-      setCartStatus({ type: 'error', message: 'Complete all 4 slots before adding this keypad to cart.' });
+      setCartStatus({
+        type: 'error',
+        message: editLineId
+          ? 'Complete all 4 slots before updating this configured cart line.'
+          : 'Complete all 4 slots before adding this keypad to cart.',
+      });
       return;
     }
 
@@ -325,17 +458,27 @@ export default function Pkp2200Configurator({
     setCartStatus(null);
 
     try {
-      const response = await fetch('/api/cart/add-item', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          productVariantId: keypad.productVariantId,
-          quantity: 1,
-          customFields: {
-            configuration: strictConfiguration,
-          },
-        }),
-      });
+      const response = editLineId
+        ? await fetch('/api/cart/update-line', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({
+              orderLineId: editLineId,
+              quantity: editLineQuantity,
+              configuration: strictConfiguration,
+            }),
+          })
+        : await fetch('/api/cart/add-item', {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({
+              productVariantId: keypad.productVariantId,
+              quantity: 1,
+              customFields: {
+                configuration: strictConfiguration,
+              },
+            }),
+          });
 
       const payload = (await response.json().catch(() => ({}))) as {
         orderCode?: string;
@@ -343,21 +486,32 @@ export default function Pkp2200Configurator({
       };
 
       if (!response.ok) {
-        throw new Error(payload.error || 'Could not add configured keypad to cart.');
+        throw new Error(payload.error || (editLineId
+          ? 'Could not update this configured cart line.'
+          : 'Could not add configured keypad to cart.'));
       }
 
       notifyCartUpdated();
       setLastOrderCode(payload.orderCode ?? null);
-      setCartStatus(null);
+      setCartStatus({
+        type: 'success',
+        message: editLineId ? 'Cart line updated successfully.' : 'Configured keypad added to cart.',
+      });
       showToast({
-        message: payload.orderCode
-          ? `Configured keypad added. Order ${payload.orderCode} updated.`
-          : 'Configured keypad added to cart.',
+        message: editLineId
+          ? 'Configuration updated in cart.'
+          : payload.orderCode
+            ? `Configured keypad added. Order ${payload.orderCode} updated.`
+            : 'Configured keypad added to cart.',
         ctaHref: '/cart',
         ctaLabel: 'View Cart',
       });
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Could not add configured keypad to cart.';
+      const message = error instanceof Error
+        ? error.message
+        : (editLineId
+          ? 'Could not update this configured cart line.'
+          : 'Could not add configured keypad to cart.');
       setCartStatus({ type: 'error', message });
     } finally {
       setAddingToCart(false);
@@ -500,10 +654,12 @@ export default function Pkp2200Configurator({
       <div className="overflow-hidden rounded-3xl border border-[#0f2c5a] bg-[radial-gradient(130%_120%_at_50%_0%,#1e63bc_0%,#102d5a_36%,#060f24_100%)] p-6 shadow-[0_34px_100px_rgba(2,10,28,0.45)] sm:p-8">
         <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <div className="pill bg-[#1052ab]">Pilot Configurator</div>
+            <div className="pill bg-[#1052ab]">{editLineId ? 'Edit Configuration' : 'Pilot Configurator'}</div>
             <h1 className="mt-4 text-3xl font-semibold tracking-tight text-white sm:text-4xl">{keypad.modelCode}</h1>
             <p className="mt-2 max-w-2xl text-sm text-blue-100/80">
-              Select matte inserts for each slot, tune ring glow colors, save to account, and bridge directly to order PDF export.
+              {editLineId
+                ? 'Update this cart line by editing icon IDs and ring glow colors, then save directly back to your active order.'
+                : 'Select matte inserts for each slot, tune ring glow colors, save to account, and bridge directly to order PDF export.'}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
@@ -552,7 +708,8 @@ export default function Pkp2200Configurator({
               <ConfiguratorActions
                 variant="inline"
                 isComplete={isComplete}
-                hasVariant={Boolean(keypad.productVariantId)}
+                hasVariant={Boolean(keypad.productVariantId) || Boolean(editLineId)}
+                isEditingLine={Boolean(editLineId)}
                 addingToCart={addingToCart}
                 savingToAccount={savingToAccount}
                 downloadingPdf={downloadingPdf}
@@ -589,7 +746,8 @@ export default function Pkp2200Configurator({
         <ConfiguratorActions
           variant="sticky"
           isComplete={isComplete}
-          hasVariant={Boolean(keypad.productVariantId)}
+          hasVariant={Boolean(keypad.productVariantId) || Boolean(editLineId)}
+          isEditingLine={Boolean(editLineId)}
           addingToCart={addingToCart}
           savingToAccount={savingToAccount}
           downloadingPdf={downloadingPdf}
@@ -610,9 +768,12 @@ export default function Pkp2200Configurator({
         icons={icons}
         selectedIconId={popupSlotId ? slots[popupSlotId].iconId : null}
         selectedColor={popupSlotId ? slots[popupSlotId].color : null}
+        selectedIconIds={selectedIconIds}
+        recommendationSeedIconId={recommendationSeedIconId}
         onSelectIcon={(icon) => {
           if (!popupSlotId) return;
           selectIconForSlot(popupSlotId, icon);
+          setRecommendationSeedIconId(icon.iconId);
         }}
         onSelectColor={(color) => {
           if (!popupSlotId) return;

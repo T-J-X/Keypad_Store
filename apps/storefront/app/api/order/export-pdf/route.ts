@@ -652,7 +652,7 @@ function renderPdfHtml({
           </section>
 
           <section class="footer">
-            <div>Authorized Blink Marine UK Reseller</div>
+            <div>Keypad Co. Authorized Technical Partner</div>
             <div>support@keypadco.example · +44 0000 000000</div>
           </section>
         </main>

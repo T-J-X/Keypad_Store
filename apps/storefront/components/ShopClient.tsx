@@ -587,7 +587,7 @@ export default function ShopClient({
   };
 
   const renderIconsGrid = (iconItems: IconProduct[]) => (
-    <div className="staggered grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+    <div className="staggered grid grid-cols-2 gap-3 min-[430px]:grid-cols-3 lg:grid-cols-4">
       {iconItems.map((icon) => {
         const iconCategoryNames = categoryNamesByIconId.get(icon.id) ?? [];
         const primaryCategoryName = iconCategoryNames[0] ?? '';

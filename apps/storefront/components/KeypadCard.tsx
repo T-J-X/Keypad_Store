@@ -11,12 +11,12 @@ import {
 } from './cardTypography';
 
 const keypadDescriptions: Record<string, string> = {
-  'pkp-2200-si': 'Blink Marine CAN Keypad 4 Button 2x2',
-  'pkp-2300-si': 'Blink Marine CAN Keypad 6 Button 2x3',
-  'pkp-2400-si': 'Blink Marine CAN Keypad 8 Button 2x4',
-  'pkp-2500-si': 'Blink Marine CAN Keypad 10 Button 2x5',
-  'pkp-2600-si': 'Blink Marine CAN Keypad 12 Button 2x6',
-  'pkp-3500-si': 'Blink Marine CAN Keypad 15 Button 3x5',
+  'pkp-2200-si': 'CAN Keypad 4 Button 2x2',
+  'pkp-2300-si': 'CAN Keypad 6 Button 2x3',
+  'pkp-2400-si': 'CAN Keypad 8 Button 2x4',
+  'pkp-2500-si': 'CAN Keypad 10 Button 2x5',
+  'pkp-2600-si': 'CAN Keypad 12 Button 2x6',
+  'pkp-3500-si': 'CAN Keypad 15 Button 3x5',
 };
 
 function resolveDescription(modelCode: string) {

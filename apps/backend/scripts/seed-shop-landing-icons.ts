@@ -447,13 +447,13 @@ function applySignatureBlue(svg: string): string {
   if (!output.includes('<defs>')) {
     output = output.replace(
       /<svg([^>]*)>/,
-      '<svg$1><defs><linearGradient id="aimshopBlue" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0d2f66"/><stop offset="55%" stop-color="#2053a2"/><stop offset="100%" stop-color="#3f75c4"/></linearGradient></defs>',
+      '<svg$1><defs><linearGradient id="signatureBlue" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#0d2f66"/><stop offset="55%" stop-color="#2053a2"/><stop offset="100%" stop-color="#3f75c4"/></linearGradient></defs>',
     );
   }
 
   output = output
-    .replace(/stroke=\"#1f4f9c\"/g, 'stroke="url(#aimshopBlue)"')
-    .replace(/fill=\"#1f4f9c\"/g, 'fill="url(#aimshopBlue)"');
+    .replace(/stroke=\"#1f4f9c\"/g, 'stroke="url(#signatureBlue)"')
+    .replace(/fill=\"#1f4f9c\"/g, 'fill="url(#signatureBlue)"');
 
   return output;
 }

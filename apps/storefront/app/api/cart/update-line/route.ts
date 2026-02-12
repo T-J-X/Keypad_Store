@@ -1,10 +1,22 @@
 import { NextResponse } from 'next/server';
+import {
+  serializeConfiguration,
+  validateAndNormalizeConfigurationInput,
+} from '../../../../lib/keypadConfiguration';
 
 const SHOP_API = process.env.VENDURE_SHOP_API_URL || 'http://localhost:3000/shop-api';
 
 const ADJUST_ORDER_LINE_MUTATION = `
-  mutation AdjustOrderLine($orderLineId: ID!, $quantity: Int!) {
-    adjustOrderLine(orderLineId: $orderLineId, quantity: $quantity) {
+  mutation AdjustOrderLine(
+    $orderLineId: ID!
+    $quantity: Int!
+    $customFields: OrderLineCustomFieldsInput
+  ) {
+    adjustOrderLine(
+      orderLineId: $orderLineId
+      quantity: $quantity
+      customFields: $customFields
+    ) {
       __typename
       ... on Order {
         id
@@ -64,7 +76,7 @@ type RemoveOrderLineResponse = {
 
 export async function POST(request: Request) {
   const payload = (await request.json().catch(() => null)) as
-    | { orderLineId?: string; quantity?: number }
+    | { orderLineId?: string; quantity?: number; configuration?: unknown }
     | null;
 
   const orderLineId = payload?.orderLineId?.trim();
@@ -78,6 +90,17 @@ export async function POST(request: Request) {
 
   if (!Number.isInteger(quantity)) {
     return NextResponse.json({ error: 'Invalid quantity' }, { status: 400 });
+  }
+
+  let customFields: { configuration: string } | undefined;
+  if (payload?.configuration !== undefined && quantity > 0) {
+    const validation = validateAndNormalizeConfigurationInput(payload.configuration, { requireComplete: true });
+    if (!validation.ok) {
+      return NextResponse.json({ error: validation.error }, { status: 400 });
+    }
+    customFields = {
+      configuration: serializeConfiguration(validation.value),
+    };
   }
 
   const headers: Record<string, string> = {
@@ -95,7 +118,7 @@ export async function POST(request: Request) {
     cache: 'no-store',
     body: JSON.stringify({
       query: isRemove ? REMOVE_ORDER_LINE_MUTATION : ADJUST_ORDER_LINE_MUTATION,
-      variables: isRemove ? { orderLineId } : { orderLineId, quantity },
+      variables: isRemove ? { orderLineId } : { orderLineId, quantity, customFields },
     }),
   });
 

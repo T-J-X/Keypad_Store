@@ -41,7 +41,7 @@ IMPORTANT:
 - Insert assets are configurator-only and should not appear in catalog listings.
 
 ## Configurator UX Target
-Inspired by the referenced Blink Marine product page, but with extra functionality and more modern styling.
+Inspired by the referenced premium marine keypad product page, with extra functionality and more modern styling.
 - The user clicks a keypad slot.
 - A modal (popup) shows icon grid with search and categories.
 - Choosing an icon inserts it into that specific slot.
@@ -89,4 +89,3 @@ Env vars (storefront):
 - Start with PKP-2200-SI (2x2) as the first fully working layout.
 - Other keypad models should be easy to map once the base layout is done.
 - Port logic from `apps/sandbox-configurator/src/App.tsx` and `apps/sandbox-configurator/src/vendure.ts` as the starting point.
-

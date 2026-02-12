@@ -176,12 +176,14 @@ export default function ShopPage({
 function ShopPageFallback() {
   return (
     <div className="mx-auto w-full max-w-[88rem] px-6 py-12">
-      <div className="mb-3 h-3 w-28 animate-pulse rounded-full bg-gray-200" />
-      <div className="mb-8 h-10 w-72 animate-pulse rounded bg-gray-200" />
+      <div className="rounded-3xl border border-[#0f2c5a] bg-[radial-gradient(130%_130%_at_50%_0%,#1b5dae_0%,#0e2a55_36%,#050f23_100%)] p-5 shadow-[0_34px_100px_rgba(2,10,28,0.45)] sm:p-6">
+      <div className="mb-3 h-3 w-28 animate-pulse rounded-full bg-white/20" />
+      <div className="mb-8 h-10 w-72 animate-pulse rounded bg-white/15" />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {Array.from({ length: 8 }).map((_, index) => (
-          <div key={index} className="card-soft h-[360px] animate-pulse rounded-3xl bg-gray-200" />
+          <div key={index} className="card-soft h-[360px] animate-pulse rounded-3xl bg-white/10" />
         ))}
+      </div>
       </div>
     </div>
   );
@@ -245,18 +247,22 @@ async function ShopPageContent({
   const baseShopConfig = await shopLandingContentPromise;
 
   return (
-    <ShopClient
-      icons={icons}
-      keypads={keypads}
-      baseShopConfig={baseShopConfig}
-      categorySourceIcons={categorySourceIcons}
-      initialQuery={query}
-      initialCategories={selectedCategories}
-      initialSection={section}
-      initialPage={pagination?.page ?? 1}
-      initialTake={pagination?.take ?? DEFAULT_PAGE_SIZE}
-      pagedTotalItems={pagination?.totalItems ?? 0}
-      isIconsPaginationActive={Boolean(pagination)}
-    />
+    <div className="mx-auto w-full max-w-[88rem] px-4 pb-12 pt-8 sm:px-6">
+      <div className="rounded-3xl border border-[#0f2c5a] bg-[radial-gradient(130%_130%_at_50%_0%,#1b5dae_0%,#0e2a55_36%,#050f23_100%)] p-4 shadow-[0_34px_100px_rgba(2,10,28,0.45)] sm:p-6">
+        <ShopClient
+          icons={icons}
+          keypads={keypads}
+          baseShopConfig={baseShopConfig}
+          categorySourceIcons={categorySourceIcons}
+          initialQuery={query}
+          initialCategories={selectedCategories}
+          initialSection={section}
+          initialPage={pagination?.page ?? 1}
+          initialTake={pagination?.take ?? DEFAULT_PAGE_SIZE}
+          pagedTotalItems={pagination?.totalItems ?? 0}
+          isIconsPaginationActive={Boolean(pagination)}
+        />
+      </div>
+    </div>
   );
 }
