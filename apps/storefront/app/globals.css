@@ -4,9 +4,13 @@
 
 :root {
   color-scheme: light;
-  --ink: #0c111a;
-  --mist: #f5f3ef;
+  --ink: #0e111a;
+  --ink-muted: #525866;
+  --ink-subtle: #99a0ae;
+  --mist: #ffffff;
   --shell: #ffffff;
+  --surface-alt: #f7f8fa;
+  --surface-border: #e2e4e9;
   --cloud: #e7ecf3;
   --moss: #1b7f6a;
   --coral: #ff6b57;
@@ -20,11 +24,15 @@
   box-sizing: border-box;
 }
 
+html {
+  background: #fff;
+}
+
 body {
   margin: 0;
-  font-family: var(--font-body), ui-sans-serif, system-ui;
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
   color: var(--ink);
-  background: var(--mist);
+  background: linear-gradient(180deg, #ffffff 0%, #fbfcfe 48%, #f9fbff 100%);
   min-height: 100vh;
 }
 
@@ -34,7 +42,7 @@ h3,
 h4,
 h5,
 .font-display {
-  font-family: var(--font-display), ui-sans-serif, system-ui;
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
 a {
@@ -55,28 +63,26 @@ img {
   display: flex;
   flex-direction: column;
   position: relative;
-  overflow-x: hidden;
-}
-
-.page-bg {
-  position: fixed;
-  inset: 0;
-  z-index: -2;
+  overflow-x: clip;
   background:
-    radial-gradient(1200px 600px at 8% -10%, rgba(74, 164, 255, 0.35), transparent 60%),
-    radial-gradient(1000px 500px at 90% 10%, rgba(255, 107, 87, 0.22), transparent 55%),
-    linear-gradient(180deg, #fbfaf8 0%, #f5f3ef 45%, #eef3f8 100%);
+    radial-gradient(140% 72% at 50% -22%, rgba(12, 17, 26, 0.05) 0%, rgba(12, 17, 26, 0) 58%),
+    linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
 }
 
-.page-texture {
-  position: fixed;
-  inset: 0;
-  z-index: -1;
-  opacity: 0.22;
-  background-image: radial-gradient(rgba(12, 17, 26, 0.18) 1px, transparent 1px);
-  background-size: 3px 3px;
-  mix-blend-mode: multiply;
-  pointer-events: none;
+:where(
+  .card-soft .space-y-1 > .text-sm.font-semibold.uppercase.tracking-wide.text-ink\/55,
+  .card-soft .space-y-1 > .text-xs.font-semibold.uppercase.tracking-wide.text-ink\/55,
+  dl .text-ink\/80
+) {
+  font-family: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+}
+
+ul.list-disc.space-y-3.pl-5.text-base.leading-7.text-ink\/75 li {
+  font-family: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+}
+
+ul.list-disc.space-y-3.pl-5.text-base.leading-7.text-ink\/75 li > span {
+  font-family: var(--font-geist-sans), ui-sans-serif, system-ui, sans-serif;
 }
 
 @keyframes fade-up {
@@ -90,20 +96,42 @@ img {
   to { transform: translateY(0); }
 }
 
+@layer utilities {
+  .font-geist-mono,
+  .font-mono {
+    font-family: var(--font-geist-mono), ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', monospace;
+  }
+}
+
+@layer utilities {
+  @keyframes softPulse {
+    0%, 100% {
+      box-shadow: 0 0 0 0 rgba(4, 15, 46, 0), 0 0 0 0 rgba(41, 69, 122, 0);
+    }
+    50% {
+      box-shadow: 0 0 0 5px rgba(17, 43, 93, 0.24), 0 0 0 10px rgba(41, 69, 122, 0.14);
+    }
+  }
+
+  .animate-soft-pulse {
+    animation: softPulse 2.2s ease-in-out infinite;
+  }
+}
+
 @layer components {
   .card {
     background: var(--shell);
-    border: 1px solid rgba(12, 17, 26, 0.08);
+    border: 1px solid rgba(12, 17, 26, 0.09);
     border-radius: 20px;
     box-shadow: 0 16px 40px var(--shadow);
   }
 
   .card-soft {
-    background: rgba(255, 255, 255, 0.75);
-    border: 1px solid rgba(12, 17, 26, 0.06);
+    background: rgba(255, 255, 255, 0.76);
+    border: 1px solid rgba(12, 17, 26, 0.08);
     border-radius: 20px;
-    box-shadow: 0 12px 30px var(--shadow);
-    backdrop-filter: blur(12px);
+    box-shadow: 0 18px 42px rgba(14, 17, 26, 0.08);
+    backdrop-filter: blur(16px);
   }
 
   .pill {
@@ -115,8 +143,8 @@ img {
     font-size: 12px;
     letter-spacing: 0.2px;
     font-weight: 600;
-    background: rgba(27, 127, 106, 0.12);
-    color: #115f4f;
+    background: #023e8a;
+    color: #ffffff;
   }
 
   .btn-primary {
@@ -145,14 +173,30 @@ img {
     cursor: pointer;
   }
 
+  .btn-ghost-strong {
+    background: rgba(255, 255, 255, 0.5);
+    color: var(--ink);
+    border-radius: 999px;
+    padding: 10px 18px;
+    font-weight: 600;
+    border: 2px solid rgba(12, 17, 26, 0.2);
+    cursor: pointer;
+    backdrop-filter: blur(8px);
+  }
+
   .input {
     width: 100%;
     border-radius: 999px;
-    border: 1px solid rgba(12, 17, 26, 0.14);
+    border: 1px solid var(--surface-border);
     padding: 12px 16px;
     font-size: 14px;
     background: #ffffff;
+    color: var(--ink);
     outline: none;
+  }
+
+  .input::placeholder {
+    color: rgba(12, 17, 26, 0.52);
   }
 
   .input:focus {

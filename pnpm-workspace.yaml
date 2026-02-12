@@ -1,7 +1,11 @@
 packages:
-  - "apps/*"
-  - "packages/*"
+  - apps/*
+  - packages/*
 
 onlyBuiltDependencies:
+  - '@apollo/protobufjs'
+  - '@nestjs/core'
   - bcrypt
+  - esbuild
   - sharp
+  - unrs-resolver

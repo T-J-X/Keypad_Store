@@ -1,0 +1,29 @@
+import js from "@eslint/js";
+import nextPlugin from "@next/eslint-plugin-next";
+import globals from "globals";
+
+export default [
+  js.configs.recommended,
+  {
+    plugins: { "@next/next": nextPlugin },
+    rules: {
+      ...nextPlugin.configs.recommended.rules,
+      ...nextPlugin.configs["core-web-vitals"].rules,
+    },
+    languageOptions: {
+      ecmaVersion: "latest",
+      sourceType: "module",
+      globals: { ...globals.browser, ...globals.node },
+    },
+  },
+  {
+    ignores: [
+      ".next/**",
+      "node_modules/**",
+      "dist/**",
+      "build/**",
+      "out/**",
+      "coverage/**",
+    ],
+  },
+];

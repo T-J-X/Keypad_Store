@@ -1,0 +1,52 @@
+Storefront Changes Today (Working Tree Snapshot)
+Date: 2026-02-11
+Scope: apps/storefront (uncommitted changes currently present)
+
+Summary
+- Legacy header removed and replaced by a new premium Navbar architecture.
+- Cart/session plumbing added through Next.js API routes and shared cart update events.
+- Checkout and order confirmation routes added with server-side flow support.
+- Google auth bridge and callback routes added for direct Vendure auth.
+- Environment and config updates made for port split (frontend 3001, backend 3000).
+
+Tracked modified/deleted files
+- M apps/storefront/.env.local.example
+- M apps/storefront/app/layout.tsx
+- M apps/storefront/app/login/page.tsx
+- D apps/storefront/components/Header.tsx
+- M apps/storefront/components/PdpAddToCartButton.tsx
+- M apps/storefront/components/ProductCard.tsx
+- M apps/storefront/components/ProductPdp/PurchasePanel.tsx
+- M apps/storefront/next.config.js
+- M apps/storefront/package.json
+
+Untracked new files/directories
+- apps/storefront/app/api/auth/google/route.ts
+- apps/storefront/app/api/auth/google/callback/route.ts
+- apps/storefront/app/api/auth/logout/route.ts
+- apps/storefront/app/api/cart/active/route.ts
+- apps/storefront/app/api/cart/update-line/route.ts
+- apps/storefront/app/api/checkout/session/route.ts
+- apps/storefront/app/api/checkout/submit/route.ts
+- apps/storefront/app/api/session/summary/route.ts
+- apps/storefront/app/cart/page.tsx
+- apps/storefront/app/checkout/page.tsx
+- apps/storefront/app/order/[code]/page.tsx
+- apps/storefront/components/GoogleLoginButton.tsx
+- apps/storefront/components/Navbar.tsx
+- apps/storefront/lib/cartEvents.ts
+- apps/storefront/lib/googleAuth.ts
+
+Diffstat for tracked storefront files
+- 9 files changed, 23 insertions(+), 106 deletions(-)
+- Primary deletion is old Header component; net route/functionality is expanded via new untracked files listed above.
+
+Essential page route availability check (local)
+- /cart -> 200
+- /checkout -> 200
+- /account -> 200
+- /login -> 200
+- /order/SMOKE-CODE -> 200
+
+Notes
+- This report reflects current local git state, not committed history.

@@ -1,6 +1,6 @@
 import './App.css';
 import { useEffect, useMemo, useState } from 'react';
-import { assetUrl, categoryOf, fetchIconProducts, pickInsertAsset, type IconProduct } from './vendure';
+import { assetUrl, categoriesOf, fetchIconProducts, pickInsertAsset, type IconProduct } from './vendure';
 
 type Slot = {
   key: string;
@@ -115,14 +115,18 @@ export function App() {
 
   const categories = useMemo(() => {
     const set = new Set<string>();
-    for (const p of icons) set.add(categoryOf(p));
+    for (const p of icons) {
+      for (const category of categoriesOf(p)) {
+        set.add(category);
+      }
+    }
     return ['All', ...Array.from(set).sort((a, b) => a.localeCompare(b))];
   }, [icons]);
 
   const filteredIcons = useMemo(() => {
     const q = search.trim().toLowerCase();
     return icons
-      .filter((p) => (activeCategory === 'All' ? true : categoryOf(p) === activeCategory))
+      .filter((p) => (activeCategory === 'All' ? true : categoriesOf(p).includes(activeCategory)))
       .filter((p) => {
         if (!q) return true;
         const hay = `${p.customFields?.iconId ?? ''} ${p.name ?? ''} ${p.slug ?? ''}`.toLowerCase();
@@ -287,7 +291,7 @@ export function App() {
                     <div className="miniName">
                       Slot {slot.label} • <code>{icon.customFields?.iconId ?? icon.slug}</code>
                     </div>
-                    <div className="miniCat">{categoryOf(icon)}</div>
+                    <div className="miniCat">{categoriesOf(icon).join(', ')}</div>
                   </div>
                 </div>
               ))}
