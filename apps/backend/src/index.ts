@@ -1,13 +1,17 @@
 import 'dotenv/config';
 import path from 'node:path';
 import {
+  Asset,
   bootstrap,
   DefaultLogger,
+  DefaultJobQueuePlugin,
   dummyPaymentHandler,
   DefaultSchedulerPlugin,
   DefaultSearchPlugin,
   LanguageCode,
   LogLevel,
+  NativeAuthenticationStrategy,
+  ProductService,
   VendureConfig,
 } from '@vendure/core';
 import {
@@ -15,9 +19,54 @@ import {
   configureS3AssetStorage,
 } from '@vendure/asset-server-plugin';
 import { AdminUiPlugin } from '@vendure/admin-ui-plugin';
+import { compileUiExtensions } from '@vendure/ui-devkit/compiler';
+import { BaseShopPlugin } from './plugins/base-shop';
+import { GoogleAuthenticationStrategy } from './auth/google-authentication-strategy';
+import {
+  ConfigurationValidationError,
+  findMissingIconIds,
+  parseAndValidateStrictConfiguration,
+} from './plugins/base-shop/saved-designs/keypad-configuration';
 
-const port = Number(process.env.PORT ?? 3000);
+const host = 'localhost';
+const port = 3000;
+const isProduction = process.env.NODE_ENV === 'production';
 const adminPath = process.env.ADMIN_UI_PATH ?? 'admin';
+const devCorsOrigins = ['http://localhost:3000', 'http://localhost:3001'];
+const configuredCorsOrigins = (process.env.CORS_ORIGINS ?? '')
+  .split(',')
+  .map((origin) => origin.trim())
+  .filter(Boolean);
+const corsOrigins = Array.from(
+  new Set(configuredCorsOrigins.length > 0 ? configuredCorsOrigins : devCorsOrigins),
+);
+const uiDevkitPackagePath = path.dirname(require.resolve('@vendure/ui-devkit/package.json'));
+const adminUiOutputPath = path.join(__dirname, '../admin-ui');
+const ngCompilerPath = require.resolve('@angular/cli/bin/ng.js', {
+  paths: [uiDevkitPackagePath],
+});
+
+const superadminIdentifier = process.env.SUPERADMIN_USERNAME?.trim() || (isProduction ? '' : 'superadmin');
+const superadminPassword = process.env.SUPERADMIN_PASSWORD?.trim() || (isProduction ? '' : 'superadmin');
+
+if (isProduction && (!superadminIdentifier || !superadminPassword)) {
+  throw new Error(
+    'FATAL: SUPERADMIN_USERNAME and SUPERADMIN_PASSWORD must be set in production.',
+  );
+}
+
+if (!isProduction) {
+  const envUrlsUsingIp = Object.entries(process.env).filter(([key, value]) => {
+    return /url/i.test(key) && typeof value === 'string' && value.includes('127.0.0.1');
+  });
+
+  if (envUrlsUsingIp.length > 0) {
+    const urlKeys = envUrlsUsingIp.map(([key]) => key).join(', ');
+    throw new Error(
+      `Detected 127.0.0.1 in URL env var(s): ${urlKeys}. Use http://localhost:3000 for Vendure dev URLs.`,
+    );
+  }
+}
 
 const storageStrategyFactory = configureS3AssetStorage({
   bucket: process.env.S3_BUCKET ?? 'vendure-assets',
@@ -35,14 +84,33 @@ const storageStrategyFactory = configureS3AssetStorage({
 
 export const config: VendureConfig = {
   apiOptions: {
+    hostname: host,
     port,
-    adminApiPath: process.env.ADMIN_API_PATH ?? 'admin-api',
-    shopApiPath: process.env.SHOP_API_PATH ?? 'shop-api',
+    adminApiPath: 'admin-api',
+    shopApiPath: 'shop-api',
+    cors: {
+      origin: corsOrigins,
+      credentials: true,
+    },
   },
   authOptions: {
+    // Use cookie-based sessions for the Admin UI.
+    tokenMethod: 'cookie',
+    shopAuthenticationStrategy: [
+      new NativeAuthenticationStrategy(),
+      new GoogleAuthenticationStrategy(),
+    ],
     superadminCredentials: {
-      identifier: process.env.SUPERADMIN_USERNAME ?? 'superadmin',
-      password: process.env.SUPERADMIN_PASSWORD ?? 'superadmin',
+      identifier: superadminIdentifier,
+      password: superadminPassword,
+    },
+    // Secure cookies in production, relaxed only for local HTTP development.
+    cookieOptions: {
+      name: 'vendure-auth',
+      httpOnly: true,
+      secure: isProduction,
+      sameSite: 'lax',
+      path: '/',
     },
   },
   dbConnectionOptions: {
@@ -84,6 +152,18 @@ export const config: VendureConfig = {
         public: true,
       },
       {
+        // Canonical storefront/configurator icon categories source of truth.
+        name: 'iconCategories',
+        type: 'string',
+        list: true,
+        nullable: true,
+        public: true,
+        ui: {
+          component: 'text-form-input',
+          tab: 'Icons',
+        },
+      },
+      {
         // Stores the Asset.id of the matte "insert" image (used for overlay in the configurator).
         name: 'insertAssetId',
         type: 'string',
@@ -110,10 +190,98 @@ export const config: VendureConfig = {
         nullable: true,
         public: true,
       },
+      {
+        name: 'additionalSpecs',
+        type: 'struct',
+        list: true,
+        nullable: true,
+        public: true,
+        fields: [
+          { name: 'label', type: 'string' },
+          { name: 'value', type: 'string' },
+        ],
+        ui: {
+          tab: 'Specifications',
+        },
+      },
+      {
+        name: 'whatsInTheBox',
+        type: 'text',
+        list: true,
+        nullable: true,
+        public: true,
+        ui: {
+          tab: 'Content',
+        },
+      },
+      {
+        name: 'downloads',
+        type: 'relation',
+        list: true,
+        nullable: true,
+        entity: Asset,
+        public: true,
+        ui: {
+          tab: 'Downloads',
+        },
+      },
+      {
+        name: 'seoTitle',
+        type: 'string',
+        nullable: true,
+        public: true,
+        ui: {
+          tab: 'SEO',
+        },
+      },
+      {
+        name: 'seoDescription',
+        type: 'text',
+        nullable: true,
+        public: true,
+        ui: {
+          component: 'textarea-form-input',
+          tab: 'SEO',
+        },
+      },
+      {
+        name: 'seoNoIndex',
+        type: 'boolean',
+        defaultValue: false,
+        public: true,
+        ui: {
+          tab: 'SEO',
+        },
+      },
+      {
+        name: 'seoCanonicalUrl',
+        type: 'string',
+        nullable: true,
+        public: true,
+        ui: {
+          tab: 'SEO',
+        },
+      },
+      {
+        name: 'seoKeywords',
+        type: 'string',
+        nullable: true,
+        public: true,
+        ui: {
+          tab: 'SEO',
+        },
+      },
     ],
     ProductVariant: [
       {
         name: 'iconId',
+        type: 'string',
+        nullable: true,
+        public: true,
+      },
+      {
+        // Stores the Asset.id of the matte insert paired to this purchasable variant.
+        name: 'insertAssetId',
         type: 'string',
         nullable: true,
         public: true,
@@ -146,14 +314,52 @@ export const config: VendureConfig = {
         nullable: true,
         public: true,
       },
+      {
+        // Slot diameter in mm, used by configurator filtering (e.g. 15mm).
+        name: 'sizeMm',
+        type: 'int',
+        nullable: true,
+        public: true,
+      },
     ],
     OrderLine: [
       {
         name: 'configuration',
         type: 'text',
         nullable: true,
-        public: false,
+        public: true,
+        label: [{ languageCode: LanguageCode.en, value: 'Keypad Configuration' }],
+        description: [
+          {
+            languageCode: LanguageCode.en,
+            value: 'JSON mapping of slot IDs to icon IDs and ring glow colors',
+          },
+        ],
         ui: { component: 'json' },
+        validate: async (value, injector, ctx) => {
+          if (value == null || value === '') {
+            return;
+          }
+          if (typeof value !== 'string') {
+            return 'Configuration must be a JSON string.';
+          }
+
+          let strictConfiguration;
+          try {
+            strictConfiguration = parseAndValidateStrictConfiguration(value);
+          } catch (error) {
+            if (error instanceof ConfigurationValidationError) {
+              return error.message;
+            }
+            throw error;
+          }
+
+          const productService = injector.get(ProductService);
+          const missingIconIds = await findMissingIconIds(ctx, productService, strictConfiguration);
+          if (missingIconIds.length > 0) {
+            return `Unknown iconId(s): ${missingIconIds.join(', ')}.`;
+          }
+        },
       },
     ],
   },
@@ -162,12 +368,16 @@ export const config: VendureConfig = {
   },
 
   plugins: [
+    DefaultJobQueuePlugin,
+
     DefaultSearchPlugin.init({
       indexStockStatus: false,
       bufferUpdates: false,
     }),
 
     DefaultSchedulerPlugin.init(),
+
+    BaseShopPlugin,
 
     AssetServerPlugin.init({
       route: 'assets',
@@ -176,8 +386,27 @@ export const config: VendureConfig = {
     }),
 
     AdminUiPlugin.init({
-      route: adminPath,
+      route: 'admin',
       port: port + 1,
+      app: compileUiExtensions({
+        outputPath: adminUiOutputPath,
+        extensions: [
+          {
+            extensionPath: path.join(__dirname, 'plugins/base-shop/ui'),
+            providers: ['providers.ts'],
+            ngModules: [
+              {
+                type: 'lazy',
+                route: 'baseshop',
+                ngModuleFileName: 'baseshop.module.ts',
+                ngModuleName: 'BaseShopModule',
+              },
+            ],
+          },
+        ],
+        devMode: true,
+        ngCompilerPath,
+      }),
       adminUiConfig: {
         apiHost: 'http://localhost',
         apiPort: port,

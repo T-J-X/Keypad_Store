@@ -1,36 +1,27 @@
 import type { Metadata } from 'next';
-import { Manrope, Sora } from 'next/font/google';
+import { GeistSans } from 'geist/font/sans';
+import { GeistMono } from 'geist/font/mono';
 import './globals.css';
-import Header from '../components/Header';
+import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
-
-const display = Sora({
-  subsets: ['latin'],
-  variable: '--font-display',
-  weight: ['400', '600', '700']
-});
-
-const body = Manrope({
-  subsets: ['latin'],
-  variable: '--font-body',
-  weight: ['400', '500', '600', '700']
-});
+import GlobalToastViewport from '../components/GlobalToastViewport';
+import { resolveMetadataBase } from '../lib/siteUrl';
 
 export const metadata: Metadata = {
+  metadataBase: resolveMetadataBase(),
   title: 'Keypad Store',
   description: 'Configure premium keypads with curated icon systems.'
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html lang="en" className={`${display.variable} ${body.variable}`}>
+    <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
       <body>
         <div className="page-shell">
-          <div className="page-bg" aria-hidden />
-          <div className="page-texture" aria-hidden />
-          <Header />
+          <Navbar />
           <main className="flex-1">{children}</main>
           <Footer />
+          <GlobalToastViewport />
         </div>
       </body>
     </html>

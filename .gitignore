@@ -22,3 +22,28 @@ apps/**/package-lock.json
 # never commit npm lockfiles
 package-lock.json
 apps/**/package-lock.json
+
+# Local backups / Codex artifacts
+_backups/
+apps/**/.codex-backups/
+**/*.tgz
+
+# Local env
+**/.env.local
+**/.env.*.local
+
+# Local backups / Codex artifacts
+_backups/
+apps/**/.codex-backups/
+**/*.tgz
+
+# Local env
+**/.env.local
+**/.env.*.local
+
+# Vendure Admin UI / ui-devkit build outputs
+apps/backend/admin-ui/
+apps/backend/apps/
+apps/backend/.angular/
+apps/backend/.cache/
+apps/backend/dist/
