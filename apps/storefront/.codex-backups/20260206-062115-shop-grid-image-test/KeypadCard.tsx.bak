@@ -1,0 +1,105 @@
+import Link from 'next/link';
+import type { KeypadProduct } from '../lib/vendure';
+import { assetUrl } from '../lib/vendure';
+
+const keypadDescriptions: Record<string, string> = {
+  'pkp-2200-si': 'Blink Marine CAN Keypad 4 Button 2x2',
+  'pkp-2300-si': 'Blink Marine CAN Keypad 6 Button 2x3',
+  'pkp-2400-si': 'Blink Marine CAN Keypad 8 Button 2x4',
+  'pkp-2500-si': 'Blink Marine CAN Keypad 10 Button 2x5',
+  'pkp-2600-si': 'Blink Marine CAN Keypad 12 Button 2x6',
+  'pkp-3500-si': 'Blink Marine CAN Keypad 15 Button 3x5',
+};
+
+function resolveModelCode(product: KeypadProduct) {
+  const slugMatch = product.slug.match(/pkp-\d{4}-si/i);
+  if (slugMatch) return slugMatch[0].toUpperCase();
+
+  const nameMatch = product.name.match(/pkp[\s-]?(\d{4})[\s-]?si/i);
+  if (nameMatch) return `PKP-${nameMatch[1]}-SI`;
+
+  return product.name;
+}
+
+function resolveDescription(modelCode: string) {
+  return keypadDescriptions[modelCode.toLowerCase()] || 'Keypad model ready for configuration.';
+}
+
+export default function KeypadCard({
+  product,
+  mode = 'configurator',
+  learnMoreHref,
+}: {
+  product: KeypadProduct;
+  mode?: 'configurator' | 'shop';
+  learnMoreHref?: string;
+}) {
+  const image = product.featuredAsset?.preview ?? product.featuredAsset?.source ?? '';
+  const modelCode = resolveModelCode(product);
+  const description = resolveDescription(modelCode);
+  const isShopCard = mode === 'shop';
+  const detailHref = learnMoreHref ?? `/product/${product.slug}`;
+
+  return (
+    <div className="card relative flex h-full flex-col gap-4 p-4">
+      {isShopCard && (
+        <Link
+          href={detailHref}
+          aria-label={`View ${product.name}`}
+          className="absolute inset-0 z-0 rounded-2xl"
+        />
+      )}
+      <div
+        className={`relative z-10 overflow-hidden rounded-2xl bg-slate-100 ${
+          isShopCard ? 'pointer-events-none' : ''
+        }`}
+      >
+        {image ? (
+          <img
+            src={assetUrl(image)}
+            alt={product.name}
+            className="h-44 w-full object-contain p-4"
+            loading="lazy"
+          />
+        ) : (
+          <div className="flex h-44 items-center justify-center text-xs font-semibold uppercase tracking-wide text-slate-400">
+            Render pending
+          </div>
+        )}
+      </div>
+      <div
+        className={`relative z-10 flex flex-1 flex-col justify-between gap-3 ${
+          isShopCard ? 'pointer-events-none' : ''
+        }`}
+      >
+        <div>
+          <div className="text-sm font-semibold text-ink">{isShopCard ? modelCode : product.name}</div>
+          <div className="mt-1 text-xs text-ink/60">{description}</div>
+        </div>
+        {isShopCard ? (
+          <div className="pointer-events-auto relative z-20 flex flex-col gap-2 sm:flex-row">
+            <Link
+              href={detailHref}
+              className="btn-ghost inline-flex w-full items-center justify-center sm:w-auto"
+            >
+              Learn more
+            </Link>
+            <Link
+              href={`/configurator/${product.slug}`}
+              className="btn-primary inline-flex w-full items-center justify-center sm:w-auto"
+            >
+              Customize now
+            </Link>
+          </div>
+        ) : (
+          <Link
+            href={`/configurator/${product.slug}`}
+            className="btn-primary inline-flex w-fit items-center justify-center"
+          >
+            Configure now
+          </Link>
+        )}
+      </div>
+    </div>
+  );
+}
