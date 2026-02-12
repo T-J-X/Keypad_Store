@@ -2,6 +2,19 @@ import type { SlotId } from '../../lib/keypadConfiguration';
 
 export type SlotCoordMode = 'center' | 'topLeft';
 
+export type SlotSafeZone = {
+  // Offsets measured inside the slot box.
+  centerXPctOfSlot: number;
+  centerYPctOfSlot: number;
+  // Effective physical button/well diameter relative to slot box size.
+  wellDiameterPctOfSlot: number;
+  // LED ring band around the well radius.
+  ledOuterPctOfWell: number;
+  ledInnerPctOfWell: number;
+  // Icon insert diameter relative to slot box size.
+  iconDiameterPctOfSlot: number;
+};
+
 export type SlotGeometry = {
   label: string;
   // Normalized center and radius coordinates in the shared stage space.
@@ -13,6 +26,7 @@ export type SlotGeometry = {
   topPct: number;
   sizePct: number;
   coordMode?: SlotCoordMode;
+  safeZone?: SlotSafeZone;
 };
 
 export type KeypadModelGeometry = {
@@ -29,6 +43,15 @@ export type KeypadModelGeometry = {
     ringDiameterPctOfSlot: number;
     iconDiameterPctOfSlot: number;
   };
+};
+
+export const DEFAULT_SLOT_SAFE_ZONE: SlotSafeZone = {
+  centerXPctOfSlot: 50,
+  centerYPctOfSlot: 50,
+  wellDiameterPctOfSlot: 145,
+  ledOuterPctOfWell: 94,
+  ledInnerPctOfWell: 80,
+  iconDiameterPctOfSlot: 60,
 };
 
 export function slotGeometryToPercentBox(slot: SlotGeometry) {
@@ -60,6 +83,9 @@ export const PKP_2200_SI_GEOMETRY: KeypadModelGeometry = {
       leftPct: 31.3,
       topPct: 14.4,
       sizePct: 12.4,
+      safeZone: {
+        ...DEFAULT_SLOT_SAFE_ZONE,
+      },
     },
     slot_2: {
       label: 'Slot 2',
@@ -70,6 +96,9 @@ export const PKP_2200_SI_GEOMETRY: KeypadModelGeometry = {
       leftPct: 56.3,
       topPct: 14.6,
       sizePct: 12.4,
+      safeZone: {
+        ...DEFAULT_SLOT_SAFE_ZONE,
+      },
     },
     slot_3: {
       label: 'Slot 3',
@@ -80,6 +109,9 @@ export const PKP_2200_SI_GEOMETRY: KeypadModelGeometry = {
       leftPct: 31.6,
       topPct: 65.1,
       sizePct: 12.4,
+      safeZone: {
+        ...DEFAULT_SLOT_SAFE_ZONE,
+      },
     },
     slot_4: {
       label: 'Slot 4',
@@ -90,12 +122,15 @@ export const PKP_2200_SI_GEOMETRY: KeypadModelGeometry = {
       leftPct: 56.1,
       topPct: 64.8,
       sizePct: 12.4,
+      safeZone: {
+        ...DEFAULT_SLOT_SAFE_ZONE,
+      },
     },
   },
   buttonVisual: {
     // Tuned against Blink 12.4% slot boxes so ring sits on the outer grey channel
     // and matte symbols do not render undersized.
-    ringDiameterPctOfSlot: 100,
-    iconDiameterPctOfSlot: 74,
+    ringDiameterPctOfSlot: 136.3,
+    iconDiameterPctOfSlot: 60,
   },
 };

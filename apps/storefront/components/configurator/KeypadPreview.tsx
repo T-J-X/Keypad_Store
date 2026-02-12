@@ -2,14 +2,17 @@
 
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import {
+  DEFAULT_SLOT_SAFE_ZONE,
   type KeypadModelGeometry,
   PKP_2200_SI_GEOMETRY,
   type SlotCoordMode,
   type SlotGeometry,
+  type SlotSafeZone,
 } from '../../config/layouts/geometry';
 import type { SlotVisualState } from '../../lib/configuratorStore';
 import { SLOT_IDS, type SlotId } from '../../lib/keypadConfiguration';
 import { assetUrl } from '../../lib/vendure';
+import BacklitGlow from './BacklitGlow';
 
 type IntrinsicSize = {
   width: number;
@@ -20,24 +23,23 @@ type SvgSlotMetrics = {
   label: string;
   cx: number;
   cy: number;
+  slotCenterX: number;
+  slotCenterY: number;
   sizePx: number;
   slotX: number;
   slotY: number;
   clipRadius: number;
-  insertDiameterPx: number;
+  iconDiameterPx: number;
+  wellDiameterPx: number;
   buttonDiameterPx: number;
   buttonRadiusPx: number;
   rOuter: number;
   rInner: number;
+  safeZone: SlotSafeZone;
 };
 
-const INSERT_TARGET_DIAMETER_MULTIPLIER = 2.06;
 const ROTATION_ANIMATION_MS = 360;
-const BUTTON_DIAMETER_MULT = 1.45;
-const BEZEL_OUTER = 0.94;
-const BEZEL_INNER = 0.8;
-const RING_BLOOM_BLUR_FACTOR = 0.018;
-const RING_BLOOM_OPACITY = 0.35;
+const WHITE_GLOW_LUMINANCE_THRESHOLD = 0.92;
 
 const MODEL_FALLBACK_SIZES: Record<string, IntrinsicSize> = {
   [PKP_2200_SI_GEOMETRY.modelCode]: PKP_2200_SI_GEOMETRY.intrinsicSize,
@@ -51,11 +53,8 @@ function resolveModelGeometry(modelCode: string) {
   return MODEL_GEOMETRIES[modelCode] ?? PKP_2200_SI_GEOMETRY;
 }
 
-function clamp01(value: number) {
-  return Math.max(0, Math.min(1, value));
-}
-
-function parseHexColor(input: string): [number, number, number] | null {
+function parseHexColor(input: string | null | undefined): [number, number, number] | null {
+  if (!input) return null;
   const normalized = input.trim();
   if (!normalized.startsWith('#')) return null;
   const hex = normalized.slice(1);
@@ -79,37 +78,11 @@ function parseHexColor(input: string): [number, number, number] | null {
   return null;
 }
 
-function rgbToHex(r: number, g: number, b: number) {
-  const toHex = (channel: number) => Math.round(channel).toString(16).padStart(2, '0');
-  return `#${toHex(r)}${toHex(g)}${toHex(b)}`;
-}
-
-function mixColor(base: string, target: string, t: number) {
-  const baseRgb = parseHexColor(base);
-  const targetRgb = parseHexColor(target);
-  if (!baseRgb || !targetRgb) return base;
-
-  const weight = clamp01(t);
-  const [br, bg, bb] = baseRgb;
-  const [tr, tg, tb] = targetRgb;
-
-  return rgbToHex(
-    br + ((tr - br) * weight),
-    bg + ((tg - bg) * weight),
-    bb + ((tb - bb) * weight),
-  );
-}
-
-function donutPath(cx: number, cy: number, ro: number, ri: number) {
-  return `
-    M ${cx} ${cy - ro}
-    A ${ro} ${ro} 0 1 1 ${cx} ${cy + ro}
-    A ${ro} ${ro} 0 1 1 ${cx} ${cy - ro}
-    M ${cx} ${cy - ri}
-    A ${ri} ${ri} 0 1 0 ${cx} ${cy + ri}
-    A ${ri} ${ri} 0 1 0 ${cx} ${cy - ri}
-    Z
-  `;
+function colorLuminance(color: string | null | undefined) {
+  const rgb = parseHexColor(color);
+  if (!rgb) return 0;
+  const [r, g, b] = rgb;
+  return ((0.2126 * r) + (0.7152 * g) + (0.0722 * b)) / 255;
 }
 
 function buildSlotMetrics(
@@ -118,6 +91,11 @@ function buildSlotMetrics(
   baseH: number,
   defaultCoordMode: SlotCoordMode,
 ): SvgSlotMetrics {
+  const safeZone = {
+    ...DEFAULT_SLOT_SAFE_ZONE,
+    ...(slot.safeZone ?? {}),
+    iconDiameterPctOfSlot: DEFAULT_SLOT_SAFE_ZONE.iconDiameterPctOfSlot,
+  };
   const coordMode = slot.coordMode ?? defaultCoordMode;
   const sizePct = Number.isFinite(slot.sizePct) ? slot.sizePct : slot.r * 200;
   const sizePx = (sizePct / 100) * baseW;
@@ -141,25 +119,39 @@ function buildSlotMetrics(
     cy += sizePx / 2;
   }
 
-  const insertDiameterPx = sizePx;
-  const buttonDiameterPx = insertDiameterPx * BUTTON_DIAMETER_MULT;
-  const buttonRadiusPx = buttonDiameterPx / 2;
-  const rOuter = buttonRadiusPx * BEZEL_OUTER;
-  const rInner = buttonRadiusPx * BEZEL_INNER;
+  const slotCenterX = cx;
+  const slotCenterY = cy;
+  const slotX = slotCenterX - (sizePx / 2);
+  const slotY = slotCenterY - (sizePx / 2);
+
+  const safeCx = slotX + (sizePx * (safeZone.centerXPctOfSlot / 100));
+  const safeCy = slotY + (sizePx * (safeZone.centerYPctOfSlot / 100));
+
+  const wellDiameterPx = sizePx * (safeZone.wellDiameterPctOfSlot / 100);
+  const buttonDiameterPx = wellDiameterPx;
+  const buttonRadiusPx = wellDiameterPx / 2;
+  const rOuter = buttonRadiusPx * (safeZone.ledOuterPctOfWell / 100);
+  const rInner = buttonRadiusPx * (safeZone.ledInnerPctOfWell / 100);
+  const iconDiameterPx = sizePx * (safeZone.iconDiameterPctOfSlot / 100);
+  const clipRadius = iconDiameterPx / 2;
 
   return {
     label: slot.label,
-    cx,
-    cy,
+    cx: safeCx,
+    cy: safeCy,
+    slotCenterX,
+    slotCenterY,
     sizePx,
-    slotX: cx - (sizePx / 2),
-    slotY: cy - (sizePx / 2),
-    clipRadius: sizePx * 0.47,
-    insertDiameterPx,
+    slotX,
+    slotY,
+    clipRadius,
+    iconDiameterPx,
+    wellDiameterPx,
     buttonDiameterPx,
     buttonRadiusPx,
     rOuter,
     rInner,
+    safeZone,
   };
 }
 
@@ -332,7 +324,7 @@ export default function KeypadPreview({
   const hoverPromptShadowOffset = Math.max(1, baseW * 0.0012);
 
   return (
-    <div className="card relative overflow-hidden border border-white/18 bg-[radial-gradient(140%_120%_at_60%_-10%,#2e79dd_0%,#17305f_36%,#0a1429_72%)] p-5 shadow-[0_28px_70px_rgba(2,9,24,0.42)] sm:p-6">
+    <div className="card glow-isolate relative overflow-hidden border border-white/18 bg-[radial-gradient(140%_120%_at_60%_-10%,#2e79dd_0%,#17305f_36%,#0a1429_72%)] p-5 shadow-[0_28px_70px_rgba(2,9,24,0.42)] sm:p-6">
       <div className="mb-4 flex items-center justify-between">
         <div>
           <div className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-100/80">Command View</div>
@@ -376,50 +368,6 @@ export default function KeypadPreview({
                     <circle cx={metrics.cx} cy={metrics.cy} r={metrics.clipRadius} />
                   </clipPath>
                 ))}
-
-                {slotMetrics.map(({ slotId, metrics }) => {
-                  const ringColor = slots[slotId]?.color;
-                  if (!ringColor) return null;
-
-                  return (
-                    <linearGradient
-                      key={`${slotId}-ring-grad`}
-                      id={`${safeSvgIdPrefix}-ringGrad-${slotId}`}
-                      gradientUnits="userSpaceOnUse"
-                      x1={metrics.cx - metrics.rOuter}
-                      y1={metrics.cy - metrics.rOuter}
-                      x2={metrics.cx + metrics.rOuter}
-                      y2={metrics.cy + metrics.rOuter}
-                    >
-                      <stop offset="0%" stopColor={mixColor(ringColor, '#ffffff', 0.28)} stopOpacity={0.95} />
-                      <stop offset="45%" stopColor={ringColor} stopOpacity={0.9} />
-                      <stop offset="100%" stopColor={mixColor(ringColor, '#000000', 0.22)} stopOpacity={0.85} />
-                    </linearGradient>
-                  );
-                })}
-
-                {slotMetrics.map(({ slotId, metrics }) => {
-                  const ringColor = slots[slotId]?.color;
-                  if (!ringColor) return null;
-
-                  return (
-                    <filter
-                      key={`${slotId}-ring-bloom`}
-                      id={`${safeSvgIdPrefix}-ringBloom-${slotId}`}
-                      filterUnits="userSpaceOnUse"
-                      x={metrics.cx - metrics.buttonDiameterPx}
-                      y={metrics.cy - metrics.buttonDiameterPx}
-                      width={metrics.buttonDiameterPx * 2}
-                      height={metrics.buttonDiameterPx * 2}
-                    >
-                      <feGaussianBlur stdDeviation={metrics.buttonDiameterPx * RING_BLOOM_BLUR_FACTOR} result="b" />
-                      <feMerge>
-                        <feMergeNode in="b" />
-                        <feMergeNode in="SourceGraphic" />
-                      </feMerge>
-                    </filter>
-                  );
-                })}
 
                 <linearGradient id={`${safeSvgIdPrefix}-hover-gradient`} x1="0%" y1="0%" x2="0%" y2="100%">
                   <stop offset="0%" stopColor="#203257" stopOpacity={0.72} />
@@ -472,10 +420,12 @@ export default function KeypadPreview({
                   const arrowCenterX = hoverPromptX + (hoverPromptWidth / 2);
                   const textCenterX = hoverPromptX + (hoverPromptWidth / 2);
                   const textBaselineY = hoverPromptY + (hoverPromptHeight / 2) + Math.max(4, hoverPromptHeight * 0.08);
-                  const iconSize = metrics.clipRadius * INSERT_TARGET_DIAMETER_MULTIPLIER;
+                  const iconSize = metrics.iconDiameterPx;
                   const iconX = metrics.cx - (iconSize / 2);
                   const iconY = metrics.cy - (iconSize / 2);
                   const ringColor = slot.color;
+                  const ringLuminance = colorLuminance(ringColor);
+                  const isWhiteGlow = ringLuminance >= WHITE_GLOW_LUMINANCE_THRESHOLD;
                   const isActive = slotId === activeSlotId;
 
                   return (
@@ -515,10 +465,24 @@ export default function KeypadPreview({
                         <circle
                           cx={metrics.cx}
                           cy={metrics.cy}
-                          r={metrics.sizePx * 0.55}
+                          r={Math.max(metrics.clipRadius * 1.04, metrics.rInner)}
                           fill="rgba(255,255,255,0.04)"
                           stroke="rgba(170,189,216,0.45)"
                           strokeWidth={Math.max(1, metrics.sizePx * 0.016)}
+                        />
+                      ) : null}
+
+                      {ringColor && showGlows ? (
+                        <BacklitGlow
+                          idBase={`${safeSvgIdPrefix}-slot-${slotId}`}
+                          cx={metrics.cx}
+                          cy={metrics.cy}
+                          rOuter={metrics.rOuter}
+                          rInner={metrics.rInner}
+                          buttonDiameterPx={metrics.buttonDiameterPx}
+                          color={ringColor}
+                          opacity={0.46}
+                          transitionMs={190}
                         />
                       ) : null}
 
@@ -532,6 +496,10 @@ export default function KeypadPreview({
                           preserveAspectRatio="xMidYMid meet"
                           transform={visualRotationDeg ? `rotate(${-visualRotationDeg} ${metrics.cx} ${metrics.cy})` : undefined}
                           clipPath={`url(#${safeSvgIdPrefix}-clip-${slotId})`}
+                          style={{
+                            filter: isWhiteGlow ? 'brightness(0.82)' : 'brightness(0.9)',
+                            transition: 'filter 180ms ease-out',
+                          }}
                         />
                       ) : showHoverPrompt ? null : (
                         <>
@@ -545,7 +513,7 @@ export default function KeypadPreview({
                           />
                           <text
                             x={metrics.cx}
-                            y={metrics.cy + Math.max(7, metrics.sizePx * 0.08)}
+                            y={metrics.cy + Math.max(7, metrics.sizePx * 0.09)}
                             textAnchor="middle"
                             fontSize={Math.max(18, metrics.sizePx * 0.36)}
                             fontWeight={600}
@@ -555,26 +523,6 @@ export default function KeypadPreview({
                           </text>
                         </>
                       )}
-
-                      {ringColor && showGlows ? (
-                        <>
-                          <path
-                            d={donutPath(metrics.cx, metrics.cy, metrics.rOuter, metrics.rInner)}
-                            fill={ringColor}
-                            fillRule="evenodd"
-                            opacity={RING_BLOOM_OPACITY}
-                            filter={`url(#${safeSvgIdPrefix}-ringBloom-${slotId})`}
-                            style={{ mixBlendMode: 'screen' }}
-                          />
-                          <path
-                            d={donutPath(metrics.cx, metrics.cy, metrics.rOuter, metrics.rInner)}
-                            fill={`url(#${safeSvgIdPrefix}-ringGrad-${slotId})`}
-                            fillRule="evenodd"
-                            opacity={0.92}
-                            style={{ mixBlendMode: 'screen' }}
-                          />
-                        </>
-                      ) : null}
 
                       {showHoverPrompt ? (
                         <g pointerEvents="none" filter={`url(#${safeSvgIdPrefix}-hover-glass)`}>
@@ -625,9 +573,25 @@ export default function KeypadPreview({
                           <circle
                             cx={metrics.cx}
                             cy={metrics.cy}
-                            r={metrics.insertDiameterPx / 2}
+                            r={metrics.sizePx / 2}
                             fill="none"
-                            stroke="#ffffff"
+                            stroke="#fef08a"
+                            strokeWidth={Math.max(1, metrics.sizePx * 0.008)}
+                          />
+                          <circle
+                            cx={metrics.cx}
+                            cy={metrics.cy}
+                            r={metrics.buttonRadiusPx}
+                            fill="none"
+                            stroke="#fde047"
+                            strokeWidth={Math.max(1, metrics.sizePx * 0.008)}
+                          />
+                          <circle
+                            cx={metrics.cx}
+                            cy={metrics.cy}
+                            r={metrics.wellDiameterPx / 2}
+                            fill="none"
+                            stroke="#f59e0b"
                             strokeWidth={Math.max(1, metrics.sizePx * 0.008)}
                           />
                           <circle
@@ -644,6 +608,14 @@ export default function KeypadPreview({
                             r={metrics.rInner}
                             fill="none"
                             stroke="#22d3ee"
+                            strokeWidth={Math.max(1, metrics.sizePx * 0.008)}
+                          />
+                          <circle
+                            cx={metrics.cx}
+                            cy={metrics.cy}
+                            r={metrics.iconDiameterPx / 2}
+                            fill="none"
+                            stroke="#ffffff"
                             strokeWidth={Math.max(1, metrics.sizePx * 0.008)}
                           />
                         </>
