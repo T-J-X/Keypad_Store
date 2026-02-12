@@ -173,6 +173,17 @@ ul.list-disc.space-y-3.pl-5.text-base.leading-7.text-ink\/75 li > span {
     cursor: pointer;
   }
 
+  .btn-ghost-strong {
+    background: rgba(255, 255, 255, 0.5);
+    color: var(--ink);
+    border-radius: 999px;
+    padding: 10px 18px;
+    font-weight: 600;
+    border: 2px solid rgba(12, 17, 26, 0.2);
+    cursor: pointer;
+    backdrop-filter: blur(8px);
+  }
+
   .input {
     width: 100%;
     border-radius: 999px;

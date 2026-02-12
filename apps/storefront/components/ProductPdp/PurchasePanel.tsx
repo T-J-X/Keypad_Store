@@ -5,6 +5,7 @@ import { useEffect, useMemo, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { categorySlug } from '../../lib/vendure';
 import { notifyCartUpdated } from '../../lib/cartEvents';
+import { useUIStore } from '../../lib/uiStore';
 
 type StockSummary = {
   label: string;
@@ -45,8 +46,9 @@ export default function PurchasePanel({
   const [pulse, setPulse] = useState(true);
   const [buyingNow, setBuyingNow] = useState(false);
   const [wishlistSaving, setWishlistSaving] = useState(false);
-  const [feedback, setFeedback] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
+  const showToast = useUIStore((state) => state.showToast);
   const safeIconId = iconId.trim() || '—';
   const categoryItems = useMemo(
     () => Array.from(
@@ -100,16 +102,17 @@ export default function PurchasePanel({
   const onAddToCart = async () => {
     if (!canPurchase || adding || buyingNow) return;
     setAdding(true);
-    setFeedback(null);
+    setErrorMessage(null);
     try {
       await addToCart(quantity);
-      setFeedback({
+      showToast({
         message: quantity === 1 ? 'Added to cart' : `Added ${quantity} to cart`,
-        type: 'success',
+        ctaHref: '/cart',
+        ctaLabel: 'View cart',
       });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Could not add this item to cart.';
-      setFeedback({ message, type: 'error' });
+      setErrorMessage(message);
     } finally {
       setAdding(false);
     }
@@ -118,13 +121,13 @@ export default function PurchasePanel({
   const onBuyNow = async () => {
     if (!canPurchase || adding || buyingNow) return;
     setBuyingNow(true);
-    setFeedback(null);
+    setErrorMessage(null);
     try {
       await addToCart(quantity);
       router.push(BUY_NOW_REDIRECT);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Could not continue to cart.';
-      setFeedback({ message, type: 'error' });
+      setErrorMessage(message);
       setBuyingNow(false);
     }
   };
@@ -137,15 +140,19 @@ export default function PurchasePanel({
     }
 
     setWishlistSaving(true);
-    setFeedback(null);
+    setErrorMessage(null);
     try {
       const saved = await toggleWishlist({
         productSlug,
         productVariantId,
       });
-      setFeedback({ message: saved ? 'Saved to wishlist' : 'Removed from wishlist', type: 'success' });
+      showToast({
+        message: saved ? 'Saved to wishlist' : 'Removed from wishlist',
+        ctaHref: '/account',
+        ctaLabel: 'View account',
+      });
     } catch {
-      setFeedback({ message: 'Could not update wishlist right now.', type: 'error' });
+      setErrorMessage('Could not update wishlist right now.');
     } finally {
       setWishlistSaving(false);
     }
@@ -310,11 +317,7 @@ export default function PurchasePanel({
         </p>
       )}
 
-      {feedback && (
-        <p className={feedback.type === 'success' ? 'text-sm font-bold text-ink' : 'text-sm font-semibold text-rose-700'}>
-          {feedback.message}
-        </p>
-      )}
+      {errorMessage ? <p className="text-sm font-semibold text-rose-700">{errorMessage}</p> : null}
 
       {showAuthPrompt && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-6">

@@ -41,6 +41,24 @@ const tabs: Array<{ id: TabId; label: string }> = [
   { id: 'saved', label: 'My Saved Designs' },
 ];
 
+const accountPrimaryButtonClass = [
+  'group relative isolate inline-flex items-center justify-center rounded-full border border-transparent text-white',
+  'bg-[linear-gradient(90deg,#040F2E_0%,#112B5D_55%,#29457A_100%),linear-gradient(90deg,#203f7a_0%,#2f5da8_55%,#4b7fca_100%)] [background-origin:padding-box,border-box] [background-clip:padding-box,border-box]',
+  'transition-[background,box-shadow,transform] duration-300',
+  'hover:-translate-y-[1px] hover:bg-[linear-gradient(270deg,#040F2E_0%,#112B5D_55%,#29457A_100%),linear-gradient(90deg,#24497d_0%,#39629a_55%,#537bb0_100%)] hover:shadow-[0_0_0_1px_rgba(72,116,194,0.56),0_10px_24px_rgba(4,15,46,0.29)]',
+  'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#29457A]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white',
+  'disabled:cursor-not-allowed disabled:opacity-60',
+].join(' ');
+
+const accountStrongGhostButtonClass =
+  'btn-ghost-strong inline-flex items-center justify-center transition hover:border-[#6d88b6] hover:bg-white/80';
+
+const accountPrimaryGlowLayerClass =
+  'pointer-events-none absolute inset-0 rounded-full bg-[linear-gradient(270deg,rgba(255,255,255,0.10)_0%,rgba(255,255,255,0.02)_45%,rgba(255,255,255,0.08)_100%)] opacity-0 transition-opacity duration-300 group-hover:opacity-45';
+
+const accountPrimaryGlowRingClass =
+  'pointer-events-none absolute -inset-[1px] -z-10 rounded-full bg-[linear-gradient(90deg,rgba(11,27,58,0.44)_0%,rgba(27,52,95,0.30)_55%,rgba(58,116,198,0.30)_100%)] opacity-0 transition-opacity duration-300 group-hover:opacity-55';
+
 export default function AccountTabs() {
   const [active, setActive] = useState<TabId>('saved');
   const [session, setSession] = useState<SessionSummary | null>(null);
@@ -272,7 +290,7 @@ export default function AccountTabs() {
   };
 
   return (
-    <div className="card overflow-hidden p-6">
+    <div className="card-soft overflow-hidden p-6">
       <div className="flex flex-wrap gap-2 border-b border-black/5 pb-4">
         {tabs.map((tab) => (
           <button
@@ -377,8 +395,13 @@ function SavedDesignsPanel({
         <div className="card-soft space-y-3 p-4 text-sm text-ink/65">
           <p>Sign in to manage saved keypad designs for {customerName}.</p>
           <div>
-            <Link href="/login?redirectTo=%2Faccount" className="inline-flex min-h-10 items-center rounded-full bg-ink px-4 text-sm font-semibold text-white">
-              Sign in
+            <Link
+              href="/login?redirectTo=%2Faccount"
+              className={`${accountPrimaryButtonClass} min-h-10 px-4 text-sm font-semibold`}
+            >
+              <span className={accountPrimaryGlowLayerClass} />
+              <span className={accountPrimaryGlowRingClass} />
+              <span className="relative z-10">Sign in</span>
             </Link>
           </div>
         </div>
@@ -422,16 +445,17 @@ function SavedDesignsPanel({
               <div className="mt-3 grid gap-2 sm:grid-cols-6">
                 <ActionButton onClick={() => onPreview(item.id)} label="View" />
                 {editHref ? (
-                  <Link href={editHref} className={actionButtonClass()}>
+                  <Link href={editHref} className={actionButtonClass('default')}>
                     Edit
                   </Link>
                 ) : (
-                  <span className={actionButtonClass('opacity-50')}>Edit</span>
+                  <span className={`${actionButtonClass('default')} cursor-not-allowed opacity-50`}>Edit</span>
                 )}
                 <ActionButton
                   onClick={() => onAddToCart(item)}
                   label={pendingId === item.id ? 'Adding...' : 'Add to cart'}
                   disabled={pendingId === item.id}
+                  tone="primary"
                 />
                 <ActionButton
                   onClick={() => onDownloadPdf(item)}
@@ -442,7 +466,7 @@ function SavedDesignsPanel({
                 <ActionButton
                   onClick={() => onDelete(item)}
                   label={pendingId === item.id ? 'Deleting...' : 'Delete'}
-                  danger
+                  tone="danger"
                   disabled={pendingId === item.id}
                 />
               </div>
@@ -471,7 +495,11 @@ function PreviewModal({
             <h3 className="text-lg font-semibold text-ink">{item.name}</h3>
             <p className="mt-1 text-xs text-ink/55">{item.keypadModel}</p>
           </div>
-          <button type="button" onClick={onClose} className="rounded-full border border-ink/15 px-3 py-1 text-xs font-semibold">
+          <button
+            type="button"
+            onClick={onClose}
+            className={`${accountStrongGhostButtonClass} px-3 py-1 text-xs font-semibold`}
+          >
             Close
           </button>
         </div>
@@ -538,7 +566,11 @@ function EnquireModal({
             <h3 className="text-lg font-semibold text-ink">Enquire about {item.name}</h3>
             <p className="mt-1 text-xs text-ink/55">Support will receive the full technical spec.</p>
           </div>
-          <button type="button" onClick={onClose} className="rounded-full border border-ink/15 px-3 py-1 text-xs font-semibold">
+          <button
+            type="button"
+            onClick={onClose}
+            className={`${accountStrongGhostButtonClass} px-3 py-1 text-xs font-semibold`}
+          >
             Close
           </button>
         </div>
@@ -559,16 +591,22 @@ function EnquireModal({
         </pre>
 
         <div className="mt-4 flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="rounded-full border border-ink/15 px-4 py-2 text-sm font-semibold">
+          <button
+            type="button"
+            onClick={onClose}
+            className={`${accountStrongGhostButtonClass} px-4 py-2 text-sm font-semibold`}
+          >
             Cancel
           </button>
           <button
             type="button"
             onClick={onSubmit}
             disabled={pending}
-            className="rounded-full bg-ink px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+            className={`${accountPrimaryButtonClass} px-4 py-2 text-sm font-semibold`}
           >
-            {pending ? 'Sending...' : 'Send enquiry'}
+            <span className={accountPrimaryGlowLayerClass} />
+            <span className={accountPrimaryGlowRingClass} />
+            <span className="relative z-10">{pending ? 'Sending...' : 'Send enquiry'}</span>
           </button>
         </div>
       </div>
@@ -590,34 +628,54 @@ function ActionButton({
   onClick,
   label,
   disabled = false,
-  danger = false,
+  tone = 'default',
 }: {
   onClick: () => void;
   label: string;
   disabled?: boolean;
-  danger?: boolean;
+  tone?: 'default' | 'primary' | 'danger';
 }) {
+  const isPrimary = tone === 'primary';
+
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
-      className={actionButtonClass(
-        danger ? 'text-rose-700 hover:border-rose-300 hover:bg-rose-50' : undefined,
-      )}
+      className={actionButtonClass(tone)}
     >
-      {label}
+      {isPrimary ? (
+        <>
+          <span className={accountPrimaryGlowLayerClass} />
+          <span className={accountPrimaryGlowRingClass} />
+          <span className="relative z-10">{label}</span>
+        </>
+      ) : (
+        label
+      )}
     </button>
   );
 }
 
-function actionButtonClass(extra?: string) {
+function actionButtonClass(tone: 'default' | 'primary' | 'danger') {
+  if (tone === 'primary') {
+    return [
+      accountPrimaryButtonClass,
+      'min-h-10 px-3 text-xs font-semibold uppercase tracking-[0.12em]',
+    ].join(' ');
+  }
+
+  if (tone === 'danger') {
+    return [
+      accountStrongGhostButtonClass,
+      'min-h-10 px-3 text-xs font-semibold uppercase tracking-[0.12em] text-rose-700 hover:border-rose-300 hover:bg-rose-50',
+      'disabled:cursor-not-allowed disabled:opacity-60',
+    ].join(' ');
+  }
+
   return [
-    'inline-flex min-h-10 items-center justify-center rounded-full border border-ink/14 px-3 text-xs font-semibold uppercase tracking-[0.12em] text-ink/75 transition',
-    'hover:border-ink/30 hover:bg-white',
+    accountStrongGhostButtonClass,
+    'min-h-10 px-3 text-xs font-semibold uppercase tracking-[0.12em] text-ink/75 hover:text-ink',
     'disabled:cursor-not-allowed disabled:opacity-60',
-    extra,
-  ]
-    .filter(Boolean)
-    .join(' ');
+  ].join(' ');
 }

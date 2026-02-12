@@ -2,10 +2,11 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { useEffect, useState } from 'react';
+import { useState } from 'react';
 import type { IconProduct } from '../lib/vendure';
 import { assetUrl } from '../lib/vendure';
 import { notifyCartUpdated } from '../lib/cartEvents';
+import { useUIStore } from '../lib/uiStore';
 import {
   cardIdentifierTextClass,
   cardPlaceholderTextClass,
@@ -38,7 +39,8 @@ export default function ProductCard({
   const iconId = product.customFields?.iconId ?? product.name;
   const primaryVariant = product.variants?.[0];
   const [adding, setAdding] = useState(false);
-  const [feedback, setFeedback] = useState<{ message: string; type: 'success' | 'error' } | null>(null);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const showToast = useUIStore((state) => state.showToast);
 
   const priceWithVatLabel = formatPrice(primaryVariant?.priceWithTax, primaryVariant?.currencyCode);
   const priceExVatLabel = formatPriceExVatUk(primaryVariant?.priceWithTax, primaryVariant?.currencyCode);
@@ -46,7 +48,7 @@ export default function ProductCard({
   const onAddToCart = async () => {
     if (!primaryVariant?.id || adding) return;
     setAdding(true);
-    setFeedback(null);
+    setErrorMessage(null);
     try {
       const response = await fetch('/api/cart/add-item', {
         method: 'POST',
@@ -58,22 +60,18 @@ export default function ProductCard({
         throw new Error(payload.error || 'Could not add this button insert to cart.');
       }
       notifyCartUpdated();
-      setFeedback({ message: 'Added to cart', type: 'success' });
+      showToast({
+        message: 'Added to cart',
+        ctaHref: '/cart',
+        ctaLabel: 'View cart',
+      });
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Could not add this button insert to cart.';
-      setFeedback({ message, type: 'error' });
+      setErrorMessage(message);
     } finally {
       setAdding(false);
     }
   };
-
-  useEffect(() => {
-    if (feedback?.type !== 'success') return;
-    const timer = window.setTimeout(() => {
-      setFeedback((current) => (current?.type === 'success' ? null : current));
-    }, 10000);
-    return () => window.clearTimeout(timer);
-  }, [feedback]);
 
   const addToCartClass = [
     'group relative isolate inline-flex items-center justify-center gap-2 rounded-full border border-transparent px-4 py-2 text-sm font-medium text-white md:text-base',
@@ -85,7 +83,7 @@ export default function ProductCard({
   ].join(' ');
 
   return (
-    <div className="card-soft group relative flex h-full flex-col gap-5 border border-surface-border/80 p-5 transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-1 hover:border-ink/15 hover:shadow-premium">
+    <div className="card-soft group relative flex h-full flex-col gap-5 p-5 transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-1 hover:shadow-premium">
       <Link
         href={productHref ?? `/product/${product.slug}`}
         replace={replaceProductNavigation}
@@ -149,17 +147,7 @@ export default function ProductCard({
             <span className="relative z-10">{adding ? 'Adding...' : 'Add to cart'}</span>
           </button>
         </div>
-        {feedback && (
-          <div
-            className={
-              feedback.type === 'success'
-                ? 'text-sm font-bold text-ink'
-                : 'text-xs font-medium text-rose-700'
-            }
-          >
-            {feedback.message}
-          </div>
-        )}
+        {errorMessage ? <div className="text-xs font-medium text-rose-700">{errorMessage}</div> : null}
       </div>
     </div>
   );

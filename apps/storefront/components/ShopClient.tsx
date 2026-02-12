@@ -632,7 +632,19 @@ export default function ShopClient({
   );
 
   return (
-    <div className="mx-auto w-full max-w-[88rem] px-6 pb-20 pt-10">
+    <div className="relative mx-auto w-full max-w-[88rem] px-6 pb-20 pt-10">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 -z-10 rounded-[36px] bg-[radial-gradient(130%_120%_at_50%_-8%,rgba(53,113,198,0.22)_0%,rgba(19,50,96,0.12)_38%,rgba(255,255,255,0)_78%)]"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -left-24 top-20 -z-10 h-64 w-64 rounded-full bg-[#6ea3ec]/18 blur-3xl"
+      />
+      <div
+        aria-hidden
+        className="pointer-events-none absolute -right-20 top-44 -z-10 h-64 w-64 rounded-full bg-[#84b2f0]/20 blur-3xl"
+      />
       <BaseShopHero showTiles={false} />
 
       <div className="mb-8 flex flex-col gap-4">
@@ -681,7 +693,7 @@ export default function ShopClient({
 
       {isLandingSection ? (
         <section className="space-y-12">
-          <section className="rounded-3xl border border-ink/10 bg-[linear-gradient(180deg,#ffffff_0%,#f6f9ff_100%)] p-5 md:p-7">
+          <section className="card-soft rounded-3xl p-5 md:p-7">
             <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h2 className="mt-1 text-2xl font-semibold tracking-tight text-ink md:text-3xl">
@@ -769,7 +781,7 @@ export default function ShopClient({
             </div>
           </section>
 
-          <section className="rounded-3xl border border-ink/10 bg-[linear-gradient(180deg,#ffffff_0%,#f6f9ff_100%)] p-5 md:p-7">
+          <section className="card-soft rounded-3xl p-5 md:p-7">
             <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h2 className="mt-1 text-2xl font-semibold tracking-tight text-ink md:text-3xl">
@@ -810,7 +822,7 @@ export default function ShopClient({
                 })}
               </div>
             ) : (
-              <div className="rounded-2xl border border-ink/10 bg-white p-6 text-sm text-ink/60">
+              <div className="card-soft rounded-2xl p-6 text-sm text-ink/60">
                 No insert categories are available yet.
               </div>
             )}
@@ -853,7 +865,7 @@ export default function ShopClient({
       ) : (
         <div className="grid gap-8 md:grid-cols-[260px_minmax(0,1fr)] md:items-start">
           <aside className="space-y-6 md:sticky md:top-24 md:self-start">
-            <div className="card md:max-h-[calc(100vh-7rem)] md:overflow-y-auto md:pr-1">
+            <div className="card-soft md:max-h-[calc(100vh-7rem)] md:overflow-y-auto md:pr-1">
               <div className="px-4 py-4">
                 <div className="text-[10px] font-semibold uppercase tracking-widest text-ink-subtle">
                   Browse

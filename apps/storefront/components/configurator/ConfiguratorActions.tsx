@@ -17,6 +17,34 @@ type ConfiguratorActionsProps = {
   onDownloadPdf: () => void;
 };
 
+const aimshopPrimaryClass = [
+  'group relative isolate inline-flex items-center justify-center rounded-full border border-transparent text-white',
+  'bg-[linear-gradient(90deg,#040F2E_0%,#112B5D_55%,#29457A_100%),linear-gradient(90deg,#203f7a_0%,#2f5da8_55%,#4b7fca_100%)] [background-origin:padding-box,border-box] [background-clip:padding-box,border-box]',
+  'transition-[background,box-shadow,transform] duration-300',
+  'hover:-translate-y-[1px] hover:bg-[linear-gradient(270deg,#040F2E_0%,#112B5D_55%,#29457A_100%),linear-gradient(90deg,#24497d_0%,#39629a_55%,#537bb0_100%)] hover:shadow-[0_0_0_1px_rgba(72,116,194,0.56),0_10px_24px_rgba(4,15,46,0.29)]',
+  'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#29457A]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white/70',
+  'disabled:cursor-not-allowed disabled:opacity-50',
+].join(' ');
+
+const strongGhostClass =
+  'btn-ghost-strong inline-flex items-center justify-center transition hover:border-[#6d88b6] hover:bg-white/80';
+
+const glowLayerClass =
+  'pointer-events-none absolute inset-0 rounded-full bg-[linear-gradient(270deg,rgba(255,255,255,0.10)_0%,rgba(255,255,255,0.02)_45%,rgba(255,255,255,0.08)_100%)] opacity-0 transition-opacity duration-300 group-hover:opacity-45';
+
+const glowRingClass =
+  'pointer-events-none absolute -inset-[1px] -z-10 rounded-full bg-[linear-gradient(90deg,rgba(11,27,58,0.44)_0%,rgba(27,52,95,0.30)_55%,rgba(58,116,198,0.30)_100%)] opacity-0 transition-opacity duration-300 group-hover:opacity-55';
+
+function PrimaryButtonLabel({ label }: { label: string }) {
+  return (
+    <>
+      <span className={glowLayerClass} />
+      <span className={glowRingClass} />
+      <span className="relative z-10">{label}</span>
+    </>
+  );
+}
+
 export default function ConfiguratorActions({
   variant,
   isComplete,
@@ -39,17 +67,17 @@ export default function ConfiguratorActions({
             type="button"
             onClick={onAddToCart}
             disabled={!isComplete || !hasVariant || addingToCart}
-            className="inline-flex min-h-12 items-center justify-center rounded-full border border-transparent bg-[linear-gradient(90deg,#031331_0%,#0d2f63_58%,#1f59a6_100%)] px-3 text-xs font-semibold uppercase tracking-[0.12em] text-white transition disabled:cursor-not-allowed disabled:opacity-50"
+            className={`${aimshopPrimaryClass} min-h-12 px-3 text-xs font-semibold uppercase tracking-[0.12em]`}
           >
-            {addingToCart ? 'Adding...' : 'Add To Cart'}
+            <PrimaryButtonLabel label={addingToCart ? 'Adding...' : 'Add To Cart'} />
           </button>
           <button
             type="button"
             onClick={onOpenSaveModal}
             disabled={!isComplete || savingToAccount || !canOpenSave}
-            className="inline-flex min-h-12 items-center justify-center rounded-full border border-[#0f3d7a] bg-white px-3 text-xs font-semibold uppercase tracking-[0.12em] text-[#0f3d7a] transition disabled:cursor-not-allowed disabled:opacity-50"
+            className={`${aimshopPrimaryClass} min-h-12 px-3 text-xs font-semibold uppercase tracking-[0.12em]`}
           >
-            {hasLoadedSavedConfig ? 'Update Save' : 'Save To Account'}
+            <PrimaryButtonLabel label={hasLoadedSavedConfig ? 'Update Save' : 'Save To Account'} />
           </button>
         </div>
       </div>
@@ -63,18 +91,18 @@ export default function ConfiguratorActions({
           type="button"
           onClick={onAddToCart}
           disabled={!isComplete || !hasVariant || addingToCart}
-          className="inline-flex min-h-12 items-center justify-center rounded-full border border-transparent bg-[linear-gradient(90deg,#031331_0%,#0d2f63_58%,#1f59a6_100%)] px-5 text-sm font-semibold uppercase tracking-[0.13em] text-white transition hover:-translate-y-[1px] hover:shadow-[0_12px_28px_rgba(8,31,64,0.32)] disabled:cursor-not-allowed disabled:opacity-50"
+          className={`${aimshopPrimaryClass} min-h-12 px-5 text-sm font-semibold uppercase tracking-[0.13em]`}
         >
-          {addingToCart ? 'Adding...' : 'Add Configured Keypad'}
+          <PrimaryButtonLabel label={addingToCart ? 'Adding...' : 'Add Configured Keypad'} />
         </button>
 
         <button
           type="button"
           onClick={onOpenSaveModal}
           disabled={!isComplete || savingToAccount || !canOpenSave}
-          className="inline-flex min-h-12 items-center justify-center rounded-full border border-[#0f3d7a] bg-white px-5 text-sm font-semibold uppercase tracking-[0.13em] text-[#0f3d7a] transition hover:bg-[#0f3d7a] hover:text-white disabled:cursor-not-allowed disabled:opacity-50"
+          className={`${aimshopPrimaryClass} min-h-12 px-5 text-sm font-semibold uppercase tracking-[0.13em]`}
         >
-          {hasLoadedSavedConfig ? 'Update Saved Design' : 'Save To Account'}
+          <PrimaryButtonLabel label={hasLoadedSavedConfig ? 'Update Saved Design' : 'Save To Account'} />
         </button>
       </div>
 
@@ -83,13 +111,13 @@ export default function ConfiguratorActions({
           type="button"
           onClick={onDownloadPdf}
           disabled={!canDownloadPdf || downloadingPdf}
-          className="inline-flex min-h-11 items-center justify-center rounded-full border border-[#0d2f63] bg-[#e8f1ff] px-4 text-xs font-semibold uppercase tracking-[0.12em] text-[#0d2f63] transition hover:bg-[#d9e9ff] disabled:cursor-not-allowed disabled:opacity-50"
+          className={`${strongGhostClass} min-h-11 px-4 text-xs font-semibold uppercase tracking-[0.12em] text-[#0d2f63] disabled:cursor-not-allowed disabled:opacity-50`}
         >
           {downloadingPdf ? 'Generating...' : 'Download PDF'}
         </button>
         <Link
           href="/account"
-          className="inline-flex min-h-11 items-center justify-center rounded-full border border-[#cdd9ec] px-4 text-xs font-semibold uppercase tracking-[0.12em] text-[#5c6f90] transition hover:border-[#8ea4c8] hover:text-[#1e3355]"
+          className={`${strongGhostClass} min-h-11 px-4 text-xs font-semibold uppercase tracking-[0.12em] text-[#5c6f90] hover:text-[#1e3355]`}
         >
           Open My Saved Designs
         </Link>

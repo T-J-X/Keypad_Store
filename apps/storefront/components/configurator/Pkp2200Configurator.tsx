@@ -20,9 +20,9 @@ import ConfigurationSidebar from './ConfigurationSidebar';
 import KeypadPreview from './KeypadPreview';
 import IconSelectionPopup from './IconSelectionPopup';
 import { PKP_2200_SI_LAYOUT, PKP_2200_SI_SLOT_SIZE_MM } from './pkp2200Layout';
-import PremiumToast, { type ToastPayload } from './PremiumToast';
 import SaveDesignModal from './SaveDesignModal';
 import type { PilotKeypadProduct, SavedConfigurationItem, StatusMessage } from './types';
+import { useUIStore } from '../../lib/uiStore';
 
 type IconCatalogPayload = {
   icons?: IconCatalogItem[];
@@ -95,9 +95,9 @@ export default function Pkp2200Configurator({
   const [savingToAccount, setSavingToAccount] = useState(false);
 
   const [downloadingPdf, setDownloadingPdf] = useState(false);
-  const [toast, setToast] = useState<ToastPayload | null>(null);
   const hydratedLoadIdRef = useRef<string | null>(null);
   const resetScopeRef = useRef<string | null>(null);
+  const showToast = useUIStore((state) => state.showToast);
 
   const loadSavedId = useMemo(() => {
     const value = searchParams.get('load');
@@ -110,11 +110,6 @@ export default function Pkp2200Configurator({
     const value = Number.parseFloat(searchParams.get('rotationDeg') || '0');
     if (!Number.isFinite(value)) return 0;
     return Math.max(-180, Math.min(180, value));
-  }, [searchParams]);
-  const previewIconScale = useMemo(() => {
-    const value = Number.parseFloat(searchParams.get('iconScale') || '');
-    if (!Number.isFinite(value) || value <= 0) return 0.94;
-    return value;
   }, [searchParams]);
   const showGlowsFromQuery = useMemo(() => searchParams.get('showGlows') !== '0', [searchParams]);
   const [previewRotationDeg, setPreviewRotationDeg] = useState(previewRotationFromQuery);
@@ -150,14 +145,6 @@ export default function Pkp2200Configurator({
     hydratedLoadIdRef.current = null;
     resetScopeRef.current = resetScope;
   }, [keypad.modelCode, loadSavedId, reset]);
-
-  useEffect(() => {
-    if (!toast) return;
-    const timer = window.setTimeout(() => setToast(null), 5500);
-    return () => {
-      window.clearTimeout(timer);
-    };
-  }, [toast]);
 
   useEffect(() => {
     let cancelled = false;
@@ -355,7 +342,7 @@ export default function Pkp2200Configurator({
       notifyCartUpdated();
       setLastOrderCode(payload.orderCode ?? null);
       setCartStatus(null);
-      setToast({
+      showToast({
         message: payload.orderCode
           ? `Configured keypad added. Order ${payload.orderCode} updated.`
           : 'Configured keypad added to cart.',
@@ -427,7 +414,7 @@ export default function Pkp2200Configurator({
 
       setLoadedSavedConfig(payload.item);
       setSaveStatus(null);
-      setToast({
+      showToast({
         message: loadedSavedConfig
           ? `Updated "${payload.item.name}".`
           : `Saved "${payload.item.name}" to your account.`,
@@ -535,7 +522,6 @@ export default function Pkp2200Configurator({
             onSlotClick={openSlotPopup}
             rotationDeg={previewRotationDeg}
             debugSlots={debugSlots}
-            iconScale={previewIconScale}
             descriptionText={keypadDescription}
             showGlows={previewShowGlows}
             onRotate={rotatePreview}
@@ -575,13 +561,13 @@ export default function Pkp2200Configurator({
                   type="button"
                   onClick={onDownloadPdf}
                   disabled={!canDownloadPdf || downloadingPdf}
-                  className="inline-flex min-h-11 items-center justify-center rounded-full border border-[#0d2f63] bg-[#e8f1ff] px-4 text-xs font-semibold uppercase tracking-[0.12em] text-[#0d2f63] transition hover:bg-[#d9e9ff] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="btn-ghost-strong inline-flex min-h-11 items-center justify-center px-4 text-xs font-semibold uppercase tracking-[0.12em] text-[#0d2f63] transition hover:border-[#6d88b6] hover:bg-white/80 disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {downloadingPdf ? 'Generating...' : 'Download PDF'}
                 </button>
                 <Link
                   href="/account"
-                  className="inline-flex min-h-11 items-center justify-center rounded-full border border-[#cdd9ec] px-4 text-xs font-semibold uppercase tracking-[0.12em] text-[#5c6f90] transition hover:border-[#8ea4c8] hover:text-[#1e3355]"
+                  className="btn-ghost-strong inline-flex min-h-11 items-center justify-center px-4 text-xs font-semibold uppercase tracking-[0.12em] text-[#5c6f90] transition hover:border-[#8ea4c8] hover:bg-white/80 hover:text-[#1e3355]"
                 >
                   Open My Saved Designs
                 </Link>
@@ -636,8 +622,6 @@ export default function Pkp2200Configurator({
         onClose={() => setIsSaveModalOpen(false)}
         onSubmit={() => void onSubmitSave()}
       />
-
-      <PremiumToast toast={toast} onClose={() => setToast(null)} offsetBottom={isMobile} />
     </div>
   );
 }
