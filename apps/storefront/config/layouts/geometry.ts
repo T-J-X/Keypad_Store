@@ -2,6 +2,20 @@ import type { SlotId } from '../../lib/keypadConfiguration';
 
 export type SlotCoordMode = 'center' | 'topLeft';
 
+export type GlowPhysics = {
+  defaultAlpha: number;
+  thumbnailAlpha: number;
+  haloNearBlurFactor: number;
+  haloFarBlurFactor: number;
+  haloNearBlurMin: number;
+  haloFarBlurMin: number;
+  intensityBase: number;
+  intensityByDarkness: number;
+  colorMatrixAlphaFloor: number;
+  colorMatrixAlphaMultiplier: number;
+  matteIconFitPct: number;
+};
+
 export type SlotSafeZone = {
   // Offsets measured inside the slot box.
   centerXPctOfSlot: number;
@@ -54,6 +68,20 @@ export const DEFAULT_SLOT_SAFE_ZONE: SlotSafeZone = {
   iconDiameterPctOfSlot: 60,
 };
 
+export const GLOBAL_GLOW_PHYSICS: GlowPhysics = {
+  defaultAlpha: 0.46,
+  thumbnailAlpha: 0.42,
+  haloNearBlurFactor: 0.022,
+  haloFarBlurFactor: 0.062,
+  haloNearBlurMin: 1.1,
+  haloFarBlurMin: 2.1,
+  intensityBase: 1.1,
+  intensityByDarkness: 0.55,
+  colorMatrixAlphaFloor: 0.85,
+  colorMatrixAlphaMultiplier: 2.25,
+  matteIconFitPct: 58,
+};
+
 export function slotGeometryToPercentBox(slot: SlotGeometry) {
   return {
     leftPct: (slot.cx - slot.r) * 100,
@@ -65,7 +93,7 @@ export function slotGeometryToPercentBox(slot: SlotGeometry) {
 
 export const PKP_2200_SI_GEOMETRY: KeypadModelGeometry = {
   modelCode: 'PKP-2200-SI',
-  // Blink render canvas is 1000x580.
+  // Render canvas is 1000x580.
   aspectRatio: 50 / 29,
   intrinsicSize: {
     width: 1000,
@@ -76,7 +104,7 @@ export const PKP_2200_SI_GEOMETRY: KeypadModelGeometry = {
   slots: {
     slot_1: {
       label: 'Slot 1',
-      // Blink source: left 31.3%, top 14.4%, width 12.4%
+      // Source placement: left 31.3%, top 14.4%, width 12.4%
       cx: 0.375,
       cy: 0.206,
       r: 0.062,
@@ -89,7 +117,7 @@ export const PKP_2200_SI_GEOMETRY: KeypadModelGeometry = {
     },
     slot_2: {
       label: 'Slot 2',
-      // Blink source: left 56.3%, top 14.6%, width 12.4%
+      // Source placement: left 56.3%, top 14.6%, width 12.4%
       cx: 0.625,
       cy: 0.208,
       r: 0.062,
@@ -102,7 +130,7 @@ export const PKP_2200_SI_GEOMETRY: KeypadModelGeometry = {
     },
     slot_3: {
       label: 'Slot 3',
-      // Blink source: left 31.6%, top 65.1%, width 12.4%
+      // Source placement: left 31.6%, top 65.1%, width 12.4%
       cx: 0.378,
       cy: 0.713,
       r: 0.062,
@@ -115,7 +143,7 @@ export const PKP_2200_SI_GEOMETRY: KeypadModelGeometry = {
     },
     slot_4: {
       label: 'Slot 4',
-      // Blink source: left 56.1%, top 64.8%, width 12.4%
+      // Source placement: left 56.1%, top 64.8%, width 12.4%
       cx: 0.623,
       cy: 0.71,
       r: 0.062,
@@ -128,7 +156,7 @@ export const PKP_2200_SI_GEOMETRY: KeypadModelGeometry = {
     },
   },
   buttonVisual: {
-    // Tuned against Blink 12.4% slot boxes so ring sits on the outer grey channel
+    // Tuned against 12.4% slot boxes so ring sits on the outer grey channel
     // and matte symbols do not render undersized.
     ringDiameterPctOfSlot: 136.3,
     iconDiameterPctOfSlot: 60,

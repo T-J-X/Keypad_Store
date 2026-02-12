@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { GLOBAL_GLOW_PHYSICS } from '../../config/layouts/geometry';
 
 type BacklitGlowProps = {
   idBase: string;
@@ -79,9 +80,9 @@ function buildGlowTarget(
 ): GlowFrame {
   const [r, g, b] = parseHexColor(color) ?? [30, 167, 255];
   const lum = luminance(r, g, b);
-  const blurNear = Math.max(1.1, buttonDiameterPx * 0.022);
-  const blurFar = Math.max(2.1, buttonDiameterPx * 0.062);
-  const intensity = 1.1 + ((1 - lum) * 0.55);
+  const blurNear = Math.max(GLOBAL_GLOW_PHYSICS.haloNearBlurMin, buttonDiameterPx * GLOBAL_GLOW_PHYSICS.haloNearBlurFactor);
+  const blurFar = Math.max(GLOBAL_GLOW_PHYSICS.haloFarBlurMin, buttonDiameterPx * GLOBAL_GLOW_PHYSICS.haloFarBlurFactor);
+  const intensity = GLOBAL_GLOW_PHYSICS.intensityBase + ((1 - lum) * GLOBAL_GLOW_PHYSICS.intensityByDarkness);
 
   return {
     r,
@@ -102,7 +103,7 @@ export default function BacklitGlow({
   rInner,
   buttonDiameterPx,
   color,
-  opacity = 0.46,
+  opacity = GLOBAL_GLOW_PHYSICS.defaultAlpha,
   transitionMs = 190,
 }: BacklitGlowProps) {
   const glowPath = useMemo(() => donutPath(cx, cy, rOuter, rInner), [cx, cy, rOuter, rInner]);
@@ -167,7 +168,10 @@ export default function BacklitGlow({
 
   const colorMatrixValues = useMemo(() => {
     const colorGain = frame.intensity / 255;
-    const alphaGain = Math.max(0.85, frame.alpha * 2.25);
+    const alphaGain = Math.max(
+      GLOBAL_GLOW_PHYSICS.colorMatrixAlphaFloor,
+      frame.alpha * GLOBAL_GLOW_PHYSICS.colorMatrixAlphaMultiplier,
+    );
     return [
       `0 0 0 ${frame.r * colorGain} 0`,
       `0 0 0 ${frame.g * colorGain} 0`,
