@@ -240,7 +240,7 @@ export default function ButtonInsertPdp({
               question: 'Do I need a special removal tool?',
               answer: (
                 <p>
-                  No, but the Blink insert tool makes fitting and replacing inserts simple and safe.{' '}
+                  No, but the Keypad Co. insert tool makes fitting and replacing inserts simple and safe.{' '}
                   <a href="#" className="underline underline-offset-4">
                     Tool details coming soon
                   </a>

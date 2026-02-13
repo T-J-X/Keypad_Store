@@ -3,15 +3,15 @@
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
 import {
   DEFAULT_SLOT_SAFE_ZONE,
-  type KeypadModelGeometry,
+  getGeometryForModel,
+  getSlotIdsForGeometry,
   PKP_2200_SI_GEOMETRY,
   type SlotCoordMode,
   type SlotGeometry,
   type SlotSafeZone,
 } from '../../config/layouts/geometry';
-import { CONFIGURATOR_THEME } from '../../config/configurator/theme';
 import type { SlotVisualState } from '../../lib/configuratorStore';
-import { SLOT_IDS, type SlotId } from '../../lib/keypadConfiguration';
+import type { SlotId } from '../../lib/keypadConfiguration';
 import { assetUrl } from '../../lib/vendure';
 import BacklitGlow from './BacklitGlow';
 
@@ -41,23 +41,23 @@ type SvgSlotMetrics = {
 
 const ROTATION_ANIMATION_MS = 360;
 const WHITE_GLOW_LUMINANCE_THRESHOLD = 0.92;
-const DEFAULT_ICON_SCALE = 1;
+const DEFAULT_ICON_SCALE = 0.94;
 const MIN_ICON_SCALE = 0.4;
-const MAX_EFFECTIVE_ICON_SCALE = 1;
+const MAX_EFFECTIVE_ICON_SCALE = 1.68;
 const MIN_VISIBLE_ICON_RATIO = 0.08;
 const ICON_CLIP_RADIUS_PCT_OF_SLOT = 47;
 
-const MODEL_FALLBACK_SIZES: Record<string, IntrinsicSize> = {
-  [PKP_2200_SI_GEOMETRY.modelCode]: PKP_2200_SI_GEOMETRY.intrinsicSize,
+const EMPTY_SLOT_VISUAL_STATE: SlotVisualState = {
+  iconId: null,
+  iconName: null,
+  matteAssetPath: null,
+  glossyAssetPath: null,
+  productId: null,
+  variantId: null,
+  category: null,
+  sizeMm: null,
+  color: null,
 };
-
-const MODEL_GEOMETRIES: Record<string, KeypadModelGeometry> = {
-  [PKP_2200_SI_GEOMETRY.modelCode]: PKP_2200_SI_GEOMETRY,
-};
-
-function resolveModelGeometry(modelCode: string) {
-  return MODEL_GEOMETRIES[modelCode] ?? PKP_2200_SI_GEOMETRY;
-}
 
 function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
@@ -253,7 +253,7 @@ export default function KeypadPreview({
 }: {
   modelCode?: string;
   shellAssetPath?: string | null;
-  slots: Record<SlotId, SlotVisualState>;
+  slots: Record<string, SlotVisualState>;
   activeSlotId: SlotId | null;
   onSlotClick: (slotId: SlotId) => void;
   rotationDeg?: number;
@@ -264,12 +264,10 @@ export default function KeypadPreview({
   onRotate?: () => void;
   onToggleGlows?: () => void;
 }) {
-  const modelGeometry = useMemo(() => resolveModelGeometry(modelCode), [modelCode]);
+  const modelGeometry = useMemo(() => getGeometryForModel(modelCode), [modelCode]);
+  const slotIds = useMemo(() => getSlotIdsForGeometry(modelGeometry), [modelGeometry]);
   const shellSrc = shellAssetPath ? assetUrl(shellAssetPath) : '';
-  const fallbackSize = useMemo(
-    () => MODEL_FALLBACK_SIZES[modelGeometry.modelCode] ?? modelGeometry.intrinsicSize,
-    [modelGeometry],
-  );
+  const fallbackSize = useMemo(() => modelGeometry.intrinsicSize, [modelGeometry]);
   const [baseSize, setBaseSize] = useState<IntrinsicSize>(fallbackSize);
   const [hoveredSlotId, setHoveredSlotId] = useState<SlotId | null>(null);
   const [displayRotationDeg, setDisplayRotationDeg] = useState(rotationDeg);
@@ -331,13 +329,13 @@ export default function KeypadPreview({
   const canvasOffsetY = (canvasSize - baseH) / 2;
   const matteSrcBySlotId = useMemo(() => {
     const map = new Map<SlotId, string>();
-    for (const slotId of SLOT_IDS) {
-      const matteAssetPath = slots[slotId].matteAssetPath;
+    for (const slotId of slotIds) {
+      const matteAssetPath = slots[slotId]?.matteAssetPath;
       if (!matteAssetPath) continue;
       map.set(slotId, assetUrl(matteAssetPath));
     }
     return map;
-  }, [slots]);
+  }, [slotIds, slots]);
   const matteSources = useMemo(() => Array.from(new Set(matteSrcBySlotId.values())), [matteSrcBySlotId]);
 
   useEffect(() => {
@@ -437,7 +435,7 @@ export default function KeypadPreview({
 
   const slotCoordMode = modelGeometry.slotCoordMode;
   const slotMetrics = useMemo(
-    () => SLOT_IDS.map((slotId) => ({
+    () => slotIds.map((slotId) => ({
       slotId,
       metrics: buildSlotMetrics(
         modelGeometry.slots[slotId],
@@ -446,7 +444,7 @@ export default function KeypadPreview({
         slotCoordMode,
       ),
     })),
-    [baseH, baseW, modelGeometry.slots, slotCoordMode],
+    [baseH, baseW, modelGeometry.slots, slotCoordMode, slotIds],
   );
   const svgIdPrefix = useId();
   const safeSvgIdPrefix = useMemo(() => sanitizeSvgId(svgIdPrefix), [svgIdPrefix]);
@@ -479,7 +477,7 @@ export default function KeypadPreview({
             {showGlows ? 'Glows on' : 'Glows off'}
           </button>
           <div className="rounded-full border border-white/20 bg-[#06122a]/65 px-3 py-1 text-xs font-semibold tracking-[0.14em] text-blue-100">
-            2x2
+            {modelGeometry.layoutLabel}
           </div>
         </div>
       </div>
@@ -535,7 +533,7 @@ export default function KeypadPreview({
                 <image href={shellSrc} x={0} y={0} width={baseW} height={baseH} preserveAspectRatio="xMidYMid meet" />
 
                 {slotMetrics.map(({ slotId, metrics }) => {
-                  const slot = slots[slotId];
+                  const slot = slots[slotId] ?? EMPTY_SLOT_VISUAL_STATE;
                   const matteSrc = matteSrcBySlotId.get(slotId) ?? '';
                   const isEmptySlot = !matteSrc;
                   const showHoverPrompt = isEmptySlot && hoveredSlotId === slotId && activeSlotId == null;
@@ -560,8 +558,7 @@ export default function KeypadPreview({
                     MAX_EFFECTIVE_ICON_SCALE,
                     iconScaleValue / Math.max(MIN_VISIBLE_ICON_RATIO, visibleIconRatio),
                   );
-                  const iconBaseDiameter = metrics.sizePx * (CONFIGURATOR_THEME.iconFitPercent / 100);
-                  const iconSize = Math.min(metrics.clipRadius * 2, iconBaseDiameter * effectiveIconScale);
+                  const iconSize = Math.min(metrics.clipRadius * 2.18, metrics.sizePx * effectiveIconScale);
                   const iconX = metrics.cx - (iconSize / 2);
                   const iconY = metrics.cy - (iconSize / 2);
                   const ringColor = slot.color;

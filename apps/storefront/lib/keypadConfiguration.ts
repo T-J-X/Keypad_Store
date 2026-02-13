@@ -1,31 +1,65 @@
 export const SLOT_IDS = ['slot_1', 'slot_2', 'slot_3', 'slot_4'] as const;
 
-export type SlotId = (typeof SLOT_IDS)[number];
+export type SlotId = `slot_${number}`;
 
 export type SlotConfigurationDraft = {
   iconId: string | null;
   color: string | null;
 };
 
-export type KeypadConfigurationDraft = Record<SlotId, SlotConfigurationDraft>;
+export type KeypadConfigurationDraft = Record<string, SlotConfigurationDraft>;
 
 export type SlotConfiguration = {
   iconId: string;
   color: string | null;
 };
 
-export type KeypadConfiguration = Record<SlotId, SlotConfiguration>;
+export type KeypadConfiguration = Record<string, SlotConfiguration>;
 
 const ICON_ID_PATTERN = /^[A-Za-z0-9]{3,4}$/;
 const HEX_COLOR_PATTERN = /^#[0-9A-F]{6}$/;
+const SLOT_ID_PATTERN = /^slot_(\d+)$/i;
 
-export function createEmptyConfigurationDraft(): KeypadConfigurationDraft {
-  return {
-    slot_1: { iconId: null, color: null },
-    slot_2: { iconId: null, color: null },
-    slot_3: { iconId: null, color: null },
-    slot_4: { iconId: null, color: null },
-  };
+function slotIdToIndex(slotId: string) {
+  const match = slotId.match(SLOT_ID_PATTERN);
+  if (!match) return Number.POSITIVE_INFINITY;
+  const parsed = Number.parseInt(match[1], 10);
+  if (!Number.isFinite(parsed)) return Number.POSITIVE_INFINITY;
+  return parsed;
+}
+
+export function isSlotId(value: string): value is SlotId {
+  return SLOT_ID_PATTERN.test(value);
+}
+
+export function sortSlotIds(slotIds: readonly string[]): SlotId[] {
+  const unique = Array.from(new Set(slotIds.filter((slotId): slotId is SlotId => isSlotId(slotId))));
+  unique.sort((left, right) => slotIdToIndex(left) - slotIdToIndex(right));
+  return unique;
+}
+
+export function getOrderedSlotIdsFromConfiguration(configuration: unknown): SlotId[] {
+  if (!configuration || typeof configuration !== 'object' || Array.isArray(configuration)) {
+    return [];
+  }
+  return sortSlotIds(Object.keys(configuration as Record<string, unknown>));
+}
+
+function resolveSlotIds(
+  slotIds: readonly string[] | undefined,
+  fallbackSlotIds: readonly string[] = SLOT_IDS,
+) {
+  const normalized = sortSlotIds(slotIds ?? []);
+  if (normalized.length > 0) return normalized;
+  return sortSlotIds(fallbackSlotIds);
+}
+
+export function createEmptyConfigurationDraft(slotIds: readonly string[] = SLOT_IDS): KeypadConfigurationDraft {
+  const draft: KeypadConfigurationDraft = {};
+  for (const slotId of resolveSlotIds(slotIds)) {
+    draft[slotId] = { iconId: null, color: null };
+  }
+  return draft;
 }
 
 export function isValidIconId(value: string) {
@@ -41,8 +75,12 @@ export function normalizeRingColor(value: unknown): string | null {
   return HEX_COLOR_PATTERN.test(normalized) ? normalized : null;
 }
 
-export function isConfigurationComplete(configuration: KeypadConfigurationDraft) {
-  return SLOT_IDS.every((slotId) => {
+export function isConfigurationComplete(
+  configuration: KeypadConfigurationDraft,
+  slotIds?: readonly string[],
+) {
+  const keys = resolveSlotIds(slotIds, getOrderedSlotIdsFromConfiguration(configuration));
+  return keys.every((slotId) => {
     const iconId = configuration[slotId]?.iconId;
     return typeof iconId === 'string' && iconId.length > 0 && isValidIconId(iconId);
   });
@@ -50,10 +88,12 @@ export function isConfigurationComplete(configuration: KeypadConfigurationDraft)
 
 export function asStrictConfiguration(
   configuration: KeypadConfigurationDraft,
+  slotIds?: readonly string[],
 ): KeypadConfiguration | null {
-  const strictConfiguration = {} as KeypadConfiguration;
+  const keys = resolveSlotIds(slotIds, getOrderedSlotIdsFromConfiguration(configuration));
+  const strictConfiguration: KeypadConfiguration = {};
 
-  for (const slotId of SLOT_IDS) {
+  for (const slotId of keys) {
     const slot = configuration[slotId];
     const iconId = typeof slot?.iconId === 'string' ? slot.iconId.trim() : '';
     if (!iconId || !isValidIconId(iconId)) {
@@ -69,9 +109,13 @@ export function asStrictConfiguration(
   return strictConfiguration;
 }
 
-export function serializeConfiguration(configuration: KeypadConfigurationDraft | KeypadConfiguration): string {
-  const orderedConfiguration = {} as KeypadConfigurationDraft | KeypadConfiguration;
-  for (const slotId of SLOT_IDS) {
+export function serializeConfiguration(
+  configuration: KeypadConfigurationDraft | KeypadConfiguration,
+  slotIds?: readonly string[],
+): string {
+  const keys = resolveSlotIds(slotIds, getOrderedSlotIdsFromConfiguration(configuration));
+  const orderedConfiguration: KeypadConfigurationDraft | KeypadConfiguration = {};
+  for (const slotId of keys) {
     const slot = configuration[slotId];
     orderedConfiguration[slotId] = {
       iconId: slot?.iconId ?? null,
@@ -95,6 +139,7 @@ export function validateAndNormalizeConfigurationInput(
   input: unknown,
   options: {
     requireComplete?: boolean;
+    slotIds?: readonly string[];
   } = {},
 ): ValidationResult {
   const requireComplete = options.requireComplete ?? false;
@@ -115,15 +160,30 @@ export function validateAndNormalizeConfigurationInput(
   const payload = parsed as Record<string, unknown>;
   const payloadKeys = Object.keys(payload);
 
-  for (const key of payloadKeys) {
-    if (!SLOT_IDS.includes(key as SlotId)) {
-      return { ok: false, error: `Unexpected slot key "${key}" in configuration.` };
+  const nonSlotKeys = payloadKeys.filter((key) => !isSlotId(key));
+  if (nonSlotKeys.length > 0) {
+    return { ok: false, error: `Unexpected key "${nonSlotKeys[0]}" in configuration.` };
+  }
+
+  const expectedSlotIds = sortSlotIds(options.slotIds ?? []);
+  const payloadSlotIds = sortSlotIds(payloadKeys);
+  const slotIds = expectedSlotIds.length > 0 ? expectedSlotIds : payloadSlotIds;
+
+  if (slotIds.length === 0) {
+    return { ok: false, error: 'Configuration must include at least one slot entry.' };
+  }
+
+  if (expectedSlotIds.length > 0) {
+    for (const key of payloadSlotIds) {
+      if (!expectedSlotIds.includes(key)) {
+        return { ok: false, error: `Unexpected slot key "${key}" in configuration.` };
+      }
     }
   }
 
-  const normalized = createEmptyConfigurationDraft();
+  const normalized = createEmptyConfigurationDraft(slotIds);
 
-  for (const slotId of SLOT_IDS) {
+  for (const slotId of slotIds) {
     if (!(slotId in payload)) {
       return { ok: false, error: `Missing required slot "${slotId}" in configuration.` };
     }
@@ -155,10 +215,10 @@ export function validateAndNormalizeConfigurationInput(
     normalized[slotId].color = normalizedColor;
   }
 
-  if (requireComplete && !isConfigurationComplete(normalized)) {
+  if (requireComplete && !isConfigurationComplete(normalized, slotIds)) {
     return {
       ok: false,
-      error: 'Configuration is incomplete. All 4 slots require a valid iconId before checkout.',
+      error: `Configuration is incomplete. All ${slotIds.length} slots require a valid iconId before checkout.`,
     };
   }
 

@@ -1,11 +1,16 @@
 import { NextResponse } from 'next/server';
-import { PKP_2200_SI_GEOMETRY } from '../../../../config/layouts/geometry';
+import {
+  getGeometryForModel,
+  getSlotIdsForModel,
+  inferModelCodeFromSlotCount,
+  KEYPAD_MODEL_GEOMETRIES,
+} from '../../../../config/layouts/geometry';
 import {
   asStrictConfiguration,
-  SLOT_IDS,
+  getOrderedSlotIdsFromConfiguration,
   validateAndNormalizeConfigurationInput,
-  type SlotId,
 } from '../../../../lib/keypadConfiguration';
+import { resolvePkpModelCode } from '../../../../lib/keypadUtils';
 
 const SHOP_API = process.env.VENDURE_SHOP_API_URL || 'http://localhost:3000/shop-api';
 const VENDURE_HOST = process.env.NEXT_PUBLIC_VENDURE_HOST || 'http://localhost:3000';
@@ -134,6 +139,7 @@ type IconProductListResponse = {
 type BodyPayload = {
   orderCode?: unknown;
   designName?: unknown;
+  modelCode?: unknown;
   configuration?: unknown;
 };
 
@@ -147,8 +153,22 @@ export async function POST(request: Request) {
   const body = (await request.json().catch(() => null)) as BodyPayload | null;
   const designName = typeof body?.designName === 'string' ? body.designName.trim() : '';
   const orderCode = typeof body?.orderCode === 'string' ? body.orderCode.trim() : '';
+  const requestedModelCode = typeof body?.modelCode === 'string'
+    ? body.modelCode.trim().toUpperCase()
+    : '';
+  const hasRequestedModelGeometry = Boolean(KEYPAD_MODEL_GEOMETRIES[requestedModelCode]);
+  const requestedSlotIdsFromConfiguration = getOrderedSlotIdsFromConfiguration(body?.configuration);
+  const requestedSlotIdsFromModel = hasRequestedModelGeometry
+    ? getSlotIdsForModel(requestedModelCode)
+    : [];
+  const slotIdsForValidation = requestedSlotIdsFromModel.length > 0
+    ? requestedSlotIdsFromModel
+    : requestedSlotIdsFromConfiguration;
 
-  const configurationValidation = validateAndNormalizeConfigurationInput(body?.configuration, { requireComplete: true });
+  const configurationValidation = validateAndNormalizeConfigurationInput(body?.configuration, {
+    requireComplete: true,
+    slotIds: slotIdsForValidation.length > 0 ? slotIdsForValidation : undefined,
+  });
   if (!configurationValidation.ok) {
     return NextResponse.json({ error: configurationValidation.error }, { status: 400 });
   }
@@ -156,6 +176,15 @@ export async function POST(request: Request) {
   const requestedConfiguration = asStrictConfiguration(configurationValidation.value);
   if (!requestedConfiguration) {
     return NextResponse.json({ error: 'Configuration is incomplete.' }, { status: 400 });
+  }
+  let resolvedSlotIds = slotIdsForValidation.length > 0
+    ? slotIdsForValidation
+    : getOrderedSlotIdsFromConfiguration(requestedConfiguration);
+  let resolvedModelCode = hasRequestedModelGeometry
+    ? requestedModelCode
+    : (inferModelCodeFromSlotCount(resolvedSlotIds.length) ?? 'PKP-2200-SI');
+  if (resolvedSlotIds.length === 0) {
+    resolvedSlotIds = getSlotIdsForModel(resolvedModelCode);
   }
 
   let resolvedOrderCode = orderCode || 'PREVIEW';
@@ -197,7 +226,21 @@ export async function POST(request: Request) {
     }
 
     const requestedConfigJson = JSON.stringify(requestedConfiguration);
-    const matchingLine = exportData.lines.find((line) => line.configuration === requestedConfigJson);
+    const matchingLine = exportData.lines.find((line) => {
+      const parsed = validateAndNormalizeConfigurationInput(line.configuration, {
+        requireComplete: true,
+        slotIds: resolvedSlotIds.length > 0 ? resolvedSlotIds : undefined,
+      });
+      if (!parsed.ok) return false;
+
+      const strictLineConfiguration = asStrictConfiguration(
+        parsed.value,
+        resolvedSlotIds.length > 0 ? resolvedSlotIds : undefined,
+      );
+      if (!strictLineConfiguration) return false;
+
+      return JSON.stringify(strictLineConfiguration) === requestedConfigJson;
+    });
     if (!matchingLine) {
       return withSessionCookie(
         NextResponse.json(
@@ -208,8 +251,15 @@ export async function POST(request: Request) {
       );
     }
 
+    const lineModelCode = resolvePkpModelCode('', `${matchingLine.variantName} ${matchingLine.variantSku}`);
+    if (lineModelCode && KEYPAD_MODEL_GEOMETRIES[lineModelCode]) {
+      resolvedModelCode = lineModelCode;
+      resolvedSlotIds = getSlotIdsForModel(lineModelCode);
+    }
+
     const lineConfigurationValidation = validateAndNormalizeConfigurationInput(matchingLine.configuration, {
       requireComplete: true,
+      slotIds: resolvedSlotIds.length > 0 ? resolvedSlotIds : undefined,
     });
     if (!lineConfigurationValidation.ok) {
       return withSessionCookie(
@@ -224,7 +274,23 @@ export async function POST(request: Request) {
     resolvedLine = matchingLine;
   }
 
-  const iconIds = SLOT_IDS.map((slotId) => requestedConfiguration[slotId].iconId);
+  const resolvedGeometry = getGeometryForModel(resolvedModelCode);
+  const unsupportedSlotId = resolvedSlotIds.find((slotId) => !resolvedGeometry.slots[slotId]);
+  if (unsupportedSlotId) {
+    return withOptionalCookie(
+      NextResponse.json(
+        { error: `Unsupported slot layout for ${resolvedModelCode} (missing geometry for ${unsupportedSlotId}).` },
+        { status: 400 },
+      ),
+    );
+  }
+
+  const iconIds = resolvedSlotIds.map((slotId) => requestedConfiguration[slotId]?.iconId).filter(Boolean) as string[];
+  if (iconIds.length !== resolvedSlotIds.length) {
+    return withOptionalCookie(
+      NextResponse.json({ error: 'Configuration does not contain all expected slots for this model.' }, { status: 400 }),
+    );
+  }
   const iconAssetMap = await buildIconAssetMap(request, iconIds);
 
   const missingIconId = iconIds.find((iconId) => !iconAssetMap.has(iconId));
@@ -239,6 +305,8 @@ export async function POST(request: Request) {
     orderDate: resolvedOrderDate,
     customerName: resolvedCustomerName,
     line: resolvedLine,
+    modelCode: resolvedModelCode,
+    slotIds: resolvedSlotIds,
     configuration: requestedConfiguration,
     iconAssetMap,
   });
@@ -398,6 +466,8 @@ function renderPdfHtml({
   orderDate,
   customerName,
   line,
+  modelCode,
+  slotIds,
   configuration,
   iconAssetMap,
 }: {
@@ -405,9 +475,12 @@ function renderPdfHtml({
   orderDate: string;
   customerName: string | null;
   line: ExportOrderLine;
-  configuration: Record<SlotId, { iconId: string; color: string | null }>;
+  modelCode: string;
+  slotIds: string[];
+  configuration: Record<string, { iconId: string; color: string | null }>;
   iconAssetMap: Map<string, IconAssetMapping>;
 }) {
+  const geometry = getGeometryForModel(modelCode);
   const formattedDate = new Date(orderDate);
   const dateLabel = Number.isNaN(formattedDate.getTime())
     ? orderDate
@@ -417,26 +490,45 @@ function renderPdfHtml({
       day: 'numeric',
     }).format(formattedDate);
 
-  const slotRows = SLOT_IDS.map((slotId) => {
+  const slotRows = slotIds.reduce<Array<{
+    slotId: string;
+    slotLabel: string;
+    slotGeometry: {
+      cx: number;
+      cy: number;
+      r: number;
+    };
+    iconId: string;
+    iconName: string;
+    color: string;
+    matteAssetUrl: string;
+  }>>((rows, slotId) => {
     const slot = configuration[slotId];
-    const iconAsset = iconAssetMap.get(slot.iconId)!;
-    return {
+    const slotGeometry = geometry.slots[slotId];
+    if (!slot || !slotGeometry) return rows;
+
+    const iconAsset = iconAssetMap.get(slot.iconId);
+    if (!iconAsset) return rows;
+
+    rows.push({
       slotId,
+      slotLabel: slotGeometry.label || slotId.replace('_', ' '),
+      slotGeometry,
       iconId: slot.iconId,
       iconName: iconAsset.iconName,
       color: slot.color ?? 'No glow',
       matteAssetUrl: iconAsset.matteAssetUrl,
-    };
-  });
+    });
+    return rows;
+  }, []);
 
   const renderSlots = slotRows
     .map((row) => {
-      const geometry = PKP_2200_SI_GEOMETRY.slots[row.slotId];
       const position = {
-        left: `${geometry.cx * 100}%`,
-        top: `${geometry.cy * 100}%`,
-        width: `${geometry.r * 200}%`,
-        height: `${geometry.r * 200}%`,
+        left: `${row.slotGeometry.cx * 100}%`,
+        top: `${row.slotGeometry.cy * 100}%`,
+        width: `${row.slotGeometry.r * 200}%`,
+        height: `${row.slotGeometry.r * 200}%`,
       };
 
       return `
@@ -448,7 +540,7 @@ function renderPdfHtml({
               : ''
           }
           <img src="${row.matteAssetUrl}" alt="${escapeHtml(row.iconId)}" />
-          <span class="slot-label">${escapeHtml(row.slotId.replace('_', ' '))}</span>
+          <span class="slot-label">${escapeHtml(row.slotLabel)}</span>
         </div>
       `;
     })
@@ -458,7 +550,7 @@ function renderPdfHtml({
     .map(
       (row) => `
       <tr>
-        <td>${escapeHtml(row.slotId.replace('_', ' '))}</td>
+        <td>${escapeHtml(row.slotLabel)}</td>
         <td>${escapeHtml(row.iconId)}</td>
         <td>${escapeHtml(row.iconName)}</td>
         <td>${escapeHtml(row.color)}</td>
@@ -468,7 +560,7 @@ function renderPdfHtml({
     .join('');
 
   const visualWidthPx = 420;
-  const visualHeightPx = Math.round(visualWidthPx / PKP_2200_SI_GEOMETRY.aspectRatio);
+  const visualHeightPx = Math.round(visualWidthPx / geometry.aspectRatio);
 
   return `
     <!doctype html>
@@ -537,8 +629,8 @@ function renderPdfHtml({
             position: absolute;
             left: 50%;
             top: 50%;
-            width: ${PKP_2200_SI_GEOMETRY.buttonVisual.ringDiameterPctOfSlot}%;
-            height: ${PKP_2200_SI_GEOMETRY.buttonVisual.ringDiameterPctOfSlot}%;
+            width: ${geometry.buttonVisual.ringDiameterPctOfSlot}%;
+            height: ${geometry.buttonVisual.ringDiameterPctOfSlot}%;
             transform: translate(-50%, -50%);
             border-radius: 999px;
             box-shadow: inset 0 0 0 1.5px rgba(164,176,196,0.42), inset 0 2px 2px rgba(255,255,255,0.08), inset 0 -4px 6px rgba(0,0,0,0.35);
@@ -547,8 +639,8 @@ function renderPdfHtml({
             position: absolute;
             left: 50%;
             top: 50%;
-            width: ${PKP_2200_SI_GEOMETRY.buttonVisual.ringDiameterPctOfSlot}%;
-            height: ${PKP_2200_SI_GEOMETRY.buttonVisual.ringDiameterPctOfSlot}%;
+            width: ${geometry.buttonVisual.ringDiameterPctOfSlot}%;
+            height: ${geometry.buttonVisual.ringDiameterPctOfSlot}%;
             transform: translate(-50%, -50%);
             border-radius: 999px;
           }
@@ -556,8 +648,8 @@ function renderPdfHtml({
             position: absolute;
             left: 50%;
             top: 50%;
-            width: ${PKP_2200_SI_GEOMETRY.buttonVisual.iconDiameterPctOfSlot}%;
-            height: ${PKP_2200_SI_GEOMETRY.buttonVisual.iconDiameterPctOfSlot}%;
+            width: ${geometry.buttonVisual.iconDiameterPctOfSlot}%;
+            height: ${geometry.buttonVisual.iconDiameterPctOfSlot}%;
             transform: translate(-50%, -50%);
             object-fit: contain;
             filter: drop-shadow(0 1px 2px rgba(0,0,0,0.55));

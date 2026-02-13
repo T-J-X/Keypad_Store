@@ -11,11 +11,12 @@ import {
   countConfiguredSlots,
   emptyPreviewConfiguration,
   parseConfigurationForPreview,
+  resolvePreviewSlotIds,
   type ConfiguredIconLookup,
 } from '../../lib/configuredKeypadPreview';
-import { SLOT_IDS, type SlotId } from '../../lib/keypadConfiguration';
+import { resolvePkpModelCode } from '../../lib/keypadUtils';
 import { assetUrl } from '../../lib/vendure';
-import { PKP_2200_SI_LAYOUT } from '../../components/configurator/pkp2200Layout';
+import { getGeometryForModel } from '../../config/layouts/geometry';
 
 type CartOrderLine = {
   id: string;
@@ -72,8 +73,13 @@ const SWATCH_LABEL_BY_HEX = new Map(
     .map((option) => [option.value.toUpperCase(), option.label]),
 );
 
-function slotLabel(slotId: SlotId) {
-  return PKP_2200_SI_LAYOUT[slotId]?.label ?? slotId.replace('_', ' ');
+function slotLabel(slotId: string, modelCode: string | null) {
+  if (modelCode) {
+    const geometry = getGeometryForModel(modelCode);
+    const label = geometry.slots[slotId]?.label;
+    if (label) return label;
+  }
+  return slotId.replace('_', ' ');
 }
 
 function normalizeHex(value: string | null | undefined) {
@@ -244,6 +250,10 @@ export default function CartPage() {
             <ul className="divide-y divide-white/10">
               {order.lines.map((line) => {
                 const productSlug = line.productVariant?.product?.slug;
+                const modelCode = resolvePkpModelCode(
+                  productSlug ?? '',
+                  line.productVariant?.product?.name ?? line.productVariant?.name ?? '',
+                ) || null;
                 const imagePath = line.productVariant?.product?.featuredAsset?.preview
                   || line.productVariant?.product?.featuredAsset?.source
                   || '';
@@ -253,28 +263,33 @@ export default function CartPage() {
                 const previewConfiguration = hasConfiguration
                   ? parseConfigurationForPreview(configurationRaw)
                   : null;
+                const slotIds = resolvePreviewSlotIds({
+                  modelCode,
+                  configuration: previewConfiguration,
+                });
                 const configuredSlots = countConfiguredSlots(previewConfiguration);
                 const configurationRows = previewConfiguration
-                  ? SLOT_IDS.map((slotId) => {
-                      const row = previewConfiguration[slotId];
-                      const iconId = row?.iconId?.trim() || null;
-                      if (!iconId) return null;
-                      const iconEntry = iconLookup.get(iconId);
-                      const iconName = iconEntry?.iconName?.trim() || iconId;
-                      return {
-                        slotId,
-                        label: slotLabel(slotId),
-                        iconId,
-                        iconName,
-                        glow: swatchDescription(row?.color ?? null),
-                      };
-                    }).filter((row): row is {
-                      slotId: SlotId;
+                  ? slotIds.reduce<Array<{
+                      slotId: string;
                       label: string;
                       iconId: string;
                       iconName: string;
                       glow: string;
-                    } => Boolean(row))
+                    }>>((rows, slotId) => {
+                      const row = previewConfiguration[slotId];
+                      const iconId = row?.iconId?.trim() || null;
+                      if (!iconId) return rows;
+                      const iconEntry = iconLookup.get(iconId);
+                      const iconName = iconEntry?.iconName?.trim() || iconId;
+                      rows.push({
+                        slotId,
+                        label: slotLabel(slotId, modelCode),
+                        iconId,
+                        iconName,
+                        glow: swatchDescription(row?.color ?? null),
+                      });
+                      return rows;
+                    }, [])
                   : [];
                 const editConfigurationHref = hasConfiguration && productSlug
                   ? `/configurator/${productSlug}?lineId=${encodeURIComponent(line.id)}`
@@ -286,6 +301,7 @@ export default function CartPage() {
                     <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-white/15 bg-[#020916]">
                       {hasConfiguration ? (
                         <ConfiguredKeypadThumbnail
+                          modelCode={modelCode}
                           shellAssetPath={imagePath || null}
                           configuration={previewConfiguration ?? emptyPreviewConfiguration()}
                           iconLookup={iconLookup}
@@ -314,7 +330,7 @@ export default function CartPage() {
                       )}
                       {hasConfiguration ? (
                         <div className="mt-1 text-xs font-semibold uppercase tracking-[0.1em] text-[#9dcfff]">
-                          Custom configuration: {configuredSlots}/4 slots defined
+                          Custom configuration: {configuredSlots}/{slotIds.length} slots defined
                         </div>
                       ) : null}
 

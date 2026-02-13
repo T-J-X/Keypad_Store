@@ -4,10 +4,11 @@ import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { notifyCartUpdated } from '../lib/cartEvents';
 import { modelCodeToPkpSlug } from '../lib/keypadUtils';
+import { resolvePreviewSlotIds } from '../lib/configuredKeypadPreview';
 import {
-  SLOT_IDS,
   validateAndNormalizeConfigurationInput,
 } from '../lib/keypadConfiguration';
+import { getGeometryForModel } from '../config/layouts/geometry';
 
 type TabId = 'orders' | 'saved';
 
@@ -258,6 +259,7 @@ export default function AccountTabs() {
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           designName: item.name,
+          modelCode: item.keypadModel,
           configuration: validation.value,
         }),
       });
@@ -485,7 +487,15 @@ function PreviewModal({
   item: SavedConfigurationRecord;
   onClose: () => void;
 }) {
-  const parsed = validateAndNormalizeConfigurationInput(item.configuration, { requireComplete: false });
+  const slotIds = resolvePreviewSlotIds({
+    modelCode: item.keypadModel,
+    configuration: null,
+  });
+  const parsed = validateAndNormalizeConfigurationInput(item.configuration, {
+    requireComplete: false,
+    slotIds,
+  });
+  const geometry = getGeometryForModel(item.keypadModel);
 
   return (
     <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/55 px-4 py-6">
@@ -515,11 +525,13 @@ function PreviewModal({
                 </tr>
               </thead>
               <tbody>
-                {SLOT_IDS.map((slotId) => (
+                {slotIds.map((slotId) => (
                   <tr key={slotId} className="border-t border-ink/8">
-                    <td className="px-3 py-2 font-semibold text-ink">{slotId.replace('_', ' ')}</td>
-                    <td className="px-3 py-2 text-ink/75">{parsed.value[slotId].iconId ?? '—'}</td>
-                    <td className="px-3 py-2 text-ink/75">{parsed.value[slotId].color ?? 'No glow'}</td>
+                    <td className="px-3 py-2 font-semibold text-ink">
+                      {geometry.slots[slotId]?.label ?? slotId.replace('_', ' ')}
+                    </td>
+                    <td className="px-3 py-2 text-ink/75">{parsed.value[slotId]?.iconId ?? '—'}</td>
+                    <td className="px-3 py-2 text-ink/75">{parsed.value[slotId]?.color ?? 'No glow'}</td>
                   </tr>
                 ))}
               </tbody>

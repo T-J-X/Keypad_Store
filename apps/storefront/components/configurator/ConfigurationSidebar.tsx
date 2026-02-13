@@ -2,8 +2,7 @@
 
 import Link from 'next/link';
 import type { SlotVisualState } from '../../lib/configuratorStore';
-import { SLOT_IDS, type SlotId } from '../../lib/keypadConfiguration';
-import { PKP_2200_SI_LAYOUT } from './pkp2200Layout';
+import type { SlotId } from '../../lib/keypadConfiguration';
 import type { StatusMessage } from './types';
 
 const primarySlotButtonClass = [
@@ -18,6 +17,8 @@ const strongGhostButtonClass =
   'btn-ghost-strong inline-flex min-h-10 items-center justify-center px-3 text-xs font-semibold uppercase tracking-[0.1em] text-[#1f3a64] transition hover:border-[#6d88b6] hover:bg-white/85 hover:text-[#14335c]';
 
 export default function ConfigurationSidebar({
+  slotIds,
+  slotLabels,
   slots,
   isComplete,
   loadingSavedConfig,
@@ -30,7 +31,9 @@ export default function ConfigurationSidebar({
   onClearSlot,
   children,
 }: {
-  slots: Record<SlotId, SlotVisualState>;
+  slotIds: SlotId[];
+  slotLabels?: Record<string, string>;
+  slots: Record<string, SlotVisualState>;
   isComplete: boolean;
   loadingSavedConfig: boolean;
   iconsLoading: boolean;
@@ -42,6 +45,8 @@ export default function ConfigurationSidebar({
   onClearSlot: (slotId: SlotId) => void;
   children?: React.ReactNode;
 }) {
+  const totalSlots = slotIds.length;
+
   return (
     <section className="card-soft relative border-white/30 bg-white/70 p-5 shadow-[0_24px_48px_rgba(6,22,47,0.2)] backdrop-blur-xl sm:p-6">
       <h2 className="text-lg font-semibold tracking-tight text-[#10223f]">Slot Configuration</h2>
@@ -50,9 +55,19 @@ export default function ConfigurationSidebar({
       </p>
 
       <div className="mt-4 space-y-2">
-        {SLOT_IDS.map((slotId) => {
-          const slot = slots[slotId];
-          const label = PKP_2200_SI_LAYOUT[slotId].label;
+        {slotIds.map((slotId) => {
+          const slot = slots[slotId] ?? {
+            iconId: null,
+            iconName: null,
+            matteAssetPath: null,
+            glossyAssetPath: null,
+            productId: null,
+            variantId: null,
+            category: null,
+            sizeMm: null,
+            color: null,
+          };
+          const label = slotLabels?.[slotId] ?? slotId.replace('_', ' ');
           const isAssigned = Boolean(slot.iconId);
           const iconName = slot.iconName?.trim() || null;
           const iconId = slot.iconId?.trim() || null;
@@ -97,7 +112,7 @@ export default function ConfigurationSidebar({
 
       {!isComplete ? (
         <p className="mt-2 text-xs font-semibold text-[#8a2f2f]">
-          All 4 slots must be filled before Add to cart and Save to account.
+          All {totalSlots} slots must be filled before Add to cart and Save to account.
         </p>
       ) : null}
 

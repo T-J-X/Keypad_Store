@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { getSlotIdsForModel, KEYPAD_MODEL_GEOMETRIES } from '../../../../../config/layouts/geometry';
 import {
   serializeConfiguration,
   validateAndNormalizeConfigurationInput,
@@ -65,6 +66,7 @@ type DeleteSavedConfigurationResponse = {
 
 type PatchBody = {
   name?: unknown;
+  keypadModel?: unknown;
   configuration?: unknown;
 };
 
@@ -111,11 +113,18 @@ export async function PATCH(
   const body = (await request.json().catch(() => null)) as PatchBody | null;
 
   const name = typeof body?.name === 'string' ? body.name.trim() : '';
+  const keypadModel = typeof body?.keypadModel === 'string' ? body.keypadModel.trim().toUpperCase() : '';
   if (!name) {
     return NextResponse.json({ error: 'Configuration name cannot be empty.' }, { status: 400 });
   }
+  if (keypadModel && !KEYPAD_MODEL_GEOMETRIES[keypadModel]) {
+    return NextResponse.json({ error: `Unsupported keypad model "${keypadModel}".` }, { status: 400 });
+  }
 
-  const configValidation = validateAndNormalizeConfigurationInput(body?.configuration, { requireComplete: true });
+  const configValidation = validateAndNormalizeConfigurationInput(body?.configuration, {
+    requireComplete: true,
+    slotIds: keypadModel ? getSlotIdsForModel(keypadModel) : undefined,
+  });
   if (!configValidation.ok) {
     return NextResponse.json({ error: configValidation.error }, { status: 400 });
   }

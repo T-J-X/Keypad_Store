@@ -1,9 +1,15 @@
 import type { IconCatalogItem } from './configuratorCatalog';
 import {
   createEmptyConfigurationDraft,
+  getOrderedSlotIdsFromConfiguration,
   validateAndNormalizeConfigurationInput,
   type KeypadConfigurationDraft,
 } from './keypadConfiguration';
+import {
+  KEYPAD_MODEL_GEOMETRIES,
+  getSlotIdsForModel,
+  inferModelCodeFromSlotCount,
+} from '../config/layouts/geometry';
 
 export type ConfiguredIconLookupEntry = {
   iconId: string;
@@ -58,7 +64,20 @@ export function buildConfiguredIconLookupFromPayload(
 }
 
 export function parseConfigurationForPreview(input: unknown): KeypadConfigurationDraft | null {
-  const parsed = validateAndNormalizeConfigurationInput(input, { requireComplete: false });
+  let slotSource: unknown = input;
+  if (typeof input === 'string') {
+    try {
+      slotSource = JSON.parse(input);
+    } catch {
+      slotSource = null;
+    }
+  }
+
+  const slotIds = getOrderedSlotIdsFromConfiguration(slotSource);
+  const parsed = validateAndNormalizeConfigurationInput(input, {
+    requireComplete: false,
+    slotIds,
+  });
   if (!parsed.ok) return null;
   return parsed.value;
 }
@@ -78,4 +97,28 @@ export function countConfiguredSlots(configuration: KeypadConfigurationDraft | n
 
 export function emptyPreviewConfiguration(): KeypadConfigurationDraft {
   return createEmptyConfigurationDraft();
+}
+
+export function resolvePreviewSlotIds({
+  modelCode,
+  configuration,
+}: {
+  modelCode?: string | null;
+  configuration?: KeypadConfigurationDraft | null;
+}) {
+  const normalizedModelCode = (modelCode ?? '').trim().toUpperCase();
+  if (normalizedModelCode && KEYPAD_MODEL_GEOMETRIES[normalizedModelCode]) {
+    return getSlotIdsForModel(normalizedModelCode);
+  }
+
+  const configuredSlotCount = getOrderedSlotIdsFromConfiguration(configuration ?? {});
+  if (configuredSlotCount.length > 0) {
+    const inferredModelCode = inferModelCodeFromSlotCount(configuredSlotCount.length);
+    if (inferredModelCode) {
+      return getSlotIdsForModel(inferredModelCode);
+    }
+    return configuredSlotCount;
+  }
+
+  return getSlotIdsForModel('PKP-2200-SI');
 }

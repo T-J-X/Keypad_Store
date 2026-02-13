@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { resolvePkpModelCode } from '../../../../lib/keypadUtils';
+import { getSlotIdsForModel, KEYPAD_MODEL_GEOMETRIES } from '../../../../config/layouts/geometry';
 import {
   serializeConfiguration,
   validateAndNormalizeConfigurationInput,
@@ -135,8 +136,14 @@ export async function POST(request: Request) {
   if (!keypadModel) {
     return NextResponse.json({ error: 'Keypad model is required.' }, { status: 400 });
   }
+  if (!KEYPAD_MODEL_GEOMETRIES[keypadModel]) {
+    return NextResponse.json({ error: `Unsupported keypad model "${keypadModel}".` }, { status: 400 });
+  }
 
-  const configValidation = validateAndNormalizeConfigurationInput(body?.configuration, { requireComplete: true });
+  const configValidation = validateAndNormalizeConfigurationInput(body?.configuration, {
+    requireComplete: true,
+    slotIds: getSlotIdsForModel(keypadModel),
+  });
   if (!configValidation.ok) {
     return NextResponse.json({ error: configValidation.error }, { status: 400 });
   }

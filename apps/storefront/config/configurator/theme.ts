@@ -30,6 +30,6 @@ export const CONFIGURATOR_THEME: ConfiguratorTheme = {
     colorMatrixAlphaMultiplier: 2.25,
     blendMode: 'screen',
   },
-  // Strict icon fit guard: keep inserts inside the button well edge.
-  iconFitPercent: 55,
+  // Fit guard tuned to fill the matte insert area without clipping the well edge.
+  iconFitPercent: 60,
 };

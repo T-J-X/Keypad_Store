@@ -1,12 +1,17 @@
 'use client';
 
 import Image from 'next/image';
-import { type CSSProperties } from 'react';
-import type { KeypadConfigurationDraft, SlotId } from '../../lib/keypadConfiguration';
-import { SLOT_IDS } from '../../lib/keypadConfiguration';
+import { type CSSProperties, useEffect, useMemo, useState } from 'react';
+import type { KeypadConfigurationDraft } from '../../lib/keypadConfiguration';
+import { getOrderedSlotIdsFromConfiguration, sortSlotIds } from '../../lib/keypadConfiguration';
 import type { ConfiguredIconLookup, ConfiguredIconLookupEntry } from '../../lib/configuredKeypadPreview';
 import { assetUrl, categorySlug } from '../../lib/vendure';
-import { PKP_2200_SI_GEOMETRY } from '../../config/layouts/geometry';
+import {
+  KEYPAD_MODEL_GEOMETRIES,
+  getGeometryForModel,
+  getSlotIdsForGeometry,
+  inferModelCodeFromSlotCount,
+} from '../../config/layouts/geometry';
 import { CONFIGURATOR_THEME } from '../../config/configurator/theme';
 
 function resolveRingColor(value: string | null) {
@@ -44,23 +49,86 @@ function sizeClassFromVariant(size: 'sm' | 'md' | 'lg') {
 }
 
 export default function ConfiguredKeypadThumbnail({
+  modelCode,
   shellAssetPath,
   configuration,
   iconLookup,
   size = 'sm',
   showSlotLabels = false,
 }: {
+  modelCode?: string | null;
   shellAssetPath?: string | null;
   configuration: KeypadConfigurationDraft;
   iconLookup: ConfiguredIconLookup;
   size?: 'sm' | 'md' | 'lg';
   showSlotLabels?: boolean;
 }) {
+  const resolvedModelCode = useMemo(() => {
+    const normalized = (modelCode ?? '').trim().toUpperCase();
+    if (normalized && KEYPAD_MODEL_GEOMETRIES[normalized]) return normalized;
+
+    const configuredSlotCount = getOrderedSlotIdsFromConfiguration(configuration).length;
+    return inferModelCodeFromSlotCount(configuredSlotCount) ?? 'PKP-2200-SI';
+  }, [configuration, modelCode]);
+  const geometry = useMemo(() => getGeometryForModel(resolvedModelCode), [resolvedModelCode]);
+  const geometrySlotIds = useMemo(() => getSlotIdsForGeometry(geometry), [geometry]);
+  const configurationSlotIds = useMemo(
+    () => getOrderedSlotIdsFromConfiguration(configuration),
+    [configuration],
+  );
+  const slotIds = useMemo(() => {
+    if (configurationSlotIds.length === geometrySlotIds.length) {
+      const geometrySet = new Set(geometrySlotIds);
+      if (configurationSlotIds.every((slotId) => geometrySet.has(slotId))) {
+        return geometrySlotIds;
+      }
+    }
+
+    if (configurationSlotIds.length > 0) {
+      return sortSlotIds(configurationSlotIds);
+    }
+
+    return geometrySlotIds;
+  }, [configurationSlotIds, geometrySlotIds]);
   const shellSrc = shellAssetPath ? assetUrl(shellAssetPath) : '';
   const sizeClass = sizeClassFromVariant(size);
+  const [renderAspectRatio, setRenderAspectRatio] = useState(geometry.aspectRatio);
+
+  useEffect(() => {
+    if (!shellSrc || typeof window === 'undefined') {
+      setRenderAspectRatio(geometry.aspectRatio);
+      return;
+    }
+
+    let cancelled = false;
+    const image = new window.Image();
+    image.decoding = 'async';
+
+    image.onload = () => {
+      if (cancelled) return;
+      const width = image.naturalWidth;
+      const height = image.naturalHeight;
+      if (!width || !height) {
+        setRenderAspectRatio(geometry.aspectRatio);
+        return;
+      }
+      setRenderAspectRatio(width / height);
+    };
+
+    image.onerror = () => {
+      if (cancelled) return;
+      setRenderAspectRatio(geometry.aspectRatio);
+    };
+
+    image.src = shellSrc;
+
+    return () => {
+      cancelled = true;
+    };
+  }, [geometry.aspectRatio, shellSrc]);
 
   return (
-    <div className={sizeClass} style={{ aspectRatio: String(PKP_2200_SI_GEOMETRY.aspectRatio) }}>
+    <div className={sizeClass} style={{ aspectRatio: String(renderAspectRatio) }}>
       <div className="relative h-full w-full overflow-visible rounded-xl border border-[#0f2c5a]/20 bg-[radial-gradient(145%_125%_at_50%_0%,#2c75d8_0%,#12335f_40%,#081427_100%)]">
         <div className="absolute inset-0 overflow-hidden rounded-xl">
           {shellSrc ? (
@@ -76,27 +144,29 @@ export default function ConfiguredKeypadThumbnail({
           )}
         </div>
 
-        {SLOT_IDS.map((slotId) => {
-          const slot = configuration[slotId as SlotId];
+        {slotIds.map((slotId) => {
+          const slot = configuration[slotId];
           const iconId = slot?.iconId ?? null;
           const icon = iconId ? iconLookup.get(iconId) : undefined;
           const matteAssetPath = resolveMatteAssetPath(iconId, icon);
           const matteSrc = matteAssetPath ? assetUrl(matteAssetPath) : '';
           const ringColor = resolveRingColor(slot?.color ?? null);
 
-          const geometry = PKP_2200_SI_GEOMETRY.slots[slotId as SlotId];
-          const ringDiameter = PKP_2200_SI_GEOMETRY.buttonVisual.ringDiameterPctOfSlot;
-          const iconDiameter = CONFIGURATOR_THEME.iconFitPercent;
+          const slotGeometry = geometry.slots[slotId];
+          if (!slotGeometry) return null;
+
+          const ringDiameter = geometry.buttonVisual.ringDiameterPctOfSlot;
+          const iconDiameter = geometry.buttonVisual.iconDiameterPctOfSlot;
           const thumbnailGlowBlurPx = Math.max(
             2.5,
             CONFIGURATOR_THEME.glow.haloStdDeviation * 0.5,
           );
           const thumbnailGlowAlpha = Math.max(0.18, CONFIGURATOR_THEME.glow.thumbnailAlpha);
           const style: CSSProperties = {
-            left: `${geometry.cx * 100}%`,
-            top: `${geometry.cy * 100}%`,
-            width: `${geometry.r * 200}%`,
-            height: `${geometry.r * 200}%`,
+            left: `${slotGeometry.cx * 100}%`,
+            top: `${slotGeometry.cy * 100}%`,
+            width: `${slotGeometry.r * 200}%`,
+            height: `${slotGeometry.r * 200}%`,
             transform: 'translate(-50%, -50%)',
           };
 
@@ -108,7 +178,7 @@ export default function ConfiguredKeypadThumbnail({
             >
               {showSlotLabels ? (
                 <span className="pointer-events-none absolute left-1 top-1 z-30 rounded-full bg-[#04122d]/70 px-1 py-0.5 text-[8px] font-semibold uppercase tracking-[0.1em] text-blue-50/85">
-                  {geometry.label}
+                  {slotGeometry.label}
                 </span>
               ) : null}
 
@@ -158,7 +228,7 @@ export default function ConfiguredKeypadThumbnail({
                 </div>
               ) : (
                 <div className="pointer-events-none absolute inset-0 z-30 flex items-center justify-center">
-                  <span className="grid h-[55%] w-[55%] place-items-center text-base font-semibold text-white/60">+</span>
+                  <span className="grid h-[56%] w-[56%] place-items-center text-base font-semibold text-white/60">+</span>
                 </div>
               )}
             </div>

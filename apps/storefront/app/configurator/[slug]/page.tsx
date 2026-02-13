@@ -1,4 +1,3 @@
-import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import Pkp2200Configurator from '../../../components/configurator/Pkp2200Configurator';
@@ -35,24 +34,6 @@ async function ConfiguratorModelContent({
   if (!product) return notFound();
 
   const modelCode = resolvePkpModelCode(product.slug, product.name) || product.name.toUpperCase();
-
-  if (modelCode !== 'PKP-2200-SI') {
-    return (
-      <div className="mx-auto flex w-full max-w-5xl flex-col items-center px-6 pb-20 pt-16 text-center">
-        <div className="pill">Configurator Pilot</div>
-        <h1 className="mt-4 text-3xl font-semibold tracking-tight text-ink md:text-4xl">
-          {modelCode} coming next
-        </h1>
-        <p className="mt-3 max-w-2xl text-sm text-ink/60">
-          The interactive pilot currently targets PKP-2200-SI. This model will be enabled in the next rollout phase.
-        </p>
-        <div className="mt-6 flex flex-wrap justify-center gap-4">
-          <Link href="/configurator" className="btn-ghost">Back to models</Link>
-          <Link href="/configurator" className="btn-primary">Open PKP-2200-SI pilot</Link>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <Pkp2200Configurator

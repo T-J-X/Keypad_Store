@@ -5,6 +5,8 @@ import type { IconCatalogItem } from './configuratorCatalog';
 import {
   createEmptyConfigurationDraft,
   normalizeRingColor,
+  sortSlotIds,
+  SLOT_IDS,
   type KeypadConfigurationDraft,
   type SlotId,
 } from './keypadConfiguration';
@@ -23,17 +25,19 @@ export type SlotVisualState = {
 
 type ConfiguratorStoreState = {
   modelCode: string;
+  slotIds: SlotId[];
   activeSlotId: SlotId | null;
-  slots: Record<SlotId, SlotVisualState>;
+  slots: Record<string, SlotVisualState>;
   setActiveSlotId: (slotId: SlotId | null) => void;
   selectIconForSlot: (slotId: SlotId, icon: IconCatalogItem) => void;
   setSlotGlowColor: (slotId: SlotId, color: string | null) => void;
   hydrateFromSavedConfiguration: (
     configuration: KeypadConfigurationDraft,
     iconCatalog: IconCatalogItem[],
+    slotIds?: readonly string[],
   ) => void;
   clearSlot: (slotId: SlotId) => void;
-  reset: (modelCode: string) => void;
+  reset: (modelCode: string, slotIds?: readonly string[]) => void;
 };
 
 function createEmptySlot(): SlotVisualState {
@@ -50,21 +54,26 @@ function createEmptySlot(): SlotVisualState {
   };
 }
 
-function createEmptySlots(): Record<SlotId, SlotVisualState> {
-  return {
-    slot_1: createEmptySlot(),
-    slot_2: createEmptySlot(),
-    slot_3: createEmptySlot(),
-    slot_4: createEmptySlot(),
-  };
+function resolveSlotIds(slotIds?: readonly string[]) {
+  return sortSlotIds(slotIds ?? SLOT_IDS);
+}
+
+function createEmptySlots(slotIds?: readonly string[]): Record<string, SlotVisualState> {
+  const keys = resolveSlotIds(slotIds);
+  return keys.reduce<Record<string, SlotVisualState>>((accumulator, slotId) => {
+    accumulator[slotId] = createEmptySlot();
+    return accumulator;
+  }, {});
 }
 
 export function buildConfigurationDraftFromSlots(
-  slots: Record<SlotId, SlotVisualState>,
+  slots: Record<string, SlotVisualState>,
+  slotIds?: readonly string[],
 ): KeypadConfigurationDraft {
-  const draft = createEmptyConfigurationDraft();
+  const keys = resolveSlotIds(slotIds ?? Object.keys(slots));
+  const draft = createEmptyConfigurationDraft(keys);
 
-  for (const slotId of Object.keys(draft) as SlotId[]) {
+  for (const slotId of keys) {
     draft[slotId] = {
       iconId: slots[slotId]?.iconId ?? null,
       color: normalizeRingColor(slots[slotId]?.color),
@@ -76,8 +85,9 @@ export function buildConfigurationDraftFromSlots(
 
 export const useConfiguratorStore = create<ConfiguratorStoreState>((set) => ({
   modelCode: 'PKP-2200-SI',
+  slotIds: resolveSlotIds(),
   activeSlotId: null,
-  slots: createEmptySlots(),
+  slots: createEmptySlots(resolveSlotIds()),
   setActiveSlotId: (slotId) => {
     set({ activeSlotId: slotId });
   },
@@ -86,7 +96,7 @@ export const useConfiguratorStore = create<ConfiguratorStoreState>((set) => ({
       slots: {
         ...state.slots,
         [slotId]: {
-          ...state.slots[slotId],
+          ...(state.slots[slotId] ?? createEmptySlot()),
           iconId: icon.iconId,
           iconName: icon.name,
           matteAssetPath: icon.matteAssetPath,
@@ -104,19 +114,20 @@ export const useConfiguratorStore = create<ConfiguratorStoreState>((set) => ({
       slots: {
         ...state.slots,
         [slotId]: {
-          ...state.slots[slotId],
+          ...(state.slots[slotId] ?? createEmptySlot()),
           color: normalizeRingColor(color),
         },
       },
     }));
   },
-  hydrateFromSavedConfiguration: (configuration, iconCatalog) => {
+  hydrateFromSavedConfiguration: (configuration, iconCatalog, slotIds) => {
     const iconsById = new Map(iconCatalog.map((icon) => [icon.iconId, icon]));
+    const keys = resolveSlotIds(slotIds ?? Object.keys(configuration));
 
     set((state) => {
-      const nextSlots = createEmptySlots();
+      const nextSlots = createEmptySlots(keys);
 
-      for (const slotId of Object.keys(nextSlots) as SlotId[]) {
+      for (const slotId of keys) {
         const savedSlot = configuration[slotId];
         const iconId = typeof savedSlot?.iconId === 'string' ? savedSlot.iconId.trim() : '';
         const matchedIcon = iconId ? iconsById.get(iconId) : undefined;
@@ -135,10 +146,9 @@ export const useConfiguratorStore = create<ConfiguratorStoreState>((set) => ({
       }
 
       return {
-        slots: {
-          ...state.slots,
-          ...nextSlots,
-        },
+        modelCode: state.modelCode,
+        slotIds: keys,
+        slots: nextSlots,
       };
     });
   },
@@ -150,7 +160,13 @@ export const useConfiguratorStore = create<ConfiguratorStoreState>((set) => ({
       },
     }));
   },
-  reset: (modelCode) => {
-    set({ modelCode, activeSlotId: null, slots: createEmptySlots() });
+  reset: (modelCode, slotIds) => {
+    const keys = resolveSlotIds(slotIds);
+    set({
+      modelCode,
+      slotIds: keys,
+      activeSlotId: null,
+      slots: createEmptySlots(keys),
+    });
   },
 }));

@@ -16,11 +16,14 @@ import {
   type SlotId,
 } from '../../lib/keypadConfiguration';
 import { resolvePkpModelCode } from '../../lib/keypadUtils';
+import {
+  getGeometryForModel,
+  getSlotIdsForGeometry,
+} from '../../config/layouts/geometry';
 import ConfiguratorActions from './ConfiguratorActions';
 import ConfigurationSidebar from './ConfigurationSidebar';
 import KeypadPreview from './KeypadPreview';
 import IconSelectionPopup from './IconSelectionPopup';
-import { PKP_2200_SI_LAYOUT, PKP_2200_SI_SLOT_SIZE_MM } from './pkp2200Layout';
 import SaveDesignModal from './SaveDesignModal';
 import type { PilotKeypadProduct, SavedConfigurationItem, StatusMessage } from './types';
 import { useUIStore } from '../../lib/uiStore';
@@ -85,6 +88,16 @@ export default function Pkp2200Configurator({
 }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const modelGeometry = useMemo(() => getGeometryForModel(keypad.modelCode), [keypad.modelCode]);
+  const slotIds = useMemo(() => getSlotIdsForGeometry(modelGeometry), [modelGeometry]);
+  const slotLabelById = useMemo(
+    () => slotIds.reduce<Record<string, string>>((map, slotId) => {
+      map[slotId] = modelGeometry.slots[slotId]?.label ?? slotId.replace('_', ' ');
+      return map;
+    }, {}),
+    [modelGeometry.slots, slotIds],
+  );
+  const slotCount = slotIds.length;
 
   const slots = useConfiguratorStore((state) => state.slots);
   const setActiveSlotId = useConfiguratorStore((state) => state.setActiveSlotId);
@@ -123,8 +136,8 @@ export default function Pkp2200Configurator({
   const [editLineQuantity, setEditLineQuantity] = useState(1);
   const [recommendationSeedIconId, setRecommendationSeedIconId] = useState<string | null>(null);
   const selectedIconIds = useMemo(
-    () => Object.values(slots).map((slot) => slot.iconId ?? '').filter(Boolean) as string[],
-    [slots],
+    () => slotIds.map((slotId) => slots[slotId]?.iconId ?? '').filter(Boolean) as string[],
+    [slotIds, slots],
   );
 
   const loadSavedId = useMemo(() => {
@@ -137,6 +150,10 @@ export default function Pkp2200Configurator({
     const normalized = value?.trim() || '';
     return normalized || null;
   }, [searchParams]);
+  const resetScope = useMemo(
+    () => `${pathname ?? ''}::${keypad.slug}::${keypad.modelCode}::${loadSavedId ?? ''}::${editLineId ?? ''}`,
+    [editLineId, keypad.modelCode, keypad.slug, loadSavedId, pathname],
+  );
 
   const debugSlots = useMemo(() => searchParams.get('debugSlots') === '1', [searchParams]);
   const previewIconScaleFromQuery = useMemo(() => {
@@ -176,10 +193,9 @@ export default function Pkp2200Configurator({
   }, []);
 
   useEffect(() => {
-    const resetScope = `${keypad.modelCode}::${loadSavedId ?? ''}::${editLineId ?? ''}`;
     if (resetScopeRef.current === resetScope) return;
 
-    reset(keypad.modelCode);
+    reset(keypad.modelCode, slotIds);
     setLoadedSavedConfig(null);
     setSavedConfigError(null);
     setSaveStatus(null);
@@ -189,7 +205,7 @@ export default function Pkp2200Configurator({
     hydratedLoadIdRef.current = null;
     hydratedLineIdRef.current = null;
     resetScopeRef.current = resetScope;
-  }, [editLineId, keypad.modelCode, loadSavedId, reset]);
+  }, [keypad.modelCode, reset, resetScope, slotIds]);
 
   useEffect(() => {
     let cancelled = false;
@@ -300,22 +316,25 @@ export default function Pkp2200Configurator({
           );
         }
 
-        const parsed = validateAndNormalizeConfigurationInput(payload.item.configuration, { requireComplete: false });
+        const parsed = validateAndNormalizeConfigurationInput(payload.item.configuration, {
+          requireComplete: false,
+          slotIds,
+        });
         if (!parsed.ok) {
           throw new Error(parsed.error);
         }
 
         if (!cancelled) {
-          hydrateFromSavedConfiguration(parsed.value, icons);
+          hydrateFromSavedConfiguration(parsed.value, icons, slotIds);
           setLoadedSavedConfig(payload.item);
           setSaveName(payload.item.name);
-          const lastConfiguredIconId = Object.values(parsed.value)
-            .map((slot) => slot.iconId ?? '')
+          const lastConfiguredIconId = slotIds
+            .map((slotId) => parsed.value[slotId]?.iconId ?? '')
             .filter(Boolean)
             .at(-1) ?? null;
           setRecommendationSeedIconId(lastConfiguredIconId);
           hydratedLoadIdRef.current = loadSavedId;
-          resetScopeRef.current = `${keypad.modelCode}::${loadSavedId ?? ''}::${editLineId ?? ''}`;
+          resetScopeRef.current = resetScope;
           setSaveStatus({ type: 'success', message: `Loaded saved design "${payload.item.name}".` });
         }
       } catch (error) {
@@ -334,7 +353,7 @@ export default function Pkp2200Configurator({
     return () => {
       cancelled = true;
     };
-  }, [editLineId, hydrateFromSavedConfiguration, icons, keypad.modelCode, loadSavedId]);
+  }, [editLineId, hydrateFromSavedConfiguration, icons, keypad.modelCode, loadSavedId, resetScope, slotIds]);
 
   useEffect(() => {
     if (!editLineId) {
@@ -381,22 +400,25 @@ export default function Pkp2200Configurator({
           throw new Error('Selected cart line has no saved configuration.');
         }
 
-        const parsed = validateAndNormalizeConfigurationInput(configurationRaw, { requireComplete: false });
+        const parsed = validateAndNormalizeConfigurationInput(configurationRaw, {
+          requireComplete: false,
+          slotIds,
+        });
         if (!parsed.ok) {
           throw new Error(parsed.error);
         }
 
         if (!cancelled) {
-          hydrateFromSavedConfiguration(parsed.value, icons);
+          hydrateFromSavedConfiguration(parsed.value, icons, slotIds);
           setEditLineQuantity(Math.max(1, Math.floor(line.quantity ?? 1)));
-          const lastConfiguredIconId = Object.values(parsed.value)
-            .map((slot) => slot.iconId ?? '')
+          const lastConfiguredIconId = slotIds
+            .map((slotId) => parsed.value[slotId]?.iconId ?? '')
             .filter(Boolean)
             .at(-1) ?? null;
           setRecommendationSeedIconId(lastConfiguredIconId);
           setSaveStatus({ type: 'success', message: 'Loaded cart line configuration for editing.' });
           hydratedLineIdRef.current = editLineId;
-          resetScopeRef.current = `${keypad.modelCode}::${loadSavedId ?? ''}::${editLineId}`;
+          resetScopeRef.current = resetScope;
         }
       } catch (error) {
         if (cancelled) return;
@@ -414,11 +436,20 @@ export default function Pkp2200Configurator({
     return () => {
       cancelled = true;
     };
-  }, [editLineId, hydrateFromSavedConfiguration, icons, keypad.modelCode, loadSavedId]);
+  }, [editLineId, hydrateFromSavedConfiguration, icons, keypad.modelCode, loadSavedId, resetScope, slotIds]);
 
-  const configurationDraft = useMemo(() => buildConfigurationDraftFromSlots(slots), [slots]);
-  const strictConfiguration = useMemo(() => asStrictConfiguration(configurationDraft), [configurationDraft]);
-  const isComplete = useMemo(() => isConfigurationComplete(configurationDraft), [configurationDraft]);
+  const configurationDraft = useMemo(
+    () => buildConfigurationDraftFromSlots(slots, slotIds),
+    [slotIds, slots],
+  );
+  const strictConfiguration = useMemo(
+    () => asStrictConfiguration(configurationDraft, slotIds),
+    [configurationDraft, slotIds],
+  );
+  const isComplete = useMemo(
+    () => isConfigurationComplete(configurationDraft, slotIds),
+    [configurationDraft, slotIds],
+  );
 
   const openSlotPopup = (slotId: SlotId) => {
     setActiveSlotId(slotId);
@@ -448,8 +479,8 @@ export default function Pkp2200Configurator({
       setCartStatus({
         type: 'error',
         message: editLineId
-          ? 'Complete all 4 slots before updating this configured cart line.'
-          : 'Complete all 4 slots before adding this keypad to cart.',
+          ? `Complete all ${slotCount} slots before updating this configured cart line.`
+          : `Complete all ${slotCount} slots before adding this keypad to cart.`,
       });
       return;
     }
@@ -520,7 +551,7 @@ export default function Pkp2200Configurator({
 
   const onOpenSaveModal = () => {
     if (!strictConfiguration) {
-      setSaveStatus({ type: 'error', message: 'Complete all 4 slots before saving to account.' });
+      setSaveStatus({ type: 'error', message: `Complete all ${slotCount} slots before saving to account.` });
       return;
     }
 
@@ -538,7 +569,7 @@ export default function Pkp2200Configurator({
 
   const onSubmitSave = async () => {
     if (!strictConfiguration) {
-      setSaveStatus({ type: 'error', message: 'Complete all 4 slots before saving to account.' });
+      setSaveStatus({ type: 'error', message: `Complete all ${slotCount} slots before saving to account.` });
       return;
     }
 
@@ -593,7 +624,10 @@ export default function Pkp2200Configurator({
 
   const onDownloadPdf = async () => {
     if (!strictConfiguration) {
-      setSaveStatus({ type: 'error', message: 'Complete all 4 slots before generating the engineering PDF.' });
+      setSaveStatus({
+        type: 'error',
+        message: `Complete all ${slotCount} slots before generating the engineering PDF.`,
+      });
       return;
     }
 
@@ -614,6 +648,7 @@ export default function Pkp2200Configurator({
         body: JSON.stringify({
           orderCode: lastOrderCode ?? undefined,
           designName: loadedSavedConfig?.name ?? `${keypad.modelCode} Design`,
+          modelCode: keypad.modelCode,
           configuration: strictConfiguration,
         }),
       });
@@ -668,7 +703,7 @@ export default function Pkp2200Configurator({
             </Link>
             <button
               type="button"
-              onClick={() => reset(keypad.modelCode)}
+              onClick={() => reset(keypad.modelCode, slotIds)}
               className="inline-flex min-h-11 items-center rounded-full border border-white/20 bg-white/10 px-4 text-sm font-semibold text-white transition hover:border-white/45 hover:bg-white/16"
             >
               Reset slots
@@ -693,6 +728,8 @@ export default function Pkp2200Configurator({
           />
 
           <ConfigurationSidebar
+            slotIds={slotIds}
+            slotLabels={slotLabelById}
             slots={slots}
             isComplete={isComplete}
             loadingSavedConfig={loadingSavedConfig}
@@ -763,11 +800,11 @@ export default function Pkp2200Configurator({
       <IconSelectionPopup
         isOpen={popupSlotId != null}
         isMobile={isMobile}
-        slotSizeMm={PKP_2200_SI_SLOT_SIZE_MM}
-        slotLabel={popupSlotId ? PKP_2200_SI_LAYOUT[popupSlotId].label : 'Slot'}
+        slotSizeMm={modelGeometry.slotSizeMm}
+        slotLabel={popupSlotId ? slotLabelById[popupSlotId] ?? 'Slot' : 'Slot'}
         icons={icons}
-        selectedIconId={popupSlotId ? slots[popupSlotId].iconId : null}
-        selectedColor={popupSlotId ? slots[popupSlotId].color : null}
+        selectedIconId={popupSlotId ? slots[popupSlotId]?.iconId ?? null : null}
+        selectedColor={popupSlotId ? slots[popupSlotId]?.color ?? null : null}
         selectedIconIds={selectedIconIds}
         recommendationSeedIconId={recommendationSeedIconId}
         onSelectIcon={(icon) => {

@@ -4,10 +4,12 @@ import { useMemo, useState } from 'react';
 import ConfiguredKeypadThumbnail from '../configurator/ConfiguredKeypadThumbnail';
 import {
   buildConfiguredIconLookupFromPayload,
+  resolvePreviewSlotIds,
   type ConfiguredIconLookup,
 } from '../../lib/configuredKeypadPreview';
-import type { SlotId, KeypadConfigurationDraft } from '../../lib/keypadConfiguration';
-import { SLOT_IDS } from '../../lib/keypadConfiguration';
+import type { KeypadConfigurationDraft } from '../../lib/keypadConfiguration';
+import { resolvePkpModelCode } from '../../lib/keypadUtils';
+import { getGeometryForModel } from '../../config/layouts/geometry';
 
 type TechnicalSpecLine = {
   lineId: string;
@@ -65,6 +67,21 @@ export default function OrderTechnicalSpecification({
     }
     return specData.lines[0] ?? null;
   }, [activeLineId, specData]);
+  const activeModelCode = useMemo(() => {
+    if (!activeLine) return null;
+    return resolvePkpModelCode('', `${activeLine.variantName} ${activeLine.variantSku}`) || null;
+  }, [activeLine]);
+  const activeGeometry = useMemo(
+    () => (activeModelCode ? getGeometryForModel(activeModelCode) : null),
+    [activeModelCode],
+  );
+  const activeSlotIds = useMemo(
+    () => resolvePreviewSlotIds({
+      modelCode: activeModelCode,
+      configuration: activeLine?.configuration ?? null,
+    }),
+    [activeLine?.configuration, activeModelCode],
+  );
 
   const loadTechnicalSpec = async () => {
     setIsLoading(true);
@@ -125,6 +142,7 @@ export default function OrderTechnicalSpecification({
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({
           orderCode,
+          modelCode: activeModelCode ?? undefined,
           configuration: activeLine.configuration,
         }),
       });
@@ -219,6 +237,7 @@ export default function OrderTechnicalSpecification({
                   ) : null}
 
                   <ConfiguredKeypadThumbnail
+                    modelCode={activeModelCode}
                     shellAssetPath={null}
                     configuration={activeLine.configuration}
                     iconLookup={iconLookup}
@@ -250,15 +269,17 @@ export default function OrderTechnicalSpecification({
                         </tr>
                       </thead>
                       <tbody>
-                        {SLOT_IDS.map((slotId) => {
-                          const slot = activeLine.configuration[slotId as SlotId];
-                          const iconMeta = slot.iconId ? iconLookup.get(slot.iconId) : undefined;
+                        {activeSlotIds.map((slotId) => {
+                          const slot = activeLine.configuration[slotId];
+                          const iconMeta = slot?.iconId ? iconLookup.get(slot.iconId) : undefined;
                           return (
                             <tr key={slotId} className="border-t border-white/15 text-blue-50/90">
-                              <td className="px-3 py-2 font-semibold">{slotId.replace('_', ' ')}</td>
-                              <td className="px-3 py-2 font-mono">{slot.iconId || 'N/A'}</td>
+                              <td className="px-3 py-2 font-semibold">
+                                {activeGeometry?.slots[slotId]?.label ?? slotId.replace('_', ' ')}
+                              </td>
+                              <td className="px-3 py-2 font-mono">{slot?.iconId || 'N/A'}</td>
                               <td className="px-3 py-2">{iconMeta?.iconName || 'Unknown icon'}</td>
-                              <td className="px-3 py-2">{slot.color || 'No glow'}</td>
+                              <td className="px-3 py-2">{slot?.color || 'No glow'}</td>
                             </tr>
                           );
                         })}

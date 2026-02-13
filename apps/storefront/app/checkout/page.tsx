@@ -11,8 +11,10 @@ import {
   countConfiguredSlots,
   emptyPreviewConfiguration,
   parseConfigurationForPreview,
+  resolvePreviewSlotIds,
   type ConfiguredIconLookup,
 } from '../../lib/configuredKeypadPreview';
+import { resolvePkpModelCode } from '../../lib/keypadUtils';
 import { assetUrl } from '../../lib/vendure';
 
 type ShippingMethodQuote = {
@@ -341,6 +343,14 @@ export default function CheckoutPage() {
                     const previewConfiguration = hasConfiguration
                       ? parseConfigurationForPreview(configurationRaw)
                       : null;
+                    const modelCode = resolvePkpModelCode(
+                      line.productVariant?.product?.slug ?? '',
+                      line.productVariant?.product?.name ?? line.productVariant?.name ?? '',
+                    ) || null;
+                    const slotIds = resolvePreviewSlotIds({
+                      modelCode,
+                      configuration: previewConfiguration,
+                    });
                     const configuredSlots = countConfiguredSlots(previewConfiguration);
                     const imagePath = line.productVariant?.product?.featuredAsset?.preview
                       || line.productVariant?.product?.featuredAsset?.source
@@ -352,6 +362,7 @@ export default function CheckoutPage() {
                         <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-neutral-100">
                           {hasConfiguration ? (
                             <ConfiguredKeypadThumbnail
+                              modelCode={modelCode}
                               shellAssetPath={imagePath || null}
                               configuration={previewConfiguration ?? emptyPreviewConfiguration()}
                               iconLookup={iconLookup}
@@ -373,7 +384,7 @@ export default function CheckoutPage() {
                           </div>
                           {hasConfiguration ? (
                             <div className="mt-1 text-xs font-semibold uppercase tracking-[0.1em] text-[#9dcfff]">
-                              Custom configuration: {configuredSlots}/4 slots defined
+                              Custom configuration: {configuredSlots}/{slotIds.length} slots defined
                             </div>
                           ) : null}
                           <div className="mt-1 text-xs text-blue-100/70">Qty {line.quantity}</div>
