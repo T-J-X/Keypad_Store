@@ -39,6 +39,12 @@ type SvgSlotMetrics = {
   safeZone: SlotSafeZone;
 };
 
+type MatteVisibleMetrics = {
+  ratio: number;
+  centerX: number;
+  centerY: number;
+};
+
 const ROTATION_ANIMATION_MS = 360;
 const WHITE_GLOW_LUMINANCE_THRESHOLD = 0.92;
 const DEFAULT_ICON_SCALE = 0.94;
@@ -46,6 +52,15 @@ const MIN_ICON_SCALE = 0.4;
 const MAX_EFFECTIVE_ICON_SCALE = 1.68;
 const MIN_VISIBLE_ICON_RATIO = 0.08;
 const ICON_CLIP_RADIUS_PCT_OF_SLOT = 47;
+const ICON_CLIP_RADIUS_PCT_BY_MODEL: Partial<Record<string, number>> = {
+  'PKP-2500-SI': 54,
+  'PKP-2600-SI': 54,
+};
+const DEFAULT_MATTE_VISIBLE_METRICS: MatteVisibleMetrics = {
+  ratio: 1,
+  centerX: 0.5,
+  centerY: 0.5,
+};
 
 const EMPTY_SLOT_VISUAL_STATE: SlotVisualState = {
   iconId: null,
@@ -100,8 +115,8 @@ function colorLuminance(color: string | null | undefined) {
   return ((0.2126 * r) + (0.7152 * g) + (0.0722 * b)) / 255;
 }
 
-async function measureVisibleIconRatio(src: string): Promise<number> {
-  if (typeof window === 'undefined') return 1;
+async function measureVisibleIconMetrics(src: string): Promise<MatteVisibleMetrics> {
+  if (typeof window === 'undefined') return DEFAULT_MATTE_VISIBLE_METRICS;
 
   return new Promise((resolve) => {
     const image = new window.Image();
@@ -111,7 +126,7 @@ async function measureVisibleIconRatio(src: string): Promise<number> {
       const width = image.naturalWidth;
       const height = image.naturalHeight;
       if (!width || !height) {
-        resolve(1);
+        resolve(DEFAULT_MATTE_VISIBLE_METRICS);
         return;
       }
 
@@ -120,7 +135,7 @@ async function measureVisibleIconRatio(src: string): Promise<number> {
       canvas.height = height;
       const ctx = canvas.getContext('2d', { willReadFrequently: true });
       if (!ctx) {
-        resolve(1);
+        resolve(DEFAULT_MATTE_VISIBLE_METRICS);
         return;
       }
 
@@ -147,19 +162,23 @@ async function measureVisibleIconRatio(src: string): Promise<number> {
         }
 
         if (maxX < 0 || maxY < 0) {
-          resolve(1);
+          resolve(DEFAULT_MATTE_VISIBLE_METRICS);
           return;
         }
 
         const visibleWidth = maxX - minX + 1;
         const visibleHeight = maxY - minY + 1;
         const ratio = Math.max(visibleWidth / width, visibleHeight / height);
-        resolve(clamp(ratio, MIN_VISIBLE_ICON_RATIO, 1));
+        resolve({
+          ratio: clamp(ratio, MIN_VISIBLE_ICON_RATIO, 1),
+          centerX: clamp((minX + maxX + 1) / (2 * width), 0, 1),
+          centerY: clamp((minY + maxY + 1) / (2 * height), 0, 1),
+        });
       } catch {
-        resolve(1);
+        resolve(DEFAULT_MATTE_VISIBLE_METRICS);
       }
     };
-    image.onerror = () => resolve(1);
+    image.onerror = () => resolve(DEFAULT_MATTE_VISIBLE_METRICS);
     image.src = src;
   });
 }
@@ -169,6 +188,7 @@ function buildSlotMetrics(
   baseW: number,
   baseH: number,
   defaultCoordMode: SlotCoordMode,
+  iconClipRadiusPctOfSlot: number,
 ): SvgSlotMetrics {
   const safeZone = {
     ...DEFAULT_SLOT_SAFE_ZONE,
@@ -210,7 +230,7 @@ function buildSlotMetrics(
   const buttonRadiusPx = wellDiameterPx / 2;
   const rOuter = buttonRadiusPx * (safeZone.ledOuterPctOfWell / 100);
   const rInner = buttonRadiusPx * (safeZone.ledInnerPctOfWell / 100);
-  const clipRadius = sizePx * (ICON_CLIP_RADIUS_PCT_OF_SLOT / 100);
+  const clipRadius = sizePx * (iconClipRadiusPctOfSlot / 100);
   const iconDiameterPx = clipRadius * 2;
 
   return {
@@ -273,9 +293,9 @@ export default function KeypadPreview({
   const [displayRotationDeg, setDisplayRotationDeg] = useState(rotationDeg);
   const displayRotationRef = useRef(rotationDeg);
   const rotationFrameRef = useRef<number | null>(null);
-  const matteVisibleRatioCacheRef = useRef<Map<string, number>>(new Map());
-  const pendingMatteRatioBySrcRef = useRef<Set<string>>(new Set());
-  const [matteVisibleRatioBySrc, setMatteVisibleRatioBySrc] = useState<Record<string, number>>({});
+  const matteVisibleMetricsCacheRef = useRef<Map<string, MatteVisibleMetrics>>(new Map());
+  const pendingMatteMetricsBySrcRef = useRef<Set<string>>(new Set());
+  const [matteVisibleMetricsBySrc, setMatteVisibleMetricsBySrc] = useState<Record<string, MatteVisibleMetrics>>({});
   const iconScaleValue = useMemo(() => normalizeIconScale(iconScale), [iconScale]);
 
   useEffect(() => {
@@ -349,31 +369,47 @@ export default function KeypadPreview({
     let cancelled = false;
 
     for (const src of matteSources) {
-      if (matteVisibleRatioCacheRef.current.has(src)) {
+      if (matteVisibleMetricsCacheRef.current.has(src)) {
         continue;
       }
-      if (pendingMatteRatioBySrcRef.current.has(src)) {
+      if (pendingMatteMetricsBySrcRef.current.has(src)) {
         continue;
       }
 
-      pendingMatteRatioBySrcRef.current.add(src);
-      void measureVisibleIconRatio(src)
-        .then((ratio) => {
-          pendingMatteRatioBySrcRef.current.delete(src);
-          matteVisibleRatioCacheRef.current.set(src, ratio);
+      pendingMatteMetricsBySrcRef.current.add(src);
+      void measureVisibleIconMetrics(src)
+        .then((metrics) => {
+          pendingMatteMetricsBySrcRef.current.delete(src);
+          matteVisibleMetricsCacheRef.current.set(src, metrics);
           if (cancelled) return;
-          setMatteVisibleRatioBySrc((previous) => {
-            if (previous[src] === ratio) return previous;
-            return { ...previous, [src]: ratio };
+          setMatteVisibleMetricsBySrc((previous) => {
+            const previousMetrics = previous[src];
+            if (
+              previousMetrics
+              && previousMetrics.ratio === metrics.ratio
+              && previousMetrics.centerX === metrics.centerX
+              && previousMetrics.centerY === metrics.centerY
+            ) {
+              return previous;
+            }
+            return { ...previous, [src]: metrics };
           });
         })
         .catch(() => {
-          pendingMatteRatioBySrcRef.current.delete(src);
-          matteVisibleRatioCacheRef.current.set(src, 1);
+          pendingMatteMetricsBySrcRef.current.delete(src);
+          matteVisibleMetricsCacheRef.current.set(src, DEFAULT_MATTE_VISIBLE_METRICS);
           if (cancelled) return;
-          setMatteVisibleRatioBySrc((previous) => {
-            if (previous[src] === 1) return previous;
-            return { ...previous, [src]: 1 };
+          setMatteVisibleMetricsBySrc((previous) => {
+            const previousMetrics = previous[src];
+            if (
+              previousMetrics
+              && previousMetrics.ratio === DEFAULT_MATTE_VISIBLE_METRICS.ratio
+              && previousMetrics.centerX === DEFAULT_MATTE_VISIBLE_METRICS.centerX
+              && previousMetrics.centerY === DEFAULT_MATTE_VISIBLE_METRICS.centerY
+            ) {
+              return previous;
+            }
+            return { ...previous, [src]: DEFAULT_MATTE_VISIBLE_METRICS };
           });
         });
     }
@@ -434,6 +470,7 @@ export default function KeypadPreview({
   }, [rotationDeg]);
 
   const slotCoordMode = modelGeometry.slotCoordMode;
+  const iconClipRadiusPctOfSlot = ICON_CLIP_RADIUS_PCT_BY_MODEL[modelCode] ?? ICON_CLIP_RADIUS_PCT_OF_SLOT;
   const slotMetrics = useMemo(
     () => slotIds.map((slotId) => ({
       slotId,
@@ -442,9 +479,10 @@ export default function KeypadPreview({
         baseW,
         baseH,
         slotCoordMode,
+        iconClipRadiusPctOfSlot,
       ),
     })),
-    [baseH, baseW, modelGeometry.slots, slotCoordMode, slotIds],
+    [baseH, baseW, iconClipRadiusPctOfSlot, modelGeometry.slots, slotCoordMode, slotIds],
   );
   const svgIdPrefix = useId();
   const safeSvgIdPrefix = useMemo(() => sanitizeSvgId(svgIdPrefix), [svgIdPrefix]);
@@ -551,16 +589,21 @@ export default function KeypadPreview({
                   const arrowCenterX = hoverPromptX + (hoverPromptWidth / 2);
                   const textCenterX = hoverPromptX + (hoverPromptWidth / 2);
                   const textBaselineY = hoverPromptY + (hoverPromptHeight / 2) + Math.max(4, hoverPromptHeight * 0.08);
-                  const visibleIconRatio = matteSrc
-                    ? (matteVisibleRatioBySrc[matteSrc] ?? matteVisibleRatioCacheRef.current.get(matteSrc) ?? 1)
-                    : 1;
+                  const visibleMetrics = matteSrc
+                    ? (matteVisibleMetricsBySrc[matteSrc]
+                      ?? matteVisibleMetricsCacheRef.current.get(matteSrc)
+                      ?? DEFAULT_MATTE_VISIBLE_METRICS)
+                    : DEFAULT_MATTE_VISIBLE_METRICS;
+                  const visibleIconRatio = visibleMetrics.ratio;
                   const effectiveIconScale = Math.min(
                     MAX_EFFECTIVE_ICON_SCALE,
                     iconScaleValue / Math.max(MIN_VISIBLE_ICON_RATIO, visibleIconRatio),
                   );
                   const iconSize = Math.min(metrics.clipRadius * 2.18, metrics.sizePx * effectiveIconScale);
-                  const iconX = metrics.cx - (iconSize / 2);
-                  const iconY = metrics.cy - (iconSize / 2);
+                  const iconCenterOffsetX = (visibleMetrics.centerX - 0.5) * iconSize;
+                  const iconCenterOffsetY = (visibleMetrics.centerY - 0.5) * iconSize;
+                  const iconX = metrics.cx - (iconSize / 2) - iconCenterOffsetX;
+                  const iconY = metrics.cy - (iconSize / 2) - iconCenterOffsetY;
                   const ringColor = slot.color;
                   const ringLuminance = colorLuminance(ringColor);
                   const isWhiteGlow = ringLuminance >= WHITE_GLOW_LUMINANCE_THRESHOLD;

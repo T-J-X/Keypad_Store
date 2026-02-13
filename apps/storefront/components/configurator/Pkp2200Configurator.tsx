@@ -81,6 +81,12 @@ function toPlainText(value: string | null | undefined) {
     .trim();
 }
 
+const DEFAULT_PREVIEW_ICON_SCALE_BY_MODEL: Record<string, number> = {
+  'PKP-2300-SI': 1.02,
+  'PKP-2500-SI': 1.28,
+  'PKP-2600-SI': 1.28,
+};
+
 export default function Pkp2200Configurator({
   keypad,
 }: {
@@ -163,6 +169,10 @@ export default function Pkp2200Configurator({
     if (!Number.isFinite(value) || value <= 0) return undefined;
     return Math.max(0.4, Math.min(1.26, value));
   }, [searchParams]);
+  const previewIconScale = useMemo(
+    () => previewIconScaleFromQuery ?? DEFAULT_PREVIEW_ICON_SCALE_BY_MODEL[keypad.modelCode] ?? undefined,
+    [keypad.modelCode, previewIconScaleFromQuery],
+  );
   const previewRotationFromQuery = useMemo(() => {
     const value = Number.parseFloat(searchParams.get('rotationDeg') || '0');
     if (!Number.isFinite(value)) return 0;
@@ -719,7 +729,7 @@ export default function Pkp2200Configurator({
             activeSlotId={popupSlotId}
             onSlotClick={openSlotPopup}
             rotationDeg={previewRotationDeg}
-            iconScale={previewIconScaleFromQuery}
+            iconScale={previewIconScale}
             debugSlots={debugSlots}
             descriptionText={keypadDescription}
             showGlows={previewShowGlows}
