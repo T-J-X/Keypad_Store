@@ -309,10 +309,8 @@ export const PKP_2300_SI_GEOMETRY = buildGridModelGeometry({
     height: 580,
   },
   gridBounds: {
-    xStartPct: 23.4,
-    xEndPct: 76.1,
-    yStartPct: 20.6,
-    yEndPct: 73.7,
+    xCentersPct: [23.8, 50.0, 75.5],
+    yCentersPct: [20.7, 74.0],
   },
 });
 
@@ -324,6 +322,10 @@ export const PKP_2400_SI_GEOMETRY = buildGridModelGeometry({
   intrinsicSize: {
     width: 1320,
     height: 580,
+  },
+  gridBounds: {
+    xCentersPct: [13.5, 38.1, 61.9, 84.2],
+    yCentersPct: [17.2, 75.3],
   },
 });
 
@@ -337,10 +339,8 @@ export const PKP_2500_SI_GEOMETRY = buildGridModelGeometry({
     height: 580,
   },
   gridBounds: {
-    xStartPct: 9.8,
-    xEndPct: 90.2,
-    yStartPct: 24.0,
-    yEndPct: 75.4,
+    xCentersPct: [9.9, 30.8, 50.0, 69.0, 89.2],
+    yCentersPct: [24.0, 75.6],
   },
 });
 
@@ -354,10 +354,8 @@ export const PKP_2600_SI_GEOMETRY = buildGridModelGeometry({
     height: 580,
   },
   gridBounds: {
-    xStartPct: 9.9,
-    xEndPct: 90.1,
-    yStartPct: 24.8,
-    yEndPct: 75.1,
+    xCentersPct: [9.9, 25.9, 41.8, 58.0, 74.0, 90.0],
+    yCentersPct: [24.0, 75.0],
   },
 });
 
@@ -371,10 +369,8 @@ export const PKP_3500_SI_GEOMETRY = buildGridModelGeometry({
     height: 700,
   },
   gridBounds: {
-    xStartPct: 10.8,
-    xEndPct: 88.9,
-    yStartPct: 15.0,
-    yEndPct: 83.4,
+    xCentersPct: [10.8, 30.9, 49.8, 68.2, 89.0],
+    yCentersPct: [15.0, 50.2, 83.2],
   },
 });
 
