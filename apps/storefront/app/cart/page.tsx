@@ -207,22 +207,22 @@ export default function CartPage() {
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 pb-16 pt-10 sm:px-6 lg:px-8">
-      <div className="rounded-3xl border border-[#0f2c5a] bg-[radial-gradient(130%_130%_at_50%_0%,#1b5dae_0%,#0e2a55_36%,#050f23_100%)] p-5 shadow-[0_34px_100px_rgba(2,10,28,0.45)] sm:p-6">
+      <div className="card-panel p-5 sm:p-6">
         <div className="mb-8 flex items-center justify-between gap-4">
           <div>
             <h1 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">Cart</h1>
-            <p className="mt-1 text-sm text-blue-100/80">Review your selected keypad components before checkout.</p>
+            <p className="mt-1 text-sm text-panel-muted">Review your selected keypad components before checkout.</p>
           </div>
           <Link
             href="/shop"
-            className="inline-flex min-h-[44px] w-full min-w-[12rem] items-center justify-center rounded-2xl border border-white/30 px-5 py-2 text-sm font-semibold text-blue-50 whitespace-nowrap transition hover:border-white hover:bg-white/10 sm:w-auto"
+            className="btn-secondary dark w-full sm:w-auto"
           >
             Continue shopping
           </Link>
         </div>
 
         {isLoading ? (
-          <div className="card-soft border-white/12 bg-[#081a35]/72 p-6 text-sm text-blue-100/80">Loading your cart…</div>
+          <div className="card-panel bg-panel-light p-6 text-sm text-panel-muted">Loading your cart…</div>
         ) : null}
 
         {!isLoading && error ? (
@@ -230,13 +230,13 @@ export default function CartPage() {
         ) : null}
 
         {!isLoading && !error && !hasLines ? (
-          <div className="card-soft border-white/12 bg-[#081a35]/72 p-8 text-center">
+          <div className="card-panel bg-panel-light p-8 text-center">
             <p className="text-base font-semibold text-white">Your cart is empty.</p>
-            <p className="mt-2 text-sm text-blue-100/75">Add products from the shop to see them here.</p>
+            <p className="mt-2 text-sm text-panel-muted">Add products from the shop to see them here.</p>
             <div className="mt-5">
               <Link
                 href="/shop"
-                className="inline-flex min-h-[44px] w-full min-w-[12rem] items-center justify-center rounded-2xl border border-[#1EA7FF]/45 bg-[#1EA7FF]/12 px-5 py-2.5 text-sm font-semibold text-blue-50 whitespace-nowrap transition hover:bg-[#1EA7FF]/24 sm:w-auto"
+                className="btn-primary-dark w-full sm:w-auto"
               >
                 Browse products
               </Link>
@@ -246,31 +246,31 @@ export default function CartPage() {
 
         {!isLoading && !error && hasLines && order ? (
           <div className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
-          <section className="card-soft overflow-hidden border-white/12 bg-[#081a35]/72">
-            <ul className="divide-y divide-white/10">
-              {order.lines.map((line) => {
-                const productSlug = line.productVariant?.product?.slug;
-                const encodedProductSlug = productSlug ? encodeURIComponent(productSlug) : null;
-                const modelCode = resolvePkpModelCode(
-                  productSlug ?? '',
-                  line.productVariant?.product?.name ?? line.productVariant?.name ?? '',
-                ) || null;
-                const imagePath = line.productVariant?.product?.featuredAsset?.preview
-                  || line.productVariant?.product?.featuredAsset?.source
-                  || '';
-                const imageSrc = imagePath ? assetUrl(imagePath) : '';
-                const configurationRaw = line.customFields?.configuration ?? null;
-                const hasConfiguration = typeof configurationRaw === 'string' && configurationRaw.trim().length > 0;
-                const previewConfiguration = hasConfiguration
-                  ? parseConfigurationForPreview(configurationRaw)
-                  : null;
-                const slotIds = resolvePreviewSlotIds({
-                  modelCode,
-                  configuration: previewConfiguration,
-                });
-                const configuredSlots = countConfiguredSlots(previewConfiguration);
-                const configurationRows = previewConfiguration
-                  ? slotIds.reduce<Array<{
+            <section className="card-panel bg-panel-light overflow-hidden">
+              <ul className="divide-y divide-white/5">
+                {order.lines.map((line) => {
+                  const productSlug = line.productVariant?.product?.slug;
+                  const encodedProductSlug = productSlug ? encodeURIComponent(productSlug) : null;
+                  const modelCode = resolvePkpModelCode(
+                    productSlug ?? '',
+                    line.productVariant?.product?.name ?? line.productVariant?.name ?? '',
+                  ) || null;
+                  const imagePath = line.productVariant?.product?.featuredAsset?.preview
+                    || line.productVariant?.product?.featuredAsset?.source
+                    || '';
+                  const imageSrc = imagePath ? assetUrl(imagePath) : '';
+                  const configurationRaw = line.customFields?.configuration ?? null;
+                  const hasConfiguration = typeof configurationRaw === 'string' && configurationRaw.trim().length > 0;
+                  const previewConfiguration = hasConfiguration
+                    ? parseConfigurationForPreview(configurationRaw)
+                    : null;
+                  const slotIds = resolvePreviewSlotIds({
+                    modelCode,
+                    configuration: previewConfiguration,
+                  });
+                  const configuredSlots = countConfiguredSlots(previewConfiguration);
+                  const configurationRows = previewConfiguration
+                    ? slotIds.reduce<Array<{
                       slotId: string;
                       label: string;
                       iconId: string;
@@ -291,96 +291,96 @@ export default function CartPage() {
                       });
                       return rows;
                     }, [])
-                  : [];
-                const editConfigurationHref = hasConfiguration && encodedProductSlug
-                  ? `/configurator/keypad/${encodedProductSlug}?lineId=${encodeURIComponent(line.id)}`
-                  : null;
-                const isUpdatingLine = activeLineId === line.id;
+                    : [];
+                  const editConfigurationHref = hasConfiguration && encodedProductSlug
+                    ? `/configurator/keypad/${encodedProductSlug}?lineId=${encodeURIComponent(line.id)}`
+                    : null;
+                  const isUpdatingLine = activeLineId === line.id;
 
-                return (
-                  <li key={line.id} className="flex gap-4 p-4 sm:p-5">
-                    <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-white/15 bg-[#020916]">
-                      {hasConfiguration ? (
-                        <ConfiguredKeypadThumbnail
-                          modelCode={modelCode}
-                          shellAssetPath={imagePath || null}
-                          configuration={previewConfiguration ?? emptyPreviewConfiguration()}
-                          iconLookup={iconLookup}
-                          size="sm"
-                        />
-                      ) : imageSrc ? (
-                        <Image
-                          src={imageSrc}
-                          alt={line.productVariant?.name || 'Product image'}
-                          fill
-                          className="object-contain p-2"
-                          sizes="80px"
-                        />
-                      ) : null}
-                    </div>
-
-                    <div className="min-w-0 flex-1">
-                      {encodedProductSlug ? (
-                        <Link href={`/shop/product/${encodedProductSlug}`} className="text-sm font-semibold text-white transition hover:underline">
-                          {line.productVariant?.name || line.productVariant?.product?.name || 'Product'}
-                        </Link>
-                      ) : (
-                        <div className="text-sm font-semibold text-white">
-                          {line.productVariant?.name || line.productVariant?.product?.name || 'Product'}
-                        </div>
-                      )}
-                      {hasConfiguration ? (
-                        <div className="mt-1 text-xs font-semibold uppercase tracking-[0.1em] text-[#9dcfff]">
-                          Custom configuration: {configuredSlots}/{slotIds.length} slots defined
-                        </div>
-                      ) : null}
-
-                      {configurationRows.length > 0 ? (
-                        <div className="mt-2 rounded-xl border border-white/14 bg-[#081831]/65 p-2.5">
-                          <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-blue-100/70">
-                            Engineering spec
-                          </div>
-                          <ul className="space-y-1.5">
-                            {configurationRows.map((row) => (
-                              <li key={`${line.id}-${row.slotId}`} className="text-[11px] text-blue-50/90">
-                                <span className="font-semibold text-white">{row.label}:</span>{' '}
-                                {row.iconName} [{row.iconId}] · {row.glow}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      ) : null}
-
-                      <div className="mt-3 inline-flex items-center rounded-full border border-white/20 bg-white/[0.08]">
-                        <button
-                          type="button"
-                          aria-label="Decrease quantity"
-                          onClick={() => updateLine(line.id, Math.max(1, line.quantity - 1))}
-                          disabled={isUpdatingLine || line.quantity <= 1}
-                          className="h-8 w-8 rounded-l-full text-sm text-blue-50 transition hover:bg-white/20 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
-                        >
-                          -
-                        </button>
-                        <span className="min-w-[2.2rem] px-2 text-center text-sm font-semibold text-white">{line.quantity}</span>
-                        <button
-                          type="button"
-                          aria-label="Increase quantity"
-                          onClick={() => updateLine(line.id, line.quantity + 1)}
-                          disabled={isUpdatingLine}
-                          className="h-8 w-8 rounded-r-full text-sm text-blue-50 transition hover:bg-white/20 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
-                        >
-                          +
-                        </button>
+                  return (
+                    <li key={line.id} className="flex gap-4 p-4 sm:p-5">
+                      <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-white/15 bg-[#020916]">
+                        {hasConfiguration ? (
+                          <ConfiguredKeypadThumbnail
+                            modelCode={modelCode}
+                            shellAssetPath={imagePath || null}
+                            configuration={previewConfiguration ?? emptyPreviewConfiguration()}
+                            iconLookup={iconLookup}
+                            size="sm"
+                          />
+                        ) : imageSrc ? (
+                          <Image
+                            src={imageSrc}
+                            alt={line.productVariant?.name || 'Product image'}
+                            fill
+                            className="object-contain p-2"
+                            sizes="80px"
+                          />
+                        ) : null}
                       </div>
 
-                      {editConfigurationHref ? (
-                        <Link
-                          href={editConfigurationHref}
-                          className="ml-3 inline-flex min-h-[44px] items-center rounded-xl border border-[#1EA7FF]/45 bg-[#1EA7FF]/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.11em] text-[#b7e7ff] whitespace-nowrap transition hover:border-[#6fd0ff] hover:bg-[#1EA7FF]/20"
-                        >
-                          Edit Configuration
-                        </Link>
-                      ) : null}
+                      <div className="min-w-0 flex-1">
+                        {encodedProductSlug ? (
+                          <Link href={`/shop/product/${encodedProductSlug}`} className="text-sm font-semibold text-white transition hover:underline">
+                            {line.productVariant?.name || line.productVariant?.product?.name || 'Product'}
+                          </Link>
+                        ) : (
+                          <div className="text-sm font-semibold text-white">
+                            {line.productVariant?.name || line.productVariant?.product?.name || 'Product'}
+                          </div>
+                        )}
+                        {hasConfiguration ? (
+                          <div className="mt-1 text-xs font-semibold uppercase tracking-[0.1em] text-[#9dcfff]">
+                            Custom configuration: {configuredSlots}/{slotIds.length} slots defined
+                          </div>
+                        ) : null}
+
+                        {configurationRows.length > 0 ? (
+                          <div className="mt-2 rounded-xl border border-white/14 bg-[#081831]/65 p-2.5">
+                            <div className="mb-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-blue-100/70">
+                              Engineering spec
+                            </div>
+                            <ul className="space-y-1.5">
+                              {configurationRows.map((row) => (
+                                <li key={`${line.id}-${row.slotId}`} className="text-[11px] text-blue-50/90">
+                                  <span className="font-semibold text-white">{row.label}:</span>{' '}
+                                  {row.iconName} [{row.iconId}] · {row.glow}
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        ) : null}
+
+                        <div className="mt-3 inline-flex items-center rounded-full border border-white/20 bg-white/[0.08]">
+                          <button
+                            type="button"
+                            aria-label="Decrease quantity"
+                            onClick={() => updateLine(line.id, Math.max(1, line.quantity - 1))}
+                            disabled={isUpdatingLine || line.quantity <= 1}
+                            className="h-8 w-8 rounded-l-full text-sm text-blue-50 transition hover:bg-white/20 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                          >
+                            -
+                          </button>
+                          <span className="min-w-[2.2rem] px-2 text-center text-sm font-semibold text-white">{line.quantity}</span>
+                          <button
+                            type="button"
+                            aria-label="Increase quantity"
+                            onClick={() => updateLine(line.id, line.quantity + 1)}
+                            disabled={isUpdatingLine}
+                            className="h-8 w-8 rounded-r-full text-sm text-blue-50 transition hover:bg-white/20 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                          >
+                            +
+                          </button>
+                        </div>
+
+                        {editConfigurationHref ? (
+                          <Link
+                            href={editConfigurationHref}
+                            className="ml-3 inline-flex min-h-[44px] items-center rounded-xl border border-[#1EA7FF]/45 bg-[#1EA7FF]/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.11em] text-[#b7e7ff] whitespace-nowrap transition hover:border-[#6fd0ff] hover:bg-[#1EA7FF]/20"
+                          >
+                            Edit Configuration
+                          </Link>
+                        ) : null}
 
                         <button
                           type="button"
@@ -391,44 +391,44 @@ export default function CartPage() {
                           disabled={isUpdatingLine}
                           className="ml-3 text-xs font-semibold text-blue-100/70 underline-offset-4 transition hover:text-rose-300 hover:underline disabled:cursor-not-allowed disabled:opacity-40"
                         >
-                        Remove
-                      </button>
-                    </div>
+                          Remove
+                        </button>
+                      </div>
 
-                    <div className="text-right text-sm font-semibold text-white">
-                      {formatMinor(line.linePriceWithTax, line.productVariant?.currencyCode || order.currencyCode)}
-                    </div>
-                  </li>
-                );
-              })}
-            </ul>
-          </section>
+                      <div className="text-right text-sm font-semibold text-white">
+                        {formatMinor(line.linePriceWithTax, line.productVariant?.currencyCode || order.currencyCode)}
+                      </div>
+                    </li>
+                  );
+                })}
+              </ul>
+            </section>
 
-          <aside className="card-soft h-fit border-white/12 bg-[#081a35]/72 p-5">
-            <h2 className="text-base font-semibold text-white">Order summary</h2>
-            <div className="mt-1 text-xs text-blue-100/70">Order code: {order.code}</div>
-            <div className="mt-4 space-y-2 text-sm text-blue-100/85">
-              <div className="flex items-center justify-between">
-                <span>Items ({order.totalQuantity})</span>
-                <span>{orderTotals.subTotal}</span>
+            <aside className="card-panel bg-panel-light h-fit p-5">
+              <h2 className="text-base font-semibold text-white">Order summary</h2>
+              <div className="mt-1 text-xs text-panel-muted">Order code: {order.code}</div>
+              <div className="mt-4 space-y-2 text-sm text-panel-muted">
+                <div className="flex items-center justify-between">
+                  <span>Items ({order.totalQuantity})</span>
+                  <span>{orderTotals.subTotal}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>Shipping</span>
+                  <span>{orderTotals.shipping}</span>
+                </div>
               </div>
-              <div className="flex items-center justify-between">
-                <span>Shipping</span>
-                <span>{orderTotals.shipping}</span>
+              <div className="my-4 h-px bg-white/5" />
+              <div className="flex items-center justify-between text-base font-semibold text-white">
+                <span>Total</span>
+                <span>{orderTotals.total}</span>
               </div>
-            </div>
-            <div className="my-4 h-px bg-white/12" />
-            <div className="flex items-center justify-between text-base font-semibold text-white">
-              <span>Total</span>
-              <span>{orderTotals.total}</span>
-            </div>
-            <Link
-              href="/checkout"
-              className="mt-5 inline-flex min-h-[44px] w-full items-center justify-center rounded-2xl border border-[#1EA7FF]/45 bg-[#1EA7FF]/12 px-5 py-3 text-sm font-semibold text-blue-50 whitespace-nowrap transition hover:bg-[#1EA7FF]/24"
-            >
-              Proceed to Checkout
-            </Link>
-          </aside>
+              <Link
+                href="/checkout"
+                className="btn-primary-dark mt-5 w-full"
+              >
+                Proceed to Checkout
+              </Link>
+            </aside>
           </div>
         ) : null}
       </div>

@@ -693,7 +693,7 @@ export default function ShopClient({
 
       {isLandingSection ? (
         <section className="space-y-12">
-          <section className="card-soft rounded-3xl p-5 md:p-7">
+          <section className="card rounded-3xl p-5 md:p-7">
             <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h2 className="mt-1 text-2xl font-semibold tracking-tight text-ink md:text-3xl">
@@ -713,11 +713,10 @@ export default function ShopClient({
                   tile.label?.trim() || (tile.kind === 'exploreMore' ? 'Discover more' : humanizeDisciplineId(tile.id));
                 const tileSubtitle = tile.subtitle?.trim() || '';
 
-                const cardClass = `group relative overflow-hidden rounded-2xl text-left ${shouldUseRingBlue ? ringBlueHoverClass : 'border border-ink/10 bg-white'} ${
-                  isInteractive
+                const cardClass = `group relative overflow-hidden rounded-2xl text-left ${shouldUseRingBlue ? ringBlueHoverClass : 'border border-ink/10 bg-white'} ${isInteractive
                     ? 'cursor-pointer transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5'
                     : 'cursor-default'
-                }`;
+                  }`;
 
                 const content = (
                   <div className={`relative h-64 w-full ${tileImage ? '' : 'bg-[linear-gradient(145deg,#e8eef9_0%,#f7fbff_48%,#e1ebfa_100%)]'}`}>
@@ -734,11 +733,10 @@ export default function ShopClient({
                     )}
                     {isInteractive && tileImage ? (
                       <div
-                        className={`pointer-events-none absolute inset-0 transition-opacity duration-200 ${
-                          isExploreMoreTile
+                        className={`pointer-events-none absolute inset-0 transition-opacity duration-200 ${isExploreMoreTile
                             ? 'bg-black/45 opacity-60 group-hover:opacity-85'
                             : 'bg-black/25 opacity-55 group-hover:opacity-75'
-                        }`}
+                          }`}
                       />
                     ) : null}
                     <div className="absolute inset-x-0 bottom-0 p-5">
@@ -750,11 +748,10 @@ export default function ShopClient({
                       ) : null}
                       {isInteractive ? (
                         <span
-                          className={`mt-4 inline-flex min-h-[44px] translate-y-2 items-center justify-center rounded-2xl px-5 py-2 text-xs font-semibold whitespace-nowrap opacity-0 transition-[opacity,transform] duration-200 group-hover:translate-y-0 group-hover:opacity-100 ${
-                            isExploreMoreTile
-                              ? 'border border-transparent bg-[linear-gradient(#ffffff,#ffffff),linear-gradient(90deg,#b7d0fb_0%,#e8f1ff_100%)] [background-origin:border-box] [background-clip:padding-box,border-box] text-[#143f82] shadow-[0_8px_20px_rgba(6,23,59,0.2)]'
-                              : 'bg-[linear-gradient(90deg,#0d2f66_0%,#2053a2_55%,#3f75c4_100%)] text-white'
-                          }`}
+                          className={`btn-primary mt-4 translate-y-2 opacity-0 transition-[opacity,transform] duration-200 group-hover:translate-y-0 group-hover:opacity-100 ${isExploreMoreTile
+                              ? 'bg-surface text-ink shadow-sm'
+                              : ''
+                            }`}
                         >
                           {tile.kind === 'exploreMore' ? 'Discover more' : 'Explore'}
                         </span>
@@ -781,7 +778,7 @@ export default function ShopClient({
             </div>
           </section>
 
-          <section className="card-soft rounded-3xl p-5 md:p-7">
+          <section className="card rounded-3xl p-5 md:p-7">
             <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
               <div>
                 <h2 className="mt-1 text-2xl font-semibold tracking-tight text-ink md:text-3xl">
@@ -791,7 +788,7 @@ export default function ShopClient({
               <button
                 type="button"
                 onClick={() => onSectionChange('button-inserts', { scrollToTop: true })}
-                className="inline-flex min-h-[44px] items-center justify-center rounded-2xl border border-ink/15 px-5 py-2 text-sm font-semibold text-ink whitespace-nowrap transition hover:border-ink/35"
+                className="btn-secondary"
               >
                 View all inserts
               </button>
@@ -883,11 +880,10 @@ export default function ShopClient({
                     type="button"
                     aria-pressed={isAllSection}
                     onClick={() => onSectionChange('all', { scrollToTop: true })}
-                    className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-sm font-semibold tracking-tight transition ${
-                      isAllSection
+                    className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-sm font-semibold tracking-tight transition ${isAllSection
                         ? 'border-ink bg-ink text-white'
                         : 'border-surface-border bg-surface text-ink hover:border-ink/25 hover:bg-surface-alt'
-                    }`}
+                      }`}
                   >
                     <span>All products</span>
                     <span className={`text-[11px] ${isAllSection ? 'text-white/75' : 'text-ink/45'}`}>
@@ -899,11 +895,10 @@ export default function ShopClient({
                     type="button"
                     aria-pressed={isIconsSection}
                     onClick={() => onSectionChange('button-inserts', { scrollToTop: true })}
-                    className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-sm font-semibold tracking-tight transition ${
-                      isIconsSection
+                    className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-sm font-semibold tracking-tight transition ${isIconsSection
                         ? 'border-ink bg-ink text-white'
                         : 'border-surface-border bg-surface text-ink hover:border-ink/25 hover:bg-surface-alt'
-                    }`}
+                      }`}
                   >
                     <span>Button Inserts</span>
                     <span className={`text-[11px] ${isIconsSection ? 'text-white/75' : 'text-ink/45'}`}>{totalIconCount}</span>
@@ -913,11 +908,10 @@ export default function ShopClient({
                     type="button"
                     aria-pressed={isKeypadsSection}
                     onClick={() => onSectionChange('keypads', { scrollToTop: true })}
-                    className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-sm font-semibold tracking-tight transition ${
-                      isKeypadsSection
+                    className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-sm font-semibold tracking-tight transition ${isKeypadsSection
                         ? 'border-ink bg-ink text-white'
                         : 'border-surface-border bg-surface text-ink hover:border-ink/25 hover:bg-surface-alt'
-                    }`}
+                      }`}
                   >
                     <span>Keypads</span>
                     <span className={`text-[11px] ${isKeypadsSection ? 'text-white/75' : 'text-ink/45'}`}>{keypads.length}</span>

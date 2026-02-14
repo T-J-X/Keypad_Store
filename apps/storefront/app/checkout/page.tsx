@@ -390,439 +390,439 @@ export default function CheckoutPage() {
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 pb-20 pt-10 sm:px-6 lg:px-8">
-      <div className="rounded-3xl border border-[#0f2c5a] bg-[radial-gradient(130%_130%_at_50%_0%,#1b5dae_0%,#0e2a55_36%,#050f23_100%)] p-5 shadow-[0_34px_100px_rgba(2,10,28,0.45)] sm:p-6">
-      <div className="mb-8 flex items-center justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">Checkout</h1>
-          <p className="mt-1 text-sm text-blue-100/80">Enter shipping and payment details to confirm your order.</p>
-        </div>
-        <Link
-          href="/cart"
-          className="inline-flex min-h-[44px] w-full min-w-[12rem] items-center justify-center rounded-2xl border border-white/30 px-5 py-2 text-sm font-semibold text-blue-50 whitespace-nowrap transition hover:border-white hover:bg-white/10 sm:w-auto"
-        >
-          Back to Cart
-        </Link>
-      </div>
-
-      {isLoading ? (
-        <div className="card-soft border-white/12 bg-[#081a35]/72 p-6 text-sm text-blue-100/80">Loading checkout…</div>
-      ) : null}
-
-      {!isLoading && error ? (
-        <div
-          role="alert"
-          aria-live="polite"
-          aria-atomic="true"
-          className="card-soft border border-rose-400/45 bg-rose-950/35 p-6 text-sm font-medium text-rose-100"
-        >
-          {error}
-        </div>
-      ) : null}
-
-      {!isLoading && !order ? (
-        <div className="card-soft border-white/12 bg-[#081a35]/72 p-8 text-center">
-          <p className="text-base font-semibold text-white">Your cart is empty.</p>
-          <p className="mt-2 text-sm text-blue-100/75">Add items before starting checkout.</p>
-          <div className="mt-5">
-            <Link
-              href="/shop"
-              className="inline-flex min-h-[44px] w-full min-w-[12rem] items-center justify-center rounded-2xl border border-[#1EA7FF]/45 bg-[#1EA7FF]/12 px-5 py-2.5 text-sm font-semibold text-blue-50 whitespace-nowrap transition hover:bg-[#1EA7FF]/24 sm:w-auto"
-            >
-              Browse products
-            </Link>
+      <div className="card-panel p-5 sm:p-6">
+        <div className="mb-8 flex items-center justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">Checkout</h1>
+            <p className="mt-1 text-sm text-panel-muted">Enter shipping and payment details to confirm your order.</p>
           </div>
+          <Link
+            href="/cart"
+            className="btn-secondary dark w-full sm:w-auto"
+          >
+            Back to Cart
+          </Link>
         </div>
-      ) : null}
 
-      {!isLoading && order ? (
-        <form onSubmit={onSubmit} className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
-          <section className="card-soft space-y-6 border-white/12 bg-[#081a35]/72 p-5 text-blue-50">
-            {order.lines.length > 0 ? (
-              <div>
-                <h2 className="text-lg font-semibold text-white">Configured line items</h2>
-                <div className="mt-3 space-y-3">
-                  {order.lines.map((line) => {
-                    const configurationRaw = line.customFields?.configuration ?? null;
-                    const hasConfiguration = typeof configurationRaw === 'string' && configurationRaw.trim().length > 0;
-                    const previewConfiguration = hasConfiguration
-                      ? parseConfigurationForPreview(configurationRaw)
-                      : null;
-                    const modelCode = resolvePkpModelCode(
-                      line.productVariant?.product?.slug ?? '',
-                      line.productVariant?.product?.name ?? line.productVariant?.name ?? '',
-                    ) || null;
-                    const slotIds = resolvePreviewSlotIds({
-                      modelCode,
-                      configuration: previewConfiguration,
-                    });
-                    const configuredSlots = countConfiguredSlots(previewConfiguration);
-                    const imagePath = line.productVariant?.product?.featuredAsset?.preview
-                      || line.productVariant?.product?.featuredAsset?.source
-                      || '';
-                    const imageSrc = imagePath ? assetUrl(imagePath) : '';
+        {isLoading ? (
+          <div className="card-panel bg-panel-light p-6 text-sm text-panel-muted">Loading checkout…</div>
+        ) : null}
 
-                    return (
-                      <article key={line.id} className="flex items-start gap-3 rounded-2xl border border-white/12 bg-[#081831]/65 p-3">
-                        <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-neutral-100">
-                          {hasConfiguration ? (
-                            <ConfiguredKeypadThumbnail
-                              modelCode={modelCode}
-                              shellAssetPath={imagePath || null}
-                              configuration={previewConfiguration ?? emptyPreviewConfiguration()}
-                              iconLookup={iconLookup}
-                              size="sm"
-                            />
-                          ) : imageSrc ? (
-                            <Image
-                              src={imageSrc}
-                              alt={line.productVariant?.name || 'Product image'}
-                              fill
-                              className="object-contain p-2"
-                              sizes="80px"
-                            />
-                          ) : null}
-                        </div>
-                        <div className="min-w-0 flex-1">
-                          <div className="text-sm font-semibold text-white">
-                            {line.productVariant?.name || line.productVariant?.product?.name || 'Product'}
+        {!isLoading && error ? (
+          <div
+            role="alert"
+            aria-live="polite"
+            aria-atomic="true"
+            className="rounded-xl border border-rose-400/20 bg-rose-950/30 p-6 text-sm font-medium text-rose-100"
+          >
+            {error}
+          </div>
+        ) : null}
+
+        {!isLoading && !order ? (
+          <div className="card-panel bg-panel-light p-8 text-center">
+            <p className="text-base font-semibold text-white">Your cart is empty.</p>
+            <p className="mt-2 text-sm text-panel-muted">Add items before starting checkout.</p>
+            <div className="mt-5">
+              <Link
+                href="/shop"
+                className="btn-primary-dark w-full sm:w-auto"
+              >
+                Browse products
+              </Link>
+            </div>
+          </div>
+        ) : null}
+
+        {!isLoading && order ? (
+          <form onSubmit={onSubmit} className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
+            <section className="card-panel bg-panel-light space-y-6 p-5">
+              {order.lines.length > 0 ? (
+                <div>
+                  <h2 className="text-lg font-semibold text-white">Configured line items</h2>
+                  <div className="mt-3 space-y-3">
+                    {order.lines.map((line) => {
+                      const configurationRaw = line.customFields?.configuration ?? null;
+                      const hasConfiguration = typeof configurationRaw === 'string' && configurationRaw.trim().length > 0;
+                      const previewConfiguration = hasConfiguration
+                        ? parseConfigurationForPreview(configurationRaw)
+                        : null;
+                      const modelCode = resolvePkpModelCode(
+                        line.productVariant?.product?.slug ?? '',
+                        line.productVariant?.product?.name ?? line.productVariant?.name ?? '',
+                      ) || null;
+                      const slotIds = resolvePreviewSlotIds({
+                        modelCode,
+                        configuration: previewConfiguration,
+                      });
+                      const configuredSlots = countConfiguredSlots(previewConfiguration);
+                      const imagePath = line.productVariant?.product?.featuredAsset?.preview
+                        || line.productVariant?.product?.featuredAsset?.source
+                        || '';
+                      const imageSrc = imagePath ? assetUrl(imagePath) : '';
+
+                      return (
+                        <article key={line.id} className="flex items-start gap-3 rounded-2xl border border-white/12 bg-[#081831]/65 p-3">
+                          <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-neutral-100">
+                            {hasConfiguration ? (
+                              <ConfiguredKeypadThumbnail
+                                modelCode={modelCode}
+                                shellAssetPath={imagePath || null}
+                                configuration={previewConfiguration ?? emptyPreviewConfiguration()}
+                                iconLookup={iconLookup}
+                                size="sm"
+                              />
+                            ) : imageSrc ? (
+                              <Image
+                                src={imageSrc}
+                                alt={line.productVariant?.name || 'Product image'}
+                                fill
+                                className="object-contain p-2"
+                                sizes="80px"
+                              />
+                            ) : null}
                           </div>
-                          {hasConfiguration ? (
-                            <div className="mt-1 text-xs font-semibold uppercase tracking-[0.1em] text-[#9dcfff]">
-                              Custom configuration: {configuredSlots}/{slotIds.length} slots defined
+                          <div className="min-w-0 flex-1">
+                            <div className="text-sm font-semibold text-white">
+                              {line.productVariant?.name || line.productVariant?.product?.name || 'Product'}
                             </div>
-                          ) : null}
-                          <div className="mt-1 text-xs text-blue-100/70">Qty {line.quantity}</div>
-                        </div>
-                        <div className="text-right text-xs font-semibold text-white">
-                          {formatMinor(line.linePriceWithTax, line.productVariant?.currencyCode || order.currencyCode)}
-                        </div>
-                      </article>
-                    );
-                  })}
+                            {hasConfiguration ? (
+                              <div className="mt-1 text-xs font-semibold uppercase tracking-[0.1em] text-[#9dcfff]">
+                                Custom configuration: {configuredSlots}/{slotIds.length} slots defined
+                              </div>
+                            ) : null}
+                            <div className="mt-1 text-xs text-blue-100/70">Qty {line.quantity}</div>
+                          </div>
+                          <div className="text-right text-xs font-semibold text-white">
+                            {formatMinor(line.linePriceWithTax, line.productVariant?.currencyCode || order.currencyCode)}
+                          </div>
+                        </article>
+                      );
+                    })}
+                  </div>
+                </div>
+              ) : null}
+
+              <div>
+                <h2 className="text-lg font-semibold text-white">Contact</h2>
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  <label className="sm:col-span-2">
+                    <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-blue-100/70">Email</span>
+                    <input
+                      id="checkout-email"
+                      ref={emailRef}
+                      name="email"
+                      type="email"
+                      value={email}
+                      onChange={(event) => {
+                        setEmail(event.target.value);
+                        clearFieldError('email');
+                      }}
+                      required
+                      className="input input-dark"
+                      placeholder="you@company.com"
+                      autoComplete="email"
+                      spellCheck={false}
+                      aria-invalid={fieldErrors.email ? 'true' : undefined}
+                      aria-describedby={fieldErrors.email ? 'checkout-email-error' : undefined}
+                    />
+                    {fieldErrors.email ? (
+                      <span id="checkout-email-error" role="alert" className="mt-1 block text-xs font-semibold text-rose-200">
+                        {fieldErrors.email}
+                      </span>
+                    ) : null}
+                  </label>
+                  <label>
+                    <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-blue-100/70">First name</span>
+                    <input
+                      id="checkout-first-name"
+                      ref={firstNameRef}
+                      name="firstName"
+                      type="text"
+                      value={firstName}
+                      onChange={(event) => {
+                        setFirstName(event.target.value);
+                        clearFieldError('firstName');
+                      }}
+                      required
+                      className="input input-dark"
+                      autoComplete="given-name"
+                      aria-invalid={fieldErrors.firstName ? 'true' : undefined}
+                      aria-describedby={fieldErrors.firstName ? 'checkout-first-name-error' : undefined}
+                    />
+                    {fieldErrors.firstName ? (
+                      <span id="checkout-first-name-error" role="alert" className="mt-1 block text-xs font-semibold text-rose-200">
+                        {fieldErrors.firstName}
+                      </span>
+                    ) : null}
+                  </label>
+                  <label>
+                    <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-blue-100/70">Last name</span>
+                    <input
+                      id="checkout-last-name"
+                      ref={lastNameRef}
+                      name="lastName"
+                      type="text"
+                      value={lastName}
+                      onChange={(event) => {
+                        setLastName(event.target.value);
+                        clearFieldError('lastName');
+                      }}
+                      required
+                      className="input input-dark"
+                      autoComplete="family-name"
+                      aria-invalid={fieldErrors.lastName ? 'true' : undefined}
+                      aria-describedby={fieldErrors.lastName ? 'checkout-last-name-error' : undefined}
+                    />
+                    {fieldErrors.lastName ? (
+                      <span id="checkout-last-name-error" role="alert" className="mt-1 block text-xs font-semibold text-rose-200">
+                        {fieldErrors.lastName}
+                      </span>
+                    ) : null}
+                  </label>
+                  <label className="sm:col-span-2">
+                    <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-blue-100/70">Phone (optional)</span>
+                    <input
+                      id="checkout-phone"
+                      name="phoneNumber"
+                      type="tel"
+                      value={phoneNumber}
+                      onChange={(event) => setPhoneNumber(event.target.value)}
+                      className="input input-dark"
+                      autoComplete="tel"
+                    />
+                  </label>
                 </div>
               </div>
-            ) : null}
 
-            <div>
-              <h2 className="text-lg font-semibold text-white">Contact</h2>
-              <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                <label className="sm:col-span-2">
-                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-blue-100/70">Email</span>
-                  <input
-                    id="checkout-email"
-                    ref={emailRef}
-                    name="email"
-                    type="email"
-                    value={email}
-                    onChange={(event) => {
-                      setEmail(event.target.value);
-                      clearFieldError('email');
-                    }}
-                    required
-                    className="input"
-                    placeholder="you@company.com"
-                    autoComplete="email"
-                    spellCheck={false}
-                    aria-invalid={fieldErrors.email ? 'true' : undefined}
-                    aria-describedby={fieldErrors.email ? 'checkout-email-error' : undefined}
-                  />
-                  {fieldErrors.email ? (
-                    <span id="checkout-email-error" role="alert" className="mt-1 block text-xs font-semibold text-rose-200">
-                      {fieldErrors.email}
-                    </span>
-                  ) : null}
-                </label>
-                <label>
-                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-blue-100/70">First name</span>
-                  <input
-                    id="checkout-first-name"
-                    ref={firstNameRef}
-                    name="firstName"
-                    type="text"
-                    value={firstName}
-                    onChange={(event) => {
-                      setFirstName(event.target.value);
-                      clearFieldError('firstName');
-                    }}
-                    required
-                    className="input"
-                    autoComplete="given-name"
-                    aria-invalid={fieldErrors.firstName ? 'true' : undefined}
-                    aria-describedby={fieldErrors.firstName ? 'checkout-first-name-error' : undefined}
-                  />
-                  {fieldErrors.firstName ? (
-                    <span id="checkout-first-name-error" role="alert" className="mt-1 block text-xs font-semibold text-rose-200">
-                      {fieldErrors.firstName}
-                    </span>
-                  ) : null}
-                </label>
-                <label>
-                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-blue-100/70">Last name</span>
-                  <input
-                    id="checkout-last-name"
-                    ref={lastNameRef}
-                    name="lastName"
-                    type="text"
-                    value={lastName}
-                    onChange={(event) => {
-                      setLastName(event.target.value);
-                      clearFieldError('lastName');
-                    }}
-                    required
-                    className="input"
-                    autoComplete="family-name"
-                    aria-invalid={fieldErrors.lastName ? 'true' : undefined}
-                    aria-describedby={fieldErrors.lastName ? 'checkout-last-name-error' : undefined}
-                  />
-                  {fieldErrors.lastName ? (
-                    <span id="checkout-last-name-error" role="alert" className="mt-1 block text-xs font-semibold text-rose-200">
-                      {fieldErrors.lastName}
-                    </span>
-                  ) : null}
-                </label>
-                <label className="sm:col-span-2">
-                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-blue-100/70">Phone (optional)</span>
-                  <input
-                    id="checkout-phone"
-                    name="phoneNumber"
-                    type="tel"
-                    value={phoneNumber}
-                    onChange={(event) => setPhoneNumber(event.target.value)}
-                    className="input"
-                    autoComplete="tel"
-                  />
-                </label>
-              </div>
-            </div>
-
-            <div>
-              <h2 className="text-lg font-semibold text-white">Shipping address</h2>
-              <div className="mt-3 grid gap-3 sm:grid-cols-2">
-                <label className="sm:col-span-2">
-                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-blue-100/70">Address line 1</span>
-                  <input
-                    id="checkout-street-line-1"
-                    ref={streetLine1Ref}
-                    name="streetLine1"
-                    type="text"
-                    value={streetLine1}
-                    onChange={(event) => {
-                      setStreetLine1(event.target.value);
-                      clearFieldError('streetLine1');
-                    }}
-                    required
-                    className="input"
-                    autoComplete="address-line1"
-                    aria-invalid={fieldErrors.streetLine1 ? 'true' : undefined}
-                    aria-describedby={fieldErrors.streetLine1 ? 'checkout-street-line-1-error' : undefined}
-                  />
-                  {fieldErrors.streetLine1 ? (
-                    <span id="checkout-street-line-1-error" role="alert" className="mt-1 block text-xs font-semibold text-rose-200">
-                      {fieldErrors.streetLine1}
-                    </span>
-                  ) : null}
-                </label>
-                <label className="sm:col-span-2">
-                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-blue-100/70">Address line 2 (optional)</span>
-                  <input
-                    id="checkout-street-line-2"
-                    name="streetLine2"
-                    type="text"
-                    value={streetLine2}
-                    onChange={(event) => setStreetLine2(event.target.value)}
-                    className="input"
-                    autoComplete="address-line2"
-                  />
-                </label>
-                <label>
-                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-blue-100/70">City</span>
-                  <input
-                    id="checkout-city"
-                    ref={cityRef}
-                    name="city"
-                    type="text"
-                    value={city}
-                    onChange={(event) => {
-                      setCity(event.target.value);
-                      clearFieldError('city');
-                    }}
-                    required
-                    className="input"
-                    autoComplete="address-level2"
-                    aria-invalid={fieldErrors.city ? 'true' : undefined}
-                    aria-describedby={fieldErrors.city ? 'checkout-city-error' : undefined}
-                  />
-                  {fieldErrors.city ? (
-                    <span id="checkout-city-error" role="alert" className="mt-1 block text-xs font-semibold text-rose-200">
-                      {fieldErrors.city}
-                    </span>
-                  ) : null}
-                </label>
-                <label>
-                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-blue-100/70">Province/State</span>
-                  <input
-                    id="checkout-province"
-                    name="province"
-                    type="text"
-                    value={province}
-                    onChange={(event) => setProvince(event.target.value)}
-                    className="input"
-                    autoComplete="address-level1"
-                  />
-                </label>
-                <label>
-                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-blue-100/70">Postal code</span>
-                  <input
-                    id="checkout-postal-code"
-                    ref={postalCodeRef}
-                    name="postalCode"
-                    type="text"
-                    value={postalCode}
-                    onChange={(event) => {
-                      setPostalCode(event.target.value);
-                      clearFieldError('postalCode');
-                    }}
-                    required
-                    className="input"
-                    autoComplete="postal-code"
-                    aria-invalid={fieldErrors.postalCode ? 'true' : undefined}
-                    aria-describedby={fieldErrors.postalCode ? 'checkout-postal-code-error' : undefined}
-                  />
-                  {fieldErrors.postalCode ? (
-                    <span id="checkout-postal-code-error" role="alert" className="mt-1 block text-xs font-semibold text-rose-200">
-                      {fieldErrors.postalCode}
-                    </span>
-                  ) : null}
-                </label>
-                <label>
-                  <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-blue-100/70">Country</span>
-                  <select
-                    id="checkout-country-code"
-                    ref={countryCodeRef}
-                    name="countryCode"
-                    value={countryCode}
-                    onChange={(event) => {
-                      setCountryCode(event.target.value);
-                      clearFieldError('countryCode');
-                    }}
-                    className="input"
-                    autoComplete="country"
-                    required
-                    aria-invalid={fieldErrors.countryCode ? 'true' : undefined}
-                    aria-describedby={fieldErrors.countryCode ? 'checkout-country-code-error' : undefined}
-                  >
-                    <option value="US">United States</option>
-                    <option value="GB">United Kingdom</option>
-                    <option value="CA">Canada</option>
-                    <option value="AU">Australia</option>
-                  </select>
-                  {fieldErrors.countryCode ? (
-                    <span id="checkout-country-code-error" role="alert" className="mt-1 block text-xs font-semibold text-rose-200">
-                      {fieldErrors.countryCode}
-                    </span>
-                  ) : null}
-                </label>
-              </div>
-            </div>
-
-            <div>
-              <h2 className="text-lg font-semibold text-white">Shipping method</h2>
-              <div className="mt-3 grid gap-2">
-                {shippingMethods.length > 0 ? (
-                  shippingMethods.map((method) => (
-                    <label key={method.id} className="inline-flex items-start gap-2 rounded-xl border border-white/14 bg-[#081831]/55 px-3 py-2 text-sm">
-                      <input
-                        type="radio"
-                        name="shippingMethod"
-                        value={method.id}
-                        checked={shippingMethodId === method.id}
-                        onChange={() => {
-                          setShippingMethodId(method.id);
-                          clearSelectionError('shippingMethodId');
-                        }}
-                        required
-                      />
-                      <span>
-                        <span className="block font-semibold text-white">{method.name}</span>
-                        <span className="block text-xs text-blue-100/70">{method.description || method.code}</span>
-                        <span className="block text-xs font-semibold text-blue-100/85">{formatMinor(method.priceWithTax, order.currencyCode)}</span>
+              <div>
+                <h2 className="text-lg font-semibold text-white">Shipping address</h2>
+                <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                  <label className="sm:col-span-2">
+                    <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-blue-100/70">Address line 1</span>
+                    <input
+                      id="checkout-street-line-1"
+                      ref={streetLine1Ref}
+                      name="streetLine1"
+                      type="text"
+                      value={streetLine1}
+                      onChange={(event) => {
+                        setStreetLine1(event.target.value);
+                        clearFieldError('streetLine1');
+                      }}
+                      required
+                      className="input input-dark"
+                      autoComplete="address-line1"
+                      aria-invalid={fieldErrors.streetLine1 ? 'true' : undefined}
+                      aria-describedby={fieldErrors.streetLine1 ? 'checkout-street-line-1-error' : undefined}
+                    />
+                    {fieldErrors.streetLine1 ? (
+                      <span id="checkout-street-line-1-error" role="alert" className="mt-1 block text-xs font-semibold text-rose-200">
+                        {fieldErrors.streetLine1}
                       </span>
-                    </label>
-                  ))
-                ) : (
-                  <div className="rounded-xl border border-rose-400/45 bg-rose-950/35 px-3 py-2 text-sm text-rose-100">
-                    No eligible shipping methods available for this order yet.
-                  </div>
-                )}
-                {selectionErrors.shippingMethodId ? (
-                  <p role="alert" className="text-xs font-semibold text-rose-200">{selectionErrors.shippingMethodId}</p>
-                ) : null}
-              </div>
-            </div>
-
-            <div>
-              <h2 className="text-lg font-semibold text-white">Payment</h2>
-              <div className="mt-3 grid gap-2">
-                {paymentMethods.length > 0 ? (
-                  paymentMethods.map((method) => (
-                    <label key={method.code} className="inline-flex items-start gap-2 rounded-xl border border-white/14 bg-[#081831]/55 px-3 py-2 text-sm">
-                      <input
-                        type="radio"
-                        name="paymentMethod"
-                        value={method.code}
-                        checked={paymentMethodCode === method.code}
-                        onChange={() => {
-                          setPaymentMethodCode(method.code);
-                          clearSelectionError('paymentMethodCode');
-                        }}
-                        required
-                      />
-                      <span>
-                        <span className="block font-semibold text-white">{method.name}</span>
-                        <span className="block text-xs text-blue-100/70">{method.description || method.code}</span>
+                    ) : null}
+                  </label>
+                  <label className="sm:col-span-2">
+                    <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-blue-100/70">Address line 2 (optional)</span>
+                    <input
+                      id="checkout-street-line-2"
+                      name="streetLine2"
+                      type="text"
+                      value={streetLine2}
+                      onChange={(event) => setStreetLine2(event.target.value)}
+                      className="input input-dark"
+                      autoComplete="address-line2"
+                    />
+                  </label>
+                  <label>
+                    <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-blue-100/70">City</span>
+                    <input
+                      id="checkout-city"
+                      ref={cityRef}
+                      name="city"
+                      type="text"
+                      value={city}
+                      onChange={(event) => {
+                        setCity(event.target.value);
+                        clearFieldError('city');
+                      }}
+                      required
+                      className="input input-dark"
+                      autoComplete="address-level2"
+                      aria-invalid={fieldErrors.city ? 'true' : undefined}
+                      aria-describedby={fieldErrors.city ? 'checkout-city-error' : undefined}
+                    />
+                    {fieldErrors.city ? (
+                      <span id="checkout-city-error" role="alert" className="mt-1 block text-xs font-semibold text-rose-200">
+                        {fieldErrors.city}
                       </span>
-                    </label>
-                  ))
-                ) : (
-                  <div className="rounded-xl border border-rose-400/45 bg-rose-950/35 px-3 py-2 text-sm text-rose-100">
-                    No eligible payment methods available for this order.
-                  </div>
-                )}
-                {selectionErrors.paymentMethodCode ? (
-                  <p role="alert" className="text-xs font-semibold text-rose-200">{selectionErrors.paymentMethodCode}</p>
-                ) : null}
+                    ) : null}
+                  </label>
+                  <label>
+                    <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-blue-100/70">Province/State</span>
+                    <input
+                      id="checkout-province"
+                      name="province"
+                      type="text"
+                      value={province}
+                      onChange={(event) => setProvince(event.target.value)}
+                      className="input input-dark"
+                      autoComplete="address-level1"
+                    />
+                  </label>
+                  <label>
+                    <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-blue-100/70">Postal code</span>
+                    <input
+                      id="checkout-postal-code"
+                      ref={postalCodeRef}
+                      name="postalCode"
+                      type="text"
+                      value={postalCode}
+                      onChange={(event) => {
+                        setPostalCode(event.target.value);
+                        clearFieldError('postalCode');
+                      }}
+                      required
+                      className="input input-dark"
+                      autoComplete="postal-code"
+                      aria-invalid={fieldErrors.postalCode ? 'true' : undefined}
+                      aria-describedby={fieldErrors.postalCode ? 'checkout-postal-code-error' : undefined}
+                    />
+                    {fieldErrors.postalCode ? (
+                      <span id="checkout-postal-code-error" role="alert" className="mt-1 block text-xs font-semibold text-rose-200">
+                        {fieldErrors.postalCode}
+                      </span>
+                    ) : null}
+                  </label>
+                  <label>
+                    <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-blue-100/70">Country</span>
+                    <select
+                      id="checkout-country-code"
+                      ref={countryCodeRef}
+                      name="countryCode"
+                      value={countryCode}
+                      onChange={(event) => {
+                        setCountryCode(event.target.value);
+                        clearFieldError('countryCode');
+                      }}
+                      className="input input-dark"
+                      autoComplete="country"
+                      required
+                      aria-invalid={fieldErrors.countryCode ? 'true' : undefined}
+                      aria-describedby={fieldErrors.countryCode ? 'checkout-country-code-error' : undefined}
+                    >
+                      <option value="US">United States</option>
+                      <option value="GB">United Kingdom</option>
+                      <option value="CA">Canada</option>
+                      <option value="AU">Australia</option>
+                    </select>
+                    {fieldErrors.countryCode ? (
+                      <span id="checkout-country-code-error" role="alert" className="mt-1 block text-xs font-semibold text-rose-200">
+                        {fieldErrors.countryCode}
+                      </span>
+                    ) : null}
+                  </label>
+                </div>
               </div>
-            </div>
-          </section>
 
-          <aside className="card-soft h-fit border-white/12 bg-[#081a35]/72 p-5 text-blue-50">
-            <h2 className="text-base font-semibold text-white">Order summary</h2>
-            <div className="mt-1 text-xs text-blue-100/70">Order code: {order.code}</div>
-            <div className="mt-4 space-y-2 text-sm text-blue-100/85">
-              <div className="flex items-center justify-between">
-                <span>Items ({order.totalQuantity})</span>
-                <span>{totals.subTotal}</span>
+              <div>
+                <h2 className="text-lg font-semibold text-white">Shipping method</h2>
+                <div className="mt-3 grid gap-2">
+                  {shippingMethods.length > 0 ? (
+                    shippingMethods.map((method) => (
+                      <label key={method.id} className="inline-flex items-start gap-2 rounded-xl border border-white/14 bg-[#081831]/55 px-3 py-2 text-sm">
+                        <input
+                          type="radio"
+                          name="shippingMethod"
+                          value={method.id}
+                          checked={shippingMethodId === method.id}
+                          onChange={() => {
+                            setShippingMethodId(method.id);
+                            clearSelectionError('shippingMethodId');
+                          }}
+                          required
+                        />
+                        <span>
+                          <span className="block font-semibold text-white">{method.name}</span>
+                          <span className="block text-xs text-blue-100/70">{method.description || method.code}</span>
+                          <span className="block text-xs font-semibold text-blue-100/85">{formatMinor(method.priceWithTax, order.currencyCode)}</span>
+                        </span>
+                      </label>
+                    ))
+                  ) : (
+                    <div className="rounded-xl border border-rose-400/45 bg-rose-950/35 px-3 py-2 text-sm text-rose-100">
+                      No eligible shipping methods available for this order yet.
+                    </div>
+                  )}
+                  {selectionErrors.shippingMethodId ? (
+                    <p role="alert" className="text-xs font-semibold text-rose-200">{selectionErrors.shippingMethodId}</p>
+                  ) : null}
+                </div>
               </div>
-              <div className="flex items-center justify-between">
-                <span>Shipping</span>
-                <span>{totals.shipping}</span>
+
+              <div>
+                <h2 className="text-lg font-semibold text-white">Payment</h2>
+                <div className="mt-3 grid gap-2">
+                  {paymentMethods.length > 0 ? (
+                    paymentMethods.map((method) => (
+                      <label key={method.code} className="inline-flex items-start gap-2 rounded-xl border border-white/14 bg-[#081831]/55 px-3 py-2 text-sm">
+                        <input
+                          type="radio"
+                          name="paymentMethod"
+                          value={method.code}
+                          checked={paymentMethodCode === method.code}
+                          onChange={() => {
+                            setPaymentMethodCode(method.code);
+                            clearSelectionError('paymentMethodCode');
+                          }}
+                          required
+                        />
+                        <span>
+                          <span className="block font-semibold text-white">{method.name}</span>
+                          <span className="block text-xs text-blue-100/70">{method.description || method.code}</span>
+                        </span>
+                      </label>
+                    ))
+                  ) : (
+                    <div className="rounded-xl border border-rose-400/45 bg-rose-950/35 px-3 py-2 text-sm text-rose-100">
+                      No eligible payment methods available for this order.
+                    </div>
+                  )}
+                  {selectionErrors.paymentMethodCode ? (
+                    <p role="alert" className="text-xs font-semibold text-rose-200">{selectionErrors.paymentMethodCode}</p>
+                  ) : null}
+                </div>
               </div>
-            </div>
-            <div className="my-4 h-px bg-white/12" />
-            <div className="flex items-center justify-between text-base font-semibold text-white">
-              <span>Total</span>
-              <span>{totals.total}</span>
-            </div>
-            <button
-              type="submit"
-              disabled={!canSubmit}
-              className="mt-5 inline-flex min-h-[44px] w-full items-center justify-center rounded-2xl border border-[#1EA7FF]/45 bg-[#1EA7FF]/12 px-5 py-3 text-sm font-semibold text-blue-50 whitespace-nowrap transition hover:bg-[#1EA7FF]/24 disabled:cursor-not-allowed disabled:opacity-60"
-            >
-              {isSubmitting ? 'Placing Order…' : 'Place Order'}
-            </button>
-          </aside>
-        </form>
-      ) : null}
+            </section>
+
+            <aside className="card-panel bg-panel-light h-fit p-5">
+              <h2 className="text-base font-semibold text-white">Order summary</h2>
+              <div className="mt-1 text-xs text-panel-muted">Order code: {order.code}</div>
+              <div className="mt-4 space-y-2 text-sm text-blue-100/85">
+                <div className="flex items-center justify-between">
+                  <span>Items ({order.totalQuantity})</span>
+                  <span>{totals.subTotal}</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span>Shipping</span>
+                  <span>{totals.shipping}</span>
+                </div>
+              </div>
+              <div className="my-4 h-px bg-white/12" />
+              <div className="flex items-center justify-between text-base font-semibold text-white">
+                <span>Total</span>
+                <span>{totals.total}</span>
+              </div>
+              <button
+                type="submit"
+                disabled={!canSubmit}
+                className="btn-primary-dark mt-5 w-full disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isSubmitting ? 'Placing Order…' : 'Place Order'}
+              </button>
+            </aside>
+          </form>
+        ) : null}
       </div>
     </div>
   );

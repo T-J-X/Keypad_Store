@@ -31,25 +31,25 @@ function KeypadConfiguratorShell() {
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 pb-28 pt-10 sm:px-6 lg:px-8 lg:pb-20">
-      <div className="overflow-hidden rounded-3xl border border-white/10 bg-deep-navy p-6 shadow-2xl sm:p-8">
+      <div className="card-panel p-6 sm:p-8">
         <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <div className="pill bg-[#1052ab]">{isEditingLine ? 'Edit Configuration' : 'Pilot Configurator'}</div>
+            <div className="pill">Pilot Configurator</div>
             <h1 className="mt-4 text-3xl font-semibold tracking-tight text-white sm:text-4xl">{state.modelCode}</h1>
-            <p className="mt-2 max-w-2xl text-sm text-blue-100/80">
+            <p className="mt-2 max-w-2xl text-sm text-panel-muted">
               {isEditingLine
                 ? 'Update this cart line by editing icon IDs and ring glow colors, then save directly back to your active order.'
                 : 'Select matte inserts for each slot, tune ring glow colors, save to account, and bridge directly to order PDF export.'}
             </p>
           </div>
           <div className="flex flex-wrap gap-2">
-            <Link href="/shop" className="inline-flex min-h-11 items-center rounded-full border border-white/35 px-4 text-sm font-semibold text-blue-50 transition hover:border-white hover:bg-white/10">
+            <Link href="/shop" className="btn-secondary dark">
               Browse icon catalog
             </Link>
             <button
               type="button"
               onClick={actions.resetSlots}
-              className="inline-flex min-h-11 items-center rounded-lg border border-white/20 bg-white/5 px-4 text-sm font-semibold text-white transition hover:border-white/40 hover:bg-white/10"
+              className="btn-secondary dark"
             >
               Reset slots
             </button>
@@ -85,15 +85,15 @@ function KeypadConfiguratorShell() {
                     void actions.downloadPdf();
                   }}
                   disabled={!state.canDownloadPdf || state.busy.downloadingPdf}
-                  className="btn-ghost-strong inline-flex min-h-11 items-center justify-center px-4 text-xs font-semibold uppercase tracking-[0.12em] text-[#0d2f63] transition hover:border-[#6d88b6] hover:bg-white/80 disabled:cursor-not-allowed disabled:opacity-50"
+                  className="btn-secondary dark w-full justify-center text-xs uppercase tracking-[0.12em] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {state.busy.downloadingPdf ? 'Generating...' : 'Download PDF'}
                 </button>
                 <Link
                   href="/account"
-                  className="btn-ghost-strong inline-flex min-h-11 items-center justify-center px-4 text-xs font-semibold uppercase tracking-[0.12em] text-[#5c6f90] transition hover:border-[#8ea4c8] hover:bg-white/80 hover:text-[#1e3355]"
+                  className="btn-secondary dark w-full justify-center text-xs uppercase tracking-[0.12em]"
                 >
-                  Open My Saved Designs
+                  My Saved Designs
                 </Link>
               </div>
             )}
