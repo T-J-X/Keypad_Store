@@ -32,7 +32,7 @@ export default function HomePage() {
             <span>Made to ship</span>
           </div>
         </div>
-        <div className="card-soft relative overflow-hidden p-6">
+        <div className="card relative overflow-hidden p-6">
           <div className="absolute -right-8 top-8 h-40 w-40 rounded-full bg-sky/20 blur-2xl" aria-hidden />
           <div className="absolute bottom-4 left-6 h-36 w-36 rounded-full bg-coral/20 blur-2xl" aria-hidden />
           <div className="space-y-4">
@@ -87,21 +87,21 @@ export default function HomePage() {
           <Link href="/shop" className="btn-primary">Browse the catalog</Link>
         </div>
         <div className="mt-6 grid gap-6 md:grid-cols-2">
-          <div className="card-soft p-6">
+          <div className="card p-6">
             <div className="text-xs font-semibold uppercase tracking-wide text-ink/40">Shop icons</div>
             <h3 className="mt-3 text-2xl font-semibold text-ink">Organized icon catalog</h3>
             <p className="mt-2 text-sm text-ink/60">
               Search by category, filter by workflow, and build icon packs that map to your use case.
             </p>
-            <Link href="/shop" className="mt-4 inline-flex text-sm font-semibold text-moss">Explore icons -&gt;</Link>
+            <Link href="/shop" className="mt-4 inline-flex text-sm font-semibold text-sky-600 hover:underline">Explore icons -&gt;</Link>
           </div>
-          <div className="card-soft p-6">
+          <div className="card p-6">
             <div className="text-xs font-semibold uppercase tracking-wide text-ink/40">Configure</div>
             <h3 className="mt-3 text-2xl font-semibold text-ink">Keypad configurator</h3>
             <p className="mt-2 text-sm text-ink/60">
               Select a keypad model and map icon inserts per slot. Save and revisit any layout.
             </p>
-            <Link href="/configurator" className="mt-4 inline-flex text-sm font-semibold text-moss">
+            <Link href="/configurator" className="mt-4 inline-flex text-sm font-semibold text-sky-600 hover:underline">
               Start configuring -&gt;
             </Link>
           </div>
