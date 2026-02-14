@@ -1,11 +1,12 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useMemo, useState, type ReactNode } from 'react';
+import { useEffect, useId, useMemo, useState, type ReactNode } from 'react';
 import { useRouter } from 'next/navigation';
 import { categorySlug } from '../../lib/vendure';
 import { notifyCartUpdated } from '../../lib/cartEvents';
 import { useUIStore } from '../../lib/uiStore';
+import AccessibleModal from '../ui/AccessibleModal';
 
 type StockSummary = {
   label: string;
@@ -48,6 +49,8 @@ export default function PurchasePanel({
   const [wishlistSaving, setWishlistSaving] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [showAuthPrompt, setShowAuthPrompt] = useState(false);
+  const authPromptTitleId = useId();
+  const authPromptDescriptionId = useId();
   const showToast = useUIStore((state) => state.showToast);
   const safeIconId = iconId.trim() || '—';
   const categoryItems = useMemo(
@@ -319,37 +322,40 @@ export default function PurchasePanel({
 
       {errorMessage ? <p className="text-sm font-semibold text-rose-700">{errorMessage}</p> : null}
 
-      {showAuthPrompt && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-6">
-          <div className="card w-full max-w-md space-y-4 p-6">
-            <h3 className="text-xl font-semibold tracking-tight text-ink">Sign in required</h3>
-            <p className="text-sm text-ink/65">
-              Sign in to save <span className="font-semibold text-ink">{productName}</span> to your wishlist.
-            </p>
-            <div className="flex flex-wrap gap-2">
-              <Link
-                href="/login"
-                className="group relative isolate inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold tracking-tight text-white bg-neutral-950 shadow-[0_10px_30px_-18px_rgba(0,0,0,0.8)] ring-1 ring-inset ring-white/10 transition-[transform,box-shadow,background,ring-color] duration-200 hover:ring-sky-400/60 hover:shadow-[0_12px_36px_-18px_rgba(56,189,248,0.35)] active:translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
-              >
-                Sign in
-              </Link>
-              <Link
-                href="/signup"
-                className="inline-flex items-center justify-center rounded-full px-5 py-3 text-sm font-semibold text-neutral-950 bg-white ring-1 ring-inset ring-neutral-200 transition-[transform,box-shadow,background] duration-200 hover:bg-neutral-50 hover:shadow-sm active:translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
-              >
-                Create account
-              </Link>
-              <button
-                type="button"
-                onClick={() => setShowAuthPrompt(false)}
-                className="inline-flex items-center justify-center rounded-full px-5 py-3 text-sm font-semibold text-neutral-950 bg-transparent ring-1 ring-inset ring-neutral-200 transition-[background,transform] duration-200 hover:bg-neutral-50 active:translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
-              >
-                Not now
-              </button>
-            </div>
-          </div>
+      <AccessibleModal
+        open={showAuthPrompt}
+        onClose={() => setShowAuthPrompt(false)}
+        labelledBy={authPromptTitleId}
+        describedBy={authPromptDescriptionId}
+        backdropClassName="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-6"
+        panelClassName="card w-full max-w-md space-y-4 p-6"
+      >
+        <h3 id={authPromptTitleId} className="text-xl font-semibold tracking-tight text-ink">Sign in required</h3>
+        <p id={authPromptDescriptionId} className="text-sm text-ink/65">
+          Sign in to save <span className="font-semibold text-ink">{productName}</span> to your wishlist.
+        </p>
+        <div className="flex flex-wrap gap-2">
+          <Link
+            href="/login"
+            className="group relative isolate inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold tracking-tight text-white bg-neutral-950 shadow-[0_10px_30px_-18px_rgba(0,0,0,0.8)] ring-1 ring-inset ring-white/10 transition-[transform,box-shadow,background,ring-color] duration-200 hover:ring-sky-400/60 hover:shadow-[0_12px_36px_-18px_rgba(56,189,248,0.35)] active:translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+          >
+            Sign in
+          </Link>
+          <Link
+            href="/signup"
+            className="inline-flex items-center justify-center rounded-full px-5 py-3 text-sm font-semibold text-neutral-950 bg-white ring-1 ring-inset ring-neutral-200 transition-[transform,box-shadow,background] duration-200 hover:bg-neutral-50 hover:shadow-sm active:translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+          >
+            Create account
+          </Link>
+          <button
+            type="button"
+            onClick={() => setShowAuthPrompt(false)}
+            className="inline-flex items-center justify-center rounded-full px-5 py-3 text-sm font-semibold text-neutral-950 bg-transparent ring-1 ring-inset ring-neutral-200 transition-[background,transform] duration-200 hover:bg-neutral-50 active:translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+          >
+            Not now
+          </button>
         </div>
-      )}
+      </AccessibleModal>
     </section>
   );
 }
