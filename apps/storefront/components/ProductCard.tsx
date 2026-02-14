@@ -74,7 +74,7 @@ export default function ProductCard({
   };
 
   const addToCartClass = [
-    'group relative isolate inline-flex items-center justify-center gap-2 rounded-full border border-transparent px-3 py-1.5 text-xs font-medium text-white sm:px-4 sm:py-2 sm:text-sm md:text-base',
+    'group relative isolate inline-flex min-h-[44px] w-full min-w-0 items-center justify-center gap-2 rounded-2xl border border-transparent px-5 py-2 text-xs font-medium text-white whitespace-nowrap sm:text-sm md:text-base',
     'bg-[linear-gradient(90deg,#040F2E_0%,#112B5D_55%,#29457A_100%),linear-gradient(90deg,#203f7a_0%,#2f5da8_55%,#4b7fca_100%)] [background-origin:padding-box,border-box] [background-clip:padding-box,border-box]',
     'transition-[background,box-shadow,transform] duration-300',
     'hover:-translate-y-[1px] hover:bg-[linear-gradient(270deg,#040F2E_0%,#112B5D_55%,#29457A_100%),linear-gradient(90deg,#24497d_0%,#39629a_55%,#537bb0_100%)] hover:shadow-[0_0_0_1px_rgba(72,116,194,0.56),0_10px_24px_rgba(4,15,46,0.29)]',
@@ -122,7 +122,7 @@ export default function ProductCard({
         </div>
       </div>
       <div className="relative z-20 mt-auto space-y-2">
-        <div className="flex items-center justify-between gap-3">
+        <div className="space-y-3">
           <div className="space-y-0.5">
             <div className="flex items-end gap-1.5">
               <div className="text-sm font-bold tracking-tight text-ink md:text-base">
@@ -142,8 +142,8 @@ export default function ProductCard({
             disabled={!primaryVariant?.id || adding}
             className={addToCartClass}
           >
-            <span className="pointer-events-none absolute inset-0 rounded-full bg-[linear-gradient(270deg,rgba(255,255,255,0.10)_0%,rgba(255,255,255,0.02)_45%,rgba(255,255,255,0.08)_100%)] opacity-0 transition-opacity duration-300 group-hover:opacity-45" />
-            <span className="pointer-events-none absolute -inset-[1px] -z-10 rounded-full bg-[linear-gradient(90deg,rgba(11,27,58,0.44)_0%,rgba(27,52,95,0.30)_55%,rgba(58,116,198,0.30)_100%)] opacity-0 transition-opacity duration-300 group-hover:opacity-55" />
+            <span className="pointer-events-none absolute inset-0 rounded-2xl bg-[linear-gradient(270deg,rgba(255,255,255,0.10)_0%,rgba(255,255,255,0.02)_45%,rgba(255,255,255,0.08)_100%)] opacity-0 transition-opacity duration-300 group-hover:opacity-45" />
+            <span className="pointer-events-none absolute -inset-[1px] -z-10 rounded-2xl bg-[linear-gradient(90deg,rgba(11,27,58,0.44)_0%,rgba(27,52,95,0.30)_55%,rgba(58,116,198,0.30)_100%)] opacity-0 transition-opacity duration-300 group-hover:opacity-55" />
             <span className="relative z-10">{adding ? 'Adding…' : 'Add to Cart'}</span>
           </button>
         </div>

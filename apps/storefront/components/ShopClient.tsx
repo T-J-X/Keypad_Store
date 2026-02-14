@@ -644,19 +644,7 @@ export default function ShopClient({
   );
 
   return (
-    <div className="relative mx-auto w-full max-w-[88rem] px-6 pb-20 pt-10">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10 rounded-[36px] bg-[radial-gradient(130%_120%_at_50%_-8%,rgba(53,113,198,0.22)_0%,rgba(19,50,96,0.12)_38%,rgba(255,255,255,0)_78%)]"
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -left-24 top-20 -z-10 h-64 w-64 rounded-full bg-[#6ea3ec]/18 blur-3xl"
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -right-20 top-44 -z-10 h-64 w-64 rounded-full bg-[#84b2f0]/20 blur-3xl"
-      />
+    <div className="mx-auto w-full max-w-[88rem] bg-white px-6 pb-20 pt-10">
       <BaseShopHero showTiles={false} />
 
       <div className="mb-8 flex flex-col gap-4">
@@ -762,7 +750,7 @@ export default function ShopClient({
                       ) : null}
                       {isInteractive ? (
                         <span
-                          className={`mt-4 inline-flex translate-y-2 items-center justify-center rounded-full px-4 py-2 text-xs font-semibold opacity-0 transition-[opacity,transform] duration-200 group-hover:translate-y-0 group-hover:opacity-100 ${
+                          className={`mt-4 inline-flex min-h-[44px] translate-y-2 items-center justify-center rounded-2xl px-5 py-2 text-xs font-semibold whitespace-nowrap opacity-0 transition-[opacity,transform] duration-200 group-hover:translate-y-0 group-hover:opacity-100 ${
                             isExploreMoreTile
                               ? 'border border-transparent bg-[linear-gradient(#ffffff,#ffffff),linear-gradient(90deg,#b7d0fb_0%,#e8f1ff_100%)] [background-origin:border-box] [background-clip:padding-box,border-box] text-[#143f82] shadow-[0_8px_20px_rgba(6,23,59,0.2)]'
                               : 'bg-[linear-gradient(90deg,#0d2f66_0%,#2053a2_55%,#3f75c4_100%)] text-white'
@@ -803,7 +791,7 @@ export default function ShopClient({
               <button
                 type="button"
                 onClick={() => onSectionChange('button-inserts', { scrollToTop: true })}
-                className="rounded-full border border-ink/15 px-4 py-2 text-sm font-semibold text-ink transition hover:border-ink/35"
+                className="inline-flex min-h-[44px] items-center justify-center rounded-2xl border border-ink/15 px-5 py-2 text-sm font-semibold text-ink whitespace-nowrap transition hover:border-ink/35"
               >
                 View all inserts
               </button>
@@ -850,7 +838,7 @@ export default function ShopClient({
               <button
                 type="button"
                 onClick={() => onSectionChange('keypads', { scrollToTop: true })}
-                className="rounded-full border border-ink/15 px-4 py-2 text-sm font-semibold text-ink transition hover:border-ink/35"
+                className="inline-flex min-h-[44px] items-center justify-center rounded-2xl border border-ink/15 px-5 py-2 text-sm font-semibold text-ink whitespace-nowrap transition hover:border-ink/35"
               >
                 View all keypads
               </button>

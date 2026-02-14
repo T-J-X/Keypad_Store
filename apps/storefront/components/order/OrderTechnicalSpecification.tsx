@@ -182,7 +182,7 @@ export default function OrderTechnicalSpecification({
       <button
         type="button"
         onClick={() => void openModal()}
-        className="inline-flex items-center justify-center rounded-full border border-[#0e2e60] bg-[linear-gradient(90deg,#031331_0%,#0d2f63_58%,#1f59a6_100%)] px-5 py-2.5 text-sm font-semibold uppercase tracking-[0.12em] text-white transition hover:opacity-90"
+        className="inline-flex min-h-[44px] items-center justify-center rounded-2xl border border-[#0e2e60] bg-[linear-gradient(90deg,#031331_0%,#0d2f63_58%,#1f59a6_100%)] px-5 py-2.5 text-sm font-semibold uppercase tracking-[0.12em] text-white whitespace-nowrap transition hover:opacity-90"
       >
         View Technical Specification
       </button>
@@ -209,13 +209,13 @@ export default function OrderTechnicalSpecification({
           <button
             type="button"
             onClick={() => setIsOpen(false)}
-            className="inline-flex min-h-11 items-center justify-center rounded-full border border-white/30 px-4 text-sm font-semibold text-white transition hover:border-white hover:bg-white/10"
+            className="inline-flex min-h-[44px] items-center justify-center rounded-2xl border border-white/30 px-4 text-sm font-semibold text-white whitespace-nowrap transition hover:border-white hover:bg-white/10"
           >
             Close
           </button>
         </div>
 
-        {isLoading ? <p className="mt-5 text-sm text-blue-100/80">Loading technical specification...</p> : null}
+        {isLoading ? <p className="mt-5 text-sm text-blue-100/80">Loading technical specification…</p> : null}
         {error ? <p className="mt-5 text-sm font-semibold text-rose-300">{error}</p> : null}
 
         {!isLoading && !error && specData && activeLine ? (
@@ -257,9 +257,9 @@ export default function OrderTechnicalSpecification({
                 type="button"
                 onClick={() => void onDownloadPdf()}
                 disabled={downloadingLineId === activeLine.lineId}
-                className="inline-flex min-h-11 w-full items-center justify-center rounded-full border border-[#0d2f63] bg-white px-4 text-sm font-semibold uppercase tracking-[0.12em] text-[#0d2f63] transition hover:bg-[#e5efff] disabled:cursor-not-allowed disabled:opacity-60"
+                className="inline-flex min-h-[44px] w-full items-center justify-center rounded-2xl border border-[#0d2f63] bg-white px-4 text-sm font-semibold uppercase tracking-[0.12em] text-[#0d2f63] whitespace-nowrap transition hover:bg-[#e5efff] disabled:cursor-not-allowed disabled:opacity-60"
               >
-                {downloadingLineId === activeLine.lineId ? 'Generating PDF...' : 'Download Engineering PDF'}
+                {downloadingLineId === activeLine.lineId ? 'Generating PDF…' : 'Download Engineering PDF'}
               </button>
               {downloadError ? <p className="text-xs font-semibold text-rose-300">{downloadError}</p> : null}
             </div>

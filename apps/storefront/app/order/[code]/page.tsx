@@ -5,8 +5,8 @@ import { Suspense, use } from 'react';
 
 const OrderTechnicalSpecification = dynamic(() => import('../../../components/order/OrderTechnicalSpecification'), {
   loading: () => (
-    <span className="inline-flex items-center justify-center rounded-full border border-[#0e2e60]/30 bg-[#0d2f63]/15 px-5 py-2.5 text-sm font-semibold uppercase tracking-[0.12em] text-[#0e2e60]">
-      Loading specification...
+    <span className="inline-flex min-h-[44px] items-center justify-center rounded-2xl border border-[#0e2e60]/30 bg-[#0d2f63]/15 px-5 py-2.5 text-sm font-semibold uppercase tracking-[0.12em] text-[#0e2e60] whitespace-nowrap">
+      Loading specification…
     </span>
   ),
 });
@@ -95,13 +95,13 @@ function OrderConfirmationContent({
           {orderCode ? <OrderTechnicalSpecification orderCode={orderCode} /> : null}
           <Link
             href="/account"
-            className="inline-flex items-center justify-center rounded-full bg-ink px-5 py-2.5 text-sm font-semibold text-white transition hover:opacity-90"
+            className="inline-flex min-h-[44px] w-full min-w-[12rem] items-center justify-center rounded-2xl bg-ink px-5 py-2.5 text-sm font-semibold text-white whitespace-nowrap transition hover:opacity-90 sm:w-auto"
           >
             View account
           </Link>
           <Link
             href="/shop"
-            className="inline-flex items-center justify-center rounded-full border border-ink/15 px-5 py-2.5 text-sm font-semibold text-ink transition hover:border-ink/30 hover:bg-white"
+            className="inline-flex min-h-[44px] w-full min-w-[12rem] items-center justify-center rounded-2xl border border-ink/15 px-5 py-2.5 text-sm font-semibold text-ink whitespace-nowrap transition hover:border-ink/30 hover:bg-white sm:w-auto"
           >
             Continue shopping
           </Link>
