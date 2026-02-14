@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import { validateMutationRequestOrigin } from '../../../../lib/api/requestSecurity';
-import { readJsonBody } from '../../../../lib/api/shopApi';
-
-const SHOP_API = process.env.VENDURE_SHOP_API_URL || 'http://localhost:3000/shop-api';
+import { readJsonBody, SHOP_API_URL } from '../../../../lib/api/shopApi';
 const PREFERRED_PAYMENT_CODES = ['standard-payment', 'test-card-processor', 'dummy-payment-handler'] as const;
 
 const SET_CUSTOMER_FOR_ORDER_MUTATION = `
@@ -207,7 +205,7 @@ export async function POST(request: Request) {
     const cookieHeader = serializeCookieHeader(cookieJar);
     if (cookieHeader) headers.cookie = cookieHeader;
 
-    const vendureResponse = await fetch(SHOP_API, {
+  const vendureResponse = await fetch(SHOP_API_URL, {
       method: 'POST',
       headers,
       cache: 'no-store',

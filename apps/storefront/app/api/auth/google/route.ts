@@ -7,9 +7,7 @@ import {
   getSafeRelativePath,
 } from '../../../../lib/googleAuth';
 import { validateMutationRequestOrigin } from '../../../../lib/api/requestSecurity';
-import { readJsonBody, withSessionCookie } from '../../../../lib/api/shopApi';
-
-const SHOP_API = process.env.VENDURE_SHOP_API_URL || 'http://localhost:3000/shop-api';
+import { readJsonBody, SHOP_API_URL, withSessionCookie } from '../../../../lib/api/shopApi';
 const STATE_MAX_AGE_SECONDS = 10 * 60;
 
 const AUTHENTICATE_WITH_GOOGLE_MUTATION = `
@@ -138,7 +136,7 @@ function authenticateWithVendure(
   const incomingCookie = request.headers.get('cookie');
   if (incomingCookie) headers.cookie = incomingCookie;
 
-  return fetch(SHOP_API, {
+  return fetch(SHOP_API_URL, {
     method: 'POST',
     headers,
     cache: 'no-store',

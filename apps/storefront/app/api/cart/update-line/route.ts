@@ -1,12 +1,10 @@
 import { NextResponse } from 'next/server';
 import { validateMutationRequestOrigin } from '../../../../lib/api/requestSecurity';
-import { readJsonBody, withSessionCookie } from '../../../../lib/api/shopApi';
+import { readJsonBody, SHOP_API_URL, withSessionCookie } from '../../../../lib/api/shopApi';
 import {
   serializeConfiguration,
   validateAndNormalizeConfigurationInput,
 } from '../../../../lib/keypadConfiguration';
-
-const SHOP_API = process.env.VENDURE_SHOP_API_URL || 'http://localhost:3000/shop-api';
 
 const ADJUST_ORDER_LINE_MUTATION = `
   mutation AdjustOrderLine(
@@ -115,7 +113,7 @@ export async function POST(request: Request) {
 
   const isRemove = quantity <= 0;
 
-  const vendureResponse = await fetch(SHOP_API, {
+  const vendureResponse = await fetch(SHOP_API_URL, {
     method: 'POST',
     headers,
     cache: 'no-store',
