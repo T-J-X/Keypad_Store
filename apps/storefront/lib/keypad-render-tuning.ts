@@ -21,6 +21,11 @@ export const KEYPAD_RENDER_TUNING: Record<string, ModelRenderTuning> = {
     iconScale: 1,
     iconVisibleComp: 1.29,
   },
+  'PKP-2400-SI': {
+    model: 'PKP-2400-SI',
+    iconScale: 1.1,
+    iconVisibleComp: 1.29,
+  },
   'PKP-2500-SI': {
     model: 'PKP-2500-SI',
     iconScale: 1.28,
@@ -30,6 +35,11 @@ export const KEYPAD_RENDER_TUNING: Record<string, ModelRenderTuning> = {
     model: 'PKP-2600-SI',
     iconScale: 1.28,
     iconVisibleComp: 1.01,
+  },
+  'PKP-3500-SI': {
+    model: 'PKP-3500-SI',
+    iconScale: 1.05,
+    iconVisibleComp: 1.29,
   },
 };
 
