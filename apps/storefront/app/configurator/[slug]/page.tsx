@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
-import Pkp2200Configurator from '../../../components/configurator/Pkp2200Configurator';
+import KeypadConfigurator from '../../../components/configurator/KeypadConfigurator';
 import { resolveKeypadShellAssetPath } from '../../../lib/keypadShellAsset';
 import { resolvePkpModelCode } from '../../../lib/keypadUtils';
 import { fetchProductBySlug } from '../../../lib/vendure.server';
@@ -70,7 +70,7 @@ async function ConfiguratorModelContent({
   const modelCode = resolvePkpModelCode(product.slug, product.name) || product.name.toUpperCase();
 
   return (
-    <Pkp2200Configurator
+    <KeypadConfigurator
       keypad={{
         id: product.id,
         slug: product.slug,

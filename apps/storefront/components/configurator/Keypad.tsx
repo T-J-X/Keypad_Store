@@ -1,14 +1,17 @@
 'use client';
 
-import ConfiguratorActions from './ConfiguratorActions';
+import dynamic from 'next/dynamic';
 import ConfigurationSidebar from './ConfigurationSidebar';
-import IconSelectionPopup from './IconSelectionPopup';
 import KeypadPreview from './KeypadPreview';
-import KeypadProvider from './KeypadProvider';
+import KeypadProvider, { KeypadContext } from './KeypadProvider';
 import SaveDesignModal from './SaveDesignModal';
+
+const ConfiguratorActions = dynamic(() => import('./ConfiguratorActions'));
+const IconSelectionPopup = dynamic(() => import('./IconSelectionPopup'));
 
 export const Keypad = {
   Provider: KeypadProvider,
+  Context: KeypadContext,
   Preview: KeypadPreview,
   Sidebar: ConfigurationSidebar,
   Actions: ConfiguratorActions,

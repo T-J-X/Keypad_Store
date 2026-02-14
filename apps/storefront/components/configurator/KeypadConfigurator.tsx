@@ -1,13 +1,29 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { use } from 'react';
-import { Keypad } from './Keypad';
-import { KeypadContext } from './KeypadProvider';
+import ConfigurationSidebar from './ConfigurationSidebar';
+import KeypadPreview from './KeypadPreview';
+import KeypadProvider, { KeypadContext } from './KeypadProvider';
+import SaveDesignModal from './SaveDesignModal';
 import type { PilotKeypadProduct } from './types';
 
+const ConfiguratorActions = dynamic(() => import('./ConfiguratorActions'));
+const IconSelectionPopup = dynamic(() => import('./IconSelectionPopup'));
+
+const Keypad = {
+  Provider: KeypadProvider,
+  Context: KeypadContext,
+  Preview: KeypadPreview,
+  Sidebar: ConfigurationSidebar,
+  Actions: ConfiguratorActions,
+  IconPicker: IconSelectionPopup,
+  SaveDialog: SaveDesignModal,
+};
+
 function KeypadConfiguratorShell() {
-  const context = use(KeypadContext);
+  const context = use(Keypad.Context);
   if (!context) return null;
 
   const { state, actions, meta } = context;
@@ -80,7 +96,7 @@ function KeypadConfiguratorShell() {
   );
 }
 
-export default function Pkp2200Configurator({
+export default function KeypadConfigurator({
   keypad,
 }: {
   keypad: PilotKeypadProduct;
