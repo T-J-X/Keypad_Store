@@ -1,6 +1,10 @@
 import { NextResponse } from 'next/server';
 import { getSlotIdsForModel, KEYPAD_MODEL_GEOMETRIES } from '../../../../../config/layouts/geometry';
 import { validateMutationRequestOrigin } from '../../../../../lib/api/requestSecurity';
+import {
+  getRequestBodyErrorMessage,
+  savedConfigurationUpdateBodySchema,
+} from '../../../../../lib/api/schemas';
 import { queryShopApi, readJsonBody, withSessionCookie } from '../../../../../lib/api/shopApi';
 import {
   serializeConfiguration,
@@ -59,12 +63,6 @@ type DeleteSavedConfigurationResponse = {
   deleteConfiguration: boolean;
 };
 
-type PatchBody = {
-  name?: unknown;
-  keypadModel?: unknown;
-  configuration?: unknown;
-};
-
 export async function GET(
   request: Request,
   { params }: { params: Promise<{ id: string }> },
@@ -108,18 +106,19 @@ export async function PATCH(
     return NextResponse.json({ error: 'Configuration id is required.' }, { status: 400 });
   }
 
-  const body = await readJsonBody<PatchBody>(request);
-
-  const name = typeof body?.name === 'string' ? body.name.trim() : '';
-  const keypadModel = typeof body?.keypadModel === 'string' ? body.keypadModel.trim().toUpperCase() : '';
-  if (!name) {
-    return NextResponse.json({ error: 'Configuration name cannot be empty.' }, { status: 400 });
+  const parsedBody = savedConfigurationUpdateBodySchema.safeParse(await readJsonBody<unknown>(request));
+  if (!parsedBody.success) {
+    return NextResponse.json({ error: getRequestBodyErrorMessage(parsedBody.error) }, { status: 400 });
   }
+
+  const name = parsedBody.data.name;
+  const keypadModel = (parsedBody.data.keypadModel || '').toUpperCase();
+
   if (keypadModel && !KEYPAD_MODEL_GEOMETRIES[keypadModel]) {
     return NextResponse.json({ error: `Unsupported keypad model "${keypadModel}".` }, { status: 400 });
   }
 
-  const configValidation = validateAndNormalizeConfigurationInput(body?.configuration, {
+  const configValidation = validateAndNormalizeConfigurationInput(parsedBody.data.configuration, {
     requireComplete: true,
     slotIds: keypadModel ? getSlotIdsForModel(keypadModel) : undefined,
   });

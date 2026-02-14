@@ -1,5 +1,9 @@
 import { NextResponse } from 'next/server';
 import { validateMutationRequestOrigin } from '../../../../../../lib/api/requestSecurity';
+import {
+  getRequestBodyErrorMessage,
+  savedConfigurationEnquiryBodySchema,
+} from '../../../../../../lib/api/schemas';
 import { queryShopApi, readJsonBody, withSessionCookie } from '../../../../../../lib/api/shopApi';
 
 const NTFY_TOPIC_URL = process.env.NTFY_TOPIC_URL?.trim() || '';
@@ -52,8 +56,12 @@ export async function POST(
     return NextResponse.json({ error: 'Configuration id is required.' }, { status: 400 });
   }
 
-  const body = await readJsonBody<{ note?: unknown }>(request);
-  const note = typeof body?.note === 'string' ? body.note.trim() : '';
+  const parsedBody = savedConfigurationEnquiryBodySchema.safeParse(await readJsonBody<unknown>(request));
+  if (!parsedBody.success) {
+    return NextResponse.json({ error: getRequestBodyErrorMessage(parsedBody.error) }, { status: 400 });
+  }
+
+  const note = parsedBody.data.note || '';
 
   const shopResponse = await queryShopApi<GetSavedConfigurationResponse>(request, {
     query: GET_SAVED_CONFIGURATION_QUERY,

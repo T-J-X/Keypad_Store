@@ -7,6 +7,7 @@ import {
   getSafeRelativePath,
 } from '../../../../lib/googleAuth';
 import { validateMutationRequestOrigin } from '../../../../lib/api/requestSecurity';
+import { getRequestBodyErrorMessage, googleAuthBodySchema } from '../../../../lib/api/schemas';
 import { readJsonBody, SHOP_API_URL, withSessionCookie } from '../../../../lib/api/shopApi';
 const STATE_MAX_AGE_SECONDS = 10 * 60;
 
@@ -84,19 +85,14 @@ export async function POST(request: Request) {
   const originError = validateMutationRequestOrigin(request);
   if (originError) return originError;
 
-  const payload = await readJsonBody<{
-    token?: string;
-    code?: string;
-    redirectUri?: string;
-  }>(request);
-
-  const token = payload?.token?.trim() || null;
-  const code = payload?.code?.trim() || null;
-  const redirectUri = payload?.redirectUri?.trim() || null;
-
-  if (!token && !code) {
-    return NextResponse.json({ error: 'Missing Google token or authorization code' }, { status: 400 });
+  const parsedBody = googleAuthBodySchema.safeParse(await readJsonBody<unknown>(request));
+  if (!parsedBody.success) {
+    return NextResponse.json({ error: getRequestBodyErrorMessage(parsedBody.error) }, { status: 400 });
   }
+
+  const token = parsedBody.data.token || null;
+  const code = parsedBody.data.code || null;
+  const redirectUri = parsedBody.data.redirectUri || null;
 
   const vendureResponse = await authenticateWithVendure(request, { token, code, redirectUri });
   const json = (await vendureResponse.json().catch(() => ({}))) as GraphResponse<AuthenticateWithGoogleResponse>;

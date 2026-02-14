@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { validateMutationRequestOrigin } from '../../../../lib/api/requestSecurity';
+import { cartUpdateLineBodySchema, getRequestBodyErrorMessage } from '../../../../lib/api/schemas';
 import { readJsonBody, SHOP_API_URL, withSessionCookie } from '../../../../lib/api/shopApi';
 import {
   serializeConfiguration,
@@ -78,24 +79,16 @@ export async function POST(request: Request) {
   const originError = validateMutationRequestOrigin(request);
   if (originError) return originError;
 
-  const payload = await readJsonBody<{ orderLineId?: string; quantity?: number; configuration?: unknown }>(request);
-
-  const orderLineId = payload?.orderLineId?.trim();
-  const quantity = typeof payload?.quantity === 'number' && Number.isFinite(payload.quantity)
-    ? Math.floor(payload.quantity)
-    : NaN;
-
-  if (!orderLineId) {
-    return NextResponse.json({ error: 'Missing orderLineId' }, { status: 400 });
+  const parsedBody = cartUpdateLineBodySchema.safeParse(await readJsonBody<unknown>(request));
+  if (!parsedBody.success) {
+    return NextResponse.json({ error: getRequestBodyErrorMessage(parsedBody.error) }, { status: 400 });
   }
 
-  if (!Number.isInteger(quantity)) {
-    return NextResponse.json({ error: 'Invalid quantity' }, { status: 400 });
-  }
+  const { orderLineId, quantity, configuration } = parsedBody.data;
 
   let customFields: { configuration: string } | undefined;
-  if (payload?.configuration !== undefined && quantity > 0) {
-    const validation = validateAndNormalizeConfigurationInput(payload.configuration, { requireComplete: true });
+  if (configuration !== undefined && quantity > 0) {
+    const validation = validateAndNormalizeConfigurationInput(configuration, { requireComplete: true });
     if (!validation.ok) {
       return NextResponse.json({ error: validation.error }, { status: 400 });
     }
