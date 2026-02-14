@@ -1,4 +1,17 @@
+import type { Metadata } from 'next';
 import AccountTabs from '../../components/AccountTabs';
+
+export const metadata: Metadata = {
+  title: 'Account | Keypad Store',
+  description: 'Manage saved keypad configurations and review orders.',
+  alternates: {
+    canonical: '/account',
+  },
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 export default function AccountPage() {
   return (

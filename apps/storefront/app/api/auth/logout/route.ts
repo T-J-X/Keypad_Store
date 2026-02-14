@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { validateMutationRequestOrigin } from '../../../../lib/api/requestSecurity';
+import { withSessionCookie } from '../../../../lib/api/shopApi';
 
 const SHOP_API = process.env.VENDURE_SHOP_API_URL || 'http://localhost:3000/shop-api';
 
@@ -18,6 +20,9 @@ const LOGOUT_MUTATION = `
 `;
 
 export async function POST(request: Request) {
+  const originError = validateMutationRequestOrigin(request);
+  if (originError) return originError;
+
   const headers: Record<string, string> = {
     'content-type': 'application/json',
   };
@@ -42,12 +47,4 @@ export async function POST(request: Request) {
   }
 
   return withSessionCookie(NextResponse.json({ ok: true }), vendureResponse);
-}
-
-function withSessionCookie(response: NextResponse, vendureResponse: Response) {
-  const setCookie = vendureResponse.headers.get('set-cookie');
-  if (setCookie) {
-    response.headers.set('set-cookie', setCookie);
-  }
-  return response;
 }

@@ -1,7 +1,20 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import GoogleLoginButton from '../../components/GoogleLoginButton';
 import { getSafeRelativePath } from '../../lib/googleAuth';
+
+export const metadata: Metadata = {
+  title: 'Login | Keypad Store',
+  description: 'Sign in to manage keypad layouts and orders.',
+  alternates: {
+    canonical: '/login',
+  },
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 type LoginSearchParams = {
   redirectTo?: string | string[];

@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { validateMutationRequestOrigin } from '../../../../lib/api/requestSecurity';
+import { readJsonBody } from '../../../../lib/api/shopApi';
 import {
   getGeometryForModel,
   getSlotIdsForModel,
@@ -150,7 +152,10 @@ type IconAssetMapping = {
 };
 
 export async function POST(request: Request) {
-  const body = (await request.json().catch(() => null)) as BodyPayload | null;
+  const originError = validateMutationRequestOrigin(request);
+  if (originError) return originError;
+
+  const body = await readJsonBody<BodyPayload>(request);
   const designName = typeof body?.designName === 'string' ? body.designName.trim() : '';
   const orderCode = typeof body?.orderCode === 'string' ? body.orderCode.trim() : '';
   const requestedModelCode = typeof body?.modelCode === 'string'

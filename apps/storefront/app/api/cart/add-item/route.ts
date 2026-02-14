@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { validateMutationRequestOrigin } from '../../../../lib/api/requestSecurity';
+import { readJsonBody, withSessionCookie } from '../../../../lib/api/shopApi';
 import {
   serializeConfiguration,
   validateAndNormalizeConfigurationInput,
@@ -50,7 +52,10 @@ const ADD_ITEM_MUTATION = `
 `;
 
 export async function POST(request: Request) {
-  const payload = (await request.json().catch(() => null)) as
+  const originError = validateMutationRequestOrigin(request);
+  if (originError) return originError;
+
+  const payload = await readJsonBody<
     | {
         productVariantId?: string;
         quantity?: number;
@@ -58,7 +63,7 @@ export async function POST(request: Request) {
           configuration?: unknown;
         } | null;
       }
-    | null;
+  >(request);
 
   const productVariantId = payload?.productVariantId?.trim();
   const quantity = Number.isInteger(payload?.quantity) && payload?.quantity && payload.quantity > 0
@@ -128,12 +133,4 @@ export async function POST(request: Request) {
     }),
     vendureResponse,
   );
-}
-
-function withSessionCookie(response: NextResponse, vendureResponse: Response) {
-  const setCookie = vendureResponse.headers.get('set-cookie');
-  if (setCookie) {
-    response.headers.set('set-cookie', setCookie);
-  }
-  return response;
 }

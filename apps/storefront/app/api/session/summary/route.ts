@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { withSessionCookie } from '../../../../lib/api/shopApi';
 
 const SHOP_API = process.env.VENDURE_SHOP_API_URL || 'http://localhost:3000/shop-api';
 
@@ -88,12 +89,4 @@ export async function GET(request: Request) {
       customer: null,
     });
   }
-}
-
-function withSessionCookie(response: NextResponse, vendureResponse: Response) {
-  const setCookie = vendureResponse.headers.get('set-cookie');
-  if (setCookie) {
-    response.headers.set('set-cookie', setCookie);
-  }
-  return response;
 }

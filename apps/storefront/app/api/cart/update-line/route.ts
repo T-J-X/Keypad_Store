@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { validateMutationRequestOrigin } from '../../../../lib/api/requestSecurity';
+import { readJsonBody, withSessionCookie } from '../../../../lib/api/shopApi';
 import {
   serializeConfiguration,
   validateAndNormalizeConfigurationInput,
@@ -75,9 +77,10 @@ type RemoveOrderLineResponse = {
 };
 
 export async function POST(request: Request) {
-  const payload = (await request.json().catch(() => null)) as
-    | { orderLineId?: string; quantity?: number; configuration?: unknown }
-    | null;
+  const originError = validateMutationRequestOrigin(request);
+  if (originError) return originError;
+
+  const payload = await readJsonBody<{ orderLineId?: string; quantity?: number; configuration?: unknown }>(request);
 
   const orderLineId = payload?.orderLineId?.trim();
   const quantity = typeof payload?.quantity === 'number' && Number.isFinite(payload.quantity)
@@ -161,12 +164,4 @@ export async function POST(request: Request) {
 function normalizeInt(value: unknown) {
   if (typeof value !== 'number' || !Number.isFinite(value)) return 0;
   return Math.max(0, Math.floor(value));
-}
-
-function withSessionCookie(response: NextResponse, vendureResponse: Response) {
-  const setCookie = vendureResponse.headers.get('set-cookie');
-  if (setCookie) {
-    response.headers.set('set-cookie', setCookie);
-  }
-  return response;
 }

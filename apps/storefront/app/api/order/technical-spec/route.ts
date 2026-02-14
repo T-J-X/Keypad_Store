@@ -1,10 +1,9 @@
 import { NextResponse } from 'next/server';
+import { queryShopApi, withSessionCookie } from '../../../../lib/api/shopApi';
 import {
   validateAndNormalizeConfigurationInput,
   type KeypadConfigurationDraft,
 } from '../../../../lib/keypadConfiguration';
-
-const SHOP_API = process.env.VENDURE_SHOP_API_URL || 'http://localhost:3000/shop-api';
 
 const ORDER_EXPORT_QUERY = `
   query OrderPdfExportData($orderCode: String!) {
@@ -24,11 +23,6 @@ const ORDER_EXPORT_QUERY = `
     }
   }
 `;
-
-type GraphResponse<T> = {
-  data?: T;
-  errors?: Array<{ message?: string }>;
-};
 
 type OrderExportResponse = {
   orderPdfExportData?: {
@@ -124,67 +118,4 @@ export async function GET(request: Request) {
     }),
     response.rawResponse,
   );
-}
-
-async function queryShopApi<T>(
-  request: Request,
-  input: {
-    query: string;
-    variables?: Record<string, unknown>;
-  },
-): Promise<
-  | {
-      ok: true;
-      data: T;
-      rawResponse: Response;
-    }
-  | {
-      ok: false;
-      status: number;
-      error: string;
-      rawResponse: Response;
-    }
-> {
-  const headers: Record<string, string> = {
-    'content-type': 'application/json',
-  };
-
-  const incomingCookie = request.headers.get('cookie');
-  if (incomingCookie) headers.cookie = incomingCookie;
-
-  const rawResponse = await fetch(SHOP_API, {
-    method: 'POST',
-    headers,
-    cache: 'no-store',
-    body: JSON.stringify({
-      query: input.query,
-      variables: input.variables,
-    }),
-  });
-
-  const json = (await rawResponse.json().catch(() => ({}))) as GraphResponse<T>;
-
-  if (!rawResponse.ok || json.errors?.length || !json.data) {
-    const message = json.errors?.[0]?.message || `Vendure error (${rawResponse.status})`;
-    return {
-      ok: false,
-      status: rawResponse.ok ? 400 : rawResponse.status,
-      error: message,
-      rawResponse,
-    };
-  }
-
-  return {
-    ok: true,
-    data: json.data,
-    rawResponse,
-  };
-}
-
-function withSessionCookie(response: NextResponse, vendureResponse: Response) {
-  const setCookie = vendureResponse.headers.get('set-cookie');
-  if (setCookie) {
-    response.headers.set('set-cookie', setCookie);
-  }
-  return response;
 }

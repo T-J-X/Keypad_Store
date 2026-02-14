@@ -5,6 +5,7 @@ import {
   getGoogleRedirectUri,
   getSafeRelativePath,
 } from '../../../../../lib/googleAuth';
+import { withSessionCookie } from '../../../../../lib/api/shopApi';
 
 const SHOP_API = process.env.VENDURE_SHOP_API_URL || 'http://localhost:3000/shop-api';
 
@@ -122,12 +123,4 @@ function authenticateWithVendure(
 function clearOauthCookies(response: NextResponse) {
   response.cookies.delete(GOOGLE_AUTH_STATE_COOKIE);
   response.cookies.delete(GOOGLE_AUTH_NEXT_COOKIE);
-}
-
-function withSessionCookie(response: NextResponse, vendureResponse: Response) {
-  const setCookie = vendureResponse.headers.get('set-cookie');
-  if (setCookie) {
-    response.headers.set('set-cookie', setCookie);
-  }
-  return response;
 }

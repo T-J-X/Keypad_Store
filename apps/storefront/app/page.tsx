@@ -1,4 +1,13 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
+
+export const metadata: Metadata = {
+  title: 'Keypad Store | Configure Technical Keypads',
+  description: 'Choose a keypad model, map icon inserts, and export production-ready keypad configurations.',
+  alternates: {
+    canonical: '/',
+  },
+};
 
 export default function HomePage() {
   return (

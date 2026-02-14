@@ -1,12 +1,12 @@
 import { NextResponse } from 'next/server';
 import { resolvePkpModelCode } from '../../../../lib/keypadUtils';
 import { getSlotIdsForModel, KEYPAD_MODEL_GEOMETRIES } from '../../../../config/layouts/geometry';
+import { validateMutationRequestOrigin } from '../../../../lib/api/requestSecurity';
+import { queryShopApi, readJsonBody, withSessionCookie } from '../../../../lib/api/shopApi';
 import {
   serializeConfiguration,
   validateAndNormalizeConfigurationInput,
 } from '../../../../lib/keypadConfiguration';
-
-const SHOP_API = process.env.VENDURE_SHOP_API_URL || 'http://localhost:3000/shop-api';
 
 const SAVED_CONFIGURATION_FIELDS = `
   id
@@ -46,11 +46,6 @@ const SAVE_CONFIGURATION_MUTATION = `
     }
   }
 `;
-
-type GraphResponse<T> = {
-  data?: T;
-  errors?: Array<{ message?: string }>;
-};
 
 type SavedConfigurationNode = {
   id: string;
@@ -125,7 +120,10 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
-  const body = (await request.json().catch(() => null)) as SavedConfigurationRequestBody | null;
+  const originError = validateMutationRequestOrigin(request);
+  if (originError) return originError;
+
+  const body = await readJsonBody<SavedConfigurationRequestBody>(request);
 
   const name = typeof body?.name === 'string' ? body.name.trim() : '';
   const keypadModel = typeof body?.keypadModel === 'string' ? body.keypadModel.trim().toUpperCase() : '';
@@ -170,69 +168,6 @@ export async function POST(request: Request) {
     NextResponse.json({ item: shopResponse.data?.saveConfiguration ?? null }),
     shopResponse.rawResponse,
   );
-}
-
-async function queryShopApi<T>(
-  request: Request,
-  input: {
-    query: string;
-    variables?: Record<string, unknown>;
-  },
-): Promise<
-  | {
-      ok: true;
-      data: T;
-      rawResponse: Response;
-    }
-  | {
-      ok: false;
-      status: number;
-      error: string;
-      rawResponse: Response;
-    }
-> {
-  const headers: Record<string, string> = {
-    'content-type': 'application/json',
-  };
-
-  const incomingCookie = request.headers.get('cookie');
-  if (incomingCookie) headers.cookie = incomingCookie;
-
-  const rawResponse = await fetch(SHOP_API, {
-    method: 'POST',
-    headers,
-    cache: 'no-store',
-    body: JSON.stringify({
-      query: input.query,
-      variables: input.variables,
-    }),
-  });
-
-  const json = (await rawResponse.json().catch(() => ({}))) as GraphResponse<T>;
-
-  if (!rawResponse.ok || json.errors?.length || !json.data) {
-    const message = json.errors?.[0]?.message || `Vendure error (${rawResponse.status})`;
-    return {
-      ok: false,
-      status: rawResponse.ok ? 400 : rawResponse.status,
-      error: message,
-      rawResponse,
-    };
-  }
-
-  return {
-    ok: true,
-    data: json.data,
-    rawResponse,
-  };
-}
-
-function withSessionCookie(response: NextResponse, vendureResponse: Response) {
-  const setCookie = vendureResponse.headers.get('set-cookie');
-  if (setCookie) {
-    response.headers.set('set-cookie', setCookie);
-  }
-  return response;
 }
 
 function buildKeypadVariantMap(

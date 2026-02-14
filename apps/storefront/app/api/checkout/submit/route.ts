@@ -1,4 +1,6 @@
 import { NextResponse } from 'next/server';
+import { validateMutationRequestOrigin } from '../../../../lib/api/requestSecurity';
+import { readJsonBody } from '../../../../lib/api/shopApi';
 
 const SHOP_API = process.env.VENDURE_SHOP_API_URL || 'http://localhost:3000/shop-api';
 const PREFERRED_PAYMENT_CODES = ['standard-payment', 'test-card-processor', 'dummy-payment-handler'] as const;
@@ -166,7 +168,10 @@ class CheckoutStepError extends Error {
 }
 
 export async function POST(request: Request) {
-  const payload = (await request.json().catch(() => null)) as CheckoutSubmitInput | null;
+  const originError = validateMutationRequestOrigin(request);
+  if (originError) return originError;
+
+  const payload = await readJsonBody<CheckoutSubmitInput>(request);
 
   const emailAddress = normalizeString(payload?.emailAddress).toLowerCase();
   const firstName = normalizeString(payload?.firstName);

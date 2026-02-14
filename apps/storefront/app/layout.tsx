@@ -5,6 +5,7 @@ import './globals.css';
 import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import GlobalToastViewport from '../components/GlobalToastViewport';
+import SiteJsonLd from '../components/SiteJsonLd';
 import { resolveMetadataBase } from '../lib/siteUrl';
 
 export const metadata: Metadata = {
@@ -42,6 +43,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`}>
       <body className="antialiased">
+        <SiteJsonLd />
         <div className="page-shell">
           <Navbar />
           <main className="flex-1">{children}</main>
