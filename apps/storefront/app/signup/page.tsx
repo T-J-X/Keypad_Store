@@ -1,4 +1,17 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
+
+export const metadata: Metadata = {
+  title: 'Sign Up | Keypad Store',
+  description: 'Create a Keypad Store account to save and manage keypad configurations.',
+  alternates: {
+    canonical: '/signup',
+  },
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 export default function SignupPage() {
   return (

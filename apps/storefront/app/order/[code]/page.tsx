@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import OrderTechnicalSpecification from '../../../components/order/OrderTechnicalSpecification';
@@ -10,6 +11,27 @@ function toStringParam(value?: string | string[]) {
   if (typeof value === 'string') return value;
   if (Array.isArray(value) && typeof value[0] === 'string') return value[0];
   return '';
+}
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ code: string }>;
+}): Promise<Metadata> {
+  const resolved = await params;
+  const orderCode = decodeURIComponent(resolved.code || '').trim();
+
+  return {
+    title: orderCode ? `Order ${orderCode} | Keypad Store` : 'Order Confirmation | Keypad Store',
+    description: 'Order confirmation and technical specification access.',
+    alternates: {
+      canonical: orderCode ? `/order/${encodeURIComponent(orderCode)}` : '/order',
+    },
+    robots: {
+      index: false,
+      follow: false,
+    },
+  };
 }
 
 export default function OrderConfirmationPage({

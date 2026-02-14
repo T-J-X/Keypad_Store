@@ -1,5 +1,6 @@
 import type { CatalogProduct } from '../../lib/vendure';
 import { resolveSeoDescription } from '../../lib/productSeo';
+import { serializeJsonLd } from '../../lib/seo/jsonLd';
 import { assetUrl } from '../../lib/vendure';
 
 type CatalogVariant = NonNullable<CatalogProduct['variants']>[number];
@@ -15,15 +16,6 @@ function hasStock(variant: CatalogVariant | undefined) {
   const stockLevel = typeof variant.stockLevel === 'string' ? variant.stockLevel.toUpperCase() : '';
   if (!stockLevel) return false;
   return stockLevel !== 'OUT_OF_STOCK';
-}
-
-function serializeJsonLd(schema: Record<string, unknown>) {
-  return JSON.stringify(schema)
-    .replace(/</g, '\\u003c')
-    .replace(/>/g, '\\u003e')
-    .replace(/&/g, '\\u0026')
-    .replace(/\u2028/g, '\\u2028')
-    .replace(/\u2029/g, '\\u2029');
 }
 
 export default function ProductJsonLd({

@@ -6,6 +6,8 @@ import {
   getGoogleRedirectUri,
   getSafeRelativePath,
 } from '../../../../lib/googleAuth';
+import { validateMutationRequestOrigin } from '../../../../lib/api/requestSecurity';
+import { readJsonBody, withSessionCookie } from '../../../../lib/api/shopApi';
 
 const SHOP_API = process.env.VENDURE_SHOP_API_URL || 'http://localhost:3000/shop-api';
 const STATE_MAX_AGE_SECONDS = 10 * 60;
@@ -81,11 +83,14 @@ export async function GET(request: NextRequest) {
 }
 
 export async function POST(request: Request) {
-  const payload = (await request.json().catch(() => null)) as {
+  const originError = validateMutationRequestOrigin(request);
+  if (originError) return originError;
+
+  const payload = await readJsonBody<{
     token?: string;
     code?: string;
     redirectUri?: string;
-  } | null;
+  }>(request);
 
   const token = payload?.token?.trim() || null;
   const code = payload?.code?.trim() || null;
@@ -146,12 +151,4 @@ function authenticateWithVendure(
       },
     }),
   });
-}
-
-function withSessionCookie(response: NextResponse, vendureResponse: Response) {
-  const setCookie = vendureResponse.headers.get('set-cookie');
-  if (setCookie) {
-    response.headers.set('set-cookie', setCookie);
-  }
-  return response;
 }
