@@ -762,7 +762,7 @@ export default function ShopClient({
                       ) : null}
                       {isInteractive ? (
                         <span
-                          className={`mt-4 inline-flex translate-y-2 items-center justify-center rounded-full px-4 py-2 text-xs font-semibold opacity-0 transition-[opacity,transform] duration-200 group-hover:translate-y-0 group-hover:opacity-100 ${
+                          className={`mt-4 inline-flex min-h-[44px] translate-y-2 items-center justify-center rounded-2xl px-5 py-2 text-xs font-semibold whitespace-nowrap opacity-0 transition-[opacity,transform] duration-200 group-hover:translate-y-0 group-hover:opacity-100 ${
                             isExploreMoreTile
                               ? 'border border-transparent bg-[linear-gradient(#ffffff,#ffffff),linear-gradient(90deg,#b7d0fb_0%,#e8f1ff_100%)] [background-origin:border-box] [background-clip:padding-box,border-box] text-[#143f82] shadow-[0_8px_20px_rgba(6,23,59,0.2)]'
                               : 'bg-[linear-gradient(90deg,#0d2f66_0%,#2053a2_55%,#3f75c4_100%)] text-white'
@@ -803,7 +803,7 @@ export default function ShopClient({
               <button
                 type="button"
                 onClick={() => onSectionChange('button-inserts', { scrollToTop: true })}
-                className="rounded-full border border-ink/15 px-4 py-2 text-sm font-semibold text-ink transition hover:border-ink/35"
+                className="inline-flex min-h-[44px] items-center justify-center rounded-2xl border border-ink/15 px-5 py-2 text-sm font-semibold text-ink whitespace-nowrap transition hover:border-ink/35"
               >
                 View all inserts
               </button>
@@ -850,7 +850,7 @@ export default function ShopClient({
               <button
                 type="button"
                 onClick={() => onSectionChange('keypads', { scrollToTop: true })}
-                className="rounded-full border border-ink/15 px-4 py-2 text-sm font-semibold text-ink transition hover:border-ink/35"
+                className="inline-flex min-h-[44px] items-center justify-center rounded-2xl border border-ink/15 px-5 py-2 text-sm font-semibold text-ink whitespace-nowrap transition hover:border-ink/35"
               >
                 View all keypads
               </button>
