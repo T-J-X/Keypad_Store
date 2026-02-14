@@ -1,0 +1,11 @@
+{
+  "debugCheck": {
+    "hasInsertDashed": true,
+    "hasBezelSolid": true,
+    "allGuidesNonScaling": true,
+    "hasSelectedHighlightInDebugOnly": false
+  },
+  "editCheck": {
+    "hasSelectedHighlightInEdit": true
+  }
+}

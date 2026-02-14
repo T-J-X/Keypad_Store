@@ -1,65 +1,78 @@
 'use client';
 
 import { useEffect, useId, useMemo, useRef, useState } from 'react';
-import {
-  DEFAULT_SLOT_SAFE_ZONE,
-  getGeometryForModel,
-  getSlotIdsForGeometry,
-  PKP_2200_SI_GEOMETRY,
-  type SlotCoordMode,
-  type SlotGeometry,
-  type SlotSafeZone,
-} from '../../config/layouts/geometry';
 import type { SlotVisualState } from '../../lib/configuratorStore';
 import type { SlotId } from '../../lib/keypadConfiguration';
+import {
+  cloneModelLayout,
+  getLayoutForModel,
+  getSlotIdsForLayout,
+  type ModelLayout,
+  type Slot,
+} from '../../lib/keypad-layouts';
 import { assetUrl } from '../../lib/vendure';
 import BacklitGlow from './BacklitGlow';
-
-type IntrinsicSize = {
-  width: number;
-  height: number;
-};
-
-type SvgSlotMetrics = {
-  label: string;
-  cx: number;
-  cy: number;
-  slotCenterX: number;
-  slotCenterY: number;
-  sizePx: number;
-  slotX: number;
-  slotY: number;
-  clipRadius: number;
-  iconDiameterPx: number;
-  wellDiameterPx: number;
-  buttonDiameterPx: number;
-  buttonRadiusPx: number;
-  rOuter: number;
-  rInner: number;
-  safeZone: SlotSafeZone;
-};
-
-type MatteVisibleMetrics = {
-  ratio: number;
-  centerX: number;
-  centerY: number;
-};
 
 const ROTATION_ANIMATION_MS = 360;
 const WHITE_GLOW_LUMINANCE_THRESHOLD = 0.92;
 const DEFAULT_ICON_SCALE = 0.94;
 const MIN_ICON_SCALE = 0.4;
-const MAX_EFFECTIVE_ICON_SCALE = 1.68;
-const MIN_VISIBLE_ICON_RATIO = 0.08;
-const ICON_CLIP_RADIUS_PCT_OF_SLOT = 47;
-const ICON_CLIP_RADIUS_PCT_BY_MODEL: Partial<Record<string, number>> = {
-  'PKP-2500-SI': 54,
-  'PKP-2600-SI': 54,
+const MAX_ICON_SCALE = 1.68;
+const DEFAULT_POSITION_NUDGE_PX = 1;
+const FAST_POSITION_NUDGE_PX = 10;
+const DEFAULT_DIAMETER_NUDGE_PX = 1;
+const FAST_DIAMETER_NUDGE_PX = 10;
+const MIN_SLOT_DIAMETER_PX = 4;
+const SLOT_SELECT_KEYS = [
+  '1',
+  '2',
+  '3',
+  '4',
+  '5',
+  '6',
+  '7',
+  '8',
+  '9',
+  '0',
+  'q',
+  'w',
+  'e',
+  'r',
+  't',
+  'y',
+  'u',
+  'i',
+  'o',
+  'p',
+  'a',
+  's',
+  'd',
+  'f',
+  'g',
+  'h',
+  'j',
+  'k',
+  'l',
+];
+
+const MODEL_LAYOUT_LABELS: Record<string, string> = {
+  'PKP-2200-SI': '2x2',
+  'PKP-2300-SI': '2x3',
+  'PKP-2400-SI': '2x4',
+  'PKP-2500-SI': '2x5',
+  'PKP-2600-SI': '2x6',
+  'PKP-3500-SI': '3x5',
 };
-const DEFAULT_MATTE_VISIBLE_METRICS: MatteVisibleMetrics = {
-  ratio: 1,
-  centerX: 0.5,
-  centerY: 0.5,
+
+type SlotBinding = {
+  key: string;
+  slotId: string;
+  slotLabel: string;
+};
+
+type IntrinsicSize = {
+  width: number;
+  height: number;
 };
 
 const EMPTY_SLOT_VISUAL_STATE: SlotVisualState = {
@@ -78,9 +91,13 @@ function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
 }
 
+function round2(value: number) {
+  return Math.round(value * 100) / 100;
+}
+
 function normalizeIconScale(input: number | undefined) {
   if (!Number.isFinite(input)) return DEFAULT_ICON_SCALE;
-  return clamp(input as number, MIN_ICON_SCALE, MAX_EFFECTIVE_ICON_SCALE);
+  return clamp(input as number, MIN_ICON_SCALE, MAX_ICON_SCALE);
 }
 
 function parseHexColor(input: string | null | undefined): [number, number, number] | null {
@@ -115,157 +132,51 @@ function colorLuminance(color: string | null | undefined) {
   return ((0.2126 * r) + (0.7152 * g) + (0.0722 * b)) / 255;
 }
 
-async function measureVisibleIconMetrics(src: string): Promise<MatteVisibleMetrics> {
-  if (typeof window === 'undefined') return DEFAULT_MATTE_VISIBLE_METRICS;
-
-  return new Promise((resolve) => {
-    const image = new window.Image();
-    image.decoding = 'async';
-    image.crossOrigin = 'anonymous';
-    image.onload = () => {
-      const width = image.naturalWidth;
-      const height = image.naturalHeight;
-      if (!width || !height) {
-        resolve(DEFAULT_MATTE_VISIBLE_METRICS);
-        return;
-      }
-
-      const canvas = window.document.createElement('canvas');
-      canvas.width = width;
-      canvas.height = height;
-      const ctx = canvas.getContext('2d', { willReadFrequently: true });
-      if (!ctx) {
-        resolve(DEFAULT_MATTE_VISIBLE_METRICS);
-        return;
-      }
-
-      ctx.drawImage(image, 0, 0, width, height);
-
-      try {
-        const data = ctx.getImageData(0, 0, width, height).data;
-        let minX = width;
-        let minY = height;
-        let maxX = -1;
-        let maxY = -1;
-
-        for (let index = 3; index < data.length; index += 4) {
-          if (data[index] <= 8) continue;
-
-          const pixelIndex = (index - 3) / 4;
-          const x = pixelIndex % width;
-          const y = Math.floor(pixelIndex / width);
-
-          if (x < minX) minX = x;
-          if (y < minY) minY = y;
-          if (x > maxX) maxX = x;
-          if (y > maxY) maxY = y;
-        }
-
-        if (maxX < 0 || maxY < 0) {
-          resolve(DEFAULT_MATTE_VISIBLE_METRICS);
-          return;
-        }
-
-        const visibleWidth = maxX - minX + 1;
-        const visibleHeight = maxY - minY + 1;
-        const ratio = Math.max(visibleWidth / width, visibleHeight / height);
-        resolve({
-          ratio: clamp(ratio, MIN_VISIBLE_ICON_RATIO, 1),
-          centerX: clamp((minX + maxX + 1) / (2 * width), 0, 1),
-          centerY: clamp((minY + maxY + 1) / (2 * height), 0, 1),
-        });
-      } catch {
-        resolve(DEFAULT_MATTE_VISIBLE_METRICS);
-      }
-    };
-    image.onerror = () => resolve(DEFAULT_MATTE_VISIBLE_METRICS);
-    image.src = src;
-  });
-}
-
-function buildSlotMetrics(
-  slot: SlotGeometry,
-  baseW: number,
-  baseH: number,
-  defaultCoordMode: SlotCoordMode,
-  iconClipRadiusPctOfSlot: number,
-): SvgSlotMetrics {
-  const safeZone = {
-    ...DEFAULT_SLOT_SAFE_ZONE,
-    ...(slot.safeZone ?? {}),
-  };
-  const coordMode = slot.coordMode ?? defaultCoordMode;
-  const sizePct = Number.isFinite(slot.sizePct) ? slot.sizePct : slot.r * 200;
-  const sizePx = (sizePct / 100) * baseW;
-
-  const leftPct = Number.isFinite(slot.leftPct)
-    ? slot.leftPct
-    : coordMode === 'topLeft'
-      ? (slot.cx - slot.r) * 100
-      : slot.cx * 100;
-  const topPct = Number.isFinite(slot.topPct)
-    ? slot.topPct
-    : coordMode === 'topLeft'
-      ? (slot.cy - slot.r) * 100
-      : slot.cy * 100;
-
-  let cx = (leftPct / 100) * baseW;
-  let cy = (topPct / 100) * baseH;
-
-  if (coordMode === 'topLeft') {
-    cx += sizePx / 2;
-    cy += sizePx / 2;
-  }
-
-  const slotCenterX = cx;
-  const slotCenterY = cy;
-  const slotX = slotCenterX - (sizePx / 2);
-  const slotY = slotCenterY - (sizePx / 2);
-
-  const safeCx = slotX + (sizePx * (safeZone.centerXPctOfSlot / 100));
-  const safeCy = slotY + (sizePx * (safeZone.centerYPctOfSlot / 100));
-
-  const wellDiameterPx = sizePx * (safeZone.wellDiameterPctOfSlot / 100);
-  const buttonDiameterPx = wellDiameterPx;
-  const buttonRadiusPx = wellDiameterPx / 2;
-  const rOuter = buttonRadiusPx * (safeZone.ledOuterPctOfWell / 100);
-  const rInner = buttonRadiusPx * (safeZone.ledInnerPctOfWell / 100);
-  const clipRadius = sizePx * (iconClipRadiusPctOfSlot / 100);
-  const iconDiameterPx = clipRadius * 2;
-
-  return {
-    label: slot.label,
-    cx: safeCx,
-    cy: safeCy,
-    slotCenterX,
-    slotCenterY,
-    sizePx,
-    slotX,
-    slotY,
-    clipRadius,
-    iconDiameterPx,
-    wellDiameterPx,
-    buttonDiameterPx,
-    buttonRadiusPx,
-    rOuter,
-    rInner,
-    safeZone,
-  };
-}
-
 function sanitizeSvgId(value: string) {
   return value.replace(/[^a-zA-Z0-9_-]/g, '');
 }
 
+function isEditableTarget(target: EventTarget | null) {
+  if (!(target instanceof HTMLElement)) return false;
+  if (target.isContentEditable) return true;
+  const tag = target.tagName.toLowerCase();
+  return tag === 'input' || tag === 'textarea' || tag === 'select';
+}
+
+function withUpdatedSlot(
+  layout: ModelLayout,
+  slotId: string,
+  updater: (slotEntry: Slot) => Slot,
+): ModelLayout {
+  return {
+    ...layout,
+    slots: layout.slots.map((slotEntry) => (slotEntry.id === slotId ? updater(slotEntry) : slotEntry)),
+  };
+}
+
+function buildSlotBindings(layout: ModelLayout): SlotBinding[] {
+  const slotIds = getSlotIdsForLayout(layout);
+  return slotIds.map((slotId, index) => {
+    const key = SLOT_SELECT_KEYS[index] ?? '';
+    const numeric = slotId.match(/\d+/)?.[0] ?? String(index + 1);
+    return {
+      key,
+      slotId,
+      slotLabel: `Slot ${numeric}`,
+    };
+  });
+}
+
 export default function KeypadPreview({
-  modelCode = PKP_2200_SI_GEOMETRY.modelCode,
+  modelCode = 'PKP-2200-SI',
   shellAssetPath,
   slots,
   activeSlotId,
   onSlotClick,
   rotationDeg = 0,
   iconScale = DEFAULT_ICON_SCALE,
-  debugSlots = false,
+  debugMode = false,
+  editMode = false,
   descriptionText,
   showGlows = true,
   onRotate,
@@ -278,146 +189,60 @@ export default function KeypadPreview({
   onSlotClick: (slotId: SlotId) => void;
   rotationDeg?: number;
   iconScale?: number;
-  debugSlots?: boolean;
+  debugMode?: boolean;
+  editMode?: boolean;
   descriptionText?: string | null;
   showGlows?: boolean;
   onRotate?: () => void;
   onToggleGlows?: () => void;
 }) {
-  const modelGeometry = useMemo(() => getGeometryForModel(modelCode), [modelCode]);
-  const slotIds = useMemo(() => getSlotIdsForGeometry(modelGeometry), [modelGeometry]);
-  const shellSrc = shellAssetPath ? assetUrl(shellAssetPath) : '';
-  const fallbackSize = useMemo(() => modelGeometry.intrinsicSize, [modelGeometry]);
-  const [baseSize, setBaseSize] = useState<IntrinsicSize>(fallbackSize);
+  const baseLayout = useMemo(() => getLayoutForModel(modelCode), [modelCode]);
+  const [editableLayout, setEditableLayout] = useState<ModelLayout>(() => cloneModelLayout(baseLayout));
+  const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
+  const [showSelectedGuidesOnly, setShowSelectedGuidesOnly] = useState(false);
   const [hoveredSlotId, setHoveredSlotId] = useState<SlotId | null>(null);
   const [displayRotationDeg, setDisplayRotationDeg] = useState(rotationDeg);
+  const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'error'>('idle');
+  const [shellNaturalSize, setShellNaturalSize] = useState<IntrinsicSize | null>(null);
   const displayRotationRef = useRef(rotationDeg);
   const rotationFrameRef = useRef<number | null>(null);
-  const matteVisibleMetricsCacheRef = useRef<Map<string, MatteVisibleMetrics>>(new Map());
-  const pendingMatteMetricsBySrcRef = useRef<Set<string>>(new Set());
-  const [matteVisibleMetricsBySrc, setMatteVisibleMetricsBySrc] = useState<Record<string, MatteVisibleMetrics>>({});
-  const iconScaleValue = useMemo(() => normalizeIconScale(iconScale), [iconScale]);
 
   useEffect(() => {
-    setBaseSize((previous) => {
-      if (previous.width === fallbackSize.width && previous.height === fallbackSize.height) return previous;
-      return fallbackSize;
-    });
-  }, [fallbackSize]);
+    setEditableLayout(cloneModelLayout(baseLayout));
+  }, [baseLayout]);
+
+  const renderLayout = editMode ? editableLayout : baseLayout;
+  const slotIds = useMemo(() => getSlotIdsForLayout(renderLayout), [renderLayout]);
+  const slotBindingList = useMemo(() => buildSlotBindings(renderLayout), [renderLayout]);
+  const slotIdByKey = useMemo(
+    () => slotBindingList.reduce<Record<string, string>>((map, binding) => {
+      if (binding.key) {
+        map[binding.key] = binding.slotId;
+      }
+      return map;
+    }, {}),
+    [slotBindingList],
+  );
 
   useEffect(() => {
-    if (!shellSrc) {
-      setBaseSize((previous) => {
-        if (previous.width === fallbackSize.width && previous.height === fallbackSize.height) return previous;
-        return fallbackSize;
-      });
+    if (!editMode) {
+      setSelectedSlotId(null);
+      setShowSelectedGuidesOnly(false);
       return;
     }
-    if (typeof window === 'undefined') return;
 
-    let cancelled = false;
-    const image = new window.Image();
-    image.decoding = 'async';
-    image.onload = () => {
-      if (cancelled) return;
-      const width = image.naturalWidth || fallbackSize.width;
-      const height = image.naturalHeight || fallbackSize.height;
+    setSelectedSlotId((previous) => {
+      if (previous && slotIds.includes(previous)) return previous;
+      return slotIds[0] ?? null;
+    });
+  }, [editMode, slotIds]);
 
-      setBaseSize((previous) => {
-        if (previous.width === width && previous.height === height) return previous;
-        return { width, height };
-      });
-    };
-    image.onerror = () => {
-      if (cancelled) return;
-      setBaseSize((previous) => {
-        if (previous.width === fallbackSize.width && previous.height === fallbackSize.height) return previous;
-        return fallbackSize;
-      });
-    };
-    image.src = shellSrc;
-
-    return () => {
-      cancelled = true;
-    };
-  }, [fallbackSize, shellSrc]);
-
-  const baseW = Math.max(baseSize.width, 1);
-  const baseH = Math.max(baseSize.height, 1);
-  const canvasSize = Math.max(baseW, baseH);
-  const canvasOffsetX = (canvasSize - baseW) / 2;
-  const canvasOffsetY = (canvasSize - baseH) / 2;
-  const matteSrcBySlotId = useMemo(() => {
-    const map = new Map<SlotId, string>();
-    for (const slotId of slotIds) {
-      const matteAssetPath = slots[slotId]?.matteAssetPath;
-      if (!matteAssetPath) continue;
-      map.set(slotId, assetUrl(matteAssetPath));
-    }
-    return map;
-  }, [slotIds, slots]);
-  const matteSources = useMemo(() => Array.from(new Set(matteSrcBySlotId.values())), [matteSrcBySlotId]);
-
-  useEffect(() => {
-    if (activeSlotId != null) {
-      setHoveredSlotId(null);
-    }
-  }, [activeSlotId]);
-
-  useEffect(() => {
-    if (typeof window === 'undefined') return;
-    let cancelled = false;
-
-    for (const src of matteSources) {
-      if (matteVisibleMetricsCacheRef.current.has(src)) {
-        continue;
-      }
-      if (pendingMatteMetricsBySrcRef.current.has(src)) {
-        continue;
-      }
-
-      pendingMatteMetricsBySrcRef.current.add(src);
-      void measureVisibleIconMetrics(src)
-        .then((metrics) => {
-          pendingMatteMetricsBySrcRef.current.delete(src);
-          matteVisibleMetricsCacheRef.current.set(src, metrics);
-          if (cancelled) return;
-          setMatteVisibleMetricsBySrc((previous) => {
-            const previousMetrics = previous[src];
-            if (
-              previousMetrics
-              && previousMetrics.ratio === metrics.ratio
-              && previousMetrics.centerX === metrics.centerX
-              && previousMetrics.centerY === metrics.centerY
-            ) {
-              return previous;
-            }
-            return { ...previous, [src]: metrics };
-          });
-        })
-        .catch(() => {
-          pendingMatteMetricsBySrcRef.current.delete(src);
-          matteVisibleMetricsCacheRef.current.set(src, DEFAULT_MATTE_VISIBLE_METRICS);
-          if (cancelled) return;
-          setMatteVisibleMetricsBySrc((previous) => {
-            const previousMetrics = previous[src];
-            if (
-              previousMetrics
-              && previousMetrics.ratio === DEFAULT_MATTE_VISIBLE_METRICS.ratio
-              && previousMetrics.centerX === DEFAULT_MATTE_VISIBLE_METRICS.centerX
-              && previousMetrics.centerY === DEFAULT_MATTE_VISIBLE_METRICS.centerY
-            ) {
-              return previous;
-            }
-            return { ...previous, [src]: DEFAULT_MATTE_VISIBLE_METRICS };
-          });
-        });
-    }
-
-    return () => {
-      cancelled = true;
-    };
-  }, [matteSources]);
+  const selectedSlot = useMemo(
+    () => (selectedSlotId
+      ? (renderLayout.slots.find((slotEntry) => slotEntry.id === selectedSlotId) ?? null)
+      : null),
+    [renderLayout.slots, selectedSlotId],
+  );
 
   useEffect(() => {
     displayRotationRef.current = displayRotationDeg;
@@ -469,35 +294,181 @@ export default function KeypadPreview({
     };
   }, [rotationDeg]);
 
-  const slotCoordMode = modelGeometry.slotCoordMode;
-  const iconClipRadiusPctOfSlot = ICON_CLIP_RADIUS_PCT_BY_MODEL[modelCode] ?? ICON_CLIP_RADIUS_PCT_OF_SLOT;
-  const slotMetrics = useMemo(
-    () => slotIds.map((slotId) => ({
-      slotId,
-      metrics: buildSlotMetrics(
-        modelGeometry.slots[slotId],
-        baseW,
-        baseH,
-        slotCoordMode,
-        iconClipRadiusPctOfSlot,
-      ),
-    })),
-    [baseH, baseW, iconClipRadiusPctOfSlot, modelGeometry.slots, slotCoordMode, slotIds],
+  useEffect(() => {
+    if (!editMode || typeof window === 'undefined') return;
+
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (isEditableTarget(event.target)) return;
+
+      const lowerKey = event.key.toLowerCase();
+      const mappedSlotId = slotIdByKey[lowerKey];
+      if (mappedSlotId) {
+        event.preventDefault();
+        setSelectedSlotId(mappedSlotId);
+        return;
+      }
+
+      if (!selectedSlotId) return;
+
+      const positionStep = event.shiftKey ? FAST_POSITION_NUDGE_PX : DEFAULT_POSITION_NUDGE_PX;
+      const diameterStep = event.shiftKey ? FAST_DIAMETER_NUDGE_PX : DEFAULT_DIAMETER_NUDGE_PX;
+
+      let dx = 0;
+      let dy = 0;
+      let dInsert = 0;
+      let dBezel = 0;
+
+      switch (event.key) {
+        case 'ArrowLeft':
+          dx = -positionStep;
+          break;
+        case 'ArrowRight':
+          dx = positionStep;
+          break;
+        case 'ArrowUp':
+          dy = -positionStep;
+          break;
+        case 'ArrowDown':
+          dy = positionStep;
+          break;
+        case '[':
+        case '{':
+          dInsert = -diameterStep;
+          break;
+        case ']':
+        case '}':
+          dInsert = diameterStep;
+          break;
+        case '-':
+        case '_':
+          dBezel = -diameterStep;
+          break;
+        case '=':
+        case '+':
+          dBezel = diameterStep;
+          break;
+        default:
+          return;
+      }
+
+      event.preventDefault();
+      setEditableLayout((previous) => withUpdatedSlot(previous, selectedSlotId, (slotEntry) => ({
+        ...slotEntry,
+        cx: round2(slotEntry.cx + dx),
+        cy: round2(slotEntry.cy + dy),
+        insertD: round2(Math.max(MIN_SLOT_DIAMETER_PX, slotEntry.insertD + dInsert)),
+        bezelD: round2(Math.max(MIN_SLOT_DIAMETER_PX, slotEntry.bezelD + dBezel)),
+      })));
+    };
+
+    window.addEventListener('keydown', onKeyDown);
+    return () => {
+      window.removeEventListener('keydown', onKeyDown);
+    };
+  }, [editMode, selectedSlotId, slotIdByKey]);
+
+  useEffect(() => {
+    if (copyStatus === 'idle') return;
+    if (typeof window === 'undefined') return;
+
+    const timeoutId = window.setTimeout(() => {
+      setCopyStatus('idle');
+    }, 1800);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [copyStatus]);
+
+  const onCopyJson = async () => {
+    if (!editMode || typeof navigator === 'undefined' || !navigator.clipboard) {
+      setCopyStatus('error');
+      return;
+    }
+
+    try {
+      const normalized: ModelLayout = {
+        model: editableLayout.model,
+        baseW: editableLayout.baseW,
+        baseH: editableLayout.baseH,
+        slots: editableLayout.slots.map((slotEntry) => ({
+          id: slotEntry.id,
+          cx: round2(slotEntry.cx),
+          cy: round2(slotEntry.cy),
+          insertD: round2(slotEntry.insertD),
+          bezelD: round2(slotEntry.bezelD),
+        })),
+      };
+
+      await navigator.clipboard.writeText(JSON.stringify(normalized, null, 2));
+      setCopyStatus('copied');
+    } catch {
+      setCopyStatus('error');
+    }
+  };
+
+  const shellSrc = shellAssetPath ? assetUrl(shellAssetPath) : '';
+  const iconScaleValue = useMemo(() => normalizeIconScale(iconScale), [iconScale]);
+  const showCalibrationGuides = debugMode || editMode;
+  const baseW = Math.max(renderLayout.baseW, 1);
+  const baseH = Math.max(renderLayout.baseH, 1);
+  const hasNaturalSizeMismatch = Boolean(
+    shellNaturalSize
+      && (shellNaturalSize.width !== baseW || shellNaturalSize.height !== baseH),
   );
   const svgIdPrefix = useId();
   const safeSvgIdPrefix = useMemo(() => sanitizeSvgId(svgIdPrefix), [svgIdPrefix]);
   const visualRotationDeg = Math.abs(displayRotationDeg) < 0.001 ? 0 : displayRotationDeg;
   const groupTransform = visualRotationDeg ? `rotate(${visualRotationDeg} ${baseW / 2} ${baseH / 2})` : undefined;
-  const shellTranslateTransform = `translate(${canvasOffsetX} ${canvasOffsetY})`;
-  const hoverPromptBlur = Math.max(1.2, baseW * 0.0022);
-  const hoverPromptShadowOffset = Math.max(1, baseW * 0.0012);
+  const layoutLabel = MODEL_LAYOUT_LABELS[renderLayout.model] ?? `${renderLayout.slots.length} slots`;
+
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (!shellSrc) {
+      setShellNaturalSize(null);
+      return;
+    }
+
+    let cancelled = false;
+    const image = new window.Image();
+    image.decoding = 'async';
+    image.onload = () => {
+      if (cancelled) return;
+      const width = image.naturalWidth;
+      const height = image.naturalHeight;
+      if (!width || !height) {
+        setShellNaturalSize(null);
+        return;
+      }
+      setShellNaturalSize((previous) => {
+        if (previous?.width === width && previous?.height === height) return previous;
+        return { width, height };
+      });
+    };
+    image.onerror = () => {
+      if (cancelled) return;
+      setShellNaturalSize(null);
+    };
+    image.src = shellSrc;
+
+    return () => {
+      cancelled = true;
+    };
+  }, [shellSrc]);
+
+  useEffect(() => {
+    if (!debugMode || !hasNaturalSizeMismatch || !shellNaturalSize) return;
+    console.warn(
+      `[KeypadPreview] base size mismatch for ${renderLayout.model}: base=${baseW}x${baseH}, natural=${shellNaturalSize.width}x${shellNaturalSize.height}`,
+    );
+  }, [baseH, baseW, debugMode, hasNaturalSizeMismatch, renderLayout.model, shellNaturalSize]);
 
   return (
     <div className="card glow-isolate relative overflow-hidden border border-white/18 bg-[radial-gradient(140%_120%_at_60%_-10%,#2e79dd_0%,#17305f_36%,#0a1429_72%)] p-5 shadow-[0_28px_70px_rgba(2,9,24,0.42)] sm:p-6">
-      <div className="mb-4 flex items-center justify-between">
+      <div className="mb-4 flex items-center justify-between gap-3">
         <div>
           <div className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-100/80">Command View</div>
-          <h2 className="mt-1 text-lg font-semibold tracking-tight text-white">{modelCode} Preview</h2>
+          <h2 className="mt-1 text-lg font-semibold tracking-tight text-white">{renderLayout.model} Preview</h2>
         </div>
         <div className="flex items-center gap-2">
           <button
@@ -515,99 +486,116 @@ export default function KeypadPreview({
             {showGlows ? 'Glows on' : 'Glows off'}
           </button>
           <div className="rounded-full border border-white/20 bg-[#06122a]/65 px-3 py-1 text-xs font-semibold tracking-[0.14em] text-blue-100">
-            {modelGeometry.layoutLabel}
+            {layoutLabel}
           </div>
         </div>
       </div>
 
-      <div className="flex w-full justify-center">
-        <div className="h-auto w-[clamp(360px,64vw,920px)] max-w-full aspect-square overflow-hidden rounded-[28px] border border-white/20 bg-[#010714]">
-          {shellSrc ? (
-            <div className="h-full w-full p-[7%]">
-              <svg
-                className="h-full w-full"
-                viewBox={`0 0 ${canvasSize} ${canvasSize}`}
-                preserveAspectRatio="xMidYMid meet"
-                role="img"
-                aria-label={`${modelCode} shell preview`}
+      {editMode ? (
+        <div className="mb-4 rounded-2xl border border-white/20 bg-[#071634]/70 px-4 py-3 text-xs text-blue-100/95">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <div className="font-semibold uppercase tracking-[0.14em] text-blue-100">Edit mode</div>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setShowSelectedGuidesOnly((previous) => !previous)}
+                className="inline-flex min-h-8 items-center rounded-full border border-white/28 bg-[#0f2a58]/80 px-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-blue-100 transition hover:border-white/45 hover:bg-[#184080]"
               >
+                {showSelectedGuidesOnly ? 'Guides: selected' : 'Guides: all'}
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  void onCopyJson();
+                }}
+                className="inline-flex min-h-8 items-center rounded-full border border-white/28 bg-[#0f2a58]/80 px-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-blue-100 transition hover:border-white/45 hover:bg-[#184080]"
+              >
+                Copy JSON
+              </button>
+            </div>
+          </div>
+          <div className="mt-2 text-blue-100/90">
+            Selected: {selectedSlotId ?? 'none'} · Move: Arrows {DEFAULT_POSITION_NUDGE_PX}px (Shift {FAST_POSITION_NUDGE_PX}px, Alt {DEFAULT_POSITION_NUDGE_PX}px)
+          </div>
+          <div className="mt-1 text-blue-100/90">
+            {selectedSlot
+              ? `cx ${round2(selectedSlot.cx)} · cy ${round2(selectedSlot.cy)} · insertD ${round2(selectedSlot.insertD)} · bezelD ${round2(selectedSlot.bezelD)}`
+              : 'Select a slot to see live cx/cy/insertD/bezelD values.'}
+          </div>
+          <div className="mt-1 text-blue-100/90">
+            Insert: [ ] ({DEFAULT_DIAMETER_NUDGE_PX}px, Shift {FAST_DIAMETER_NUDGE_PX}px) · Bezel: - = ({DEFAULT_DIAMETER_NUDGE_PX}px, Shift {FAST_DIAMETER_NUDGE_PX}px)
+          </div>
+          <div className="mt-1 text-blue-100/80">
+            Keys: {slotBindingList.filter((binding) => binding.key).map((binding) => `${binding.key}=${binding.slotLabel}`).join(' · ')}
+          </div>
+          {copyStatus !== 'idle' ? (
+            <div className={`mt-1 ${copyStatus === 'copied' ? 'text-emerald-200' : 'text-rose-200'}`}>
+              {copyStatus === 'copied' ? 'Layout JSON copied to clipboard.' : 'Could not copy JSON.'}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
+      <div className="flex w-full justify-center">
+        <div
+          className="relative h-auto w-[clamp(360px,64vw,920px)] max-w-full overflow-hidden rounded-[28px] border border-white/20 bg-[#010714]"
+          style={{ aspectRatio: `${baseW} / ${baseH}` }}
+        >
+          {showCalibrationGuides ? (
+            <div className="pointer-events-none absolute left-2 top-2 z-20 rounded bg-[#020d26]/75 px-2 py-1 text-[10px] font-semibold tracking-[0.12em] text-blue-100">
+              <div>baseW {baseW} · baseH {baseH}</div>
+              {debugMode && shellNaturalSize ? (
+                <div>naturalW {shellNaturalSize.width} · naturalH {shellNaturalSize.height}</div>
+              ) : null}
+              {debugMode && hasNaturalSizeMismatch ? (
+                <div className="text-amber-300">WARNING: base and natural sizes differ.</div>
+              ) : null}
+            </div>
+          ) : null}
+
+          {shellSrc ? (
+            <svg
+              className="h-full w-full"
+              viewBox={`0 0 ${baseW} ${baseH}`}
+              preserveAspectRatio="xMidYMid meet"
+              role="img"
+              aria-label={`${renderLayout.model} shell preview`}
+            >
               <defs>
-                {slotMetrics.map(({ slotId, metrics }) => (
-                  <clipPath key={`${slotId}-clip`} id={`${safeSvgIdPrefix}-clip-${slotId}`}>
-                    <circle cx={metrics.cx} cy={metrics.cy} r={metrics.clipRadius} />
-                  </clipPath>
-                ))}
-
-                <linearGradient id={`${safeSvgIdPrefix}-hover-gradient`} x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stopColor="#203257" stopOpacity={0.72} />
-                  <stop offset="55%" stopColor="#101b34" stopOpacity={0.84} />
-                  <stop offset="100%" stopColor="#090f1e" stopOpacity={0.92} />
-                </linearGradient>
-
-                <filter
-                  id={`${safeSvgIdPrefix}-hover-glass`}
-                  x="-50%"
-                  y="-90%"
-                  width="200%"
-                  height="280%"
-                >
-                  <feGaussianBlur in="SourceAlpha" stdDeviation={hoverPromptBlur} result="shadowBlur" />
-                  <feOffset in="shadowBlur" dy={hoverPromptShadowOffset} result="shadowOffset" />
-                  <feColorMatrix
-                    in="shadowOffset"
-                    type="matrix"
-                    values="0 0 0 0 0.03 0 0 0 0 0.07 0 0 0 0 0.14 0 0 0 0.72 0"
-                    result="shadowColor"
-                  />
-                  <feMerge>
-                    <feMergeNode in="shadowColor" />
-                    <feMergeNode in="SourceGraphic" />
-                  </feMerge>
-                </filter>
+                {slotIds.map((slotId) => {
+                  const slotEntry = renderLayout.slots.find((item) => item.id === slotId);
+                  if (!slotEntry) return null;
+                  return (
+                    <clipPath key={`${slotId}-clip`} id={`${safeSvgIdPrefix}-insert-${slotId}`}>
+                      <circle cx={slotEntry.cx} cy={slotEntry.cy} r={slotEntry.insertD / 2} />
+                    </clipPath>
+                  );
+                })}
               </defs>
 
-              <g transform={shellTranslateTransform}>
-                <g transform={groupTransform}>
+              <g transform={groupTransform}>
                 <image href={shellSrc} x={0} y={0} width={baseW} height={baseH} preserveAspectRatio="xMidYMid meet" />
 
-                {slotMetrics.map(({ slotId, metrics }) => {
-                  const slot = slots[slotId] ?? EMPTY_SLOT_VISUAL_STATE;
-                  const matteSrc = matteSrcBySlotId.get(slotId) ?? '';
-                  const isEmptySlot = !matteSrc;
-                  const showHoverPrompt = isEmptySlot && hoveredSlotId === slotId && activeSlotId == null;
-                  const hoverPromptWidth = Math.max(166, metrics.sizePx * 1.72);
-                  const hoverPromptHeight = Math.max(56, metrics.sizePx * 0.74);
-                  const hoverPromptRadius = Math.max(14, hoverPromptHeight * 0.28);
-                  const isTopSlot = metrics.cy <= baseH / 2;
-                  const arrowWidth = Math.max(12, hoverPromptHeight * 0.3);
-                  const arrowHeight = Math.max(8, hoverPromptHeight * 0.22);
-                  const slotOffset = Math.max(10, metrics.sizePx * 0.16);
-                  const hoverPromptX = metrics.cx - (hoverPromptWidth / 2);
-                  const hoverPromptY = isTopSlot
-                    ? metrics.cy + (metrics.sizePx / 2) + slotOffset
-                    : metrics.cy - (metrics.sizePx / 2) - slotOffset - hoverPromptHeight;
-                  const arrowCenterX = hoverPromptX + (hoverPromptWidth / 2);
-                  const textCenterX = hoverPromptX + (hoverPromptWidth / 2);
-                  const textBaselineY = hoverPromptY + (hoverPromptHeight / 2) + Math.max(4, hoverPromptHeight * 0.08);
-                  const visibleMetrics = matteSrc
-                    ? (matteVisibleMetricsBySrc[matteSrc]
-                      ?? matteVisibleMetricsCacheRef.current.get(matteSrc)
-                      ?? DEFAULT_MATTE_VISIBLE_METRICS)
-                    : DEFAULT_MATTE_VISIBLE_METRICS;
-                  const visibleIconRatio = visibleMetrics.ratio;
-                  const effectiveIconScale = Math.min(
-                    MAX_EFFECTIVE_ICON_SCALE,
-                    iconScaleValue / Math.max(MIN_VISIBLE_ICON_RATIO, visibleIconRatio),
-                  );
-                  const iconSize = Math.min(metrics.clipRadius * 2.18, metrics.sizePx * effectiveIconScale);
-                  const iconCenterOffsetX = (visibleMetrics.centerX - 0.5) * iconSize;
-                  const iconCenterOffsetY = (visibleMetrics.centerY - 0.5) * iconSize;
-                  const iconX = metrics.cx - (iconSize / 2) - iconCenterOffsetX;
-                  const iconY = metrics.cy - (iconSize / 2) - iconCenterOffsetY;
-                  const ringColor = slot.color;
+                {slotIds.map((slotId, slotIndex) => {
+                  const slotEntry = renderLayout.slots.find((item) => item.id === slotId);
+                  if (!slotEntry) return null;
+
+                  const slotVisual = slots[slotId] ?? EMPTY_SLOT_VISUAL_STATE;
+                  const matteSrc = slotVisual.matteAssetPath ? assetUrl(slotVisual.matteAssetPath) : '';
+                  const ringColor = slotVisual.color;
                   const ringLuminance = colorLuminance(ringColor);
                   const isWhiteGlow = ringLuminance >= WHITE_GLOW_LUMINANCE_THRESHOLD;
+                  const hitRadius = Math.max(slotEntry.insertD, slotEntry.bezelD) / 2;
+                  const ringOuter = slotEntry.bezelD / 2;
+                  const ringBand = Math.max(3, slotEntry.bezelD * 0.075);
+                  const ringInner = Math.max(1, ringOuter - ringBand);
+                  const iconSize = slotEntry.insertD * iconScaleValue;
+                  const iconX = slotEntry.cx - (iconSize / 2);
+                  const iconY = slotEntry.cy - (iconSize / 2);
                   const isActive = slotId === activeSlotId;
+                  const isSelected = editMode && slotId === selectedSlotId;
+                  const showSlotGuides = showCalibrationGuides
+                    && (!showSelectedGuidesOnly || !editMode || slotId === selectedSlotId);
 
                   return (
                     <g
@@ -615,9 +603,9 @@ export default function KeypadPreview({
                       role="button"
                       tabIndex={0}
                       style={{ cursor: 'pointer' }}
-                      aria-label={`Configure ${metrics.label}`}
+                      aria-label={`Configure Slot ${slotIndex + 1}`}
                       onMouseEnter={() => {
-                        setHoveredSlotId(slotId);
+                        setHoveredSlotId(slotId as SlotId);
                       }}
                       onMouseLeave={() => {
                         if (hoveredSlotId === slotId) {
@@ -625,42 +613,52 @@ export default function KeypadPreview({
                         }
                       }}
                       onFocus={() => {
-                        setHoveredSlotId(slotId);
+                        setHoveredSlotId(slotId as SlotId);
                       }}
                       onBlur={() => {
                         if (hoveredSlotId === slotId) {
                           setHoveredSlotId(null);
                         }
                       }}
-                      onClick={() => onSlotClick(slotId)}
+                      onClick={() => {
+                        if (editMode) {
+                          setSelectedSlotId(slotId);
+                          return;
+                        }
+                        onSlotClick(slotId as SlotId);
+                      }}
                       onKeyDown={(event) => {
                         if (event.key === 'Enter' || event.key === ' ') {
                           event.preventDefault();
-                          onSlotClick(slotId);
+                          if (editMode) {
+                            setSelectedSlotId(slotId);
+                            return;
+                          }
+                          onSlotClick(slotId as SlotId);
                         }
                       }}
                     >
-                      <circle cx={metrics.cx} cy={metrics.cy} r={metrics.sizePx / 2} fill="transparent" />
+                      <circle cx={slotEntry.cx} cy={slotEntry.cy} r={hitRadius} fill="transparent" />
 
                       {isActive ? (
                         <circle
-                          cx={metrics.cx}
-                          cy={metrics.cy}
-                          r={Math.max(metrics.clipRadius * 1.04, metrics.rInner)}
+                          cx={slotEntry.cx}
+                          cy={slotEntry.cy}
+                          r={Math.max(slotEntry.insertD / 2, ringInner)}
                           fill="rgba(255,255,255,0.04)"
                           stroke="rgba(170,189,216,0.45)"
-                          strokeWidth={Math.max(1, metrics.sizePx * 0.016)}
+                          strokeWidth={Math.max(1, slotEntry.bezelD * 0.015)}
                         />
                       ) : null}
 
                       {ringColor && showGlows ? (
                         <BacklitGlow
                           idBase={`${safeSvgIdPrefix}-slot-${slotId}`}
-                          cx={metrics.cx}
-                          cy={metrics.cy}
-                          rOuter={metrics.rOuter}
-                          rInner={metrics.rInner}
-                          buttonDiameterPx={metrics.buttonDiameterPx}
+                          cx={slotEntry.cx}
+                          cy={slotEntry.cy}
+                          rOuter={ringOuter}
+                          rInner={ringInner}
+                          buttonDiameterPx={slotEntry.bezelD}
                           color={ringColor}
                           opacity={0.46}
                           transitionMs={190}
@@ -675,28 +673,28 @@ export default function KeypadPreview({
                           width={iconSize}
                           height={iconSize}
                           preserveAspectRatio="xMidYMid meet"
-                          transform={visualRotationDeg ? `rotate(${-visualRotationDeg} ${metrics.cx} ${metrics.cy})` : undefined}
-                          clipPath={`url(#${safeSvgIdPrefix}-clip-${slotId})`}
+                          transform={visualRotationDeg ? `rotate(${-visualRotationDeg} ${slotEntry.cx} ${slotEntry.cy})` : undefined}
+                          clipPath={`url(#${safeSvgIdPrefix}-insert-${slotId})`}
                           style={{
                             filter: isWhiteGlow ? 'brightness(0.82)' : 'brightness(0.9)',
                             transition: 'filter 180ms ease-out',
                           }}
                         />
-                      ) : showHoverPrompt ? null : (
+                      ) : (
                         <>
                           <circle
-                            cx={metrics.cx}
-                            cy={metrics.cy}
-                            r={metrics.clipRadius}
+                            cx={slotEntry.cx}
+                            cy={slotEntry.cy}
+                            r={slotEntry.insertD / 2}
                             fill="rgba(255,255,255,0.04)"
                             stroke="rgba(255,255,255,0.2)"
-                            strokeWidth={Math.max(1, metrics.sizePx * 0.01)}
+                            strokeWidth={Math.max(1, slotEntry.insertD * 0.02)}
                           />
                           <text
-                            x={metrics.cx}
-                            y={metrics.cy + Math.max(7, metrics.sizePx * 0.09)}
+                            x={slotEntry.cx}
+                            y={slotEntry.cy + Math.max(6, slotEntry.insertD * 0.08)}
                             textAnchor="middle"
-                            fontSize={Math.max(18, metrics.sizePx * 0.36)}
+                            fontSize={Math.max(16, slotEntry.insertD * 0.34)}
                             fontWeight={600}
                             fill="rgba(255,255,255,0.65)"
                           >
@@ -705,113 +703,76 @@ export default function KeypadPreview({
                         </>
                       )}
 
-                      {showHoverPrompt ? (
-                        <g pointerEvents="none" filter={`url(#${safeSvgIdPrefix}-hover-glass)`}>
-                          <rect
-                            x={hoverPromptX}
-                            y={hoverPromptY}
-                            width={hoverPromptWidth}
-                            height={hoverPromptHeight}
-                            rx={hoverPromptRadius}
-                            fill={`url(#${safeSvgIdPrefix}-hover-gradient)`}
-                            stroke="rgba(190,211,245,0.38)"
-                            strokeWidth={Math.max(1, metrics.sizePx * 0.012)}
-                          />
-                          <rect
-                            x={hoverPromptX + 3}
-                            y={hoverPromptY + 3}
-                            width={hoverPromptWidth - 6}
-                            height={Math.max(16, hoverPromptHeight * 0.46)}
-                            rx={Math.max(10, hoverPromptRadius - 3)}
-                            fill="rgba(255,255,255,0.08)"
-                          />
-                          <polygon
-                            points={isTopSlot
-                              ? `${arrowCenterX - (arrowWidth / 2)},${hoverPromptY} ${arrowCenterX + (arrowWidth / 2)},${hoverPromptY} ${metrics.cx},${hoverPromptY - arrowHeight}`
-                              : `${arrowCenterX - (arrowWidth / 2)},${hoverPromptY + hoverPromptHeight} ${arrowCenterX + (arrowWidth / 2)},${hoverPromptY + hoverPromptHeight} ${metrics.cx},${hoverPromptY + hoverPromptHeight + arrowHeight}`}
-                            fill={`url(#${safeSvgIdPrefix}-hover-gradient)`}
-                            stroke="rgba(190,211,245,0.38)"
-                            strokeWidth={Math.max(1, metrics.sizePx * 0.012)}
-                            strokeLinejoin="round"
-                          />
-                          <text
-                            x={textCenterX}
-                            y={textBaselineY}
-                            textAnchor="middle"
-                            fontSize={Math.max(11, metrics.sizePx * 0.13)}
-                            fontWeight={600}
-                            letterSpacing={0.15}
-                            fill="rgba(230,240,255,0.95)"
-                          >
-                            Choose a button insert
-                          </text>
-                        </g>
+                      {isSelected ? (
+                        <circle
+                          cx={slotEntry.cx}
+                          cy={slotEntry.cy}
+                          r={(slotEntry.bezelD / 2) + 6}
+                          fill="none"
+                          stroke="#22d3ee"
+                          strokeWidth={Math.max(2, slotEntry.bezelD * 0.03)}
+                          strokeDasharray="4 3"
+                          vectorEffect="non-scaling-stroke"
+                        />
                       ) : null}
 
-                      {debugSlots ? (
+                      {showSlotGuides ? (
                         <>
-                          <circle cx={metrics.cx} cy={metrics.cy} r={Math.max(2, metrics.sizePx * 0.03)} fill="#ff3b30" />
-                          <circle
-                            cx={metrics.cx}
-                            cy={metrics.cy}
-                            r={metrics.sizePx / 2}
-                            fill="none"
-                            stroke="#fef08a"
-                            strokeWidth={Math.max(1, metrics.sizePx * 0.008)}
+                          <line
+                            x1={slotEntry.cx - Math.max(8, slotEntry.insertD * 0.26)}
+                            y1={slotEntry.cy}
+                            x2={slotEntry.cx + Math.max(8, slotEntry.insertD * 0.26)}
+                            y2={slotEntry.cy}
+                            stroke="#ff3b30"
+                            strokeWidth={1.4}
+                            vectorEffect="non-scaling-stroke"
+                          />
+                          <line
+                            x1={slotEntry.cx}
+                            y1={slotEntry.cy - Math.max(8, slotEntry.insertD * 0.26)}
+                            x2={slotEntry.cx}
+                            y2={slotEntry.cy + Math.max(8, slotEntry.insertD * 0.26)}
+                            stroke="#ff3b30"
+                            strokeWidth={1.4}
+                            vectorEffect="non-scaling-stroke"
                           />
                           <circle
-                            cx={metrics.cx}
-                            cy={metrics.cy}
-                            r={metrics.buttonRadiusPx}
-                            fill="none"
-                            stroke="#fde047"
-                            strokeWidth={Math.max(1, metrics.sizePx * 0.008)}
-                          />
-                          <circle
-                            cx={metrics.cx}
-                            cy={metrics.cy}
-                            r={metrics.wellDiameterPx / 2}
-                            fill="none"
-                            stroke="#f59e0b"
-                            strokeWidth={Math.max(1, metrics.sizePx * 0.008)}
-                          />
-                          <circle
-                            cx={metrics.cx}
-                            cy={metrics.cy}
-                            r={metrics.rOuter}
-                            fill="none"
-                            stroke="#22d3ee"
-                            strokeWidth={Math.max(1, metrics.sizePx * 0.008)}
-                          />
-                          <circle
-                            cx={metrics.cx}
-                            cy={metrics.cy}
-                            r={metrics.rInner}
-                            fill="none"
-                            stroke="#22d3ee"
-                            strokeWidth={Math.max(1, metrics.sizePx * 0.008)}
-                          />
-                          <circle
-                            cx={metrics.cx}
-                            cy={metrics.cy}
-                            r={metrics.iconDiameterPx / 2}
+                            cx={slotEntry.cx}
+                            cy={slotEntry.cy}
+                            r={slotEntry.insertD / 2}
                             fill="none"
                             stroke="#ffffff"
-                            strokeWidth={Math.max(1, metrics.sizePx * 0.008)}
+                            strokeWidth={1.2}
+                            strokeDasharray="4 3"
+                            vectorEffect="non-scaling-stroke"
                           />
+                          <circle
+                            cx={slotEntry.cx}
+                            cy={slotEntry.cy}
+                            r={slotEntry.bezelD / 2}
+                            fill="none"
+                            stroke="#22d3ee"
+                            strokeWidth={1.2}
+                            vectorEffect="non-scaling-stroke"
+                          />
+                          <text
+                            x={slotEntry.cx + Math.max(10, slotEntry.insertD * 0.28)}
+                            y={slotEntry.cy - Math.max(10, slotEntry.insertD * 0.2)}
+                            fontSize={Math.max(10, slotEntry.insertD * 0.16)}
+                            fontWeight={700}
+                            fill="#fef08a"
+                          >
+                            {slotIndex + 1}
+                          </text>
                         </>
                       ) : null}
                     </g>
                   );
                 })}
-                </g>
               </g>
-              </svg>
-            </div>
+            </svg>
           ) : (
-            <div
-              className="grid h-full w-full place-items-center text-sm font-semibold text-blue-100/80"
-            >
+            <div className="grid h-full w-full place-items-center text-sm font-semibold text-blue-100/80">
               Shell render pending
             </div>
           )}

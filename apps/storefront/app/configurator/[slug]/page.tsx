@@ -1,6 +1,7 @@
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import Pkp2200Configurator from '../../../components/configurator/Pkp2200Configurator';
+import { resolveKeypadShellAssetPath } from '../../../lib/keypadShellAsset';
 import { resolvePkpModelCode } from '../../../lib/keypadUtils';
 import { fetchProductBySlug } from '../../../lib/vendure.server';
 
@@ -43,7 +44,7 @@ async function ConfiguratorModelContent({
         name: product.name,
         modelCode,
         description: product.description ?? null,
-        shellAssetPath: product.featuredAsset?.source ?? product.featuredAsset?.preview ?? null,
+        shellAssetPath: resolveKeypadShellAssetPath(product.featuredAsset),
         productVariantId: product.variants?.[0]?.id ?? null,
       }}
     />

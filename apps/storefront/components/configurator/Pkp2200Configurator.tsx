@@ -161,7 +161,11 @@ export default function Pkp2200Configurator({
     [editLineId, keypad.modelCode, keypad.slug, loadSavedId, pathname],
   );
 
-  const debugSlots = useMemo(() => searchParams.get('debugSlots') === '1', [searchParams]);
+  const debugMode = useMemo(
+    () => searchParams.get('debug') === '1' || searchParams.get('debugSlots') === '1',
+    [searchParams],
+  );
+  const editMode = useMemo(() => searchParams.get('edit') === '1', [searchParams]);
   const previewIconScaleFromQuery = useMemo(() => {
     const raw = searchParams.get('iconScale');
     if (!raw) return undefined;
@@ -730,7 +734,8 @@ export default function Pkp2200Configurator({
             onSlotClick={openSlotPopup}
             rotationDeg={previewRotationDeg}
             iconScale={previewIconScale}
-            debugSlots={debugSlots}
+            debugMode={debugMode}
+            editMode={editMode}
             descriptionText={keypadDescription}
             showGlows={previewShowGlows}
             onRotate={rotatePreview}
