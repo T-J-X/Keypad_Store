@@ -1,12 +1,10 @@
 import { NextResponse } from 'next/server';
 import { validateMutationRequestOrigin } from '../../../../lib/api/requestSecurity';
-import { readJsonBody, withSessionCookie } from '../../../../lib/api/shopApi';
+import { readJsonBody, SHOP_API_URL, withSessionCookie } from '../../../../lib/api/shopApi';
 import {
   serializeConfiguration,
   validateAndNormalizeConfigurationInput,
 } from '../../../../lib/keypadConfiguration';
-
-const SHOP_API = process.env.VENDURE_SHOP_API_URL || 'http://localhost:3000/shop-api';
 
 type GraphResponse<T> = {
   data?: T;
@@ -95,7 +93,7 @@ export async function POST(request: Request) {
   const incomingCookie = request.headers.get('cookie');
   if (incomingCookie) headers.cookie = incomingCookie;
 
-  const vendureResponse = await fetch(SHOP_API, {
+  const vendureResponse = await fetch(SHOP_API_URL, {
     method: 'POST',
     headers,
     cache: 'no-store',

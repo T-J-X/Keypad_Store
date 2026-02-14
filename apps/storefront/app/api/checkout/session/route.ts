@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
-import { withSessionCookie } from '../../../../lib/api/shopApi';
-
-const SHOP_API = process.env.VENDURE_SHOP_API_URL || 'http://localhost:3000/shop-api';
+import { SHOP_API_URL, withSessionCookie } from '../../../../lib/api/shopApi';
 
 const CHECKOUT_SESSION_QUERY = `
   query CheckoutSession {
@@ -128,7 +126,7 @@ export async function GET(request: Request) {
   const incomingCookie = request.headers.get('cookie');
   if (incomingCookie) headers.cookie = incomingCookie;
 
-  const vendureResponse = await fetch(SHOP_API, {
+  const vendureResponse = await fetch(SHOP_API_URL, {
     method: 'POST',
     headers,
     cache: 'no-store',

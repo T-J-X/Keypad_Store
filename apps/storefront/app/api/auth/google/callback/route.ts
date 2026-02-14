@@ -5,9 +5,7 @@ import {
   getGoogleRedirectUri,
   getSafeRelativePath,
 } from '../../../../../lib/googleAuth';
-import { withSessionCookie } from '../../../../../lib/api/shopApi';
-
-const SHOP_API = process.env.VENDURE_SHOP_API_URL || 'http://localhost:3000/shop-api';
+import { SHOP_API_URL, withSessionCookie } from '../../../../../lib/api/shopApi';
 
 const AUTHENTICATE_WITH_GOOGLE_MUTATION = `
   mutation AuthenticateWithGoogle($token: String, $code: String, $redirectUri: String) {
@@ -105,7 +103,7 @@ function authenticateWithVendure(
   const incomingCookie = request.headers.get('cookie');
   if (incomingCookie) headers.cookie = incomingCookie;
 
-  return fetch(SHOP_API, {
+  return fetch(SHOP_API_URL, {
     method: 'POST',
     headers,
     cache: 'no-store',

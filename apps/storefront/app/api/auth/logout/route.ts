@@ -1,8 +1,6 @@
 import { NextResponse } from 'next/server';
 import { validateMutationRequestOrigin } from '../../../../lib/api/requestSecurity';
-import { withSessionCookie } from '../../../../lib/api/shopApi';
-
-const SHOP_API = process.env.VENDURE_SHOP_API_URL || 'http://localhost:3000/shop-api';
+import { SHOP_API_URL, withSessionCookie } from '../../../../lib/api/shopApi';
 
 type GraphResponse<T> = {
   data?: T;
@@ -30,7 +28,7 @@ export async function POST(request: Request) {
   const incomingCookie = request.headers.get('cookie');
   if (incomingCookie) headers.cookie = incomingCookie;
 
-  const vendureResponse = await fetch(SHOP_API, {
+  const vendureResponse = await fetch(SHOP_API_URL, {
     method: 'POST',
     headers,
     cache: 'no-store',

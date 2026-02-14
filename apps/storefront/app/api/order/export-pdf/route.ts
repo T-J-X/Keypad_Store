@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { validateMutationRequestOrigin } from '../../../../lib/api/requestSecurity';
-import { readJsonBody } from '../../../../lib/api/shopApi';
+import { readJsonBody, SHOP_API_URL } from '../../../../lib/api/shopApi';
 import {
   getGeometryForModel,
   getSlotIdsForModel,
@@ -14,7 +14,6 @@ import {
 } from '../../../../lib/keypadConfiguration';
 import { resolvePkpModelCode } from '../../../../lib/keypadUtils';
 
-const SHOP_API = process.env.VENDURE_SHOP_API_URL || 'http://localhost:3000/shop-api';
 const VENDURE_HOST = process.env.NEXT_PUBLIC_VENDURE_HOST || 'http://localhost:3000';
 
 const ORDER_EXPORT_QUERY = `
@@ -811,7 +810,7 @@ async function queryShopApi<T>(
   const incomingCookie = request.headers.get('cookie');
   if (incomingCookie) headers.cookie = incomingCookie;
 
-  const rawResponse = await fetch(SHOP_API, {
+  const rawResponse = await fetch(SHOP_API_URL, {
     method: 'POST',
     headers,
     cache: 'no-store',
