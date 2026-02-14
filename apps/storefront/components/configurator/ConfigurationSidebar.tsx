@@ -7,16 +7,10 @@ import type { SlotId } from '../../lib/keypadConfiguration';
 import type { StatusMessage } from './types';
 import { KeypadContext } from './KeypadProvider';
 
-const primarySlotButtonClass = [
-  'group relative isolate inline-flex min-h-10 min-w-[112px] items-center justify-center rounded-full border border-transparent px-3 text-xs font-semibold uppercase tracking-[0.1em] text-white',
-  'bg-[linear-gradient(90deg,#040F2E_0%,#112B5D_55%,#29457A_100%),linear-gradient(90deg,#203f7a_0%,#2f5da8_55%,#4b7fca_100%)] [background-origin:padding-box,border-box] [background-clip:padding-box,border-box]',
-  'transition-[background,box-shadow,transform] duration-300',
-  'hover:-translate-y-[1px] hover:bg-[linear-gradient(270deg,#040F2E_0%,#112B5D_55%,#29457A_100%),linear-gradient(90deg,#24497d_0%,#39629a_55%,#537bb0_100%)] hover:shadow-[0_0_0_1px_rgba(72,116,194,0.56),0_10px_24px_rgba(4,15,46,0.29)]',
-  'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#29457A]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white/80',
-].join(' ');
+const primarySlotButtonClass = 'btn-primary min-h-10 px-3 text-xs tracking-[0.1em] uppercase';
 
 const strongGhostButtonClass =
-  'btn-ghost-strong inline-flex min-h-10 items-center justify-center px-3 text-xs font-semibold uppercase tracking-[0.1em] text-[#1f3a64] transition hover:border-[#6d88b6] hover:bg-white/85 hover:text-[#14335c]';
+  'btn-secondary dark min-h-10 items-center justify-center px-3 text-xs uppercase tracking-[0.1em]';
 
 type ConfigurationSidebarProps = {
   slotIds?: SlotId[];
@@ -107,8 +101,6 @@ export default function ConfigurationSidebar({
                   className={primarySlotButtonClass}
                   aria-label={`${isAssigned ? 'Edit' : 'Choose'} insert for ${label}`}
                 >
-                  <span className="pointer-events-none absolute inset-0 rounded-full bg-[linear-gradient(270deg,rgba(255,255,255,0.10)_0%,rgba(255,255,255,0.02)_45%,rgba(255,255,255,0.08)_100%)] opacity-0 transition-opacity duration-300 group-hover:opacity-45" />
-                  <span className="pointer-events-none absolute -inset-[1px] -z-10 rounded-full bg-[linear-gradient(90deg,rgba(11,27,58,0.44)_0%,rgba(27,52,95,0.30)_55%,rgba(58,116,198,0.30)_100%)] opacity-0 transition-opacity duration-300 group-hover:opacity-55" />
                   <span className="relative z-10">{isAssigned ? 'Edit insert' : 'Choose insert'}</span>
                 </button>
                 {isAssigned ? (
@@ -150,7 +142,7 @@ export default function ConfigurationSidebar({
         </p>
       ) : null}
       <div className="mt-4">
-        <Link href="/cart" className="btn-ghost-strong inline-flex min-h-10 items-center px-4 text-sm font-semibold text-[#0f3d7a]">
+        <Link href="/cart" className="btn-secondary dark inline-flex min-h-10 items-center justify-center px-4 w-full sm:w-auto text-sm font-semibold">
           Review cart
         </Link>
       </div>

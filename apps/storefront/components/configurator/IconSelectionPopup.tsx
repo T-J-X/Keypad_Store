@@ -104,7 +104,7 @@ function resolvePopupProps(
     recommendationSeedIconId: props.recommendationSeedIconId ?? context?.state.recommendationSeedIconId ?? null,
     onSelectIcon: props.onSelectIcon ?? selectIconFromContext,
     onSelectColor: props.onSelectColor ?? selectColorFromContext,
-    onClose: props.onClose ?? context?.actions.closeSlot ?? (() => {}),
+    onClose: props.onClose ?? context?.actions.closeSlot ?? (() => { }),
   };
 }
 
@@ -167,8 +167,8 @@ function IconPickerProvider({
       activeCategorySlug === 'all'
         ? iconSearchIndex
         : iconSearchIndex.filter(({ item: icon }) =>
-            icon.categories.some((category) => categorySlug(category) === activeCategorySlug),
-          );
+          icon.categories.some((category) => categorySlug(category) === activeCategorySlug),
+        );
 
     const searchBase = queryTerms.length > 0 ? iconSearchIndex : categoryScoped;
 
@@ -271,22 +271,20 @@ function IconPickerTabs() {
       <button
         type="button"
         onClick={() => context.actions.setActiveView('icons')}
-        className={`${tabButtonClass} ${
-          context.state.activeView === 'icons'
-            ? 'border-white/70 bg-white text-[#05112a]'
-            : 'border-white/25 bg-transparent text-blue-100 hover:border-white/55'
-        }`}
+        className={`${tabButtonClass} ${context.state.activeView === 'icons'
+          ? 'border-white/70 bg-white text-[#05112a]'
+          : 'border-white/25 bg-transparent text-blue-100 hover:border-white/55'
+          }`}
       >
         Icons
       </button>
       <button
         type="button"
         onClick={() => context.actions.setActiveView('swatches')}
-        className={`${tabButtonClass} ${
-          context.state.activeView === 'swatches'
-            ? 'border-white/70 bg-white text-[#05112a]'
-            : 'border-white/25 bg-transparent text-blue-100 hover:border-white/55'
-        }`}
+        className={`${tabButtonClass} ${context.state.activeView === 'swatches'
+          ? 'border-white/70 bg-white text-[#05112a]'
+          : 'border-white/25 bg-transparent text-blue-100 hover:border-white/55'
+          }`}
       >
         Ring Glow
       </button>
@@ -310,7 +308,7 @@ function IconPickerSearchAndCategories() {
           value={context.state.searchQuery}
           onChange={(event) => context.actions.setSearchQuery(event.target.value)}
           placeholder="Search by name, ID, SKU, category"
-          className="h-10 w-full rounded-full border border-white/22 bg-white/[0.08] px-4 text-sm text-blue-50 placeholder:text-blue-100/60 outline-none backdrop-blur-[6px] transition focus:border-[#8cc8ff] focus:bg-white/[0.12]"
+          className="input input-dark h-10 rounded-full"
         />
       </div>
 
@@ -325,8 +323,8 @@ function IconPickerSearchAndCategories() {
               className={[
                 'inline-flex min-h-9 shrink-0 items-center justify-center rounded-full border px-3 text-[11px] font-semibold tracking-wide transition',
                 tab.slug === context.state.activeCategorySlug
-                  ? 'border-[#79b8ff] bg-[#193665] text-white'
-                  : 'border-white/20 bg-white/5 text-blue-100 hover:border-white/45 hover:bg-white/10',
+                  ? 'border-panel-accent bg-panel-light text-white shadow-[0_0_0_1px_rgba(30,167,255,0.25)]'
+                  : 'border-white/10 bg-white/5 text-panel-muted hover:border-white/30 hover:bg-white/10',
               ].join(' ')}
             >
               {tab.name}
@@ -359,10 +357,10 @@ function IconCard({
       className={[
         'group relative flex min-h-[118px] flex-col overflow-hidden rounded-2xl border p-2 text-left transition',
         isActive
-          ? 'border-[#8cc8ff] bg-[#15315f] shadow-[0_0_0_1px_rgba(140,200,255,0.4)]'
+          ? 'border-panel-accent bg-panel-light shadow-[0_0_0_1px_rgba(30,167,255,0.4)]'
           : (recommendedStyle
-            ? 'border-[#1EA7FF]/55 bg-[#0d2146]/85 shadow-[0_0_0_1px_rgba(30,167,255,0.25)] hover:border-[#69cbff] hover:bg-[#163566]'
-            : 'border-white/18 bg-white/[0.07] hover:border-white/40 hover:bg-white/[0.12]'),
+            ? 'border-panel-accent/50 bg-panel-light shadow-[0_0_0_1px_rgba(30,167,255,0.15)] hover:border-panel-accent/80'
+            : 'border-white/10 bg-white/5 hover:border-white/30 hover:bg-white/10'),
       ].join(' ')}
     >
       {recommendedBadge ? (
@@ -407,7 +405,7 @@ function IconPickerIconResults() {
       {hasAnySelection && recommendedIcons.length > 0 ? (
         <section>
           <div className="mb-2 flex items-center justify-between gap-2">
-            <h4 className="text-xs font-semibold uppercase tracking-[0.14em] text-blue-100/80">
+            <h4 className="text-xs font-semibold uppercase tracking-[0.14em] text-panel-muted">
               Recommended for your setup
             </h4>
             <span className="rounded-full border border-[#1EA7FF]/45 bg-[#1EA7FF]/12 px-2.5 py-0.5 text-[10px] font-semibold uppercase tracking-[0.12em] text-[#a7ddff]">
@@ -431,7 +429,7 @@ function IconPickerIconResults() {
 
       <section>
         {filteredIcons.length === 0 ? (
-          <div className="rounded-2xl border border-dashed border-white/25 bg-white/5 p-8 text-sm text-blue-100/80">
+          <div className="rounded-2xl border border-dashed border-white/10 bg-white/5 p-8 text-sm text-panel-muted">
             {searchQuery
               ? `No ${context.props.slotSizeMm}mm icons match "${searchQuery}" across all categories.`
               : `No ${context.props.slotSizeMm}mm icons available for this category.`}
@@ -460,7 +458,7 @@ function IconPickerSwatches() {
 
   return (
     <div className="px-5 py-6 sm:px-6">
-      <div className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-100/70">Swatches</div>
+      <div className="text-xs font-semibold uppercase tracking-[0.16em] text-panel-muted">Swatches</div>
       <div className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-5">
         {RING_GLOW_OPTIONS.map((option) => {
           const isActive = (context.props.selectedColor ?? null) === option.value;
@@ -472,8 +470,8 @@ function IconPickerSwatches() {
               className={[
                 'inline-flex min-h-12 items-center justify-between rounded-full border px-4 text-sm font-semibold transition',
                 isActive
-                  ? 'border-[#8cc8ff] bg-[#17345f] text-white shadow-[0_0_0_1px_rgba(140,200,255,0.4)]'
-                  : 'border-white/20 bg-white/[0.07] text-blue-100 hover:border-white/50 hover:bg-white/[0.12]',
+                  ? 'border-panel-accent bg-panel-light text-white shadow-[0_0_0_1px_rgba(30,167,255,0.4)]'
+                  : 'border-white/10 bg-white/5 text-panel-muted hover:border-white/30 hover:bg-white/10',
               ].join(' ')}
             >
               <span>{option.label}</span>
@@ -495,7 +493,7 @@ function IconPickerSwatches() {
         <button
           type="button"
           onClick={context.actions.close}
-          className="inline-flex min-h-10 min-w-[110px] items-center justify-center rounded-full border border-white/35 bg-white px-4 text-sm font-semibold text-[#04112b] transition hover:border-white hover:bg-blue-50"
+          className="btn-primary"
         >
           Done
         </button>
@@ -515,8 +513,8 @@ function IconPickerModal() {
     ? 'fixed inset-0 z-[80] flex items-end bg-[#020a18]/74 px-0 py-0 backdrop-blur-[2px]'
     : 'fixed inset-0 z-[80] flex items-center justify-center bg-[#020a18]/74 px-4 py-6 backdrop-blur-[2px]';
   const panelClass = context.props.isMobile
-    ? 'h-[74vh] w-full overflow-hidden rounded-t-3xl border border-white/15 border-b-0 bg-[linear-gradient(180deg,#0d1f43_0%,#07132a_100%)] shadow-[0_-20px_80px_rgba(2,8,24,0.55)]'
-    : 'h-[78vh] w-full max-w-5xl overflow-hidden rounded-3xl border border-white/15 bg-[linear-gradient(180deg,#0d1f43_0%,#07132a_100%)] shadow-[0_30px_80px_rgba(2,8,24,0.55)]';
+    ? 'h-[74vh] w-full overflow-hidden rounded-t-3xl border border-panel-border border-b-0 bg-panel shadow-[0_-20px_80px_rgba(2,8,24,0.55)]'
+    : 'h-[78vh] w-full max-w-5xl overflow-hidden rounded-3xl border border-panel-border bg-panel shadow-[0_30px_80px_rgba(2,8,24,0.55)]';
 
   return (
     <AccessibleModal
@@ -529,7 +527,7 @@ function IconPickerModal() {
     >
       <div className="flex shrink-0 items-center justify-between border-b border-white/12 px-5 py-4 sm:px-6">
         <div>
-          <div id={descriptionId} className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-100/80">Icon Library</div>
+          <div id={descriptionId} className="text-xs font-semibold uppercase tracking-[0.16em] text-panel-muted">Icon Library</div>
           <h3 id={titleId} className="mt-1 text-lg font-semibold text-white">{context.props.slotLabel}</h3>
         </div>
         <button
@@ -543,7 +541,7 @@ function IconPickerModal() {
       </div>
 
       <div className="min-h-0 flex-1 overflow-y-auto">
-        <div className="sticky top-0 z-20 border-b border-white/12 bg-[#081733]/88 px-5 pb-4 pt-3 backdrop-blur-xl sm:px-6">
+        <div className="sticky top-0 z-20 border-b border-white/5 bg-panel/95 px-5 pb-4 pt-3 backdrop-blur-xl sm:px-6">
           <IconPickerTabs />
           <IconPickerSearchAndCategories />
         </div>
