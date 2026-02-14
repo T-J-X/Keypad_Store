@@ -386,6 +386,7 @@ export default function CheckoutPage() {
       setIsSubmitting(false);
     }
   };
+  const canSubmit = !isSubmitting;
 
   return (
     <div className="mx-auto w-full max-w-6xl px-4 pb-20 pt-10 sm:px-6 lg:px-8">
@@ -814,7 +815,7 @@ export default function CheckoutPage() {
             </div>
             <button
               type="submit"
-              disabled={isSubmitting}
+              disabled={!canSubmit}
               className="mt-5 inline-flex w-full items-center justify-center rounded-full border border-[#1EA7FF]/45 bg-[#1EA7FF]/12 px-5 py-3 text-sm font-semibold text-blue-50 transition hover:bg-[#1EA7FF]/24 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isSubmitting ? 'Placing Order…' : 'Place Order'}
