@@ -31,7 +31,7 @@ function KeypadConfiguratorShell() {
 
   return (
     <div className="mx-auto w-full max-w-7xl px-4 pb-28 pt-10 sm:px-6 lg:px-8 lg:pb-20">
-      <div className="overflow-hidden rounded-3xl border border-[#0f2c5a] bg-[radial-gradient(130%_120%_at_50%_0%,#1e63bc_0%,#102d5a_36%,#060f24_100%)] p-6 shadow-[0_34px_100px_rgba(2,10,28,0.45)] sm:p-8">
+      <div className="overflow-hidden rounded-3xl border border-white/10 bg-deep-navy p-6 shadow-2xl sm:p-8">
         <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
           <div>
             <div className="pill bg-[#1052ab]">{isEditingLine ? 'Edit Configuration' : 'Pilot Configurator'}</div>
@@ -49,7 +49,7 @@ function KeypadConfiguratorShell() {
             <button
               type="button"
               onClick={actions.resetSlots}
-              className="inline-flex min-h-11 items-center rounded-full border border-white/20 bg-white/10 px-4 text-sm font-semibold text-white transition hover:border-white/45 hover:bg-white/16"
+              className="inline-flex min-h-11 items-center rounded-lg border border-white/20 bg-white/5 px-4 text-sm font-semibold text-white transition hover:border-white/40 hover:bg-white/10"
             >
               Reset slots
             </button>

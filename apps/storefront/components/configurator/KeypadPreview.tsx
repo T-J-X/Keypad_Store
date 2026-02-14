@@ -549,7 +549,7 @@ export default function KeypadPreview({
   }, [baseH, baseW, debugMode, hasNaturalSizeMismatch, renderLayout.model, shellNaturalSize]);
 
   return (
-    <div className="card glow-isolate relative overflow-hidden border border-white/18 bg-[radial-gradient(140%_120%_at_60%_-10%,#2e79dd_0%,#17305f_36%,#0a1429_72%)] p-5 shadow-[0_28px_70px_rgba(2,9,24,0.42)] sm:p-6">
+    <div className="card glow-isolate relative overflow-hidden border border-white/10 bg-deep-navy p-5 shadow-2xl sm:p-6">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
           <div className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-100/80">Command View</div>
@@ -559,14 +559,14 @@ export default function KeypadPreview({
           <button
             type="button"
             onClick={onRotate}
-            className="inline-flex min-h-9 items-center rounded-full border border-white/24 bg-[#0a1b3a]/70 px-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-blue-100 transition hover:border-white/40 hover:bg-[#12305e]"
+            className="inline-flex min-h-9 items-center rounded-lg border border-white/15 bg-white/5 px-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-blue-100 transition hover:border-white/30 hover:bg-white/10"
           >
             Rotate
           </button>
           <button
             type="button"
             onClick={onToggleGlows}
-            className="inline-flex min-h-9 items-center rounded-full border border-white/24 bg-[#0a1b3a]/70 px-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-blue-100 transition hover:border-white/40 hover:bg-[#12305e]"
+            className="inline-flex min-h-9 items-center rounded-lg border border-white/15 bg-white/5 px-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-blue-100 transition hover:border-white/30 hover:bg-white/10"
           >
             {showGlows ? 'Glows on' : 'Glows off'}
           </button>
@@ -584,7 +584,7 @@ export default function KeypadPreview({
               <button
                 type="button"
                 onClick={() => setShowSelectedGuidesOnly((previous) => !previous)}
-                className="inline-flex min-h-8 items-center rounded-full border border-white/28 bg-[#0f2a58]/80 px-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-blue-100 transition hover:border-white/45 hover:bg-[#184080]"
+                className="inline-flex min-h-8 items-center rounded-lg border border-white/15 bg-white/5 px-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-blue-100 transition hover:border-white/30 hover:bg-white/10"
               >
                 {showSelectedGuidesOnly ? 'Guides: selected' : 'Guides: all'}
               </button>
@@ -593,7 +593,7 @@ export default function KeypadPreview({
                 onClick={() => {
                   void onCopyJson();
                 }}
-                className="inline-flex min-h-8 items-center rounded-full border border-white/28 bg-[#0f2a58]/80 px-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-blue-100 transition hover:border-white/45 hover:bg-[#184080]"
+                className="inline-flex min-h-8 items-center rounded-lg border border-white/15 bg-white/5 px-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-blue-100 transition hover:border-white/30 hover:bg-white/10"
               >
                 Copy JSON
               </button>
@@ -602,7 +602,7 @@ export default function KeypadPreview({
                 onClick={() => {
                   void onCopyTuningJson();
                 }}
-                className="inline-flex min-h-8 items-center rounded-full border border-white/28 bg-[#0f2a58]/80 px-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-blue-100 transition hover:border-white/45 hover:bg-[#184080]"
+                className="inline-flex min-h-8 items-center rounded-lg border border-white/15 bg-white/5 px-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-blue-100 transition hover:border-white/30 hover:bg-white/10"
               >
                 Copy Tuning JSON
               </button>
