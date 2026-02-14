@@ -33,6 +33,15 @@ export default {
           alt: '#F7F8FA',
           border: '#E2E4E9',
         },
+        // "The Unified Geist System" - Dark Panel Tokens
+        panel: {
+          DEFAULT: '#0A1628', // Deep Navy (Solid)
+          light: '#0E1E38',   // Lighter Navy (Nested cards)
+          border: '#1A3058',  // Panel Borders
+          muted: '#8BA3C7',   // Muted Text on Dark
+          input: '#0d1f3b',   // Input background
+          ring: '#1E2D4A',    // Input ring/border
+        },
         mist: '#f5f3ef',
         shell: '#ffffff',
         cloud: '#e7ecf3',
@@ -41,17 +50,25 @@ export default {
         sky: {
           DEFAULT: '#4aa4ff',
           400: '#38bdf8',
-        }
+        },
+        'deep-navy': '#020617',
+        'pure-white': '#ffffff',
       },
-      letterSpacing: {
-        tightest: '-0.02em',
-        widest: '0.1em',
+      borderRadius: {
+        DEFAULT: '8px',
+        btn: '8px',
+        input: '8px',
+        card: '12px',
+        sm: '4px',
+        md: '8px',
+        lg: '8px',
+        xl: '12px',
+        '2xl': '16px',
       },
       boxShadow: {
-        soft: '0 16px 40px rgba(14, 17, 26, 0.12)',
-        glow: '0 0 0 1px rgba(74, 164, 255, 0.25), 0 16px 40px rgba(14, 17, 26, 0.18)',
-        premium: '0 10px 30px -10px rgba(0, 0, 0, 0.04), 0 4px 10px -5px rgba(0, 0, 0, 0.02)',
-        glass: '0 8px 32px 0 rgba(14, 17, 26, 0.05)',
+        soft: '0 4px 20px -2px rgba(0, 0, 0, 0.08)',
+        refined: '0 2px 8px -2px rgba(0, 0, 0, 0.05)',
+        glow: '0 0 0 1px rgba(56, 189, 248, 0.25), 0 8px 20px rgba(56, 189, 248, 0.1)',
       }
     }
   },

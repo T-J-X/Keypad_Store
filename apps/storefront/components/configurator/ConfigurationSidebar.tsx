@@ -60,12 +60,12 @@ export default function ConfigurationSidebar({
   const resolvedSavedConfigError = savedConfigError ?? context?.state.savedConfigError ?? null;
   const resolvedCartStatus = cartStatus ?? context?.state.cartStatus ?? null;
   const resolvedSaveStatus = saveStatus ?? context?.state.saveStatus ?? null;
-  const resolvedOnOpenSlotPopup = onOpenSlotPopup ?? context?.actions.openSlot ?? (() => {});
-  const resolvedOnClearSlot = onClearSlot ?? context?.actions.clearSlot ?? (() => {});
+  const resolvedOnOpenSlotPopup = onOpenSlotPopup ?? context?.actions.openSlot ?? (() => { });
+  const resolvedOnClearSlot = onClearSlot ?? context?.actions.clearSlot ?? (() => { });
   const totalSlots = resolvedSlotIds.length;
 
   return (
-    <section className="card-soft relative border-white/30 bg-white/70 p-5 shadow-[0_24px_48px_rgba(6,22,47,0.2)] backdrop-blur-xl sm:p-6">
+    <section className="card-soft relative p-5 sm:p-6">
       <h2 className="text-lg font-semibold tracking-tight text-[#10223f]">Slot Configuration</h2>
       <p className="mt-1 text-sm text-[#324a71]">
         Each slot requires a valid alphanumeric icon ID before checkout and account save.
@@ -92,7 +92,7 @@ export default function ConfigurationSidebar({
           return (
             <div
               key={slotId}
-              className="flex items-center justify-between rounded-2xl border border-[#b8c8df]/80 bg-white/76 px-3 py-3 shadow-[inset_0_1px_0_rgba(255,255,255,0.88),inset_0_-6px_14px_rgba(18,40,72,0.07),0_10px_22px_rgba(13,35,67,0.12)]"
+              className="flex items-center justify-between rounded-xl border border-surface-border bg-surface-alt/50 px-3 py-3 ring-1 ring-inset ring-transparent transition-all hover:bg-surface-alt hover:shadow-soft"
             >
               <div className="min-w-0">
                 <div className="text-xs font-semibold uppercase tracking-[0.14em] text-[#4c648a]">{label}</div>
