@@ -79,9 +79,22 @@ type SaveConfigurationResponse = {
 };
 
 export async function GET(request: Request) {
-  const savedConfigsResponse = await queryShopApi<ListSavedConfigurationsResponse>(request, {
-    query: LIST_SAVED_CONFIGURATIONS_QUERY,
-  });
+  const [savedConfigsResponse, keypadsResponse] = await Promise.all([
+    queryShopApi<ListSavedConfigurationsResponse>(request, {
+      query: LIST_SAVED_CONFIGURATIONS_QUERY,
+    }),
+    queryShopApi<KeypadProductListResponse>(request, {
+      query: LIST_KEYPADS_QUERY,
+      variables: {
+        options: {
+          take: 100,
+          filter: {
+            isKeypadProduct: { eq: true },
+          },
+        },
+      },
+    }),
+  ]);
 
   if (!savedConfigsResponse.ok) {
     return withSessionCookie(
@@ -89,18 +102,6 @@ export async function GET(request: Request) {
       savedConfigsResponse.rawResponse,
     );
   }
-
-  const keypadsResponse = await queryShopApi<KeypadProductListResponse>(request, {
-    query: LIST_KEYPADS_QUERY,
-    variables: {
-      options: {
-        take: 100,
-        filter: {
-          isKeypadProduct: { eq: true },
-        },
-      },
-    },
-  });
 
   const keypadVariantByModel = buildKeypadVariantMap(
     keypadsResponse.ok ? keypadsResponse.data.products.items ?? [] : [],

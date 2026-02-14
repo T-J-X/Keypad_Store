@@ -274,7 +274,7 @@ export default function KeypadPdp({
         </div>
       </div>
 
-      <div className="mt-[75px] space-y-12">
+      <div className="mt-20 space-y-12">
         <PdpTabs panels={tabPanels} defaultTabId="overview" />
       </div>
     </div>

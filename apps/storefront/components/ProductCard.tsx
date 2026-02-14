@@ -144,7 +144,7 @@ export default function ProductCard({
           >
             <span className="pointer-events-none absolute inset-0 rounded-full bg-[linear-gradient(270deg,rgba(255,255,255,0.10)_0%,rgba(255,255,255,0.02)_45%,rgba(255,255,255,0.08)_100%)] opacity-0 transition-opacity duration-300 group-hover:opacity-45" />
             <span className="pointer-events-none absolute -inset-[1px] -z-10 rounded-full bg-[linear-gradient(90deg,rgba(11,27,58,0.44)_0%,rgba(27,52,95,0.30)_55%,rgba(58,116,198,0.30)_100%)] opacity-0 transition-opacity duration-300 group-hover:opacity-55" />
-            <span className="relative z-10">{adding ? 'Adding...' : 'Add to cart'}</span>
+            <span className="relative z-10">{adding ? 'Adding…' : 'Add to Cart'}</span>
           </button>
         </div>
         {errorMessage ? <div className="text-xs font-medium text-rose-700">{errorMessage}</div> : null}

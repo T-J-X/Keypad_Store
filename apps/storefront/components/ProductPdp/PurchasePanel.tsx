@@ -288,10 +288,10 @@ export default function PurchasePanel({
           {loading ? (
             <>
               <span className="relative z-10 h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white motion-reduce:animate-none" />
-              <span className="relative z-10">Adding...</span>
+              <span className="relative z-10">Adding…</span>
             </>
           ) : (
-            <span className="relative z-10">Add to cart</span>
+            <span className="relative z-10">Add to Cart</span>
           )}
         </button>
 
@@ -301,7 +301,7 @@ export default function PurchasePanel({
           disabled={!canPurchase || adding || buyingNow}
           className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-transparent px-5 py-3 text-sm font-medium text-white bg-[linear-gradient(90deg,#0a2518_0%,#123322_52%,#000000_100%),linear-gradient(90deg,#123726_0%,#184531_52%,#10241a_100%)] [background-origin:padding-box,border-box] [background-clip:padding-box,border-box] transition-[background,box-shadow,transform] duration-300 hover:-translate-y-[1px] hover:bg-[linear-gradient(270deg,#0d2b1c_0%,#163d2a_52%,#060606_100%),linear-gradient(270deg,#1c543b_0%,#276e4c_52%,#1a4c36_100%)] hover:shadow-[0_0_0_1px_rgba(52,124,88,0.66),0_10px_22px_rgba(7,29,17,0.28)] active:translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1f5136]/55 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {buyingNow ? 'Processing...' : 'Buy now'}
+          {buyingNow ? 'Processing…' : 'Buy Now'}
         </button>
 
         <button
@@ -310,7 +310,7 @@ export default function PurchasePanel({
           disabled={wishlistSaving}
           className="inline-flex w-full items-center justify-center rounded-full border-2 border-transparent px-5 py-2.5 text-sm font-semibold text-neutral-950 bg-[linear-gradient(#ffffff,#ffffff),linear-gradient(#a3a3a3,#a3a3a3)] [background-origin:border-box] [background-clip:padding-box,border-box] transition-[background,transform,box-shadow] duration-200 hover:-translate-y-[1px] hover:bg-[linear-gradient(#ffffff,#ffffff),linear-gradient(90deg,#4e84d8_0%,#6da5f5_55%,#8ab8ff_100%)] hover:shadow-[0_8px_18px_rgba(4,15,46,0.14)] active:translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:opacity-50"
         >
-          {wishlistSaving ? 'Saving...' : 'Wishlist'}
+          {wishlistSaving ? 'Saving…' : 'Wishlist'}
         </button>
       </div>
 

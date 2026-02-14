@@ -222,7 +222,7 @@ export default function CartPage() {
         </div>
 
         {isLoading ? (
-          <div className="card-soft border-white/12 bg-[#081a35]/72 p-6 text-sm text-blue-100/80">Loading your cart...</div>
+          <div className="card-soft border-white/12 bg-[#081a35]/72 p-6 text-sm text-blue-100/80">Loading your cart…</div>
         ) : null}
 
         {!isLoading && error ? (
@@ -381,12 +381,15 @@ export default function CartPage() {
                         </Link>
                       ) : null}
 
-                      <button
-                        type="button"
-                        onClick={() => updateLine(line.id, 0)}
-                        disabled={isUpdatingLine}
-                        className="ml-3 text-xs font-semibold text-blue-100/70 underline-offset-4 transition hover:text-rose-300 hover:underline disabled:cursor-not-allowed disabled:opacity-40"
-                      >
+                        <button
+                          type="button"
+                          onClick={() => {
+                            if (!window.confirm('Remove this item from your cart?')) return;
+                            void updateLine(line.id, 0);
+                          }}
+                          disabled={isUpdatingLine}
+                          className="ml-3 text-xs font-semibold text-blue-100/70 underline-offset-4 transition hover:text-rose-300 hover:underline disabled:cursor-not-allowed disabled:opacity-40"
+                        >
                         Remove
                       </button>
                     </div>
@@ -422,7 +425,7 @@ export default function CartPage() {
               href="/checkout"
               className="mt-5 inline-flex w-full items-center justify-center rounded-full border border-[#1EA7FF]/45 bg-[#1EA7FF]/12 px-5 py-3 text-sm font-semibold text-blue-50 transition hover:bg-[#1EA7FF]/24"
             >
-              Proceed to checkout
+              Proceed to Checkout
             </Link>
           </aside>
           </div>

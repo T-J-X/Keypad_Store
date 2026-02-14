@@ -470,7 +470,7 @@ export default function ShopClient({
     ? 'Search by button insert ID or name'
     : isKeypadsSection
       ? 'Search by product name or ID'
-      : 'Search by name, category or ID...';
+      : 'Search by name, category or ID…';
   const showCatalogWideKeypads = isCatalogWideSection && query.trim().length > 0;
   const catalogWideKeypads = showCatalogWideKeypads ? filteredKeypads : [];
   const configuredTopTiles = useMemo(() => {
