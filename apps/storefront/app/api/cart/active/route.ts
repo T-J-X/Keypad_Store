@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { SHOP_API_URL, withSessionCookie } from '../../../../lib/api/shopApi';
+import { type GraphResponse, normalizeInt, SHOP_API_URL, withSessionCookie } from '../../../../lib/api/shopApi';
 
 const ACTIVE_ORDER_QUERY = `
   query ActiveOrder {
@@ -37,10 +37,7 @@ const ACTIVE_ORDER_QUERY = `
   }
 `;
 
-type GraphResponse<T> = {
-  data?: T;
-  errors?: Array<{ message?: string }>;
-};
+
 
 type ActiveOrderResponse = {
   activeOrder?: {
@@ -85,7 +82,7 @@ export async function GET(request: Request) {
   if (incomingCookie) headers.cookie = incomingCookie;
 
   try {
-  const vendureResponse = await fetch(SHOP_API_URL, {
+    const vendureResponse = await fetch(SHOP_API_URL, {
       method: 'POST',
       headers,
       cache: 'no-store',
@@ -104,44 +101,44 @@ export async function GET(request: Request) {
     const response = NextResponse.json({
       order: order
         ? {
-            id: order.id,
-            code: order.code,
-            currencyCode: order.currencyCode ?? 'USD',
-            totalQuantity: normalizeInt(order.totalQuantity),
-            subTotalWithTax: normalizeInt(order.subTotalWithTax),
-            shippingWithTax: normalizeInt(order.shippingWithTax),
-            totalWithTax: normalizeInt(order.totalWithTax),
-            lines: (order.lines ?? []).map((line) => ({
-              id: line.id,
-              quantity: normalizeInt(line.quantity),
-              linePriceWithTax: normalizeInt(line.linePriceWithTax),
-              customFields: line.customFields
-                ? {
-                    configuration: line.customFields.configuration ?? null,
-                  }
-                : null,
-              productVariant: line.productVariant
-                ? {
-                    id: line.productVariant.id,
-                    name: line.productVariant.name ?? 'Product variant',
-                    currencyCode: line.productVariant.currencyCode ?? order.currencyCode ?? 'USD',
-                    product: line.productVariant.product
+          id: order.id,
+          code: order.code,
+          currencyCode: order.currencyCode ?? 'USD',
+          totalQuantity: normalizeInt(order.totalQuantity),
+          subTotalWithTax: normalizeInt(order.subTotalWithTax),
+          shippingWithTax: normalizeInt(order.shippingWithTax),
+          totalWithTax: normalizeInt(order.totalWithTax),
+          lines: (order.lines ?? []).map((line) => ({
+            id: line.id,
+            quantity: normalizeInt(line.quantity),
+            linePriceWithTax: normalizeInt(line.linePriceWithTax),
+            customFields: line.customFields
+              ? {
+                configuration: line.customFields.configuration ?? null,
+              }
+              : null,
+            productVariant: line.productVariant
+              ? {
+                id: line.productVariant.id,
+                name: line.productVariant.name ?? 'Product variant',
+                currencyCode: line.productVariant.currencyCode ?? order.currencyCode ?? 'USD',
+                product: line.productVariant.product
+                  ? {
+                    id: line.productVariant.product.id,
+                    slug: line.productVariant.product.slug ?? null,
+                    name: line.productVariant.product.name ?? null,
+                    featuredAsset: line.productVariant.product.featuredAsset
                       ? {
-                          id: line.productVariant.product.id,
-                          slug: line.productVariant.product.slug ?? null,
-                          name: line.productVariant.product.name ?? null,
-                          featuredAsset: line.productVariant.product.featuredAsset
-                            ? {
-                                preview: line.productVariant.product.featuredAsset.preview ?? null,
-                                source: line.productVariant.product.featuredAsset.source ?? null,
-                              }
-                            : null,
-                        }
+                        preview: line.productVariant.product.featuredAsset.preview ?? null,
+                        source: line.productVariant.product.featuredAsset.source ?? null,
+                      }
                       : null,
                   }
-                : null,
-            })),
-          }
+                  : null,
+              }
+              : null,
+          })),
+        }
         : null,
     });
 
@@ -151,7 +148,3 @@ export async function GET(request: Request) {
   }
 }
 
-function normalizeInt(value: unknown) {
-  if (typeof value !== 'number' || !Number.isFinite(value)) return 0;
-  return Math.max(0, Math.floor(value));
-}

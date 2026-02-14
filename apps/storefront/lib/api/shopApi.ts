@@ -11,16 +11,16 @@ export type GraphResponse<T> = {
 
 export type ShopApiResult<T> =
   | {
-      ok: true;
-      data: T;
-      rawResponse: Response;
-    }
+    ok: true;
+    data: T;
+    rawResponse: Response;
+  }
   | {
-      ok: false;
-      status: number;
-      error: string;
-      rawResponse: Response | null;
-    };
+    ok: false;
+    status: number;
+    error: string;
+    rawResponse: Response | null;
+  };
 
 type ShopApiInput = {
   query: string;
@@ -86,4 +86,10 @@ export function withSessionCookie(response: NextResponse, vendureResponse: Respo
 
 export async function readJsonBody<T>(request: Request) {
   return (await request.json().catch(() => null)) as T | null;
+}
+
+/** Clamp an unknown value to a non-negative integer (defaults to 0). */
+export function normalizeInt(value: unknown) {
+  if (typeof value !== 'number' || !Number.isFinite(value)) return 0;
+  return Math.max(0, Math.floor(value));
 }

@@ -1,29 +1,26 @@
 import { NextResponse } from 'next/server';
 import { validateMutationRequestOrigin } from '../../../../lib/api/requestSecurity';
 import { cartAddItemBodySchema, getRequestBodyErrorMessage } from '../../../../lib/api/schemas';
-import { readJsonBody, SHOP_API_URL, withSessionCookie } from '../../../../lib/api/shopApi';
+import { type GraphResponse, readJsonBody, SHOP_API_URL, withSessionCookie } from '../../../../lib/api/shopApi';
 import {
   serializeConfiguration,
   validateAndNormalizeConfigurationInput,
 } from '../../../../lib/keypadConfiguration';
 
-type GraphResponse<T> = {
-  data?: T;
-  errors?: Array<{ message?: string }>;
-};
+
 
 type AddItemResponse = {
   addItemToOrder:
-    | {
-        __typename: 'Order';
-        id: string;
-        code: string;
-      }
-    | {
-        __typename: string;
-        errorCode?: string;
-        message?: string;
-      };
+  | {
+    __typename: 'Order';
+    id: string;
+    code: string;
+  }
+  | {
+    __typename: string;
+    errorCode?: string;
+    message?: string;
+  };
 };
 
 const ADD_ITEM_MUTATION = `
