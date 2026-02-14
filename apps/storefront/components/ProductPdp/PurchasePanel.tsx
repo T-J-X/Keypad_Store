@@ -274,7 +274,7 @@ export default function PurchasePanel({
           onClick={onAddToCart}
           disabled={!canPurchase || adding || buyingNow}
           className={[
-            'group relative isolate inline-flex w-full items-center justify-center gap-2 rounded-full border border-transparent px-6 py-4 text-sm font-medium text-white',
+            'group relative isolate inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-2xl border border-transparent px-6 py-4 text-sm font-medium text-white whitespace-nowrap',
             'bg-[linear-gradient(90deg,#040F2E_0%,#112B5D_55%,#29457A_100%),linear-gradient(90deg,#203f7a_0%,#2f5da8_55%,#4b7fca_100%)] [background-origin:padding-box,border-box] [background-clip:padding-box,border-box]',
             'transition-[background,box-shadow,transform] duration-300',
             'hover:-translate-y-[1px] hover:bg-[linear-gradient(270deg,#040F2E_0%,#112B5D_55%,#29457A_100%),linear-gradient(90deg,#24497d_0%,#39629a_55%,#537bb0_100%)] hover:shadow-[0_0_0_1px_rgba(72,116,194,0.56),0_10px_24px_rgba(4,15,46,0.29)]',
@@ -283,8 +283,8 @@ export default function PurchasePanel({
             'disabled:cursor-not-allowed disabled:opacity-50',
           ].join(' ')}
         >
-          <span className="pointer-events-none absolute inset-0 rounded-full bg-[linear-gradient(270deg,rgba(255,255,255,0.10)_0%,rgba(255,255,255,0.02)_45%,rgba(255,255,255,0.08)_100%)] opacity-0 transition-opacity duration-300 group-hover:opacity-45" />
-          <span className="pointer-events-none absolute -inset-[1px] -z-10 rounded-full bg-[linear-gradient(90deg,rgba(11,27,58,0.44)_0%,rgba(27,52,95,0.30)_55%,rgba(58,116,198,0.30)_100%)] opacity-0 transition-opacity duration-300 group-hover:opacity-55" />
+          <span className="pointer-events-none absolute inset-0 rounded-2xl bg-[linear-gradient(270deg,rgba(255,255,255,0.10)_0%,rgba(255,255,255,0.02)_45%,rgba(255,255,255,0.08)_100%)] opacity-0 transition-opacity duration-300 group-hover:opacity-45" />
+          <span className="pointer-events-none absolute -inset-[1px] -z-10 rounded-2xl bg-[linear-gradient(90deg,rgba(11,27,58,0.44)_0%,rgba(27,52,95,0.30)_55%,rgba(58,116,198,0.30)_100%)] opacity-0 transition-opacity duration-300 group-hover:opacity-55" />
           {loading ? (
             <>
               <span className="relative z-10 h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white motion-reduce:animate-none" />
@@ -299,7 +299,7 @@ export default function PurchasePanel({
           type="button"
           onClick={onBuyNow}
           disabled={!canPurchase || adding || buyingNow}
-          className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-transparent px-5 py-3 text-sm font-medium text-white bg-[linear-gradient(90deg,#0a2518_0%,#123322_52%,#000000_100%),linear-gradient(90deg,#123726_0%,#184531_52%,#10241a_100%)] [background-origin:padding-box,border-box] [background-clip:padding-box,border-box] transition-[background,box-shadow,transform] duration-300 hover:-translate-y-[1px] hover:bg-[linear-gradient(270deg,#0d2b1c_0%,#163d2a_52%,#060606_100%),linear-gradient(270deg,#1c543b_0%,#276e4c_52%,#1a4c36_100%)] hover:shadow-[0_0_0_1px_rgba(52,124,88,0.66),0_10px_22px_rgba(7,29,17,0.28)] active:translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1f5136]/55 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-2xl border border-transparent px-5 py-3 text-sm font-medium text-white whitespace-nowrap bg-[linear-gradient(90deg,#0a2518_0%,#123322_52%,#000000_100%),linear-gradient(90deg,#123726_0%,#184531_52%,#10241a_100%)] [background-origin:padding-box,border-box] [background-clip:padding-box,border-box] transition-[background,box-shadow,transform] duration-300 hover:-translate-y-[1px] hover:bg-[linear-gradient(270deg,#0d2b1c_0%,#163d2a_52%,#060606_100%),linear-gradient(270deg,#1c543b_0%,#276e4c_52%,#1a4c36_100%)] hover:shadow-[0_0_0_1px_rgba(52,124,88,0.66),0_10px_22px_rgba(7,29,17,0.28)] active:translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#1f5136]/55 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:opacity-50"
         >
           {buyingNow ? 'Processing…' : 'Buy Now'}
         </button>
@@ -308,7 +308,7 @@ export default function PurchasePanel({
           type="button"
           onClick={onWishlist}
           disabled={wishlistSaving}
-          className="inline-flex w-full items-center justify-center rounded-full border-2 border-transparent px-5 py-2.5 text-sm font-semibold text-neutral-950 bg-[linear-gradient(#ffffff,#ffffff),linear-gradient(#a3a3a3,#a3a3a3)] [background-origin:border-box] [background-clip:padding-box,border-box] transition-[background,transform,box-shadow] duration-200 hover:-translate-y-[1px] hover:bg-[linear-gradient(#ffffff,#ffffff),linear-gradient(90deg,#4e84d8_0%,#6da5f5_55%,#8ab8ff_100%)] hover:shadow-[0_8px_18px_rgba(4,15,46,0.14)] active:translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex min-h-[44px] w-full items-center justify-center rounded-2xl border-2 border-transparent px-5 py-2.5 text-sm font-semibold text-neutral-950 whitespace-nowrap bg-[linear-gradient(#ffffff,#ffffff),linear-gradient(#a3a3a3,#a3a3a3)] [background-origin:border-box] [background-clip:padding-box,border-box] transition-[background,transform,box-shadow] duration-200 hover:-translate-y-[1px] hover:bg-[linear-gradient(#ffffff,#ffffff),linear-gradient(90deg,#4e84d8_0%,#6da5f5_55%,#8ab8ff_100%)] hover:shadow-[0_8px_18px_rgba(4,15,46,0.14)] active:translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white disabled:cursor-not-allowed disabled:opacity-50"
         >
           {wishlistSaving ? 'Saving…' : 'Wishlist'}
         </button>
@@ -337,20 +337,20 @@ export default function PurchasePanel({
         <div className="flex flex-wrap gap-2">
           <Link
             href="/login"
-            className="group relative isolate inline-flex items-center justify-center gap-2 rounded-full px-5 py-3 text-sm font-semibold tracking-tight text-white bg-neutral-950 shadow-[0_10px_30px_-18px_rgba(0,0,0,0.8)] ring-1 ring-inset ring-white/10 transition-[transform,box-shadow,background,ring-color] duration-200 hover:ring-sky-400/60 hover:shadow-[0_12px_36px_-18px_rgba(56,189,248,0.35)] active:translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+            className="group relative isolate inline-flex min-h-[44px] w-full min-w-[10rem] items-center justify-center gap-2 rounded-2xl px-5 py-3 text-sm font-semibold tracking-tight text-white whitespace-nowrap bg-neutral-950 shadow-[0_10px_30px_-18px_rgba(0,0,0,0.8)] ring-1 ring-inset ring-white/10 transition-[transform,box-shadow,background,ring-color] duration-200 hover:ring-sky-400/60 hover:shadow-[0_12px_36px_-18px_rgba(56,189,248,0.35)] active:translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white sm:w-auto"
           >
             Sign in
           </Link>
           <Link
             href="/signup"
-            className="inline-flex items-center justify-center rounded-full px-5 py-3 text-sm font-semibold text-neutral-950 bg-white ring-1 ring-inset ring-neutral-200 transition-[transform,box-shadow,background] duration-200 hover:bg-neutral-50 hover:shadow-sm active:translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+            className="inline-flex min-h-[44px] w-full min-w-[10rem] items-center justify-center rounded-2xl px-5 py-3 text-sm font-semibold text-neutral-950 whitespace-nowrap bg-white ring-1 ring-inset ring-neutral-200 transition-[transform,box-shadow,background] duration-200 hover:bg-neutral-50 hover:shadow-sm active:translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white sm:w-auto"
           >
             Create account
           </Link>
           <button
             type="button"
             onClick={() => setShowAuthPrompt(false)}
-            className="inline-flex items-center justify-center rounded-full px-5 py-3 text-sm font-semibold text-neutral-950 bg-transparent ring-1 ring-inset ring-neutral-200 transition-[background,transform] duration-200 hover:bg-neutral-50 active:translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
+            className="inline-flex min-h-[44px] w-full min-w-[10rem] items-center justify-center rounded-2xl px-5 py-3 text-sm font-semibold text-neutral-950 whitespace-nowrap bg-transparent ring-1 ring-inset ring-neutral-200 transition-[background,transform] duration-200 hover:bg-neutral-50 active:translate-y-[1px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 focus-visible:ring-offset-white sm:w-auto"
           >
             Not now
           </button>

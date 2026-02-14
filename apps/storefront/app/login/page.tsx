@@ -68,12 +68,27 @@ async function LoginPageContent({
       <div className="card w-full flex-1 p-6">
         <form className="space-y-4">
           <div className="space-y-2">
-            <label className="text-xs font-semibold uppercase tracking-wide text-ink/50">Email</label>
-            <input className="input" type="email" placeholder="you@company.com" />
+            <label htmlFor="login-email" className="text-xs font-semibold uppercase tracking-wide text-ink/50">Email</label>
+            <input
+              id="login-email"
+              name="email"
+              className="input"
+              type="email"
+              autoComplete="email"
+              spellCheck={false}
+              placeholder="you@company.com"
+            />
           </div>
           <div className="space-y-2">
-            <label className="text-xs font-semibold uppercase tracking-wide text-ink/50">Password</label>
-            <input className="input" type="password" placeholder="********" />
+            <label htmlFor="login-password" className="text-xs font-semibold uppercase tracking-wide text-ink/50">Password</label>
+            <input
+              id="login-password"
+              name="password"
+              className="input"
+              type="password"
+              autoComplete="current-password"
+              placeholder="Enter your password…"
+            />
           </div>
           <button className="btn-primary w-full" type="button">Sign in</button>
           <div className="relative py-1">

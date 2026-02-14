@@ -24,7 +24,7 @@ export default function GoogleLoginButton({
       onClick={onClick}
       disabled={isRedirecting}
       className={[
-        'group inline-flex w-full items-center justify-center gap-3 rounded-full border border-ink/15 bg-white px-5 py-3 text-sm font-semibold text-ink transition-all duration-200',
+        'group inline-flex min-h-[44px] w-full items-center justify-center gap-3 rounded-2xl border border-ink/15 bg-white px-5 py-3 text-sm font-semibold text-ink whitespace-nowrap transition-[transform,box-shadow,border-color,background-color] duration-200',
         'hover:-translate-y-px hover:border-ink/25 hover:shadow-[0_10px_24px_rgba(14,17,26,0.10)]',
         'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#29457A]/40 focus-visible:ring-offset-2',
         'disabled:cursor-not-allowed disabled:opacity-60',
@@ -33,7 +33,7 @@ export default function GoogleLoginButton({
       aria-label="Continue with Google"
     >
       <GoogleIcon />
-      <span>{isRedirecting ? 'Redirecting...' : 'Continue with Google'}</span>
+      <span>{isRedirecting ? 'Redirecting…' : 'Continue with Google'}</span>
     </button>
   );
 }
