@@ -644,19 +644,7 @@ export default function ShopClient({
   );
 
   return (
-    <div className="relative mx-auto w-full max-w-[88rem] px-6 pb-20 pt-10">
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 -z-10 rounded-[36px] bg-[radial-gradient(130%_120%_at_50%_-8%,rgba(53,113,198,0.22)_0%,rgba(19,50,96,0.12)_38%,rgba(255,255,255,0)_78%)]"
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -left-24 top-20 -z-10 h-64 w-64 rounded-full bg-[#6ea3ec]/18 blur-3xl"
-      />
-      <div
-        aria-hidden
-        className="pointer-events-none absolute -right-20 top-44 -z-10 h-64 w-64 rounded-full bg-[#84b2f0]/20 blur-3xl"
-      />
+    <div className="mx-auto w-full max-w-[88rem] bg-white px-6 pb-20 pt-10">
       <BaseShopHero showTiles={false} />
 
       <div className="mb-8 flex flex-col gap-4">
