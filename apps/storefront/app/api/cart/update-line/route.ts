@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { validateMutationRequestOrigin } from '../../../../lib/api/requestSecurity';
 import { cartUpdateLineBodySchema, getRequestBodyErrorMessage } from '../../../../lib/api/schemas';
-import { readJsonBody, SHOP_API_URL, withSessionCookie } from '../../../../lib/api/shopApi';
+import { type GraphResponse, normalizeInt, readJsonBody, SHOP_API_URL, withSessionCookie } from '../../../../lib/api/shopApi';
 import {
   serializeConfiguration,
   validateAndNormalizeConfigurationInput,
@@ -49,10 +49,7 @@ const REMOVE_ORDER_LINE_MUTATION = `
   }
 `;
 
-type GraphResponse<T> = {
-  data?: T;
-  errors?: Array<{ message?: string }>;
-};
+
 
 type OrderSuccessResult = {
   __typename: 'Order';
@@ -152,7 +149,3 @@ export async function POST(request: Request) {
   );
 }
 
-function normalizeInt(value: unknown) {
-  if (typeof value !== 'number' || !Number.isFinite(value)) return 0;
-  return Math.max(0, Math.floor(value));
-}
