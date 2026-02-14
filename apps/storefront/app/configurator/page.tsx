@@ -1,7 +1,16 @@
+import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import KeypadCard from '../../components/KeypadCard';
 import { fetchKeypadProducts } from '../../lib/vendure.server';
+
+export const metadata: Metadata = {
+  title: 'Configurator | Keypad Store',
+  description: 'Choose a keypad model and configure slot-by-slot inserts with engineering-ready precision.',
+  alternates: {
+    canonical: '/configurator',
+  },
+};
 
 function KeypadGridFallback() {
   return (

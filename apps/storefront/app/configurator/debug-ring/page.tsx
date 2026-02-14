@@ -1,8 +1,19 @@
+import type { Metadata } from 'next';
+import { Suspense } from 'react';
 import ConfiguratorRingDebugClient from '../../../components/configurator/ConfiguratorRingDebugClient';
 import { hasLayoutForModel } from '../../../lib/keypad-layouts';
 import { resolveKeypadShellAssetPath } from '../../../lib/keypadShellAsset';
 import { resolvePkpModelCode } from '../../../lib/keypadUtils';
 import { fetchKeypadProducts } from '../../../lib/vendure.server';
+
+export const metadata: Metadata = {
+  title: 'Configurator Debug Ring | Keypad Store',
+  description: 'Internal calibration route for keypad slot and ring geometry.',
+  robots: {
+    index: false,
+    follow: false,
+  },
+};
 
 function pickSearchParam(value: string | string[] | undefined) {
   if (Array.isArray(value)) return value[0] ?? '';
@@ -20,7 +31,19 @@ export default async function ConfiguratorRingDebugPage({
 }: {
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const resolvedSearchParams = await searchParams;
+  return (
+    <Suspense fallback={<div className="mx-auto w-full max-w-6xl px-6 pb-20 pt-12" />}>
+      <ConfiguratorRingDebugContent searchParamsPromise={searchParams} />
+    </Suspense>
+  );
+}
+
+async function ConfiguratorRingDebugContent({
+  searchParamsPromise,
+}: {
+  searchParamsPromise: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const resolvedSearchParams = await searchParamsPromise;
   const modelCode = toModelCode(pickSearchParam(resolvedSearchParams.model));
   const debugMode = pickSearchParam(resolvedSearchParams.debug) === '1'
     || pickSearchParam(resolvedSearchParams.debugSlots) === '1';

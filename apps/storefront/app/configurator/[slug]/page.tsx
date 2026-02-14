@@ -1,9 +1,42 @@
+import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
 import Pkp2200Configurator from '../../../components/configurator/Pkp2200Configurator';
 import { resolveKeypadShellAssetPath } from '../../../lib/keypadShellAsset';
 import { resolvePkpModelCode } from '../../../lib/keypadUtils';
 import { fetchProductBySlug } from '../../../lib/vendure.server';
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const resolved = await params;
+  const product = await fetchProductBySlug(resolved.slug);
+
+  if (!product) {
+    return {
+      title: 'Configurator Not Found | Keypad Store',
+      description: 'The requested keypad configurator page could not be found.',
+      alternates: {
+        canonical: `/configurator/${encodeURIComponent(resolved.slug)}`,
+      },
+      robots: {
+        index: false,
+        follow: false,
+      },
+    };
+  }
+
+  const modelCode = resolvePkpModelCode(product.slug, product.name) || product.name.toUpperCase();
+  return {
+    title: `${modelCode} Configurator | Keypad Store`,
+    description: `Configure ${modelCode} with per-slot inserts, glow rings, and production-ready layout precision.`,
+    alternates: {
+      canonical: `/configurator/${encodeURIComponent(product.slug)}`,
+    },
+  };
+}
 
 export default function ConfiguratorModelPage({
   params,

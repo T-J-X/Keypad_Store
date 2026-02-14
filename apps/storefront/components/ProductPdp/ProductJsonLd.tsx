@@ -17,6 +17,15 @@ function hasStock(variant: CatalogVariant | undefined) {
   return stockLevel !== 'OUT_OF_STOCK';
 }
 
+function serializeJsonLd(schema: Record<string, unknown>) {
+  return JSON.stringify(schema)
+    .replace(/</g, '\\u003c')
+    .replace(/>/g, '\\u003e')
+    .replace(/&/g, '\\u0026')
+    .replace(/\u2028/g, '\\u2028')
+    .replace(/\u2029/g, '\\u2029');
+}
+
 export default function ProductJsonLd({
   product,
 }: {
@@ -71,7 +80,7 @@ export default function ProductJsonLd({
     <script
       type="application/ld+json"
       dangerouslySetInnerHTML={{
-        __html: JSON.stringify(schema),
+        __html: serializeJsonLd(schema),
       }}
     />
   );
