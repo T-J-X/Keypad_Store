@@ -398,7 +398,7 @@ export default function CheckoutPage() {
         </div>
         <Link
           href="/cart"
-          className="inline-flex items-center justify-center rounded-full border border-white/30 px-4 py-2 text-sm font-semibold text-blue-50 transition hover:border-white hover:bg-white/10"
+          className="inline-flex min-h-[44px] w-full min-w-[12rem] items-center justify-center rounded-2xl border border-white/30 px-5 py-2 text-sm font-semibold text-blue-50 whitespace-nowrap transition hover:border-white hover:bg-white/10 sm:w-auto"
         >
           Back to Cart
         </Link>
@@ -426,7 +426,7 @@ export default function CheckoutPage() {
           <div className="mt-5">
             <Link
               href="/shop"
-              className="inline-flex items-center justify-center rounded-full border border-[#1EA7FF]/45 bg-[#1EA7FF]/12 px-5 py-2.5 text-sm font-semibold text-blue-50 transition hover:bg-[#1EA7FF]/24"
+              className="inline-flex min-h-[44px] w-full min-w-[12rem] items-center justify-center rounded-2xl border border-[#1EA7FF]/45 bg-[#1EA7FF]/12 px-5 py-2.5 text-sm font-semibold text-blue-50 whitespace-nowrap transition hover:bg-[#1EA7FF]/24 sm:w-auto"
             >
               Browse products
             </Link>
@@ -816,7 +816,7 @@ export default function CheckoutPage() {
             <button
               type="submit"
               disabled={!canSubmit}
-              className="mt-5 inline-flex w-full items-center justify-center rounded-full border border-[#1EA7FF]/45 bg-[#1EA7FF]/12 px-5 py-3 text-sm font-semibold text-blue-50 transition hover:bg-[#1EA7FF]/24 disabled:cursor-not-allowed disabled:opacity-60"
+              className="mt-5 inline-flex min-h-[44px] w-full items-center justify-center rounded-2xl border border-[#1EA7FF]/45 bg-[#1EA7FF]/12 px-5 py-3 text-sm font-semibold text-blue-50 whitespace-nowrap transition hover:bg-[#1EA7FF]/24 disabled:cursor-not-allowed disabled:opacity-60"
             >
               {isSubmitting ? 'Placing Order…' : 'Place Order'}
             </button>
