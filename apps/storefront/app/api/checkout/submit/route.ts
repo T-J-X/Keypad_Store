@@ -181,6 +181,7 @@ export async function POST(request: Request) {
   const province = parsedBody.data.province || '';
   const postalCode = parsedBody.data.postalCode;
   const countryCode = parsedBody.data.countryCode.toUpperCase();
+  const requestedShippingMethodId = parsedBody.data.shippingMethodId || '';
   const requestedPaymentMethodCode = parsedBody.data.paymentMethodCode || '';
 
   const cookieJar = parseCookieHeader(request.headers.get('cookie'));
@@ -281,8 +282,10 @@ export async function POST(request: Request) {
       throw new CheckoutStepError('set-shipping-method', 'No eligible shipping methods are available for this order.', 'NO_ELIGIBLE_SHIPPING_METHODS');
     }
 
-    // As requested, pick the first eligible shipping method.
-    const selectedShippingMethodId = shippingMethods[0].id;
+    const selectedShippingMethodId = resolveShippingMethodId(
+      shippingMethods.map((method) => method.id),
+      requestedShippingMethodId,
+    );
 
     const setShippingMethod = await run<{ setOrderShippingMethod?: OrderLike | ErrorResultLike }>(
       SET_ORDER_SHIPPING_METHOD_MUTATION,
@@ -416,6 +419,22 @@ function resolvePaymentMethodCode(eligibleCodes: string[], requestedCode: string
   }
 
   return eligibleCodes[0];
+}
+
+function resolveShippingMethodId(eligibleIds: string[], requestedId: string) {
+  if (requestedId && eligibleIds.includes(requestedId)) {
+    return requestedId;
+  }
+
+  if (requestedId) {
+    throw new CheckoutStepError(
+      'set-shipping-method',
+      'Selected shipping method is not available for this order.',
+      'INVALID_SHIPPING_METHOD',
+    );
+  }
+
+  return eligibleIds[0];
 }
 
 function normalizeString(value: unknown) {

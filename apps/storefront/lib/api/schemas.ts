@@ -91,6 +91,7 @@ export const checkoutSubmitBodySchema = z
     phoneNumber: optionalTrimmedString,
     streetLine2: optionalTrimmedString,
     province: optionalTrimmedString,
+    shippingMethodId: optionalTrimmedString,
     paymentMethodCode: optionalTrimmedString,
   })
   .passthrough();

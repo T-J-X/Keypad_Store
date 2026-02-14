@@ -1,8 +1,8 @@
 import { ProductService, type RequestContext } from '@vendure/core';
 
-const SLOT_IDS = ['slot_1', 'slot_2', 'slot_3', 'slot_4'] as const;
+const SLOT_ID_PATTERN = /^slot_(\d+)$/i;
 
-export type SlotId = (typeof SLOT_IDS)[number];
+export type SlotId = `slot_${number}`;
 
 export type SlotConfiguration = {
   iconId: string;
@@ -30,6 +30,24 @@ export class ConfigurationValidationError extends Error {
   }
 }
 
+function isSlotId(value: string): value is SlotId {
+  return SLOT_ID_PATTERN.test(value);
+}
+
+function slotIdToIndex(slotId: string) {
+  const match = slotId.match(SLOT_ID_PATTERN);
+  if (!match) return Number.POSITIVE_INFINITY;
+  const parsed = Number.parseInt(match[1], 10);
+  if (!Number.isFinite(parsed)) return Number.POSITIVE_INFINITY;
+  return parsed;
+}
+
+function sortSlotIds(slotIds: string[]): SlotId[] {
+  const unique = Array.from(new Set(slotIds.filter((slotId): slotId is SlotId => isSlotId(slotId))));
+  unique.sort((left, right) => slotIdToIndex(left) - slotIdToIndex(right));
+  return unique;
+}
+
 export function parseAndValidateStrictConfiguration(
   raw: string,
   label = 'Configuration',
@@ -47,18 +65,19 @@ export function parseAndValidateStrictConfiguration(
   }
 
   const payload = parsed as Record<string, unknown>;
-  for (const key of Object.keys(payload)) {
-    if (!SLOT_IDS.includes(key as SlotId)) {
-      throw new ConfigurationValidationError(`Unexpected slot key "${key}" in configuration.`);
-    }
+  const payloadKeys = Object.keys(payload);
+  const nonSlotKeys = payloadKeys.filter((key) => !isSlotId(key));
+  if (nonSlotKeys.length > 0) {
+    throw new ConfigurationValidationError(`Unexpected slot key "${nonSlotKeys[0]}" in configuration.`);
+  }
+
+  const slotIds = sortSlotIds(payloadKeys);
+  if (slotIds.length === 0) {
+    throw new ConfigurationValidationError(`${label} must include at least one slot entry.`);
   }
 
   const strictConfiguration = {} as StrictConfiguration;
-  for (const slotId of SLOT_IDS) {
-    if (!(slotId in payload)) {
-      throw new ConfigurationValidationError(`Missing required slot "${slotId}" in configuration.`);
-    }
-
+  for (const slotId of slotIds) {
     const rawSlot = payload[slotId];
     if (!rawSlot || typeof rawSlot !== 'object' || Array.isArray(rawSlot)) {
       throw new ConfigurationValidationError(`Slot "${slotId}" must be an object with iconId and color.`);
@@ -98,8 +117,8 @@ export async function findMissingIconIds(
   configuration: StrictConfiguration,
 ): Promise<string[]> {
   const requiredIconIds = new Set<string>();
-  for (const slotId of SLOT_IDS) {
-    requiredIconIds.add(configuration[slotId].iconId);
+  for (const slot of Object.values(configuration)) {
+    requiredIconIds.add(slot.iconId);
   }
 
   if (requiredIconIds.size === 0) {

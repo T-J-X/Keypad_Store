@@ -1,12 +1,13 @@
 'use client';
 
 import Image from 'next/image';
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useId, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 import { RING_GLOW_OPTIONS, type IconCatalogItem } from '../../lib/configuratorCatalog';
 import { assetUrl, categorySlug } from '../../lib/vendure';
 import { useFuzzySearch, matchesSearchTerms } from '../../hooks/configurator/useFuzzySearch';
 import { useRecommendationEngine } from '../../hooks/configurator/useRecommendationEngine';
+import AccessibleModal from '../ui/AccessibleModal';
 
 type PopupView = 'icons' | 'swatches';
 
@@ -45,6 +46,8 @@ export default function IconSelectionPopup({
   const [activeCategorySlug, setActiveCategorySlug] = useState('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [recommendationSeed, setRecommendationSeed] = useState<string | null>(null);
+  const titleId = useId();
+  const descriptionId = useId();
 
   const sizeMatchedIcons = useMemo(
     () => icons.filter((icon) => icon.sizeMm === slotSizeMm),
@@ -87,17 +90,6 @@ export default function IconSelectionPopup({
       setActiveCategorySlug('all');
     }
   }, [activeCategorySlug, categoryTabs, isOpen]);
-
-  useEffect(() => {
-    if (!isOpen) return;
-
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-
-    return () => {
-      document.body.style.overflow = previousOverflow || '';
-    };
-  }, [isOpen]);
 
   const filteredIcons = useMemo(() => {
     const categoryScoped =
@@ -161,12 +153,18 @@ export default function IconSelectionPopup({
     : 'h-[78vh] w-full max-w-5xl overflow-hidden rounded-3xl border border-white/15 bg-[linear-gradient(180deg,#0d1f43_0%,#07132a_100%)] shadow-[0_30px_80px_rgba(2,8,24,0.55)]';
 
   return (
-    <div className={overlayClass} onClick={onClose}>
-      <div className={`${panelClass} flex flex-col`} onClick={(event) => event.stopPropagation()}>
+    <AccessibleModal
+      open={isOpen}
+      onClose={onClose}
+      labelledBy={titleId}
+      describedBy={descriptionId}
+      backdropClassName={overlayClass}
+      panelClassName={`${panelClass} flex flex-col`}
+    >
         <div className="flex shrink-0 items-center justify-between border-b border-white/12 px-5 py-4 sm:px-6">
           <div>
-            <div className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-100/80">Icon Library</div>
-            <h3 className="mt-1 text-lg font-semibold text-white">{slotLabel}</h3>
+            <div id={descriptionId} className="text-xs font-semibold uppercase tracking-[0.16em] text-blue-100/80">Icon Library</div>
+            <h3 id={titleId} className="mt-1 text-lg font-semibold text-white">{slotLabel}</h3>
           </div>
           <button
             type="button"
@@ -417,7 +415,6 @@ export default function IconSelectionPopup({
             </div>
           )}
         </div>
-      </div>
-    </div>
+    </AccessibleModal>
   );
 }

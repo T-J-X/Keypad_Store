@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import { notifyCartUpdated } from '../lib/cartEvents';
 import { modelCodeToPkpSlug } from '../lib/keypadUtils';
 import { resolvePreviewSlotIds } from '../lib/configuredKeypadPreview';
@@ -9,6 +9,7 @@ import {
   validateAndNormalizeConfigurationInput,
 } from '../lib/keypadConfiguration';
 import { getGeometryForModel } from '../config/layouts/geometry';
+import AccessibleModal from './ui/AccessibleModal';
 
 type TabId = 'orders' | 'saved';
 
@@ -487,6 +488,8 @@ function PreviewModal({
   item: SavedConfigurationRecord;
   onClose: () => void;
 }) {
+  const titleId = useId();
+  const descriptionId = useId();
   const slotIds = resolvePreviewSlotIds({
     modelCode: item.keypadModel,
     configuration: null,
@@ -498,52 +501,56 @@ function PreviewModal({
   const geometry = getGeometryForModel(item.keypadModel);
 
   return (
-    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/55 px-4 py-6">
-      <div className="w-full max-w-xl rounded-3xl border border-white/20 bg-white p-6 shadow-[0_24px_60px_rgba(0,0,0,0.35)]">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h3 className="text-lg font-semibold text-ink">{item.name}</h3>
-            <p className="mt-1 text-xs text-ink/55">{item.keypadModel}</p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className={`${accountStrongGhostButtonClass} px-3 py-1 text-xs font-semibold`}
-          >
-            Close
-          </button>
+    <AccessibleModal
+      open
+      onClose={onClose}
+      labelledBy={titleId}
+      describedBy={descriptionId}
+      panelClassName="w-full max-w-xl rounded-3xl border border-white/20 bg-white p-6 shadow-[0_24px_60px_rgba(0,0,0,0.35)]"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h3 id={titleId} className="text-lg font-semibold text-ink">{item.name}</h3>
+          <p id={descriptionId} className="mt-1 text-xs text-ink/55">{item.keypadModel}</p>
         </div>
-
-        {parsed.ok ? (
-          <div className="mt-4 overflow-hidden rounded-2xl border border-ink/10">
-            <table className="w-full border-collapse text-sm">
-              <thead>
-                <tr className="bg-ink/[0.03] text-left text-xs uppercase tracking-[0.12em] text-ink/55">
-                  <th className="px-3 py-2">Slot</th>
-                  <th className="px-3 py-2">Icon ID</th>
-                  <th className="px-3 py-2">Glow</th>
-                </tr>
-              </thead>
-              <tbody>
-                {slotIds.map((slotId) => (
-                  <tr key={slotId} className="border-t border-ink/8">
-                    <td className="px-3 py-2 font-semibold text-ink">
-                      {geometry.slots[slotId]?.label ?? slotId.replace('_', ' ')}
-                    </td>
-                    <td className="px-3 py-2 text-ink/75">{parsed.value[slotId]?.iconId ?? '—'}</td>
-                    <td className="px-3 py-2 text-ink/75">{parsed.value[slotId]?.color ?? 'No glow'}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        ) : (
-          <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
-            Stored configuration is invalid: {parsed.error}
-          </div>
-        )}
+        <button
+          type="button"
+          onClick={onClose}
+          className={`${accountStrongGhostButtonClass} px-3 py-1 text-xs font-semibold`}
+        >
+          Close
+        </button>
       </div>
-    </div>
+
+      {parsed.ok ? (
+        <div className="mt-4 overflow-hidden rounded-2xl border border-ink/10">
+          <table className="w-full border-collapse text-sm">
+            <thead>
+              <tr className="bg-ink/[0.03] text-left text-xs uppercase tracking-[0.12em] text-ink/55">
+                <th className="px-3 py-2">Slot</th>
+                <th className="px-3 py-2">Icon ID</th>
+                <th className="px-3 py-2">Glow</th>
+              </tr>
+            </thead>
+            <tbody>
+              {slotIds.map((slotId) => (
+                <tr key={slotId} className="border-t border-ink/8">
+                  <td className="px-3 py-2 font-semibold text-ink">
+                    {geometry.slots[slotId]?.label ?? slotId.replace('_', ' ')}
+                  </td>
+                  <td className="px-3 py-2 text-ink/75">{parsed.value[slotId]?.iconId ?? '—'}</td>
+                  <td className="px-3 py-2 text-ink/75">{parsed.value[slotId]?.color ?? 'No glow'}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      ) : (
+        <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50 p-3 text-sm text-rose-700">
+          Stored configuration is invalid: {parsed.error}
+        </div>
+      )}
+    </AccessibleModal>
   );
 }
 
@@ -562,6 +569,8 @@ function EnquireModal({
   onSubmit: () => void;
   pending: boolean;
 }) {
+  const titleId = useId();
+  const descriptionId = useId();
   const prefill = [
     `Configuration: ${item.name}`,
     `Model: ${item.keypadModel}`,
@@ -571,58 +580,62 @@ function EnquireModal({
   ].join('\n');
 
   return (
-    <div className="fixed inset-0 z-[90] flex items-center justify-center bg-black/55 px-4 py-6">
-      <div className="w-full max-w-xl rounded-3xl border border-white/20 bg-white p-6 shadow-[0_24px_60px_rgba(0,0,0,0.35)]">
-        <div className="flex items-start justify-between gap-3">
-          <div>
-            <h3 className="text-lg font-semibold text-ink">Enquire about {item.name}</h3>
-            <p className="mt-1 text-xs text-ink/55">Support will receive the full technical spec.</p>
-          </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className={`${accountStrongGhostButtonClass} px-3 py-1 text-xs font-semibold`}
-          >
-            Close
-          </button>
+    <AccessibleModal
+      open
+      onClose={onClose}
+      labelledBy={titleId}
+      describedBy={descriptionId}
+      panelClassName="w-full max-w-xl rounded-3xl border border-white/20 bg-white p-6 shadow-[0_24px_60px_rgba(0,0,0,0.35)]"
+    >
+      <div className="flex items-start justify-between gap-3">
+        <div>
+          <h3 id={titleId} className="text-lg font-semibold text-ink">Enquire about {item.name}</h3>
+          <p id={descriptionId} className="mt-1 text-xs text-ink/55">Support will receive the full technical spec.</p>
         </div>
-
-        <label className="mt-4 block text-xs font-semibold uppercase tracking-[0.12em] text-ink/55">
-          Extra message (optional)
-        </label>
-        <textarea
-          value={note}
-          onChange={(event) => onNoteChange(event.target.value)}
-          className="mt-2 min-h-24 w-full rounded-2xl border border-ink/15 px-3 py-2 text-sm text-ink outline-none focus:border-ink/30"
-          placeholder="Any timing, volume, or technical notes for support."
-        />
-
-        <label className="mt-4 block text-xs font-semibold uppercase tracking-[0.12em] text-ink/55">Preview</label>
-        <pre className="mt-2 max-h-44 overflow-auto rounded-2xl border border-ink/10 bg-ink/[0.03] p-3 text-xs leading-5 text-ink/75">
-          {prefill}
-        </pre>
-
-        <div className="mt-4 flex justify-end gap-2">
-          <button
-            type="button"
-            onClick={onClose}
-            className={`${accountStrongGhostButtonClass} px-4 py-2 text-sm font-semibold`}
-          >
-            Cancel
-          </button>
-          <button
-            type="button"
-            onClick={onSubmit}
-            disabled={pending}
-            className={`${accountPrimaryButtonClass} px-4 py-2 text-sm font-semibold`}
-          >
-            <span className={accountPrimaryGlowLayerClass} />
-            <span className={accountPrimaryGlowRingClass} />
-            <span className="relative z-10">{pending ? 'Sending...' : 'Send enquiry'}</span>
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={onClose}
+          className={`${accountStrongGhostButtonClass} px-3 py-1 text-xs font-semibold`}
+        >
+          Close
+        </button>
       </div>
-    </div>
+
+      <label className="mt-4 block text-xs font-semibold uppercase tracking-[0.12em] text-ink/55">
+        Extra message (optional)
+      </label>
+      <textarea
+        value={note}
+        onChange={(event) => onNoteChange(event.target.value)}
+        className="mt-2 min-h-24 w-full rounded-2xl border border-ink/15 px-3 py-2 text-sm text-ink outline-none focus:border-ink/30"
+        placeholder="Any timing, volume, or technical notes for support."
+      />
+
+      <label className="mt-4 block text-xs font-semibold uppercase tracking-[0.12em] text-ink/55">Preview</label>
+      <pre className="mt-2 max-h-44 overflow-auto rounded-2xl border border-ink/10 bg-ink/[0.03] p-3 text-xs leading-5 text-ink/75">
+        {prefill}
+      </pre>
+
+      <div className="mt-4 flex justify-end gap-2">
+        <button
+          type="button"
+          onClick={onClose}
+          className={`${accountStrongGhostButtonClass} px-4 py-2 text-sm font-semibold`}
+        >
+          Cancel
+        </button>
+        <button
+          type="button"
+          onClick={onSubmit}
+          disabled={pending}
+          className={`${accountPrimaryButtonClass} px-4 py-2 text-sm font-semibold`}
+        >
+          <span className={accountPrimaryGlowLayerClass} />
+          <span className={accountPrimaryGlowRingClass} />
+          <span className="relative z-10">{pending ? 'Sending...' : 'Send enquiry'}</span>
+        </button>
+      </div>
+    </AccessibleModal>
   );
 }
 

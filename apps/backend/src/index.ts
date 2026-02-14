@@ -48,6 +48,7 @@ const ngCompilerPath = require.resolve('@angular/cli/bin/ng.js', {
 
 const superadminIdentifier = process.env.SUPERADMIN_USERNAME?.trim() || (isProduction ? '' : 'superadmin');
 const superadminPassword = process.env.SUPERADMIN_PASSWORD?.trim() || (isProduction ? '' : 'superadmin');
+const dbSynchronize = (process.env.DB_SYNCHRONIZE ?? (isProduction ? 'false' : 'true')).trim().toLowerCase() === 'true';
 
 if (isProduction && (!superadminIdentifier || !superadminPassword)) {
   throw new Error(
@@ -120,7 +121,7 @@ export const config: VendureConfig = {
     username: process.env.DB_USER ?? 'vendure',
     password: process.env.DB_PASSWORD ?? 'vendure_dev_password',
     database: process.env.DB_NAME ?? 'vendure',
-    synchronize: true,
+    synchronize: dbSynchronize,
     logging: false,
   },
   logger: new DefaultLogger({ level: LogLevel.Info }),
