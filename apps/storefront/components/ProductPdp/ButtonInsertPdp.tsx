@@ -266,7 +266,7 @@ export default function ButtonInsertPdp({
   });
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-6 pb-20 pt-12">
+    <div className="mx-auto w-full max-w-6xl bg-transparent px-6 pb-20 pt-12">
       <div className="mb-6 text-xs font-semibold uppercase tracking-wide text-ink/50">
         <nav aria-label="Breadcrumb">
           <ol className="flex flex-wrap items-center gap-2">
