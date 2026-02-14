@@ -8,7 +8,7 @@ import {
 } from '../../../../lib/googleAuth';
 import { validateMutationRequestOrigin } from '../../../../lib/api/requestSecurity';
 import { getRequestBodyErrorMessage, googleAuthBodySchema } from '../../../../lib/api/schemas';
-import { readJsonBody, SHOP_API_URL, withSessionCookie } from '../../../../lib/api/shopApi';
+import { type GraphResponse, readJsonBody, SHOP_API_URL, withSessionCookie } from '../../../../lib/api/shopApi';
 const STATE_MAX_AGE_SECONDS = 10 * 60;
 
 const AUTHENTICATE_WITH_GOOGLE_MUTATION = `
@@ -27,23 +27,20 @@ const AUTHENTICATE_WITH_GOOGLE_MUTATION = `
   }
 `;
 
-type GraphResponse<T> = {
-  data?: T;
-  errors?: Array<{ message?: string }>;
-};
+
 
 type AuthenticateWithGoogleResponse = {
   authenticate:
-    | {
-        __typename: 'CurrentUser';
-        id: string;
-        identifier?: string | null;
-      }
-    | {
-        __typename: string;
-        errorCode?: string;
-        message?: string;
-      };
+  | {
+    __typename: 'CurrentUser';
+    id: string;
+    identifier?: string | null;
+  }
+  | {
+    __typename: string;
+    errorCode?: string;
+    message?: string;
+  };
 };
 
 export async function GET(request: NextRequest) {

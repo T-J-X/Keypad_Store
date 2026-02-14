@@ -485,14 +485,26 @@ export default function KeypadPreview({
   const showCalibrationGuides = debugMode || editMode;
   const baseW = Math.max(renderLayout.baseW, 1);
   const baseH = Math.max(renderLayout.baseH, 1);
+
+  // Expand the viewBox so the keypad can rotate without clipping.
+  // The bounding circle diagonal is the minimum side that contains every rotation.
+  const diagonal = Math.ceil(Math.sqrt(baseW * baseW + baseH * baseH));
+  const padX = (diagonal - baseW) / 2;
+  const padY = (diagonal - baseH) / 2;
+  const vbW = diagonal;
+  const vbH = diagonal;
+
   const hasNaturalSizeMismatch = Boolean(
     shellNaturalSize
-      && (shellNaturalSize.width !== baseW || shellNaturalSize.height !== baseH),
+    && (shellNaturalSize.width !== baseW || shellNaturalSize.height !== baseH),
   );
   const svgIdPrefix = useId();
   const safeSvgIdPrefix = useMemo(() => sanitizeSvgId(svgIdPrefix), [svgIdPrefix]);
   const visualRotationDeg = Math.abs(displayRotationDeg) < 0.001 ? 0 : displayRotationDeg;
-  const groupTransform = visualRotationDeg ? `rotate(${visualRotationDeg} ${baseW / 2} ${baseH / 2})` : undefined;
+  const groupTransform = [
+    `translate(${padX} ${padY})`,
+    visualRotationDeg ? `rotate(${visualRotationDeg} ${baseW / 2} ${baseH / 2})` : '',
+  ].filter(Boolean).join(' ');
   const layoutLabel = MODEL_LAYOUT_LABELS[renderLayout.model] ?? `${renderLayout.slots.length} slots`;
 
   useEffect(() => {
@@ -631,8 +643,8 @@ export default function KeypadPreview({
 
       <div className="flex w-full justify-center">
         <div
-          className="relative h-auto w-[clamp(360px,64vw,920px)] max-w-full overflow-hidden rounded-[28px] border border-white/20 bg-[#010714]"
-          style={{ aspectRatio: `${baseW} / ${baseH}` }}
+          className="relative h-auto w-[clamp(360px,64vw,920px)] max-w-full rounded-[28px] border border-white/20 bg-[#010714]"
+          style={{ aspectRatio: `${vbW} / ${vbH}` }}
         >
           {showCalibrationGuides ? (
             <div className="pointer-events-none absolute left-2 top-2 z-20 rounded bg-[#020d26]/75 px-2 py-1 text-[10px] font-semibold tracking-[0.12em] text-blue-100">
@@ -649,24 +661,23 @@ export default function KeypadPreview({
           {shellSrc ? (
             <svg
               className="h-full w-full"
-              viewBox={`0 0 ${baseW} ${baseH}`}
+              viewBox={`0 0 ${vbW} ${vbH}`}
               preserveAspectRatio="xMidYMid meet"
               role="img"
               aria-label={`${renderLayout.model} shell preview`}
             >
-              <defs>
-                {slotIds.map((slotId) => {
-                  const slotEntry = renderLayout.slots.find((item) => item.id === slotId);
-                  if (!slotEntry) return null;
-                  return (
-                    <clipPath key={`${slotId}-clip`} id={`${safeSvgIdPrefix}-insert-${slotId}`}>
-                      <circle cx={slotEntry.cx} cy={slotEntry.cy} r={slotEntry.insertD / 2} />
-                    </clipPath>
-                  );
-                })}
-              </defs>
-
               <g transform={groupTransform}>
+                <defs>
+                  {slotIds.map((slotId) => {
+                    const slotEntry = renderLayout.slots.find((item) => item.id === slotId);
+                    if (!slotEntry) return null;
+                    return (
+                      <clipPath key={`${slotId}-clip`} id={`${safeSvgIdPrefix}-insert-${slotId}`}>
+                        <circle cx={slotEntry.cx} cy={slotEntry.cy} r={slotEntry.insertD / 2} />
+                      </clipPath>
+                    );
+                  })}
+                </defs>
                 <image href={shellSrc} x={0} y={0} width={baseW} height={baseH} preserveAspectRatio="xMidYMid meet" />
 
                 {slotIds.map((slotId, slotIndex) => {

@@ -643,23 +643,23 @@ export default function Navbar() {
                     role="menuitem"
                     href="/account"
                     onClick={() => setIsAccountMenuOpen(false)}
-                  className={[
-                    'block rounded-xl px-3 py-2 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7aa0e4]/45',
-                    'text-white/85 hover:bg-white/[0.08] hover:text-white',
-                  ].join(' ')}
-                >
-                  Profile
-                </Link>
+                    className={[
+                      'block rounded-xl px-3 py-2 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7aa0e4]/45',
+                      'text-white/85 hover:bg-white/[0.08] hover:text-white',
+                    ].join(' ')}
+                  >
+                    Profile
+                  </Link>
                   <button
                     role="menuitem"
                     type="button"
                     onClick={onLogout}
                     disabled={isLoggingOut}
-                  className={[
-                    'mt-1 block w-full rounded-xl px-3 py-2 text-left text-sm transition disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7aa0e4]/45',
-                    'text-white/85 hover:bg-white/[0.08] hover:text-white',
-                  ].join(' ')}
-                >
+                    className={[
+                      'mt-1 block w-full rounded-xl px-3 py-2 text-left text-sm transition disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7aa0e4]/45',
+                      'text-white/85 hover:bg-white/[0.08] hover:text-white',
+                    ].join(' ')}
+                  >
                     {isLoggingOut ? 'Logging out...' : 'Logout'}
                   </button>
                 </div>
@@ -692,9 +692,8 @@ export default function Navbar() {
         aria-hidden={!isMenuOpen}
       >
         <div
-          className={`absolute inset-0 bg-[rgba(5,8,14,0.62)] backdrop-blur-sm transition-opacity duration-300 ${
-            isMenuOpen ? 'opacity-100' : 'opacity-0'
-          }`}
+          className={`absolute inset-0 bg-[rgba(5,8,14,0.62)] backdrop-blur-sm transition-opacity duration-300 ${isMenuOpen ? 'opacity-100' : 'opacity-0'
+            }`}
           onClick={() => setIsMenuOpen(false)}
         />
 
@@ -704,9 +703,8 @@ export default function Navbar() {
           aria-modal="true"
           aria-label="Mobile navigation"
           ref={menuPanelRef}
-          className={`absolute inset-y-0 left-0 flex w-[90vw] max-w-[22rem] flex-col overflow-y-auto overscroll-contain border-r border-white/12 bg-[#060a10] px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-5 text-white shadow-[0_24px_58px_rgba(0,0,0,0.55)] transition-transform duration-300 ${
-            isMenuOpen ? 'translate-x-0' : '-translate-x-full'
-          }`}
+          className={`absolute inset-y-0 left-0 flex w-[90vw] max-w-[22rem] flex-col overflow-y-auto overscroll-contain border-r border-white/12 bg-[#060a10] px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-5 text-white shadow-[0_24px_58px_rgba(0,0,0,0.55)] transition-transform duration-300 ${isMenuOpen ? 'translate-x-0' : '-translate-x-full'
+            }`}
         >
           <div className="mb-7 flex items-center justify-between">
             <div className="text-sm font-bold uppercase tracking-[0.2em] text-white">KEYPAD CO.</div>

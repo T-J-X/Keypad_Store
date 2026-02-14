@@ -1,10 +1,7 @@
 import { NextResponse } from 'next/server';
-import { SHOP_API_URL, withSessionCookie } from '../../../../lib/api/shopApi';
+import { type GraphResponse, normalizeInt, SHOP_API_URL, withSessionCookie } from '../../../../lib/api/shopApi';
 
-type GraphResponse<T> = {
-  data?: T;
-  errors?: Array<{ message?: string }>;
-};
+
 
 type SessionSummaryResponse = {
   activeOrder?: {
@@ -43,7 +40,7 @@ export async function GET(request: Request) {
   if (incomingCookie) headers.cookie = incomingCookie;
 
   try {
-  const vendureResponse = await fetch(SHOP_API_URL, {
+    const vendureResponse = await fetch(SHOP_API_URL, {
       method: 'POST',
       headers,
       cache: 'no-store',
@@ -63,12 +60,11 @@ export async function GET(request: Request) {
       return withSessionCookie(fallback, vendureResponse);
     }
 
-    const totalQuantity = Number(json.data?.activeOrder?.totalQuantity ?? 0);
     const customer = json.data?.activeCustomer ?? null;
 
     const response = NextResponse.json({
       authenticated: Boolean(customer?.id),
-      totalQuantity: Number.isFinite(totalQuantity) ? Math.max(0, Math.floor(totalQuantity)) : 0,
+      totalQuantity: normalizeInt(json.data?.activeOrder?.totalQuantity),
       customer: customer
         ? {
           id: customer.id,

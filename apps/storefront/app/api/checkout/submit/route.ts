@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { validateMutationRequestOrigin } from '../../../../lib/api/requestSecurity';
 import { checkoutSubmitBodySchema, getRequestBodyErrorMessage } from '../../../../lib/api/schemas';
-import { readJsonBody, SHOP_API_URL } from '../../../../lib/api/shopApi';
+import { type GraphResponse, readJsonBody, SHOP_API_URL } from '../../../../lib/api/shopApi';
 const PREFERRED_PAYMENT_CODES = ['standard-payment', 'test-card-processor', 'dummy-payment-handler'] as const;
 
 const SET_CUSTOMER_FOR_ORDER_MUTATION = `
@@ -124,10 +124,6 @@ const ADD_PAYMENT_TO_ORDER_MUTATION = `
   }
 `;
 
-type GraphResponse<T> = {
-  data?: T;
-  errors?: Array<{ message?: string }>;
-};
 
 type ErrorResultLike = {
   __typename: string;
@@ -471,6 +467,11 @@ function applySetCookie(cookieJar: Map<string, string>, setCookieHeader: string)
   cookieJar.set(name, rawValueParts.join('=').trim());
 }
 
+/**
+ * Local variant of `withSessionCookie` that accepts a raw set-cookie header
+ * string (accumulated from the multi-step cookie jar) rather than a Response
+ * object. This differs from the shared `shopApi.withSessionCookie` signature.
+ */
 function withSessionCookie(response: NextResponse, setCookieHeader: string | null) {
   if (setCookieHeader) {
     response.headers.set('set-cookie', setCookieHeader);

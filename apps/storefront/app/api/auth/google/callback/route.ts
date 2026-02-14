@@ -5,7 +5,7 @@ import {
   getGoogleRedirectUri,
   getSafeRelativePath,
 } from '../../../../../lib/googleAuth';
-import { SHOP_API_URL, withSessionCookie } from '../../../../../lib/api/shopApi';
+import { type GraphResponse, SHOP_API_URL, withSessionCookie } from '../../../../../lib/api/shopApi';
 
 const AUTHENTICATE_WITH_GOOGLE_MUTATION = `
   mutation AuthenticateWithGoogle($token: String, $code: String, $redirectUri: String) {
@@ -21,21 +21,18 @@ const AUTHENTICATE_WITH_GOOGLE_MUTATION = `
   }
 `;
 
-type GraphResponse<T> = {
-  data?: T;
-  errors?: Array<{ message?: string }>;
-};
+
 
 type AuthenticateWithGoogleResponse = {
   authenticate:
-    | {
-        __typename: 'CurrentUser';
-        id: string;
-      }
-    | {
-        __typename: string;
-        message?: string;
-      };
+  | {
+    __typename: 'CurrentUser';
+    id: string;
+  }
+  | {
+    __typename: string;
+    message?: string;
+  };
 };
 
 export async function GET(request: NextRequest) {
