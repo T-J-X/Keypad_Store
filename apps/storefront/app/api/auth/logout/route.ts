@@ -1,11 +1,6 @@
 import { NextResponse } from 'next/server';
 import { validateMutationRequestOrigin } from '../../../../lib/api/requestSecurity';
-import { SHOP_API_URL, withSessionCookie } from '../../../../lib/api/shopApi';
-
-type GraphResponse<T> = {
-  data?: T;
-  errors?: Array<{ message?: string }>;
-};
+import { type GraphResponse, SHOP_API_URL, withSessionCookie } from '../../../../lib/api/shopApi';
 
 type LogoutResponse = {
   logout?: boolean | null;

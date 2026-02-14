@@ -3,6 +3,7 @@ import type { IconCatalogItem } from '../../../../lib/configuratorCatalog';
 import { RING_GLOW_OPTIONS } from '../../../../lib/configuratorCatalog';
 import { normalizeCategoryName } from '../../../../lib/vendure';
 import { vendureFetch } from '../../../../lib/vendure.server';
+import { resolveInsertAsset } from '../../../../lib/api/resolveInsertAsset';
 
 type ProductAsset = {
   id?: string | null;
@@ -105,35 +106,15 @@ function resolveAssetPath(asset: ProductAsset | null | undefined): string | null
   return asset.source ?? asset.preview ?? null;
 }
 
-function findAssetById(assets: ProductAsset[], assetId: string): ProductAsset | null {
-  const normalizedId = assetId.trim();
-  if (!normalizedId) return null;
-  return assets.find((asset) => String(asset.id ?? '').trim() === normalizedId) ?? null;
-}
-
-function resolveInsertAsset(product: IconProductNode, variant: ProductVariantNode): ProductAsset | null {
+function resolveInsertAssetForVariant(product: IconProductNode, variant: ProductVariantNode): ProductAsset | null {
   const assets = product.assets ?? [];
   const insertAssetId =
     variant.customFields?.insertAssetId?.trim()
     || product.customFields?.insertAssetId?.trim()
     || '';
-
-  if (insertAssetId) {
-    const exact = findAssetById(assets, insertAssetId);
-    if (exact) return exact;
-  }
-
   const featuredId = String(product.featuredAsset?.id ?? '').trim();
-  const nonFeatured = assets.filter((asset) => String(asset.id ?? '').trim() !== featuredId);
 
-  const hinted = nonFeatured.find((asset) => {
-    const text = `${asset.name ?? ''} ${asset.source ?? ''}`.toLowerCase();
-    return text.includes('insert') || text.includes('matte') || text.includes('overlay');
-  });
-  if (hinted) return hinted;
-
-  if (nonFeatured.length > 0) return nonFeatured[0] ?? null;
-  return null;
+  return resolveInsertAsset(assets, featuredId, insertAssetId) as ProductAsset | null;
 }
 
 function resolveIconId(product: IconProductNode, variant: ProductVariantNode): string | null {
@@ -170,7 +151,7 @@ function toCatalogItems(products: IconProductNode[]): IconCatalogItem[] {
       const iconId = resolveIconId(product, variant);
       if (!iconId) continue;
 
-      const insertAsset = resolveInsertAsset(product, variant);
+      const insertAsset = resolveInsertAssetForVariant(product, variant);
       const matteAssetPath = resolveAssetPath(insertAsset);
       if (!matteAssetPath) continue;
 

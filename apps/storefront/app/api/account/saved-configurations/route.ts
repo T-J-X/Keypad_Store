@@ -8,18 +8,15 @@ import {
 } from '../../../../lib/api/schemas';
 import { queryShopApi, readJsonBody, withSessionCookie } from '../../../../lib/api/shopApi';
 import {
+  type SavedConfigurationNode,
+  SAVED_CONFIGURATION_FIELDS,
+} from '../../../../lib/api/savedConfigurationTypes';
+import {
   serializeConfiguration,
   validateAndNormalizeConfigurationInput,
 } from '../../../../lib/keypadConfiguration';
 
-const SAVED_CONFIGURATION_FIELDS = `
-  id
-  name
-  keypadModel
-  configuration
-  createdAt
-  updatedAt
-`;
+
 
 const LIST_SAVED_CONFIGURATIONS_QUERY = `
   query GetSavedConfigurations {
@@ -51,14 +48,6 @@ const SAVE_CONFIGURATION_MUTATION = `
   }
 `;
 
-type SavedConfigurationNode = {
-  id: string;
-  name: string;
-  keypadModel: string;
-  configuration: string;
-  createdAt: string;
-  updatedAt: string;
-};
 
 type KeypadProductListResponse = {
   products: {

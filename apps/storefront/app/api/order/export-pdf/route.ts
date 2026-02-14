@@ -1,7 +1,8 @@
 import { NextResponse } from 'next/server';
 import { validateMutationRequestOrigin } from '../../../../lib/api/requestSecurity';
 import { getRequestBodyErrorMessage, orderExportPdfBodySchema } from '../../../../lib/api/schemas';
-import { readJsonBody, SHOP_API_URL } from '../../../../lib/api/shopApi';
+import { readJsonBody, queryShopApi, withSessionCookie } from '../../../../lib/api/shopApi';
+import { resolveInsertAsset } from '../../../../lib/api/resolveInsertAsset';
 import {
   getGeometryForModel,
   getSlotIdsForModel,
@@ -76,10 +77,7 @@ const ICON_CATALOG_QUERY = `
 
 const PAGE_SIZE = 100;
 
-type GraphResponse<T> = {
-  data?: T;
-  errors?: Array<{ message?: string }>;
-};
+
 
 type ExportOrderLine = {
   lineId: string;
@@ -329,10 +327,10 @@ export async function POST(request: Request) {
   const fileToken = resolvedOrderCode !== 'PREVIEW'
     ? resolvedOrderCode
     : (designName
-        .replace(/[^a-z0-9_-]+/gi, '-')
-        .replace(/-+/g, '-')
-        .replace(/^-+|-+$/g, '')
-        .slice(0, 60)
+      .replace(/[^a-z0-9_-]+/gi, '-')
+      .replace(/-+/g, '-')
+      .replace(/^-+|-+$/g, '')
+      .slice(0, 60)
       || 'Preview');
 
   return withOptionalCookie(
@@ -402,26 +400,7 @@ async function buildIconAssetMap(request: Request, iconIds: string[]) {
   return map;
 }
 
-function resolveInsertAsset(
-  assets: Array<{ id?: string | null; source?: string | null; preview?: string | null; name?: string | null }>,
-  featuredAssetId: string | null,
-  insertAssetId: string,
-) {
-  if (insertAssetId) {
-    const exact = assets.find((asset) => String(asset.id ?? '').trim() === insertAssetId);
-    if (exact) return exact;
-  }
 
-  const nonFeatured = assets.filter((asset) => String(asset.id ?? '').trim() !== String(featuredAssetId ?? '').trim());
-
-  const hinted = nonFeatured.find((asset) => {
-    const text = `${asset.name ?? ''} ${asset.source ?? ''}`.toLowerCase();
-    return text.includes('insert') || text.includes('matte') || text.includes('overlay');
-  });
-
-  if (hinted) return hinted;
-  return nonFeatured[0] ?? null;
-}
 
 function toAssetUrl(path: string) {
   if (path.startsWith('http://') || path.startsWith('https://')) return path;
@@ -534,11 +513,10 @@ function renderPdfHtml({
       return `
         <div class="slot" style="left:${position.left};top:${position.top};width:${position.width};height:${position.height};transform:translate(-50%, -50%);">
           <span class="slot-ring-base"></span>
-          ${
-            row.color !== 'No glow'
-              ? `<span class="slot-ring-glow" style="${ringGlowInlineStyle(row.color)}"></span>`
-              : ''
-          }
+          ${row.color !== 'No glow'
+          ? `<span class="slot-ring-glow" style="${ringGlowInlineStyle(row.color)}"></span>`
+          : ''
+        }
           <img src="${row.matteAssetUrl}" alt="${escapeHtml(row.iconId)}" />
           <span class="slot-label">${escapeHtml(row.slotLabel)}</span>
         </div>
@@ -780,65 +758,3 @@ function ringGlowInlineStyle(color: string) {
   ].join(' ');
 }
 
-async function queryShopApi<T>(
-  request: Request,
-  input: {
-    query: string;
-    variables?: Record<string, unknown>;
-  },
-): Promise<
-  | {
-      ok: true;
-      data: T;
-      rawResponse: Response;
-    }
-  | {
-      ok: false;
-      status: number;
-      error: string;
-      rawResponse: Response;
-    }
-> {
-  const headers: Record<string, string> = {
-    'content-type': 'application/json',
-  };
-
-  const incomingCookie = request.headers.get('cookie');
-  if (incomingCookie) headers.cookie = incomingCookie;
-
-  const rawResponse = await fetch(SHOP_API_URL, {
-    method: 'POST',
-    headers,
-    cache: 'no-store',
-    body: JSON.stringify({
-      query: input.query,
-      variables: input.variables,
-    }),
-  });
-
-  const json = (await rawResponse.json().catch(() => ({}))) as GraphResponse<T>;
-
-  if (!rawResponse.ok || json.errors?.length || !json.data) {
-    const message = json.errors?.[0]?.message || `Vendure error (${rawResponse.status})`;
-    return {
-      ok: false,
-      status: rawResponse.ok ? 400 : rawResponse.status,
-      error: message,
-      rawResponse,
-    };
-  }
-
-  return {
-    ok: true,
-    data: json.data,
-    rawResponse,
-  };
-}
-
-function withSessionCookie(response: NextResponse, vendureResponse: Response) {
-  const setCookie = vendureResponse.headers.get('set-cookie');
-  if (setCookie) {
-    response.headers.set('set-cookie', setCookie);
-  }
-  return response;
-}

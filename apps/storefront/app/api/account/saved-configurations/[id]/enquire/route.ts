@@ -5,6 +5,7 @@ import {
   savedConfigurationEnquiryBodySchema,
 } from '../../../../../../lib/api/schemas';
 import { queryShopApi, readJsonBody, withSessionCookie } from '../../../../../../lib/api/shopApi';
+import { type SavedConfigurationNode } from '../../../../../../lib/api/savedConfigurationTypes';
 
 const NTFY_TOPIC_URL = process.env.NTFY_TOPIC_URL?.trim() || '';
 const NTFY_AUTH_HEADER = process.env.NTFY_AUTH_HEADER?.trim() || '';
@@ -22,14 +23,7 @@ const GET_SAVED_CONFIGURATION_QUERY = `
   }
 `;
 
-type SavedConfigurationNode = {
-  id: string;
-  name: string;
-  keypadModel: string;
-  configuration: string;
-  createdAt: string;
-  updatedAt: string;
-};
+
 
 type GetSavedConfigurationResponse = {
   getSavedConfiguration: SavedConfigurationNode;
