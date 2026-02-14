@@ -1,7 +1,15 @@
 import type { Metadata } from 'next';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { Suspense, use } from 'react';
-import OrderTechnicalSpecification from '../../../components/order/OrderTechnicalSpecification';
+
+const OrderTechnicalSpecification = dynamic(() => import('../../../components/order/OrderTechnicalSpecification'), {
+  loading: () => (
+    <span className="inline-flex items-center justify-center rounded-full border border-[#0e2e60]/30 bg-[#0d2f63]/15 px-5 py-2.5 text-sm font-semibold uppercase tracking-[0.12em] text-[#0e2e60]">
+      Loading specification...
+    </span>
+  ),
+});
 
 type OrderSearchParams = {
   payment?: string | string[];
