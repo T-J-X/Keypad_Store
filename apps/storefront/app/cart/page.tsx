@@ -14,7 +14,7 @@ import {
   resolvePreviewSlotIds,
   type ConfiguredIconLookup,
 } from '../../lib/configuredKeypadPreview';
-import { modelCodeToPkpSlug, resolvePkpModelCode } from '../../lib/keypadUtils';
+import { resolvePkpModelCode } from '../../lib/keypadUtils';
 import { assetUrl } from '../../lib/vendure';
 import { getGeometryForModel } from '../../config/layouts/geometry';
 
@@ -254,8 +254,6 @@ export default function CartPage() {
                   productSlug ?? '',
                   line.productVariant?.product?.name ?? line.productVariant?.name ?? '',
                 ) || null;
-                const canonicalKeypadSlug = modelCode ? modelCodeToPkpSlug(modelCode) : null;
-                const detailSlug = canonicalKeypadSlug ?? productSlug;
                 const imagePath = line.productVariant?.product?.featuredAsset?.preview
                   || line.productVariant?.product?.featuredAsset?.source
                   || '';
@@ -293,8 +291,8 @@ export default function CartPage() {
                       return rows;
                     }, [])
                   : [];
-                const editConfigurationHref = hasConfiguration && detailSlug
-                  ? `/configurator/keypad/${detailSlug}?lineId=${encodeURIComponent(line.id)}`
+                const editConfigurationHref = hasConfiguration && productSlug
+                  ? `/configurator/keypad/${productSlug}?lineId=${encodeURIComponent(line.id)}`
                   : null;
                 const isUpdatingLine = activeLineId === line.id;
 
@@ -321,8 +319,8 @@ export default function CartPage() {
                     </div>
 
                     <div className="min-w-0 flex-1">
-                      {detailSlug ? (
-                        <Link href={`/shop/product/${detailSlug}`} className="text-sm font-semibold text-white transition hover:underline">
+                      {productSlug ? (
+                        <Link href={`/shop/product/${productSlug}`} className="text-sm font-semibold text-white transition hover:underline">
                           {line.productVariant?.name || line.productVariant?.product?.name || 'Product'}
                         </Link>
                       ) : (
