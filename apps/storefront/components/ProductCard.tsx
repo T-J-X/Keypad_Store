@@ -74,7 +74,7 @@ export default function ProductCard({
   };
 
   const addToCartClass = [
-    'group relative isolate inline-flex min-h-[44px] w-full min-w-[10.5rem] items-center justify-center gap-2 rounded-2xl border border-transparent px-5 py-2 text-xs font-medium text-white whitespace-nowrap sm:w-auto sm:text-sm md:text-base',
+    'group relative isolate inline-flex min-h-[44px] w-full min-w-0 items-center justify-center gap-2 rounded-2xl border border-transparent px-5 py-2 text-xs font-medium text-white whitespace-nowrap sm:text-sm md:text-base',
     'bg-[linear-gradient(90deg,#040F2E_0%,#112B5D_55%,#29457A_100%),linear-gradient(90deg,#203f7a_0%,#2f5da8_55%,#4b7fca_100%)] [background-origin:padding-box,border-box] [background-clip:padding-box,border-box]',
     'transition-[background,box-shadow,transform] duration-300',
     'hover:-translate-y-[1px] hover:bg-[linear-gradient(270deg,#040F2E_0%,#112B5D_55%,#29457A_100%),linear-gradient(90deg,#24497d_0%,#39629a_55%,#537bb0_100%)] hover:shadow-[0_0_0_1px_rgba(72,116,194,0.56),0_10px_24px_rgba(4,15,46,0.29)]',
@@ -122,7 +122,7 @@ export default function ProductCard({
         </div>
       </div>
       <div className="relative z-20 mt-auto space-y-2">
-        <div className="flex flex-col items-stretch gap-3 sm:flex-row sm:items-center sm:justify-between">
+        <div className="space-y-3">
           <div className="space-y-0.5">
             <div className="flex items-end gap-1.5">
               <div className="text-sm font-bold tracking-tight text-ink md:text-base">
