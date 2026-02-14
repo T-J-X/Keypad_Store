@@ -54,7 +54,7 @@ export default function ProductJsonLd({
   }
 
   if (priceWithTax && primaryVariant?.currencyCode) {
-    const productPath = `/product/${encodeURIComponent(product.slug)}`;
+    const productPath = `/shop/product/${encodeURIComponent(product.slug)}`;
     const offerUrl = storefrontOrigin
       ? `${storefrontOrigin.replace(/\/+$/, '')}${productPath}`
       : productPath;

@@ -2,7 +2,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import type { KeypadProduct } from '../lib/vendure';
 import { assetUrl } from '../lib/vendure';
-import { resolvePkpModelCode } from '../lib/keypadUtils';
+import { modelCodeToPkpSlug, resolvePkpModelCode } from '../lib/keypadUtils';
 import { buttonPrimaryClass, buttonSecondaryClass } from './buttonStyles';
 import {
   cardPlaceholderTextClass,
@@ -36,9 +36,10 @@ export default function KeypadCard({
 }) {
   const image = product.featuredAsset?.preview ?? product.featuredAsset?.source ?? '';
   const modelCode = resolvePkpModelCode(product.slug, product.name) || product.name;
+  const canonicalSlug = modelCodeToPkpSlug(product.slug) ?? modelCodeToPkpSlug(modelCode) ?? product.slug;
   const description = resolveDescription(modelCode);
   const isShopCard = mode === 'shop';
-  const detailHref = learnMoreHref ?? `/product/${product.slug}`;
+  const detailHref = learnMoreHref ?? `/shop/product/${canonicalSlug}`;
   const mediaHeightClass = isShopCard ? 'h-56' : 'h-44';
   const mediaPaddingClass = isShopCard ? 'p-5' : 'p-4';
 
@@ -92,7 +93,7 @@ export default function KeypadCard({
               Learn more
             </Link>
             <Link
-              href={`/configurator/${product.slug}`}
+              href={`/configurator/keypad/${canonicalSlug}`}
               className={`${buttonPrimaryClass} w-full sm:w-auto`}
             >
               Customize now
@@ -100,7 +101,7 @@ export default function KeypadCard({
           </div>
         ) : (
           <Link
-            href={`/configurator/${product.slug}`}
+            href={`/configurator/keypad/${canonicalSlug}`}
             className={`${buttonPrimaryClass} w-fit`}
           >
             Configure now

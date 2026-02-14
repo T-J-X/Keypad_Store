@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import ConfiguratorRingDebugClient from '../../../components/configurator/ConfiguratorRingDebugClient';
-import { hasLayoutForModel } from '../../../lib/keypad-layouts';
+import { KEYPAD_MODEL_GEOMETRIES } from '../../../config/layouts/geometry';
 import { resolveKeypadShellAssetPath } from '../../../lib/keypadShellAsset';
 import { resolvePkpModelCode } from '../../../lib/keypadUtils';
 import { fetchKeypadProducts } from '../../../lib/vendure.server';
@@ -22,7 +22,7 @@ function pickSearchParam(value: string | string[] | undefined) {
 
 function toModelCode(input: string) {
   const normalized = input.trim().toUpperCase();
-  if (normalized && hasLayoutForModel(normalized)) return normalized;
+  if (normalized && KEYPAD_MODEL_GEOMETRIES[normalized]) return normalized;
   return 'PKP-2200-SI';
 }
 

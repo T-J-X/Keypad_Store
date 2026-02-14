@@ -28,14 +28,14 @@ export type {
   SlotSafeZone,
 } from './shared';
 
-export const KEYPAD_MODEL_GEOMETRIES: Record<string, KeypadModelGeometry> = {
+export const KEYPAD_MODEL_GEOMETRIES: Readonly<Record<string, KeypadModelGeometry>> = Object.freeze({
   [PKP_2200_SI_GEOMETRY.modelCode]: PKP_2200_SI_GEOMETRY,
   [PKP_2300_SI_GEOMETRY.modelCode]: PKP_2300_SI_GEOMETRY,
   [PKP_2400_SI_GEOMETRY.modelCode]: PKP_2400_SI_GEOMETRY,
   [PKP_2500_SI_GEOMETRY.modelCode]: PKP_2500_SI_GEOMETRY,
   [PKP_2600_SI_GEOMETRY.modelCode]: PKP_2600_SI_GEOMETRY,
   [PKP_3500_SI_GEOMETRY.modelCode]: PKP_3500_SI_GEOMETRY,
-};
+});
 
 export function getGeometryForModel(modelCode: string) {
   const normalized = modelCode.trim().toUpperCase();
