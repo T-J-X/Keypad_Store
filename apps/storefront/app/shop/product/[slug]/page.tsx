@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { Suspense } from 'react';
+import { Suspense, cache } from 'react';
 import ButtonInsertPdp from '../../../../components/ProductPdp/ButtonInsertPdp';
 import KeypadPdp from '../../../../components/ProductPdp/KeypadPdp';
 import ProductJsonLd from '../../../../components/ProductPdp/ProductJsonLd';
@@ -9,7 +9,7 @@ import ShopHubBackAnchor from '../../../../components/ShopHubBackAnchor';
 import { resolvePkpModelCode } from '../../../../lib/keypadUtils';
 import { resolveSeoDescription } from '../../../../lib/productSeo';
 import { type CatalogProduct, type IconProduct } from '../../../../lib/vendure';
-import { fetchIconProducts, fetchProductBySlug } from '../../../../lib/vendure.server';
+import { fetchIconProducts, fetchKeypadProducts, fetchProductBySlug } from '../../../../lib/vendure.server';
 
 type ProductSearchParams = {
   from?: string | string[];
@@ -96,13 +96,30 @@ function resolveCanonicalUrl(product: CatalogProduct, fallbackSlug: string) {
   return `/shop/product/${encodeURIComponent(slug)}`;
 }
 
+const fetchCatalogProductForSlug = cache(async (slug: string) => {
+  const normalized = slug.trim();
+  if (!normalized) return null;
+
+  const product = await fetchProductBySlug(normalized);
+  if (product) return product;
+
+  const modelCode = resolvePkpModelCode(normalized, normalized);
+  if (!modelCode) return null;
+
+  const keypads = await fetchKeypadProducts();
+  return keypads.find((keypad) => {
+    const keypadModelCode = resolvePkpModelCode(keypad.slug, keypad.name);
+    return keypadModelCode === modelCode;
+  }) ?? null;
+});
+
 export async function generateMetadata({
   params,
 }: {
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const resolvedParams = await params;
-  const product = await fetchProductBySlug(resolvedParams.slug);
+  const product = await fetchCatalogProductForSlug(resolvedParams.slug);
 
   if (!product) {
     return {
@@ -265,7 +282,7 @@ async function ProductDetailContent({
     paramsPromise,
     searchParamsPromise ?? Promise.resolve(undefined),
   ]);
-  const product = await fetchProductBySlug(resolvedParams.slug);
+  const product = await fetchCatalogProductForSlug(resolvedParams.slug);
   if (!product) return notFound();
 
   const origin = toStringParam(searchParams?.from);

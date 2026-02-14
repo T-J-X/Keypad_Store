@@ -320,7 +320,7 @@ export async function fetchKeypadProducts(): Promise<KeypadProduct[]> {
     .map((item) => item as KeypadProduct);
 }
 
-export async function fetchProductBySlug(slug: string): Promise<CatalogProduct | null> {
+const fetchProductBySlugUncached = async (slug: string): Promise<CatalogProduct | null> => {
   const queryWithNumericStock = `
     query ProductBySlug($slug: String!) {
       product(slug: $slug) {
@@ -358,4 +358,8 @@ export async function fetchProductBySlug(slug: string): Promise<CatalogProduct |
       variants: fallbackData.product.variants ?? [],
     };
   }
-}
+};
+
+export const fetchProductBySlug = cache(async (slug: string): Promise<CatalogProduct | null> => {
+  return fetchProductBySlugUncached(slug);
+});

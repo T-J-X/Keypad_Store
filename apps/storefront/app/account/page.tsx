@@ -1,5 +1,9 @@
 import type { Metadata } from 'next';
-import AccountTabs from '../../components/AccountTabs';
+import dynamic from 'next/dynamic';
+
+const AccountTabs = dynamic(() => import('../../components/AccountTabs'), {
+  loading: () => <div className="card-soft p-4 text-sm text-blue-100/80">Loading account dashboard...</div>,
+});
 
 export const metadata: Metadata = {
   title: 'Account | Keypad Store',

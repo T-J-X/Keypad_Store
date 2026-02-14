@@ -1,28 +1,33 @@
 import type { Metadata } from 'next';
-import { notFound, redirect } from 'next/navigation';
-import { Suspense } from 'react';
+import { notFound } from 'next/navigation';
+import { Suspense, cache } from 'react';
 import KeypadConfigurator from '../../../../components/configurator/KeypadConfigurator';
 import { resolveKeypadShellAssetPath } from '../../../../lib/keypadShellAsset';
-import { modelCodeToPkpSlug, resolvePkpModelCode } from '../../../../lib/keypadUtils';
-import { fetchProductBySlug } from '../../../../lib/vendure.server';
+import { resolvePkpModelCode } from '../../../../lib/keypadUtils';
+import { fetchKeypadProducts, fetchProductBySlug } from '../../../../lib/vendure.server';
 
-async function fetchKeypadForSlug(slug: string) {
+const fetchKeypadForSlug = cache(async (slug: string) => {
   const normalizedInput = slug.trim();
   if (!normalizedInput) return null;
 
-  const candidates = new Set<string>([normalizedInput]);
-  const canonical = modelCodeToPkpSlug(normalizedInput);
-  if (canonical) {
-    candidates.add(canonical);
+  const requestedModelCode = resolvePkpModelCode(normalizedInput, normalizedInput);
+  const keypadsPromise = requestedModelCode ? fetchKeypadProducts() : null;
+
+  const bySlug = await fetchProductBySlug(normalizedInput);
+  if (bySlug?.customFields?.isKeypadProduct) {
+    return bySlug;
   }
 
-  for (const candidate of candidates) {
-    const product = await fetchProductBySlug(candidate);
-    if (product) return product;
+  if (!requestedModelCode || !keypadsPromise) {
+    return null;
   }
 
-  return null;
-}
+  const keypads = await keypadsPromise;
+  return keypads.find((keypad) => {
+    const keypadModelCode = resolvePkpModelCode(keypad.slug, keypad.name);
+    return keypadModelCode === requestedModelCode;
+  }) ?? null;
+});
 
 export async function generateMetadata({
   params,
@@ -47,12 +52,11 @@ export async function generateMetadata({
   }
 
   const modelCode = resolvePkpModelCode(product.slug, product.name) || product.name.toUpperCase();
-  const canonicalSlug = modelCodeToPkpSlug(product.slug) ?? modelCodeToPkpSlug(modelCode) ?? product.slug;
   return {
     title: `${modelCode} Configurator | Keypad Store`,
     description: `Configure ${modelCode} with per-slot inserts, glow rings, and production-ready layout precision.`,
     alternates: {
-      canonical: `/configurator/keypad/${encodeURIComponent(canonicalSlug)}`,
+      canonical: `/configurator/keypad/${encodeURIComponent(product.slug)}`,
     },
   };
 }
@@ -83,21 +87,16 @@ async function ConfiguratorModelContent({
   paramsPromise: Promise<{ slug: string }>;
 }) {
   const resolved = await paramsPromise;
-  const requestedSlug = resolved.slug.trim();
-  const product = await fetchKeypadForSlug(requestedSlug);
+  const product = await fetchKeypadForSlug(resolved.slug);
   if (!product) return notFound();
 
   const modelCode = resolvePkpModelCode(product.slug, product.name) || product.name.toUpperCase();
-  const canonicalSlug = modelCodeToPkpSlug(product.slug) ?? modelCodeToPkpSlug(modelCode) ?? product.slug;
-  if (requestedSlug.toLowerCase() !== canonicalSlug.toLowerCase()) {
-    redirect(`/configurator/keypad/${encodeURIComponent(canonicalSlug)}`);
-  }
 
   return (
     <KeypadConfigurator
       keypad={{
         id: product.id,
-        slug: canonicalSlug,
+        slug: product.slug,
         name: product.name,
         modelCode,
         description: product.description ?? null,

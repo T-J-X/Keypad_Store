@@ -57,7 +57,22 @@ function KeypadConfiguratorShell() {
         </div>
 
         <div className="grid gap-6 lg:grid-cols-[minmax(0,1.2fr)_minmax(320px,0.8fr)]">
-          <Keypad.Preview />
+          <Keypad.Preview
+            modelCode={state.modelCode}
+            shellAssetPath={meta.keypad.shellAssetPath}
+            slots={state.slots}
+            activeSlotId={state.popupSlotId}
+            onSlotClick={actions.openSlot}
+            rotationDeg={state.preview.rotationDeg}
+            iconScale={state.preview.iconScale}
+            iconVisibleComp={state.preview.iconVisibleComp}
+            debugMode={state.preview.debugMode}
+            editMode={state.preview.editMode}
+            descriptionText={state.preview.descriptionText}
+            showGlows={state.preview.showGlows}
+            onRotate={actions.rotatePreview}
+            onToggleGlows={actions.togglePreviewGlows}
+          />
 
           <Keypad.Sidebar>
             {!state.isMobile ? (

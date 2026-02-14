@@ -13,7 +13,6 @@ import {
   type IconProduct,
   type KeypadProduct,
 } from '../lib/vendure';
-import { modelCodeToPkpSlug } from '../lib/keypadUtils';
 import { useShopLandingSubcategoryIcons } from '../lib/useShopLandingSubcategoryIcons';
 import { ensureShopHubAnchor } from '../lib/shopHistory';
 import BaseShopHero from './BaseShopHero';
@@ -154,6 +153,13 @@ function matchesSearchTerms(tokens: string[], queryTerms: string[]) {
   return queryTerms.every((term) => tokens.some((token) => tokenFuzzyMatch(term, token)));
 }
 
+type IconSearchEntry = {
+  icon: IconProduct;
+  tokens: string[];
+  categoryNames: string[];
+  categorySlugs: string[];
+};
+
 export default function ShopClient({
   icons,
   keypads,
@@ -253,14 +259,6 @@ export default function ShopClient({
     return new Map(categories.map((category) => [category.slug, category]));
   }, [categories]);
 
-  const categoryNamesByIconId = useMemo(() => {
-    const map = new Map<string, string[]>();
-    for (const icon of icons) {
-      map.set(icon.id, iconCategoriesFromProduct(icon));
-    }
-    return map;
-  }, [icons]);
-
   const isLandingSection = activeSection === 'landing';
   const isAllSection = activeSection === 'all';
   const isCatalogWideSection = isLandingSection || isAllSection;
@@ -297,14 +295,29 @@ export default function ShopClient({
 
   const queryTerms = useMemo(() => tokenizeSearchText(debouncedQuery), [debouncedQuery]);
 
-  const iconSearchIndex = useMemo(() => {
-    return icons.map((icon) => ({
-      icon,
-      tokens: tokenizeSearchText(
-        `${icon.customFields?.iconId ?? ''} ${icon.name ?? ''} ${icon.slug ?? ''} ${iconCategoriesFromProduct(icon).join(' ')}`,
-      ),
-    }));
+  const iconSearchIndex = useMemo<IconSearchEntry[]>(() => {
+    return icons.map((icon) => {
+      const categoryNames = iconCategoriesFromProduct(icon);
+      return {
+        categoryNames,
+        categorySlugs: categoryNames.map((name) => categorySlug(name)),
+        icon,
+        tokens: tokenizeSearchText(
+          `${icon.customFields?.iconId ?? ''} ${icon.name ?? ''} ${icon.slug ?? ''} ${categoryNames.join(' ')}`,
+        ),
+      };
+    });
   }, [icons]);
+
+  const categoryNamesByIconId = useMemo(
+    () => new Map(iconSearchIndex.map((entry) => [entry.icon.id, entry.categoryNames])),
+    [iconSearchIndex],
+  );
+
+  const categorySlugsByIconId = useMemo(
+    () => new Map(iconSearchIndex.map((entry) => [entry.icon.id, entry.categorySlugs])),
+    [iconSearchIndex],
+  );
 
   const keypadSearchIndex = useMemo(() => {
     return keypads.map((keypad) => ({
@@ -318,11 +331,10 @@ export default function ShopClient({
     const shouldApplyCategoryFilter = isIconsSection;
 
     return iconSearchIndex
-      .filter(({ icon, tokens }) => {
+      .filter(({ icon, tokens, categorySlugs }) => {
         if (shouldApplyCategoryFilter) {
-          const iconCategorySlugs = iconCategoriesFromProduct(icon).map((name) => categorySlug(name));
           const matchesCategory =
-            targetCategories.size === 0 || iconCategorySlugs.some((slug) => targetCategories.has(slug));
+            targetCategories.size === 0 || categorySlugs.some((slug) => targetCategories.has(slug));
           if (!matchesCategory) return false;
         }
         return matchesSearchTerms(tokens, queryTerms);
@@ -429,8 +441,7 @@ export default function ShopClient({
           : categorySlugValues[0];
       params.set('cat', categoryForBreadcrumb);
     }
-    const normalizedSlug = section === 'keypads' ? (modelCodeToPkpSlug(slug) ?? slug) : slug;
-    return `/shop/product/${encodeURIComponent(normalizedSlug)}?${params.toString()}`;
+    return `/shop/product/${slug}?${params.toString()}`;
   };
 
   const toCategoryHref = (categorySlugValue: string) => {
@@ -445,7 +456,7 @@ export default function ShopClient({
 
   const resolveProductCategoryForBreadcrumb = (icon: IconProduct) => {
     if (activeCategorySlugs.length === 0) return '';
-    const productCategorySlugs = iconCategoriesFromProduct(icon).map((name) => categorySlug(name));
+    const productCategorySlugs = categorySlugsByIconId.get(icon.id) ?? [];
     return activeCategorySlugs.find((slug) => productCategorySlugs.includes(slug)) ?? activeCategorySlugs[0];
   };
 
