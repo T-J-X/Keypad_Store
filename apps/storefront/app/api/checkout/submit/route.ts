@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { validateMutationRequestOrigin } from '../../../../lib/api/requestSecurity';
+import { checkoutSubmitBodySchema, getRequestBodyErrorMessage } from '../../../../lib/api/schemas';
 import { readJsonBody, SHOP_API_URL } from '../../../../lib/api/shopApi';
 const PREFERRED_PAYMENT_CODES = ['standard-payment', 'test-card-processor', 'dummy-payment-handler'] as const;
 
@@ -141,20 +142,6 @@ type OrderLike = {
   state?: string | null;
 };
 
-type CheckoutSubmitInput = {
-  emailAddress?: string;
-  firstName?: string;
-  lastName?: string;
-  phoneNumber?: string;
-  streetLine1?: string;
-  streetLine2?: string;
-  city?: string;
-  province?: string;
-  postalCode?: string;
-  countryCode?: string;
-  paymentMethodCode?: string;
-};
-
 class CheckoutStepError extends Error {
   constructor(
     public readonly step: string,
@@ -169,30 +156,32 @@ export async function POST(request: Request) {
   const originError = validateMutationRequestOrigin(request);
   if (originError) return originError;
 
-  const payload = await readJsonBody<CheckoutSubmitInput>(request);
-
-  const emailAddress = normalizeString(payload?.emailAddress).toLowerCase();
-  const firstName = normalizeString(payload?.firstName);
-  const lastName = normalizeString(payload?.lastName);
-  const phoneNumber = normalizeString(payload?.phoneNumber);
-  const streetLine1 = normalizeString(payload?.streetLine1);
-  const streetLine2 = normalizeString(payload?.streetLine2);
-  const city = normalizeString(payload?.city);
-  const province = normalizeString(payload?.province);
-  const postalCode = normalizeString(payload?.postalCode);
-  const countryCode = normalizeString(payload?.countryCode).toUpperCase();
-  const requestedPaymentMethodCode = normalizeString(payload?.paymentMethodCode);
-
-  if (!emailAddress || !firstName || !lastName || !streetLine1 || !city || !postalCode || !countryCode) {
+  const parsedBody = checkoutSubmitBodySchema.safeParse(await readJsonBody<unknown>(request));
+  if (!parsedBody.success) {
     return NextResponse.json(
       {
-        error: 'Missing required checkout fields (contact and shipping address).',
+        error: getRequestBodyErrorMessage(
+          parsedBody.error,
+          'Missing required checkout fields (contact and shipping address).',
+        ),
         errorCode: 'CHECKOUT_VALIDATION_ERROR',
         step: 'validation',
       },
       { status: 400 },
     );
   }
+
+  const emailAddress = parsedBody.data.emailAddress.toLowerCase();
+  const firstName = parsedBody.data.firstName;
+  const lastName = parsedBody.data.lastName;
+  const phoneNumber = parsedBody.data.phoneNumber || '';
+  const streetLine1 = parsedBody.data.streetLine1;
+  const streetLine2 = parsedBody.data.streetLine2 || '';
+  const city = parsedBody.data.city;
+  const province = parsedBody.data.province || '';
+  const postalCode = parsedBody.data.postalCode;
+  const countryCode = parsedBody.data.countryCode.toUpperCase();
+  const requestedPaymentMethodCode = parsedBody.data.paymentMethodCode || '';
 
   const cookieJar = parseCookieHeader(request.headers.get('cookie'));
   let latestSetCookie: string | null = null;
@@ -205,7 +194,7 @@ export async function POST(request: Request) {
     const cookieHeader = serializeCookieHeader(cookieJar);
     if (cookieHeader) headers.cookie = cookieHeader;
 
-  const vendureResponse = await fetch(SHOP_API_URL, {
+    const vendureResponse = await fetch(SHOP_API_URL, {
       method: 'POST',
       headers,
       cache: 'no-store',

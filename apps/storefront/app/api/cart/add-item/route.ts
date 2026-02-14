@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { validateMutationRequestOrigin } from '../../../../lib/api/requestSecurity';
+import { cartAddItemBodySchema, getRequestBodyErrorMessage } from '../../../../lib/api/schemas';
 import { readJsonBody, SHOP_API_URL, withSessionCookie } from '../../../../lib/api/shopApi';
 import {
   serializeConfiguration,
@@ -53,27 +54,15 @@ export async function POST(request: Request) {
   const originError = validateMutationRequestOrigin(request);
   if (originError) return originError;
 
-  const payload = await readJsonBody<
-    | {
-        productVariantId?: string;
-        quantity?: number;
-        customFields?: {
-          configuration?: unknown;
-        } | null;
-      }
-  >(request);
-
-  const productVariantId = payload?.productVariantId?.trim();
-  const quantity = Number.isInteger(payload?.quantity) && payload?.quantity && payload.quantity > 0
-    ? payload.quantity
-    : 1;
-
-  if (!productVariantId) {
-    return NextResponse.json({ error: 'Missing productVariantId' }, { status: 400 });
+  const parsedBody = cartAddItemBodySchema.safeParse(await readJsonBody<unknown>(request));
+  if (!parsedBody.success) {
+    return NextResponse.json({ error: getRequestBodyErrorMessage(parsedBody.error) }, { status: 400 });
   }
 
+  const { productVariantId, quantity, customFields: parsedCustomFields } = parsedBody.data;
+
   let customFields: { configuration: string } | undefined;
-  const rawConfiguration = payload?.customFields?.configuration;
+  const rawConfiguration = parsedCustomFields?.configuration;
 
   if (rawConfiguration !== undefined) {
     const validation = validateAndNormalizeConfigurationInput(rawConfiguration, { requireComplete: true });

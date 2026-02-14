@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server';
 import { resolvePkpModelCode } from '../../../../lib/keypadUtils';
 import { getSlotIdsForModel, KEYPAD_MODEL_GEOMETRIES } from '../../../../config/layouts/geometry';
 import { validateMutationRequestOrigin } from '../../../../lib/api/requestSecurity';
+import {
+  getRequestBodyErrorMessage,
+  savedConfigurationCreateBodySchema,
+} from '../../../../lib/api/schemas';
 import { queryShopApi, readJsonBody, withSessionCookie } from '../../../../lib/api/shopApi';
 import {
   serializeConfiguration,
@@ -74,12 +78,6 @@ type SaveConfigurationResponse = {
   saveConfiguration: SavedConfigurationNode;
 };
 
-type SavedConfigurationRequestBody = {
-  name?: unknown;
-  keypadModel?: unknown;
-  configuration?: unknown;
-};
-
 export async function GET(request: Request) {
   const savedConfigsResponse = await queryShopApi<ListSavedConfigurationsResponse>(request, {
     query: LIST_SAVED_CONFIGURATIONS_QUERY,
@@ -123,22 +121,19 @@ export async function POST(request: Request) {
   const originError = validateMutationRequestOrigin(request);
   if (originError) return originError;
 
-  const body = await readJsonBody<SavedConfigurationRequestBody>(request);
-
-  const name = typeof body?.name === 'string' ? body.name.trim() : '';
-  const keypadModel = typeof body?.keypadModel === 'string' ? body.keypadModel.trim().toUpperCase() : '';
-
-  if (!name) {
-    return NextResponse.json({ error: 'Configuration name cannot be empty.' }, { status: 400 });
+  const parsedBody = savedConfigurationCreateBodySchema.safeParse(await readJsonBody<unknown>(request));
+  if (!parsedBody.success) {
+    return NextResponse.json({ error: getRequestBodyErrorMessage(parsedBody.error) }, { status: 400 });
   }
-  if (!keypadModel) {
-    return NextResponse.json({ error: 'Keypad model is required.' }, { status: 400 });
-  }
+
+  const name = parsedBody.data.name;
+  const keypadModel = parsedBody.data.keypadModel.toUpperCase();
+
   if (!KEYPAD_MODEL_GEOMETRIES[keypadModel]) {
     return NextResponse.json({ error: `Unsupported keypad model "${keypadModel}".` }, { status: 400 });
   }
 
-  const configValidation = validateAndNormalizeConfigurationInput(body?.configuration, {
+  const configValidation = validateAndNormalizeConfigurationInput(parsedBody.data.configuration, {
     requireComplete: true,
     slotIds: getSlotIdsForModel(keypadModel),
   });

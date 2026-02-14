@@ -1,5 +1,6 @@
 import { NextResponse } from 'next/server';
 import { validateMutationRequestOrigin } from '../../../../lib/api/requestSecurity';
+import { getRequestBodyErrorMessage, orderExportPdfBodySchema } from '../../../../lib/api/schemas';
 import { readJsonBody, SHOP_API_URL } from '../../../../lib/api/shopApi';
 import {
   getGeometryForModel,
@@ -137,13 +138,6 @@ type IconProductListResponse = {
   };
 };
 
-type BodyPayload = {
-  orderCode?: unknown;
-  designName?: unknown;
-  modelCode?: unknown;
-  configuration?: unknown;
-};
-
 type IconAssetMapping = {
   iconId: string;
   iconName: string;
@@ -154,14 +148,16 @@ export async function POST(request: Request) {
   const originError = validateMutationRequestOrigin(request);
   if (originError) return originError;
 
-  const body = await readJsonBody<BodyPayload>(request);
-  const designName = typeof body?.designName === 'string' ? body.designName.trim() : '';
-  const orderCode = typeof body?.orderCode === 'string' ? body.orderCode.trim() : '';
-  const requestedModelCode = typeof body?.modelCode === 'string'
-    ? body.modelCode.trim().toUpperCase()
-    : '';
+  const parsedBody = orderExportPdfBodySchema.safeParse(await readJsonBody<unknown>(request));
+  if (!parsedBody.success) {
+    return NextResponse.json({ error: getRequestBodyErrorMessage(parsedBody.error) }, { status: 400 });
+  }
+
+  const designName = parsedBody.data.designName || '';
+  const orderCode = parsedBody.data.orderCode || '';
+  const requestedModelCode = (parsedBody.data.modelCode || '').toUpperCase();
   const hasRequestedModelGeometry = Boolean(KEYPAD_MODEL_GEOMETRIES[requestedModelCode]);
-  const requestedSlotIdsFromConfiguration = getOrderedSlotIdsFromConfiguration(body?.configuration);
+  const requestedSlotIdsFromConfiguration = getOrderedSlotIdsFromConfiguration(parsedBody.data.configuration);
   const requestedSlotIdsFromModel = hasRequestedModelGeometry
     ? getSlotIdsForModel(requestedModelCode)
     : [];
@@ -169,7 +165,7 @@ export async function POST(request: Request) {
     ? requestedSlotIdsFromModel
     : requestedSlotIdsFromConfiguration;
 
-  const configurationValidation = validateAndNormalizeConfigurationInput(body?.configuration, {
+  const configurationValidation = validateAndNormalizeConfigurationInput(parsedBody.data.configuration, {
     requireComplete: true,
     slotIds: slotIdsForValidation.length > 0 ? slotIdsForValidation : undefined,
   });

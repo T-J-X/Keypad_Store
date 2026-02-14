@@ -265,7 +265,6 @@ export default function ShopClient({
   const isCatalogWideSection = isLandingSection || isAllSection;
   const isIconsSection = activeSection === 'button-inserts';
   const isKeypadsSection = activeSection === 'keypads';
-  const isAllIconsView = isIconsSection && activeCategorySlugs.length === 0;
 
   useEffect(() => {
     const params = new URLSearchParams();
