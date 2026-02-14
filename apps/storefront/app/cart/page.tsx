@@ -250,6 +250,7 @@ export default function CartPage() {
             <ul className="divide-y divide-white/10">
               {order.lines.map((line) => {
                 const productSlug = line.productVariant?.product?.slug;
+                const encodedProductSlug = productSlug ? encodeURIComponent(productSlug) : null;
                 const modelCode = resolvePkpModelCode(
                   productSlug ?? '',
                   line.productVariant?.product?.name ?? line.productVariant?.name ?? '',
@@ -291,8 +292,8 @@ export default function CartPage() {
                       return rows;
                     }, [])
                   : [];
-                const editConfigurationHref = hasConfiguration && productSlug
-                  ? `/configurator/keypad/${productSlug}?lineId=${encodeURIComponent(line.id)}`
+                const editConfigurationHref = hasConfiguration && encodedProductSlug
+                  ? `/configurator/keypad/${encodedProductSlug}?lineId=${encodeURIComponent(line.id)}`
                   : null;
                 const isUpdatingLine = activeLineId === line.id;
 
@@ -319,8 +320,8 @@ export default function CartPage() {
                     </div>
 
                     <div className="min-w-0 flex-1">
-                      {productSlug ? (
-                        <Link href={`/shop/product/${productSlug}`} className="text-sm font-semibold text-white transition hover:underline">
+                      {encodedProductSlug ? (
+                        <Link href={`/shop/product/${encodedProductSlug}`} className="text-sm font-semibold text-white transition hover:underline">
                           {line.productVariant?.name || line.productVariant?.product?.name || 'Product'}
                         </Link>
                       ) : (

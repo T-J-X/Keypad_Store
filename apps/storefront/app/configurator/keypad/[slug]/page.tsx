@@ -1,31 +1,33 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
-import { Suspense } from 'react';
+import { Suspense, cache } from 'react';
 import KeypadConfigurator from '../../../../components/configurator/KeypadConfigurator';
 import { resolveKeypadShellAssetPath } from '../../../../lib/keypadShellAsset';
 import { resolvePkpModelCode } from '../../../../lib/keypadUtils';
 import { fetchKeypadProducts, fetchProductBySlug } from '../../../../lib/vendure.server';
 
-async function fetchKeypadForSlug(slug: string) {
+const fetchKeypadForSlug = cache(async (slug: string) => {
   const normalizedInput = slug.trim();
   if (!normalizedInput) return null;
+
+  const requestedModelCode = resolvePkpModelCode(normalizedInput, normalizedInput);
+  const keypadsPromise = requestedModelCode ? fetchKeypadProducts() : null;
 
   const bySlug = await fetchProductBySlug(normalizedInput);
   if (bySlug?.customFields?.isKeypadProduct) {
     return bySlug;
   }
 
-  const requestedModelCode = resolvePkpModelCode(normalizedInput, normalizedInput);
-  if (!requestedModelCode) {
+  if (!requestedModelCode || !keypadsPromise) {
     return null;
   }
 
-  const keypads = await fetchKeypadProducts();
+  const keypads = await keypadsPromise;
   return keypads.find((keypad) => {
     const keypadModelCode = resolvePkpModelCode(keypad.slug, keypad.name);
     return keypadModelCode === requestedModelCode;
   }) ?? null;
-}
+});
 
 export async function generateMetadata({
   params,
@@ -85,8 +87,7 @@ async function ConfiguratorModelContent({
   paramsPromise: Promise<{ slug: string }>;
 }) {
   const resolved = await paramsPromise;
-  const requestedSlug = resolved.slug.trim();
-  const product = await fetchKeypadForSlug(requestedSlug);
+  const product = await fetchKeypadForSlug(resolved.slug);
   if (!product) return notFound();
 
   const modelCode = resolvePkpModelCode(product.slug, product.name) || product.name.toUpperCase();

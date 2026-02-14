@@ -36,9 +36,12 @@ export default function KeypadCard({
 }) {
   const image = product.featuredAsset?.preview ?? product.featuredAsset?.source ?? '';
   const modelCode = resolvePkpModelCode(product.slug, product.name) || product.name;
+  const productSlug = (product.slug || modelCode).trim();
+  const encodedProductSlug = encodeURIComponent(productSlug);
   const description = resolveDescription(modelCode);
   const isShopCard = mode === 'shop';
-  const detailHref = learnMoreHref ?? `/shop/product/${product.slug}`;
+  const detailHref = learnMoreHref ?? `/shop/product/${encodedProductSlug}`;
+  const configuratorHref = `/configurator/keypad/${encodedProductSlug}`;
   const mediaHeightClass = isShopCard ? 'h-56' : 'h-44';
   const mediaPaddingClass = isShopCard ? 'p-5' : 'p-4';
 
@@ -92,7 +95,7 @@ export default function KeypadCard({
               Learn more
             </Link>
             <Link
-              href={`/configurator/keypad/${product.slug}`}
+              href={configuratorHref}
               className={`${buttonPrimaryClass} w-full sm:w-auto`}
             >
               Customize now
@@ -100,7 +103,7 @@ export default function KeypadCard({
           </div>
         ) : (
           <Link
-            href={`/configurator/keypad/${product.slug}`}
+            href={configuratorHref}
             className={`${buttonPrimaryClass} w-fit`}
           >
             Configure now
