@@ -599,8 +599,8 @@ export default function Navbar() {
                     placeholder="Search inserts, keypads, IDs"
                     aria-label="Search products"
                     className={[
-                      'w-full rounded-full border px-4 py-2 text-sm outline-none transition',
-                      'border-white/15 bg-white/[0.08] text-white placeholder:text-white/50 focus:border-white/35 focus:ring-2 focus:ring-white/20',
+                      'w-full rounded-full input input-dark px-4 py-2 text-sm outline-none transition',
+                      'placeholder:text-panel-muted',
                     ].join(' ')}
                   />
                   <button
@@ -703,7 +703,7 @@ export default function Navbar() {
           aria-modal="true"
           aria-label="Mobile navigation"
           ref={menuPanelRef}
-          className={`absolute inset-y-0 left-0 flex w-[90vw] max-w-[22rem] flex-col overflow-y-auto overscroll-contain border-r border-white/12 bg-[#060a10] px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-5 text-white shadow-[0_24px_58px_rgba(0,0,0,0.55)] transition-transform duration-300 ${isMenuOpen ? 'translate-x-0' : '-translate-x-full'
+          className={`absolute inset-y-0 left-0 flex w-[90vw] max-w-[22rem] flex-col overflow-y-auto overscroll-contain border-r border-panel-border bg-panel px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-5 text-white shadow-[0_24px_58px_rgba(0,0,0,0.55)] transition-transform duration-300 ${isMenuOpen ? 'translate-x-0' : '-translate-x-full'
             }`}
         >
           <div className="mb-7 flex items-center justify-between">
@@ -724,7 +724,7 @@ export default function Navbar() {
             <Link
               href="/shop"
               onClick={() => setIsMenuOpen(false)}
-              className="mt-2 inline-flex min-h-12 w-full items-center gap-2 rounded-xl border border-white/15 bg-white/[0.05] px-4 py-3 text-sm font-medium text-white transition hover:bg-white/[0.1] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/35 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
+              className="mt-2 inline-flex min-h-12 w-full items-center gap-2 rounded-xl input input-dark px-4 py-3 text-sm font-medium text-white transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/35 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
             >
               <Search className="h-4 w-4" />
               Search products

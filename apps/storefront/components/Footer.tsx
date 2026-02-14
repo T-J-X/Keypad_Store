@@ -41,7 +41,7 @@ const footerGroups = [
 
 export default function Footer() {
   return (
-    <footer className="mt-20 border-t border-white/10 bg-slate-950 text-white">
+    <footer className="mt-20 border-t border-panel-border bg-panel text-white">
       <div className="mx-auto w-full max-w-7xl px-6 pb-10 pt-14 lg:px-8">
         <div className="mb-10 rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-6 backdrop-blur">
           <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
@@ -49,7 +49,7 @@ export default function Footer() {
               <div className="text-[10px] font-semibold uppercase tracking-widest text-white/50">Keypad Co.</div>
               <div className="mt-2 text-xl font-semibold tracking-tight">Precision hardware for demanding control systems.</div>
             </div>
-            <div className="text-sm text-white/70">Frontend `:3001` • Vendure `:3000`</div>
+            <div className="text-sm text-panel-muted">Frontend `:3001` • Vendure `:3000`</div>
           </div>
         </div>
 
@@ -76,15 +76,15 @@ export default function Footer() {
             <p className="text-sm text-white/70">
               Stay in the loop on new keypad launches, insert drops, and configurator updates.
             </p>
-            <form className="rounded-full border border-white/18 bg-white/[0.04] p-1">
+            <form className="rounded-full border border-panel-border bg-panel-light p-1">
               <div className="flex items-center gap-2">
                 <input
-                  className="w-full bg-transparent px-3 py-2 text-sm text-white outline-none placeholder:text-white/45"
+                  className="input input-dark w-full border-none bg-transparent px-3 py-2 shadow-none focus:ring-0"
                   placeholder="you@company.com"
                   aria-label="Email address"
                 />
                 <button
-                  className="rounded-full bg-white px-4 py-2 text-xs font-semibold uppercase tracking-wide text-slate-950 transition hover:bg-white/85"
+                  className="btn-primary rounded-full px-4 py-2 text-xs"
                   type="button"
                 >
                   Join
