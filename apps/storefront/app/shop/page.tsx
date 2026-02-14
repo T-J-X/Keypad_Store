@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import ShopClient from '../../components/ShopClient';
+import type { IconProduct, KeypadProduct, VendureAsset, VendureProductVariant } from '../../lib/vendure';
 import { fetchIconProducts, fetchIconProductsPage, fetchKeypadProducts, fetchShopLandingContent } from '../../lib/vendure.server';
 
 type SearchParams = {
@@ -161,6 +162,61 @@ function parseCategorySlugs(
   return catParam ? [catParam] : [];
 }
 
+function pickAssetFields(asset: VendureAsset | null | undefined): VendureAsset | null {
+  if (!asset) return null;
+  return {
+    id: asset.id,
+    preview: asset.preview,
+    source: asset.source,
+    name: asset.name,
+  };
+}
+
+function pickIconVariantFields(variant: VendureProductVariant | null | undefined): VendureProductVariant[] {
+  if (!variant) return [];
+  return [
+    {
+      id: variant.id,
+      priceWithTax: variant.priceWithTax ?? null,
+      currencyCode: variant.currencyCode ?? null,
+    },
+  ];
+}
+
+function pickIconCardFields(icon: IconProduct): IconProduct {
+  return {
+    id: icon.id,
+    name: icon.name,
+    slug: icon.slug,
+    featuredAsset: pickAssetFields(icon.featuredAsset),
+    variants: pickIconVariantFields(icon.variants?.[0]),
+    customFields: {
+      iconId: icon.customFields?.iconId,
+      iconCategories: icon.customFields?.iconCategories ?? [],
+    },
+  };
+}
+
+function pickCategorySourceIconFields(icon: IconProduct): IconProduct {
+  return {
+    id: icon.id,
+    name: icon.name,
+    slug: icon.slug,
+    customFields: {
+      iconCategories: icon.customFields?.iconCategories ?? [],
+    },
+  };
+}
+
+function pickKeypadCardFields(keypad: KeypadProduct): KeypadProduct {
+  return {
+    id: keypad.id,
+    name: keypad.name,
+    slug: keypad.slug,
+    featuredAsset: pickAssetFields(keypad.featuredAsset),
+  };
+}
+
 export default function ShopPage({
   searchParams
 }: {
@@ -207,9 +263,10 @@ async function ShopPageContent({
   const enableIconsPagination =
     (section === 'button-inserts' && selectedCategories.length === 0) || section === 'all';
 
-  let icons;
-  let categorySourceIcons;
+  let icons: IconProduct[] = [];
+  let categorySourceIcons: IconProduct[] = [];
   let pagination: { page: number; take: number; totalItems: number } | null = null;
+  const allIconsPromise = fetchIconProducts();
   const keypadsPromise = fetchKeypadProducts();
   const shopLandingContentPromise = fetchShopLandingContent();
 
@@ -231,27 +288,29 @@ async function ShopPageContent({
       });
     }
 
-    icons = pagedIcons.items;
-    categorySourceIcons = await fetchIconProducts();
+    const allIcons = await allIconsPromise;
+    icons = pagedIcons.items.map(pickIconCardFields);
+    categorySourceIcons = allIcons.map(pickCategorySourceIconFields);
     pagination = {
       page: safePage,
       take: requestedTake,
       totalItems: pagedIcons.totalItems,
     };
   } else {
-    icons = await fetchIconProducts();
-    categorySourceIcons = icons;
+    const allIcons = await allIconsPromise;
+    icons = allIcons.map(pickIconCardFields);
+    categorySourceIcons = allIcons.map(pickCategorySourceIconFields);
   }
 
-  const keypads = await keypadsPromise;
-  const baseShopConfig = await shopLandingContentPromise;
+  const [keypads, baseShopConfig] = await Promise.all([keypadsPromise, shopLandingContentPromise]);
+  const trimmedKeypads = keypads.map(pickKeypadCardFields);
 
   return (
     <div className="mx-auto w-full max-w-[88rem] px-4 pb-12 pt-8 sm:px-6">
       <div className="rounded-3xl border border-[#0f2c5a] bg-[radial-gradient(130%_130%_at_50%_0%,#1b5dae_0%,#0e2a55_36%,#050f23_100%)] p-4 shadow-[0_34px_100px_rgba(2,10,28,0.45)] sm:p-6">
         <ShopClient
           icons={icons}
-          keypads={keypads}
+          keypads={trimmedKeypads}
           baseShopConfig={baseShopConfig}
           categorySourceIcons={categorySourceIcons}
           initialQuery={query}

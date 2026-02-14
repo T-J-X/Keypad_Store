@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { FormEvent, useEffect, useMemo, useState } from 'react';
+import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import ConfiguredKeypadThumbnail from '../../components/configurator/ConfiguredKeypadThumbnail';
 import { notifyCartUpdated } from '../../lib/cartEvents';
 import {
@@ -83,6 +83,25 @@ type IconCatalogPayload = {
   }>;
 };
 
+type CheckoutField = 'email' | 'firstName' | 'lastName' | 'streetLine1' | 'city' | 'postalCode' | 'countryCode';
+
+type CheckoutFieldErrors = Partial<Record<CheckoutField, string>>;
+
+type CheckoutSelectionErrors = {
+  shippingMethodId?: string;
+  paymentMethodCode?: string;
+};
+
+const REQUIRED_FIELD_ORDER: CheckoutField[] = [
+  'email',
+  'firstName',
+  'lastName',
+  'streetLine1',
+  'city',
+  'postalCode',
+  'countryCode',
+];
+
 export default function CheckoutPage() {
   const router = useRouter();
 
@@ -108,6 +127,78 @@ export default function CheckoutPage() {
 
   const [shippingMethodId, setShippingMethodId] = useState('');
   const [paymentMethodCode, setPaymentMethodCode] = useState('');
+  const [fieldErrors, setFieldErrors] = useState<CheckoutFieldErrors>({});
+  const [selectionErrors, setSelectionErrors] = useState<CheckoutSelectionErrors>({});
+  const emailRef = useRef<HTMLInputElement | null>(null);
+  const firstNameRef = useRef<HTMLInputElement | null>(null);
+  const lastNameRef = useRef<HTMLInputElement | null>(null);
+  const streetLine1Ref = useRef<HTMLInputElement | null>(null);
+  const cityRef = useRef<HTMLInputElement | null>(null);
+  const postalCodeRef = useRef<HTMLInputElement | null>(null);
+  const countryCodeRef = useRef<HTMLSelectElement | null>(null);
+
+  const clearFieldError = (field: CheckoutField) => {
+    setFieldErrors((current) => {
+      if (!current[field]) return current;
+      const next = { ...current };
+      delete next[field];
+      return next;
+    });
+  };
+
+  const clearSelectionError = (field: keyof CheckoutSelectionErrors) => {
+    setSelectionErrors((current) => {
+      if (!current[field]) return current;
+      const next = { ...current };
+      delete next[field];
+      return next;
+    });
+  };
+
+  const validateFields = () => {
+    const nextErrors: CheckoutFieldErrors = {};
+    const trimmedEmail = email.trim();
+    if (!trimmedEmail) {
+      nextErrors.email = 'Enter your email address.';
+    } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+      nextErrors.email = 'Enter a valid email address.';
+    }
+    if (!firstName.trim()) nextErrors.firstName = 'Enter your first name.';
+    if (!lastName.trim()) nextErrors.lastName = 'Enter your last name.';
+    if (!streetLine1.trim()) nextErrors.streetLine1 = 'Enter your address line 1.';
+    if (!city.trim()) nextErrors.city = 'Enter your city.';
+    if (!postalCode.trim()) nextErrors.postalCode = 'Enter your postal code.';
+    if (!countryCode.trim()) nextErrors.countryCode = 'Select your country.';
+    return nextErrors;
+  };
+
+  const focusField = (field: CheckoutField) => {
+    switch (field) {
+      case 'email':
+        emailRef.current?.focus();
+        break;
+      case 'firstName':
+        firstNameRef.current?.focus();
+        break;
+      case 'lastName':
+        lastNameRef.current?.focus();
+        break;
+      case 'streetLine1':
+        streetLine1Ref.current?.focus();
+        break;
+      case 'city':
+        cityRef.current?.focus();
+        break;
+      case 'postalCode':
+        postalCodeRef.current?.focus();
+        break;
+      case 'countryCode':
+        countryCodeRef.current?.focus();
+        break;
+      default:
+        break;
+    }
+  };
 
   useEffect(() => {
     let cancelled = false;
@@ -220,19 +311,6 @@ export default function CheckoutPage() {
     };
   }, [order, shippingMethodId, shippingMethods]);
 
-  const canSubmit = Boolean(
-    order
-      && shippingMethodId
-      && paymentMethodCode
-      && email.trim()
-      && firstName.trim()
-      && lastName.trim()
-      && streetLine1.trim()
-      && city.trim()
-      && postalCode.trim()
-      && countryCode.trim(),
-  );
-
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
 
@@ -241,11 +319,29 @@ export default function CheckoutPage() {
       return;
     }
 
-    if (!canSubmit) {
-      setError('Please complete all required checkout fields.');
+    const nextFieldErrors = validateFields();
+    const nextSelectionErrors: CheckoutSelectionErrors = {};
+    if (!shippingMethodId) nextSelectionErrors.shippingMethodId = 'Select a shipping method.';
+    if (!paymentMethodCode) nextSelectionErrors.paymentMethodCode = 'Select a payment method.';
+
+    if (Object.keys(nextFieldErrors).length > 0 || Object.keys(nextSelectionErrors).length > 0) {
+      setFieldErrors(nextFieldErrors);
+      setSelectionErrors(nextSelectionErrors);
+      setError('Please correct the highlighted fields and try again.');
+
+      const firstFieldError = REQUIRED_FIELD_ORDER.find((field) => Boolean(nextFieldErrors[field]));
+      if (firstFieldError) {
+        focusField(firstFieldError);
+      } else if (nextSelectionErrors.shippingMethodId) {
+        document.querySelector<HTMLInputElement>('input[name="shippingMethod"]')?.focus();
+      } else if (nextSelectionErrors.paymentMethodCode) {
+        document.querySelector<HTMLInputElement>('input[name="paymentMethod"]')?.focus();
+      }
       return;
     }
 
+    setFieldErrors({});
+    setSelectionErrors({});
     setIsSubmitting(true);
     setError(null);
 
@@ -303,19 +399,26 @@ export default function CheckoutPage() {
           href="/cart"
           className="inline-flex items-center justify-center rounded-full border border-white/30 px-4 py-2 text-sm font-semibold text-blue-50 transition hover:border-white hover:bg-white/10"
         >
-          Back to cart
+          Back to Cart
         </Link>
       </div>
 
       {isLoading ? (
-        <div className="card-soft border-white/12 bg-[#081a35]/72 p-6 text-sm text-blue-100/80">Loading checkout...</div>
+        <div className="card-soft border-white/12 bg-[#081a35]/72 p-6 text-sm text-blue-100/80">Loading checkout…</div>
       ) : null}
 
       {!isLoading && error ? (
-        <div className="card-soft border border-rose-400/45 bg-rose-950/35 p-6 text-sm font-medium text-rose-100">{error}</div>
+        <div
+          role="alert"
+          aria-live="polite"
+          aria-atomic="true"
+          className="card-soft border border-rose-400/45 bg-rose-950/35 p-6 text-sm font-medium text-rose-100"
+        >
+          {error}
+        </div>
       ) : null}
 
-      {!isLoading && !error && !order ? (
+      {!isLoading && !order ? (
         <div className="card-soft border-white/12 bg-[#081a35]/72 p-8 text-center">
           <p className="text-base font-semibold text-white">Your cart is empty.</p>
           <p className="mt-2 text-sm text-blue-100/75">Add items before starting checkout.</p>
@@ -330,7 +433,7 @@ export default function CheckoutPage() {
         </div>
       ) : null}
 
-      {!isLoading && !error && order ? (
+      {!isLoading && order ? (
         <form onSubmit={onSubmit} className="grid gap-6 lg:grid-cols-[minmax(0,1fr)_340px]">
           <section className="card-soft space-y-6 border-white/12 bg-[#081a35]/72 p-5 text-blue-50">
             {order.lines.length > 0 ? (
@@ -405,25 +508,88 @@ export default function CheckoutPage() {
                 <label className="sm:col-span-2">
                   <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-blue-100/70">Email</span>
                   <input
+                    id="checkout-email"
+                    ref={emailRef}
+                    name="email"
                     type="email"
                     value={email}
-                    onChange={(event) => setEmail(event.target.value)}
+                    onChange={(event) => {
+                      setEmail(event.target.value);
+                      clearFieldError('email');
+                    }}
                     required
                     className="input"
                     placeholder="you@company.com"
+                    autoComplete="email"
+                    spellCheck={false}
+                    aria-invalid={fieldErrors.email ? 'true' : undefined}
+                    aria-describedby={fieldErrors.email ? 'checkout-email-error' : undefined}
                   />
+                  {fieldErrors.email ? (
+                    <span id="checkout-email-error" role="alert" className="mt-1 block text-xs font-semibold text-rose-200">
+                      {fieldErrors.email}
+                    </span>
+                  ) : null}
                 </label>
                 <label>
                   <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-blue-100/70">First name</span>
-                  <input type="text" value={firstName} onChange={(event) => setFirstName(event.target.value)} required className="input" />
+                  <input
+                    id="checkout-first-name"
+                    ref={firstNameRef}
+                    name="firstName"
+                    type="text"
+                    value={firstName}
+                    onChange={(event) => {
+                      setFirstName(event.target.value);
+                      clearFieldError('firstName');
+                    }}
+                    required
+                    className="input"
+                    autoComplete="given-name"
+                    aria-invalid={fieldErrors.firstName ? 'true' : undefined}
+                    aria-describedby={fieldErrors.firstName ? 'checkout-first-name-error' : undefined}
+                  />
+                  {fieldErrors.firstName ? (
+                    <span id="checkout-first-name-error" role="alert" className="mt-1 block text-xs font-semibold text-rose-200">
+                      {fieldErrors.firstName}
+                    </span>
+                  ) : null}
                 </label>
                 <label>
                   <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-blue-100/70">Last name</span>
-                  <input type="text" value={lastName} onChange={(event) => setLastName(event.target.value)} required className="input" />
+                  <input
+                    id="checkout-last-name"
+                    ref={lastNameRef}
+                    name="lastName"
+                    type="text"
+                    value={lastName}
+                    onChange={(event) => {
+                      setLastName(event.target.value);
+                      clearFieldError('lastName');
+                    }}
+                    required
+                    className="input"
+                    autoComplete="family-name"
+                    aria-invalid={fieldErrors.lastName ? 'true' : undefined}
+                    aria-describedby={fieldErrors.lastName ? 'checkout-last-name-error' : undefined}
+                  />
+                  {fieldErrors.lastName ? (
+                    <span id="checkout-last-name-error" role="alert" className="mt-1 block text-xs font-semibold text-rose-200">
+                      {fieldErrors.lastName}
+                    </span>
+                  ) : null}
                 </label>
                 <label className="sm:col-span-2">
                   <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-blue-100/70">Phone (optional)</span>
-                  <input type="tel" value={phoneNumber} onChange={(event) => setPhoneNumber(event.target.value)} className="input" />
+                  <input
+                    id="checkout-phone"
+                    name="phoneNumber"
+                    type="tel"
+                    value={phoneNumber}
+                    onChange={(event) => setPhoneNumber(event.target.value)}
+                    className="input"
+                    autoComplete="tel"
+                  />
                 </label>
               </div>
             </div>
@@ -433,32 +599,127 @@ export default function CheckoutPage() {
               <div className="mt-3 grid gap-3 sm:grid-cols-2">
                 <label className="sm:col-span-2">
                   <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-blue-100/70">Address line 1</span>
-                  <input type="text" value={streetLine1} onChange={(event) => setStreetLine1(event.target.value)} required className="input" />
+                  <input
+                    id="checkout-street-line-1"
+                    ref={streetLine1Ref}
+                    name="streetLine1"
+                    type="text"
+                    value={streetLine1}
+                    onChange={(event) => {
+                      setStreetLine1(event.target.value);
+                      clearFieldError('streetLine1');
+                    }}
+                    required
+                    className="input"
+                    autoComplete="address-line1"
+                    aria-invalid={fieldErrors.streetLine1 ? 'true' : undefined}
+                    aria-describedby={fieldErrors.streetLine1 ? 'checkout-street-line-1-error' : undefined}
+                  />
+                  {fieldErrors.streetLine1 ? (
+                    <span id="checkout-street-line-1-error" role="alert" className="mt-1 block text-xs font-semibold text-rose-200">
+                      {fieldErrors.streetLine1}
+                    </span>
+                  ) : null}
                 </label>
                 <label className="sm:col-span-2">
                   <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-blue-100/70">Address line 2 (optional)</span>
-                  <input type="text" value={streetLine2} onChange={(event) => setStreetLine2(event.target.value)} className="input" />
+                  <input
+                    id="checkout-street-line-2"
+                    name="streetLine2"
+                    type="text"
+                    value={streetLine2}
+                    onChange={(event) => setStreetLine2(event.target.value)}
+                    className="input"
+                    autoComplete="address-line2"
+                  />
                 </label>
                 <label>
                   <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-blue-100/70">City</span>
-                  <input type="text" value={city} onChange={(event) => setCity(event.target.value)} required className="input" />
+                  <input
+                    id="checkout-city"
+                    ref={cityRef}
+                    name="city"
+                    type="text"
+                    value={city}
+                    onChange={(event) => {
+                      setCity(event.target.value);
+                      clearFieldError('city');
+                    }}
+                    required
+                    className="input"
+                    autoComplete="address-level2"
+                    aria-invalid={fieldErrors.city ? 'true' : undefined}
+                    aria-describedby={fieldErrors.city ? 'checkout-city-error' : undefined}
+                  />
+                  {fieldErrors.city ? (
+                    <span id="checkout-city-error" role="alert" className="mt-1 block text-xs font-semibold text-rose-200">
+                      {fieldErrors.city}
+                    </span>
+                  ) : null}
                 </label>
                 <label>
                   <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-blue-100/70">Province/State</span>
-                  <input type="text" value={province} onChange={(event) => setProvince(event.target.value)} className="input" />
+                  <input
+                    id="checkout-province"
+                    name="province"
+                    type="text"
+                    value={province}
+                    onChange={(event) => setProvince(event.target.value)}
+                    className="input"
+                    autoComplete="address-level1"
+                  />
                 </label>
                 <label>
                   <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-blue-100/70">Postal code</span>
-                  <input type="text" value={postalCode} onChange={(event) => setPostalCode(event.target.value)} required className="input" />
+                  <input
+                    id="checkout-postal-code"
+                    ref={postalCodeRef}
+                    name="postalCode"
+                    type="text"
+                    value={postalCode}
+                    onChange={(event) => {
+                      setPostalCode(event.target.value);
+                      clearFieldError('postalCode');
+                    }}
+                    required
+                    className="input"
+                    autoComplete="postal-code"
+                    aria-invalid={fieldErrors.postalCode ? 'true' : undefined}
+                    aria-describedby={fieldErrors.postalCode ? 'checkout-postal-code-error' : undefined}
+                  />
+                  {fieldErrors.postalCode ? (
+                    <span id="checkout-postal-code-error" role="alert" className="mt-1 block text-xs font-semibold text-rose-200">
+                      {fieldErrors.postalCode}
+                    </span>
+                  ) : null}
                 </label>
                 <label>
                   <span className="mb-1 block text-xs font-semibold uppercase tracking-wide text-blue-100/70">Country</span>
-                  <select value={countryCode} onChange={(event) => setCountryCode(event.target.value)} className="input" required>
+                  <select
+                    id="checkout-country-code"
+                    ref={countryCodeRef}
+                    name="countryCode"
+                    value={countryCode}
+                    onChange={(event) => {
+                      setCountryCode(event.target.value);
+                      clearFieldError('countryCode');
+                    }}
+                    className="input"
+                    autoComplete="country"
+                    required
+                    aria-invalid={fieldErrors.countryCode ? 'true' : undefined}
+                    aria-describedby={fieldErrors.countryCode ? 'checkout-country-code-error' : undefined}
+                  >
                     <option value="US">United States</option>
                     <option value="GB">United Kingdom</option>
                     <option value="CA">Canada</option>
                     <option value="AU">Australia</option>
                   </select>
+                  {fieldErrors.countryCode ? (
+                    <span id="checkout-country-code-error" role="alert" className="mt-1 block text-xs font-semibold text-rose-200">
+                      {fieldErrors.countryCode}
+                    </span>
+                  ) : null}
                 </label>
               </div>
             </div>
@@ -474,7 +735,10 @@ export default function CheckoutPage() {
                         name="shippingMethod"
                         value={method.id}
                         checked={shippingMethodId === method.id}
-                        onChange={() => setShippingMethodId(method.id)}
+                        onChange={() => {
+                          setShippingMethodId(method.id);
+                          clearSelectionError('shippingMethodId');
+                        }}
                         required
                       />
                       <span>
@@ -489,6 +753,9 @@ export default function CheckoutPage() {
                     No eligible shipping methods available for this order yet.
                   </div>
                 )}
+                {selectionErrors.shippingMethodId ? (
+                  <p role="alert" className="text-xs font-semibold text-rose-200">{selectionErrors.shippingMethodId}</p>
+                ) : null}
               </div>
             </div>
 
@@ -503,7 +770,10 @@ export default function CheckoutPage() {
                         name="paymentMethod"
                         value={method.code}
                         checked={paymentMethodCode === method.code}
-                        onChange={() => setPaymentMethodCode(method.code)}
+                        onChange={() => {
+                          setPaymentMethodCode(method.code);
+                          clearSelectionError('paymentMethodCode');
+                        }}
                         required
                       />
                       <span>
@@ -517,6 +787,9 @@ export default function CheckoutPage() {
                     No eligible payment methods available for this order.
                   </div>
                 )}
+                {selectionErrors.paymentMethodCode ? (
+                  <p role="alert" className="text-xs font-semibold text-rose-200">{selectionErrors.paymentMethodCode}</p>
+                ) : null}
               </div>
             </div>
           </section>
@@ -541,10 +814,10 @@ export default function CheckoutPage() {
             </div>
             <button
               type="submit"
-              disabled={isSubmitting || !canSubmit}
+              disabled={isSubmitting}
               className="mt-5 inline-flex w-full items-center justify-center rounded-full border border-[#1EA7FF]/45 bg-[#1EA7FF]/12 px-5 py-3 text-sm font-semibold text-blue-50 transition hover:bg-[#1EA7FF]/24 disabled:cursor-not-allowed disabled:opacity-60"
             >
-              {isSubmitting ? 'Placing order...' : 'Place order'}
+              {isSubmitting ? 'Placing Order…' : 'Place Order'}
             </button>
           </aside>
         </form>

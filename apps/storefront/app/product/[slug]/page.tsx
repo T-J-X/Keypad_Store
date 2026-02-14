@@ -261,8 +261,10 @@ async function ProductDetailContent({
   paramsPromise: Promise<{ slug: string }>;
   searchParamsPromise?: Promise<ProductSearchParams>;
 }) {
-  const resolvedParams = await paramsPromise;
-  const searchParams = await searchParamsPromise;
+  const [resolvedParams, searchParams] = await Promise.all([
+    paramsPromise,
+    searchParamsPromise ?? Promise.resolve(undefined),
+  ]);
   const product = await fetchProductBySlug(resolvedParams.slug);
   if (!product) return notFound();
 

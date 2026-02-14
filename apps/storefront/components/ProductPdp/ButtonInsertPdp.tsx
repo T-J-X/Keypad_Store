@@ -297,7 +297,7 @@ export default function ButtonInsertPdp({
         priceAndStockSlot={priceAndStockSlot}
       />
 
-      <div className="mt-[75px] space-y-12">
+      <div className="mt-20 space-y-12">
         <PdpTabs panels={tabPanels} defaultTabId="overview" />
 
         <RelatedProducts products={relatedProducts} />

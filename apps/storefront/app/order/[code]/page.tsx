@@ -1,6 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { Suspense } from 'react';
+import { Suspense, use } from 'react';
 import OrderTechnicalSpecification from '../../../components/order/OrderTechnicalSpecification';
 
 type OrderSearchParams = {
@@ -48,15 +48,17 @@ export default function OrderConfirmationPage({
   );
 }
 
-async function OrderConfirmationContent({
+function OrderConfirmationContent({
   params,
   searchParams,
 }: {
   params: Promise<{ code: string }>;
   searchParams?: Promise<OrderSearchParams>;
 }) {
-  const resolvedParams = await params;
-  const resolvedSearch = (await searchParams) ?? {};
+  const [resolvedParams, resolvedSearch] = use(Promise.all([
+    params,
+    searchParams ?? Promise.resolve({} as OrderSearchParams),
+  ]));
 
   const orderCode = decodeURIComponent(resolvedParams.code || '').trim();
   const paymentMethod = toStringParam(resolvedSearch.payment) || 'card';

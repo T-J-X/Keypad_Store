@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { createContext, use, useEffect, useId, useMemo, useRef, useState } from 'react';
 import type { SlotVisualState } from '../../lib/configuratorStore';
 import type { SlotId } from '../../lib/keypadConfiguration';
 import {
@@ -12,6 +12,7 @@ import {
 } from '../../lib/keypad-layouts';
 import { assetUrl } from '../../lib/vendure';
 import BacklitGlow from './BacklitGlow';
+import { KeypadContext } from './KeypadProvider';
 
 const ROTATION_ANIMATION_MS = 360;
 const WHITE_GLOW_LUMINANCE_THRESHOLD = 0.92;
@@ -79,6 +80,17 @@ type IntrinsicSize = {
   width: number;
   height: number;
 };
+
+type PreviewInteractionContextValue = {
+  selectedSlotId: string | null;
+  hoveredSlotId: SlotId | null;
+  showSelectedGuidesOnly: boolean;
+  setSelectedSlotId: (slotId: string | null) => void;
+  setHoveredSlotId: (slotId: SlotId | null) => void;
+  setShowSelectedGuidesOnly: (next: boolean) => void;
+};
+
+const PreviewInteractionContext = createContext<PreviewInteractionContextValue | null>(null);
 
 const EMPTY_SLOT_VISUAL_STATE: SlotVisualState = {
   iconId: null,
@@ -177,27 +189,69 @@ function buildSlotBindings(layout: ModelLayout): SlotBinding[] {
   });
 }
 
+function PreviewEditStatus({
+  selectedSlot,
+  iconScaleValue,
+  iconVisibleCompValue,
+  effectiveIconMultiplier,
+  slotBindingList,
+}: {
+  selectedSlot: Slot | null;
+  iconScaleValue: number;
+  iconVisibleCompValue: number;
+  effectiveIconMultiplier: number;
+  slotBindingList: SlotBinding[];
+}) {
+  const interactions = use(PreviewInteractionContext);
+  if (!interactions) return null;
+
+  return (
+    <>
+      <div className="mt-2 text-blue-100/90">
+        Selected: {interactions.selectedSlotId ?? 'none'} · Move: Arrows {DEFAULT_POSITION_NUDGE_PX}px (Shift {FAST_POSITION_NUDGE_PX}px, Alt {DEFAULT_POSITION_NUDGE_PX}px)
+      </div>
+      <div className="mt-1 text-blue-100/90">
+        {selectedSlot
+          ? `cx ${round2(selectedSlot.cx)} · cy ${round2(selectedSlot.cy)} · insertD ${round2(selectedSlot.insertD)} · bezelD ${round2(selectedSlot.bezelD)}`
+          : 'Select a slot to see live cx/cy/insertD/bezelD values.'}
+      </div>
+      <div className="mt-1 text-blue-100/90">
+        Insert: [ ] ({DEFAULT_DIAMETER_NUDGE_PX}px, Shift {FAST_DIAMETER_NUDGE_PX}px) · Bezel: - = ({DEFAULT_DIAMETER_NUDGE_PX}px, Shift {FAST_DIAMETER_NUDGE_PX}px)
+      </div>
+      <div className="mt-1 text-blue-100/80">
+        Render: iconScale {round2(iconScaleValue)} · iconVisibleComp {round2(iconVisibleCompValue)} · effective {effectiveIconMultiplier}
+      </div>
+      <div className="mt-1 text-blue-100/80">
+        Scale: , . ({DEFAULT_ICON_SCALE_NUDGE}, Shift {FAST_ICON_SCALE_NUDGE})
+      </div>
+      <div className="mt-1 text-blue-100/80">
+        Keys: {slotBindingList.filter((binding) => binding.key).map((binding) => `${binding.key}=${binding.slotLabel}`).join(' · ')}
+      </div>
+    </>
+  );
+}
+
 export default function KeypadPreview({
-  modelCode = 'PKP-2200-SI',
+  modelCode,
   shellAssetPath,
   slots,
   activeSlotId,
   onSlotClick,
-  rotationDeg = 0,
-  iconScale = DEFAULT_ICON_SCALE,
-  iconVisibleComp = DEFAULT_ICON_VISIBLE_COMP,
-  debugMode = false,
-  editMode = false,
+  rotationDeg,
+  iconScale,
+  iconVisibleComp,
+  debugMode,
+  editMode,
   descriptionText,
-  showGlows = true,
+  showGlows,
   onRotate,
   onToggleGlows,
 }: {
   modelCode?: string;
   shellAssetPath?: string | null;
-  slots: Record<string, SlotVisualState>;
-  activeSlotId: SlotId | null;
-  onSlotClick: (slotId: SlotId) => void;
+  slots?: Record<string, SlotVisualState>;
+  activeSlotId?: SlotId | null;
+  onSlotClick?: (slotId: SlotId) => void;
   rotationDeg?: number;
   iconScale?: number;
   iconVisibleComp?: number;
@@ -208,17 +262,33 @@ export default function KeypadPreview({
   onRotate?: () => void;
   onToggleGlows?: () => void;
 }) {
-  const baseLayout = useMemo(() => getLayoutForModel(modelCode), [modelCode]);
+  const keypadContext = use(KeypadContext);
+  const resolvedModelCode = modelCode ?? keypadContext?.state.modelCode ?? 'PKP-2200-SI';
+  const resolvedShellAssetPath = shellAssetPath ?? keypadContext?.meta.keypad.shellAssetPath ?? null;
+  const resolvedSlots = slots ?? keypadContext?.state.slots ?? {};
+  const resolvedActiveSlotId = activeSlotId ?? keypadContext?.state.popupSlotId ?? null;
+  const resolvedOnSlotClick = onSlotClick ?? keypadContext?.actions.openSlot ?? (() => {});
+  const resolvedRotationDeg = rotationDeg ?? keypadContext?.state.preview.rotationDeg ?? 0;
+  const resolvedIconScale = iconScale ?? keypadContext?.state.preview.iconScale ?? DEFAULT_ICON_SCALE;
+  const resolvedIconVisibleComp = iconVisibleComp ?? keypadContext?.state.preview.iconVisibleComp ?? DEFAULT_ICON_VISIBLE_COMP;
+  const resolvedDebugMode = debugMode ?? keypadContext?.state.preview.debugMode ?? false;
+  const resolvedEditMode = editMode ?? keypadContext?.state.preview.editMode ?? false;
+  const resolvedDescriptionText = descriptionText ?? keypadContext?.state.preview.descriptionText ?? null;
+  const resolvedShowGlows = showGlows ?? keypadContext?.state.preview.showGlows ?? true;
+  const resolvedOnRotate = onRotate ?? keypadContext?.actions.rotatePreview;
+  const resolvedOnToggleGlows = onToggleGlows ?? keypadContext?.actions.togglePreviewGlows;
+
+  const baseLayout = useMemo(() => getLayoutForModel(resolvedModelCode), [resolvedModelCode]);
   const [editableLayout, setEditableLayout] = useState<ModelLayout>(() => cloneModelLayout(baseLayout));
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
   const [showSelectedGuidesOnly, setShowSelectedGuidesOnly] = useState(false);
   const [hoveredSlotId, setHoveredSlotId] = useState<SlotId | null>(null);
-  const [displayRotationDeg, setDisplayRotationDeg] = useState(rotationDeg);
-  const [editableIconScale, setEditableIconScale] = useState(() => normalizeIconScale(iconScale));
+  const [displayRotationDeg, setDisplayRotationDeg] = useState(resolvedRotationDeg);
+  const [editableIconScale, setEditableIconScale] = useState(() => normalizeIconScale(resolvedIconScale));
   const [layoutCopyStatus, setLayoutCopyStatus] = useState<'idle' | 'copied' | 'error'>('idle');
   const [tuningCopyStatus, setTuningCopyStatus] = useState<'idle' | 'copied' | 'error'>('idle');
   const [shellNaturalSize, setShellNaturalSize] = useState<IntrinsicSize | null>(null);
-  const displayRotationRef = useRef(rotationDeg);
+  const displayRotationRef = useRef(resolvedRotationDeg);
   const rotationFrameRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -226,15 +296,18 @@ export default function KeypadPreview({
   }, [baseLayout]);
 
   useEffect(() => {
-    setEditableIconScale(normalizeIconScale(iconScale));
-  }, [baseLayout.model, iconScale]);
+    setEditableIconScale(normalizeIconScale(resolvedIconScale));
+  }, [baseLayout.model, resolvedIconScale]);
 
-  const renderLayout = editMode ? editableLayout : baseLayout;
+  const renderLayout = resolvedEditMode ? editableLayout : baseLayout;
   const slotIds = useMemo(() => getSlotIdsForLayout(renderLayout), [renderLayout]);
-  const iconVisibleCompValue = useMemo(() => normalizeIconVisibleComp(iconVisibleComp), [iconVisibleComp]);
+  const iconVisibleCompValue = useMemo(
+    () => normalizeIconVisibleComp(resolvedIconVisibleComp),
+    [resolvedIconVisibleComp],
+  );
   const iconScaleValue = useMemo(
-    () => (editMode ? editableIconScale : normalizeIconScale(iconScale)),
-    [editMode, editableIconScale, iconScale],
+    () => (resolvedEditMode ? editableIconScale : normalizeIconScale(resolvedIconScale)),
+    [resolvedEditMode, editableIconScale, resolvedIconScale],
   );
   const effectiveIconMultiplier = useMemo(
     () => round2(iconScaleValue * iconVisibleCompValue),
@@ -252,7 +325,7 @@ export default function KeypadPreview({
   );
 
   useEffect(() => {
-    if (!editMode) {
+    if (!resolvedEditMode) {
       setSelectedSlotId(null);
       setShowSelectedGuidesOnly(false);
       return;
@@ -262,7 +335,7 @@ export default function KeypadPreview({
       if (previous && slotIds.includes(previous)) return previous;
       return slotIds[0] ?? null;
     });
-  }, [editMode, slotIds]);
+  }, [resolvedEditMode, slotIds]);
 
   const selectedSlot = useMemo(
     () => (selectedSlotId
@@ -276,9 +349,9 @@ export default function KeypadPreview({
   }, [displayRotationDeg]);
 
   useEffect(() => {
-    if (Math.abs(displayRotationRef.current - rotationDeg) < 0.001) return;
+    if (Math.abs(displayRotationRef.current - resolvedRotationDeg) < 0.001) return;
     if (typeof window === 'undefined') {
-      setDisplayRotationDeg(rotationDeg);
+      setDisplayRotationDeg(resolvedRotationDeg);
       return;
     }
 
@@ -288,7 +361,7 @@ export default function KeypadPreview({
     }
 
     const startRotation = displayRotationRef.current;
-    const delta = rotationDeg - startRotation;
+    const delta = resolvedRotationDeg - startRotation;
     const startTime = window.performance.now();
 
     const easeInOutCubic = (progress: number) => {
@@ -306,7 +379,7 @@ export default function KeypadPreview({
       if (progress < 1) {
         rotationFrameRef.current = window.requestAnimationFrame(tick);
       } else {
-        setDisplayRotationDeg(rotationDeg);
+        setDisplayRotationDeg(resolvedRotationDeg);
         rotationFrameRef.current = null;
       }
     };
@@ -319,10 +392,10 @@ export default function KeypadPreview({
         rotationFrameRef.current = null;
       }
     };
-  }, [rotationDeg]);
+  }, [resolvedRotationDeg]);
 
   useEffect(() => {
-    if (!editMode || typeof window === 'undefined') return;
+    if (!resolvedEditMode || typeof window === 'undefined') return;
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (isEditableTarget(event.target)) return;
@@ -407,7 +480,7 @@ export default function KeypadPreview({
     return () => {
       window.removeEventListener('keydown', onKeyDown);
     };
-  }, [editMode, selectedSlotId, slotIdByKey]);
+  }, [resolvedEditMode, selectedSlotId, slotIdByKey]);
 
   useEffect(() => {
     if (layoutCopyStatus === 'idle') return;
@@ -436,7 +509,7 @@ export default function KeypadPreview({
   }, [tuningCopyStatus]);
 
   const onCopyJson = async () => {
-    if (!editMode || typeof navigator === 'undefined' || !navigator.clipboard) {
+    if (!resolvedEditMode || typeof navigator === 'undefined' || !navigator.clipboard) {
       setLayoutCopyStatus('error');
       return;
     }
@@ -463,7 +536,7 @@ export default function KeypadPreview({
   };
 
   const onCopyTuningJson = async () => {
-    if (!editMode || typeof navigator === 'undefined' || !navigator.clipboard) {
+    if (!resolvedEditMode || typeof navigator === 'undefined' || !navigator.clipboard) {
       setTuningCopyStatus('error');
       return;
     }
@@ -481,8 +554,8 @@ export default function KeypadPreview({
     }
   };
 
-  const shellSrc = shellAssetPath ? assetUrl(shellAssetPath) : '';
-  const showCalibrationGuides = debugMode || editMode;
+  const shellSrc = resolvedShellAssetPath ? assetUrl(resolvedShellAssetPath) : '';
+  const showCalibrationGuides = resolvedDebugMode || resolvedEditMode;
   const baseW = Math.max(renderLayout.baseW, 1);
   const baseH = Math.max(renderLayout.baseH, 1);
   const hasNaturalSizeMismatch = Boolean(
@@ -530,14 +603,24 @@ export default function KeypadPreview({
   }, [shellSrc]);
 
   useEffect(() => {
-    if (!debugMode || !hasNaturalSizeMismatch || !shellNaturalSize) return;
+    if (!resolvedDebugMode || !hasNaturalSizeMismatch || !shellNaturalSize) return;
     console.warn(
       `[KeypadPreview] base size mismatch for ${renderLayout.model}: base=${baseW}x${baseH}, natural=${shellNaturalSize.width}x${shellNaturalSize.height}`,
     );
-  }, [baseH, baseW, debugMode, hasNaturalSizeMismatch, renderLayout.model, shellNaturalSize]);
+  }, [baseH, baseW, hasNaturalSizeMismatch, renderLayout.model, resolvedDebugMode, shellNaturalSize]);
+
+  const previewInteractions = useMemo<PreviewInteractionContextValue>(() => ({
+    selectedSlotId,
+    hoveredSlotId,
+    showSelectedGuidesOnly,
+    setSelectedSlotId,
+    setHoveredSlotId,
+    setShowSelectedGuidesOnly,
+  }), [hoveredSlotId, selectedSlotId, showSelectedGuidesOnly]);
 
   return (
-    <div className="card glow-isolate relative overflow-hidden border border-white/18 bg-[radial-gradient(140%_120%_at_60%_-10%,#2e79dd_0%,#17305f_36%,#0a1429_72%)] p-5 shadow-[0_28px_70px_rgba(2,9,24,0.42)] sm:p-6">
+    <PreviewInteractionContext value={previewInteractions}>
+      <div className="card glow-isolate relative overflow-hidden border border-white/18 bg-[radial-gradient(140%_120%_at_60%_-10%,#2e79dd_0%,#17305f_36%,#0a1429_72%)] p-5 shadow-[0_28px_70px_rgba(2,9,24,0.42)] sm:p-6">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
           <div className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-100/80">Command View</div>
@@ -546,17 +629,17 @@ export default function KeypadPreview({
         <div className="flex items-center gap-2">
           <button
             type="button"
-            onClick={onRotate}
+            onClick={resolvedOnRotate}
             className="inline-flex min-h-9 items-center rounded-full border border-white/24 bg-[#0a1b3a]/70 px-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-blue-100 transition hover:border-white/40 hover:bg-[#12305e]"
           >
             Rotate
           </button>
           <button
             type="button"
-            onClick={onToggleGlows}
+            onClick={resolvedOnToggleGlows}
             className="inline-flex min-h-9 items-center rounded-full border border-white/24 bg-[#0a1b3a]/70 px-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-blue-100 transition hover:border-white/40 hover:bg-[#12305e]"
           >
-            {showGlows ? 'Glows on' : 'Glows off'}
+            {resolvedShowGlows ? 'Glows on' : 'Glows off'}
           </button>
           <div className="rounded-full border border-white/20 bg-[#06122a]/65 px-3 py-1 text-xs font-semibold tracking-[0.14em] text-blue-100">
             {layoutLabel}
@@ -564,7 +647,7 @@ export default function KeypadPreview({
         </div>
       </div>
 
-      {editMode ? (
+      {resolvedEditMode ? (
         <div className="mb-4 rounded-2xl border border-white/20 bg-[#071634]/70 px-4 py-3 text-xs text-blue-100/95">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="font-semibold uppercase tracking-[0.14em] text-blue-100">Edit mode</div>
@@ -596,26 +679,13 @@ export default function KeypadPreview({
               </button>
             </div>
           </div>
-          <div className="mt-2 text-blue-100/90">
-            Selected: {selectedSlotId ?? 'none'} · Move: Arrows {DEFAULT_POSITION_NUDGE_PX}px (Shift {FAST_POSITION_NUDGE_PX}px, Alt {DEFAULT_POSITION_NUDGE_PX}px)
-          </div>
-          <div className="mt-1 text-blue-100/90">
-            {selectedSlot
-              ? `cx ${round2(selectedSlot.cx)} · cy ${round2(selectedSlot.cy)} · insertD ${round2(selectedSlot.insertD)} · bezelD ${round2(selectedSlot.bezelD)}`
-              : 'Select a slot to see live cx/cy/insertD/bezelD values.'}
-          </div>
-          <div className="mt-1 text-blue-100/90">
-            Insert: [ ] ({DEFAULT_DIAMETER_NUDGE_PX}px, Shift {FAST_DIAMETER_NUDGE_PX}px) · Bezel: - = ({DEFAULT_DIAMETER_NUDGE_PX}px, Shift {FAST_DIAMETER_NUDGE_PX}px)
-          </div>
-          <div className="mt-1 text-blue-100/80">
-            Render: iconScale {round2(iconScaleValue)} · iconVisibleComp {round2(iconVisibleCompValue)} · effective {effectiveIconMultiplier}
-          </div>
-          <div className="mt-1 text-blue-100/80">
-            Scale: , . ({DEFAULT_ICON_SCALE_NUDGE}, Shift {FAST_ICON_SCALE_NUDGE})
-          </div>
-          <div className="mt-1 text-blue-100/80">
-            Keys: {slotBindingList.filter((binding) => binding.key).map((binding) => `${binding.key}=${binding.slotLabel}`).join(' · ')}
-          </div>
+          <PreviewEditStatus
+            selectedSlot={selectedSlot}
+            iconScaleValue={iconScaleValue}
+            iconVisibleCompValue={iconVisibleCompValue}
+            effectiveIconMultiplier={effectiveIconMultiplier}
+            slotBindingList={slotBindingList}
+          />
           {layoutCopyStatus !== 'idle' ? (
             <div className={`mt-1 ${layoutCopyStatus === 'copied' ? 'text-emerald-200' : 'text-rose-200'}`}>
               {layoutCopyStatus === 'copied' ? 'Layout JSON copied to clipboard.' : 'Could not copy layout JSON.'}
@@ -637,10 +707,10 @@ export default function KeypadPreview({
           {showCalibrationGuides ? (
             <div className="pointer-events-none absolute left-2 top-2 z-20 rounded bg-[#020d26]/75 px-2 py-1 text-[10px] font-semibold tracking-[0.12em] text-blue-100">
               <div>baseW {baseW} · baseH {baseH}</div>
-              {debugMode && shellNaturalSize ? (
+              {resolvedDebugMode && shellNaturalSize ? (
                 <div>naturalW {shellNaturalSize.width} · naturalH {shellNaturalSize.height}</div>
               ) : null}
-              {debugMode && hasNaturalSizeMismatch ? (
+              {resolvedDebugMode && hasNaturalSizeMismatch ? (
                 <div className="text-amber-300">WARNING: base and natural sizes differ.</div>
               ) : null}
             </div>
@@ -673,7 +743,7 @@ export default function KeypadPreview({
                   const slotEntry = renderLayout.slots.find((item) => item.id === slotId);
                   if (!slotEntry) return null;
 
-                  const slotVisual = slots[slotId] ?? EMPTY_SLOT_VISUAL_STATE;
+                  const slotVisual = resolvedSlots[slotId] ?? EMPTY_SLOT_VISUAL_STATE;
                   const matteSrc = slotVisual.matteAssetPath ? assetUrl(slotVisual.matteAssetPath) : '';
                   const ringColor = slotVisual.color;
                   const ringLuminance = colorLuminance(ringColor);
@@ -685,10 +755,10 @@ export default function KeypadPreview({
                   const iconSize = slotEntry.insertD * iconScaleValue * iconVisibleCompValue;
                   const iconX = slotEntry.cx - (iconSize / 2);
                   const iconY = slotEntry.cy - (iconSize / 2);
-                  const isActive = slotId === activeSlotId;
-                  const isSelected = editMode && slotId === selectedSlotId;
+                  const isActive = slotId === resolvedActiveSlotId;
+                  const isSelected = resolvedEditMode && slotId === selectedSlotId;
                   const showSlotGuides = showCalibrationGuides
-                    && (!showSelectedGuidesOnly || !editMode || slotId === selectedSlotId);
+                    && (!showSelectedGuidesOnly || !resolvedEditMode || slotId === selectedSlotId);
 
                   return (
                     <g
@@ -714,20 +784,20 @@ export default function KeypadPreview({
                         }
                       }}
                       onClick={() => {
-                        if (editMode) {
+                        if (resolvedEditMode) {
                           setSelectedSlotId(slotId);
                           return;
                         }
-                        onSlotClick(slotId as SlotId);
+                        resolvedOnSlotClick(slotId as SlotId);
                       }}
                       onKeyDown={(event) => {
                         if (event.key === 'Enter' || event.key === ' ') {
                           event.preventDefault();
-                          if (editMode) {
+                          if (resolvedEditMode) {
                             setSelectedSlotId(slotId);
                             return;
                           }
-                          onSlotClick(slotId as SlotId);
+                          resolvedOnSlotClick(slotId as SlotId);
                         }
                       }}
                     >
@@ -744,7 +814,7 @@ export default function KeypadPreview({
                         />
                       ) : null}
 
-                      {ringColor && showGlows ? (
+                      {ringColor && resolvedShowGlows ? (
                         <BacklitGlow
                           idBase={`${safeSvgIdPrefix}-slot-${slotId}`}
                           cx={slotEntry.cx}
@@ -874,8 +944,9 @@ export default function KeypadPreview({
 
       <div className="mt-4 space-y-1 text-xs text-white/90">
         <p className="text-[#f0f7ff]">Select a button insert for each slot, then pick a ring glow color to preview your final keypad layout.</p>
-        {descriptionText ? <p className="text-[#d7e8ff]/90">{descriptionText}</p> : null}
+        {resolvedDescriptionText ? <p className="text-[#d7e8ff]/90">{resolvedDescriptionText}</p> : null}
       </div>
     </div>
+    </PreviewInteractionContext>
   );
 }

@@ -704,7 +704,7 @@ export default function Navbar() {
           aria-modal="true"
           aria-label="Mobile navigation"
           ref={menuPanelRef}
-          className={`absolute inset-y-0 left-0 flex w-[90vw] max-w-[22rem] flex-col overflow-y-auto border-r border-white/12 bg-[#060a10] px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-5 text-white shadow-[0_24px_58px_rgba(0,0,0,0.55)] transition-transform duration-300 ${
+          className={`absolute inset-y-0 left-0 flex w-[90vw] max-w-[22rem] flex-col overflow-y-auto overscroll-contain border-r border-white/12 bg-[#060a10] px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-5 text-white shadow-[0_24px_58px_rgba(0,0,0,0.55)] transition-transform duration-300 ${
             isMenuOpen ? 'translate-x-0' : '-translate-x-full'
           }`}
         >
