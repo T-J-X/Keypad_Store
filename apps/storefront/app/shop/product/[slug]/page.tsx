@@ -200,7 +200,6 @@ function resolveRelatedProducts(currentProduct: CatalogProduct, icons: IconProdu
   );
 
   const candidates = icons.filter((icon) => icon.id !== currentProduct.id && icon.slug !== currentProduct.slug);
-  const byId = new Map(candidates.map((icon) => [icon.id, icon]));
 
   const ranked = candidates
     .map((candidate) => {
@@ -222,13 +221,14 @@ function resolveRelatedProducts(currentProduct: CatalogProduct, icons: IconProdu
     .map((entry) => entry.product);
 
   if (ranked.length === 3) return ranked;
+  const rankedIds = new Set(ranked.map((item) => item.id));
 
   const fallback = candidates
-    .filter((item) => !ranked.some((rankedItem) => rankedItem.id === item.id))
+    .filter((item) => !rankedIds.has(item.id))
     .sort((a, b) => a.name.localeCompare(b.name))
     .slice(0, 3 - ranked.length);
 
-  return [...ranked, ...fallback].filter((item) => byId.has(item.id)).slice(0, 3);
+  return [...ranked, ...fallback].slice(0, 3);
 }
 
 function PriceAndStockFallback({ showStock = false }: { showStock?: boolean }) {
