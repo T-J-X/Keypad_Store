@@ -20,6 +20,7 @@ import {
   getGeometryForModel,
   getSlotIdsForGeometry,
 } from '../../config/layouts/geometry';
+import { getRenderTuningForModel } from '../../lib/keypad-render-tuning';
 import ConfiguratorActions from './ConfiguratorActions';
 import ConfigurationSidebar from './ConfigurationSidebar';
 import KeypadPreview from './KeypadPreview';
@@ -80,12 +81,6 @@ function toPlainText(value: string | null | undefined) {
     .replace(/\s+/g, ' ')
     .trim();
 }
-
-const DEFAULT_PREVIEW_ICON_SCALE_BY_MODEL: Record<string, number> = {
-  'PKP-2300-SI': 1.02,
-  'PKP-2500-SI': 1.28,
-  'PKP-2600-SI': 1.28,
-};
 
 export default function Pkp2200Configurator({
   keypad,
@@ -166,16 +161,17 @@ export default function Pkp2200Configurator({
     [searchParams],
   );
   const editMode = useMemo(() => searchParams.get('edit') === '1', [searchParams]);
+  const modelRenderTuning = useMemo(() => getRenderTuningForModel(keypad.modelCode), [keypad.modelCode]);
   const previewIconScaleFromQuery = useMemo(() => {
     const raw = searchParams.get('iconScale');
     if (!raw) return undefined;
     const value = Number.parseFloat(raw);
     if (!Number.isFinite(value) || value <= 0) return undefined;
-    return Math.max(0.4, Math.min(1.26, value));
+    return Math.max(0.4, Math.min(1.68, value));
   }, [searchParams]);
   const previewIconScale = useMemo(
-    () => previewIconScaleFromQuery ?? DEFAULT_PREVIEW_ICON_SCALE_BY_MODEL[keypad.modelCode] ?? undefined,
-    [keypad.modelCode, previewIconScaleFromQuery],
+    () => previewIconScaleFromQuery ?? modelRenderTuning.iconScale,
+    [modelRenderTuning.iconScale, previewIconScaleFromQuery],
   );
   const previewRotationFromQuery = useMemo(() => {
     const value = Number.parseFloat(searchParams.get('rotationDeg') || '0');
@@ -734,6 +730,7 @@ export default function Pkp2200Configurator({
             onSlotClick={openSlotPopup}
             rotationDeg={previewRotationDeg}
             iconScale={previewIconScale}
+            iconVisibleComp={modelRenderTuning.iconVisibleComp}
             debugMode={debugMode}
             editMode={editMode}
             descriptionText={keypadDescription}

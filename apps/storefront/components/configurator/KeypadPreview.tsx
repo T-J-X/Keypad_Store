@@ -16,8 +16,13 @@ import BacklitGlow from './BacklitGlow';
 const ROTATION_ANIMATION_MS = 360;
 const WHITE_GLOW_LUMINANCE_THRESHOLD = 0.92;
 const DEFAULT_ICON_SCALE = 0.94;
+const DEFAULT_ICON_VISIBLE_COMP = 1;
 const MIN_ICON_SCALE = 0.4;
 const MAX_ICON_SCALE = 1.68;
+const MIN_ICON_VISIBLE_COMP = 0.5;
+const MAX_ICON_VISIBLE_COMP = 2;
+const DEFAULT_ICON_SCALE_NUDGE = 0.01;
+const FAST_ICON_SCALE_NUDGE = 0.05;
 const DEFAULT_POSITION_NUDGE_PX = 1;
 const FAST_POSITION_NUDGE_PX = 10;
 const DEFAULT_DIAMETER_NUDGE_PX = 1;
@@ -100,6 +105,11 @@ function normalizeIconScale(input: number | undefined) {
   return clamp(input as number, MIN_ICON_SCALE, MAX_ICON_SCALE);
 }
 
+function normalizeIconVisibleComp(input: number | undefined) {
+  if (!Number.isFinite(input)) return DEFAULT_ICON_VISIBLE_COMP;
+  return clamp(input as number, MIN_ICON_VISIBLE_COMP, MAX_ICON_VISIBLE_COMP);
+}
+
 function parseHexColor(input: string | null | undefined): [number, number, number] | null {
   if (!input) return null;
   const normalized = input.trim();
@@ -175,6 +185,7 @@ export default function KeypadPreview({
   onSlotClick,
   rotationDeg = 0,
   iconScale = DEFAULT_ICON_SCALE,
+  iconVisibleComp = DEFAULT_ICON_VISIBLE_COMP,
   debugMode = false,
   editMode = false,
   descriptionText,
@@ -189,6 +200,7 @@ export default function KeypadPreview({
   onSlotClick: (slotId: SlotId) => void;
   rotationDeg?: number;
   iconScale?: number;
+  iconVisibleComp?: number;
   debugMode?: boolean;
   editMode?: boolean;
   descriptionText?: string | null;
@@ -202,7 +214,9 @@ export default function KeypadPreview({
   const [showSelectedGuidesOnly, setShowSelectedGuidesOnly] = useState(false);
   const [hoveredSlotId, setHoveredSlotId] = useState<SlotId | null>(null);
   const [displayRotationDeg, setDisplayRotationDeg] = useState(rotationDeg);
-  const [copyStatus, setCopyStatus] = useState<'idle' | 'copied' | 'error'>('idle');
+  const [editableIconScale, setEditableIconScale] = useState(() => normalizeIconScale(iconScale));
+  const [layoutCopyStatus, setLayoutCopyStatus] = useState<'idle' | 'copied' | 'error'>('idle');
+  const [tuningCopyStatus, setTuningCopyStatus] = useState<'idle' | 'copied' | 'error'>('idle');
   const [shellNaturalSize, setShellNaturalSize] = useState<IntrinsicSize | null>(null);
   const displayRotationRef = useRef(rotationDeg);
   const rotationFrameRef = useRef<number | null>(null);
@@ -211,8 +225,21 @@ export default function KeypadPreview({
     setEditableLayout(cloneModelLayout(baseLayout));
   }, [baseLayout]);
 
+  useEffect(() => {
+    setEditableIconScale(normalizeIconScale(iconScale));
+  }, [baseLayout.model, iconScale]);
+
   const renderLayout = editMode ? editableLayout : baseLayout;
   const slotIds = useMemo(() => getSlotIdsForLayout(renderLayout), [renderLayout]);
+  const iconVisibleCompValue = useMemo(() => normalizeIconVisibleComp(iconVisibleComp), [iconVisibleComp]);
+  const iconScaleValue = useMemo(
+    () => (editMode ? editableIconScale : normalizeIconScale(iconScale)),
+    [editMode, editableIconScale, iconScale],
+  );
+  const effectiveIconMultiplier = useMemo(
+    () => round2(iconScaleValue * iconVisibleCompValue),
+    [iconScaleValue, iconVisibleCompValue],
+  );
   const slotBindingList = useMemo(() => buildSlotBindings(renderLayout), [renderLayout]);
   const slotIdByKey = useMemo(
     () => slotBindingList.reduce<Record<string, string>>((map, binding) => {
@@ -308,15 +335,15 @@ export default function KeypadPreview({
         return;
       }
 
-      if (!selectedSlotId) return;
-
       const positionStep = event.shiftKey ? FAST_POSITION_NUDGE_PX : DEFAULT_POSITION_NUDGE_PX;
       const diameterStep = event.shiftKey ? FAST_DIAMETER_NUDGE_PX : DEFAULT_DIAMETER_NUDGE_PX;
+      const iconScaleStep = event.shiftKey ? FAST_ICON_SCALE_NUDGE : DEFAULT_ICON_SCALE_NUDGE;
 
       let dx = 0;
       let dy = 0;
       let dInsert = 0;
       let dBezel = 0;
+      let dIconScale = 0;
 
       switch (event.key) {
         case 'ArrowLeft':
@@ -347,11 +374,26 @@ export default function KeypadPreview({
         case '+':
           dBezel = diameterStep;
           break;
+        case ',':
+        case '<':
+          dIconScale = -iconScaleStep;
+          break;
+        case '.':
+        case '>':
+          dIconScale = iconScaleStep;
+          break;
         default:
           return;
       }
 
       event.preventDefault();
+      if (dIconScale !== 0) {
+        setEditableIconScale((previous) => round2(clamp(previous + dIconScale, MIN_ICON_SCALE, MAX_ICON_SCALE)));
+        return;
+      }
+
+      if (!selectedSlotId) return;
+
       setEditableLayout((previous) => withUpdatedSlot(previous, selectedSlotId, (slotEntry) => ({
         ...slotEntry,
         cx: round2(slotEntry.cx + dx),
@@ -368,21 +410,34 @@ export default function KeypadPreview({
   }, [editMode, selectedSlotId, slotIdByKey]);
 
   useEffect(() => {
-    if (copyStatus === 'idle') return;
+    if (layoutCopyStatus === 'idle') return;
     if (typeof window === 'undefined') return;
 
     const timeoutId = window.setTimeout(() => {
-      setCopyStatus('idle');
+      setLayoutCopyStatus('idle');
     }, 1800);
 
     return () => {
       window.clearTimeout(timeoutId);
     };
-  }, [copyStatus]);
+  }, [layoutCopyStatus]);
+
+  useEffect(() => {
+    if (tuningCopyStatus === 'idle') return;
+    if (typeof window === 'undefined') return;
+
+    const timeoutId = window.setTimeout(() => {
+      setTuningCopyStatus('idle');
+    }, 1800);
+
+    return () => {
+      window.clearTimeout(timeoutId);
+    };
+  }, [tuningCopyStatus]);
 
   const onCopyJson = async () => {
     if (!editMode || typeof navigator === 'undefined' || !navigator.clipboard) {
-      setCopyStatus('error');
+      setLayoutCopyStatus('error');
       return;
     }
 
@@ -401,14 +456,32 @@ export default function KeypadPreview({
       };
 
       await navigator.clipboard.writeText(JSON.stringify(normalized, null, 2));
-      setCopyStatus('copied');
+      setLayoutCopyStatus('copied');
     } catch {
-      setCopyStatus('error');
+      setLayoutCopyStatus('error');
+    }
+  };
+
+  const onCopyTuningJson = async () => {
+    if (!editMode || typeof navigator === 'undefined' || !navigator.clipboard) {
+      setTuningCopyStatus('error');
+      return;
+    }
+
+    try {
+      const tuning = {
+        model: renderLayout.model,
+        iconScale: round2(editableIconScale),
+        iconVisibleComp: round2(iconVisibleCompValue),
+      };
+      await navigator.clipboard.writeText(JSON.stringify(tuning, null, 2));
+      setTuningCopyStatus('copied');
+    } catch {
+      setTuningCopyStatus('error');
     }
   };
 
   const shellSrc = shellAssetPath ? assetUrl(shellAssetPath) : '';
-  const iconScaleValue = useMemo(() => normalizeIconScale(iconScale), [iconScale]);
   const showCalibrationGuides = debugMode || editMode;
   const baseW = Math.max(renderLayout.baseW, 1);
   const baseH = Math.max(renderLayout.baseH, 1);
@@ -512,6 +585,15 @@ export default function KeypadPreview({
               >
                 Copy JSON
               </button>
+              <button
+                type="button"
+                onClick={() => {
+                  void onCopyTuningJson();
+                }}
+                className="inline-flex min-h-8 items-center rounded-full border border-white/28 bg-[#0f2a58]/80 px-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-blue-100 transition hover:border-white/45 hover:bg-[#184080]"
+              >
+                Copy Tuning JSON
+              </button>
             </div>
           </div>
           <div className="mt-2 text-blue-100/90">
@@ -526,11 +608,22 @@ export default function KeypadPreview({
             Insert: [ ] ({DEFAULT_DIAMETER_NUDGE_PX}px, Shift {FAST_DIAMETER_NUDGE_PX}px) · Bezel: - = ({DEFAULT_DIAMETER_NUDGE_PX}px, Shift {FAST_DIAMETER_NUDGE_PX}px)
           </div>
           <div className="mt-1 text-blue-100/80">
+            Render: iconScale {round2(iconScaleValue)} · iconVisibleComp {round2(iconVisibleCompValue)} · effective {effectiveIconMultiplier}
+          </div>
+          <div className="mt-1 text-blue-100/80">
+            Scale: , . ({DEFAULT_ICON_SCALE_NUDGE}, Shift {FAST_ICON_SCALE_NUDGE})
+          </div>
+          <div className="mt-1 text-blue-100/80">
             Keys: {slotBindingList.filter((binding) => binding.key).map((binding) => `${binding.key}=${binding.slotLabel}`).join(' · ')}
           </div>
-          {copyStatus !== 'idle' ? (
-            <div className={`mt-1 ${copyStatus === 'copied' ? 'text-emerald-200' : 'text-rose-200'}`}>
-              {copyStatus === 'copied' ? 'Layout JSON copied to clipboard.' : 'Could not copy JSON.'}
+          {layoutCopyStatus !== 'idle' ? (
+            <div className={`mt-1 ${layoutCopyStatus === 'copied' ? 'text-emerald-200' : 'text-rose-200'}`}>
+              {layoutCopyStatus === 'copied' ? 'Layout JSON copied to clipboard.' : 'Could not copy layout JSON.'}
+            </div>
+          ) : null}
+          {tuningCopyStatus !== 'idle' ? (
+            <div className={`mt-1 ${tuningCopyStatus === 'copied' ? 'text-emerald-200' : 'text-rose-200'}`}>
+              {tuningCopyStatus === 'copied' ? 'Tuning JSON copied to clipboard.' : 'Could not copy tuning JSON.'}
             </div>
           ) : null}
         </div>
@@ -589,7 +682,7 @@ export default function KeypadPreview({
                   const ringOuter = slotEntry.bezelD / 2;
                   const ringBand = Math.max(3, slotEntry.bezelD * 0.075);
                   const ringInner = Math.max(1, ringOuter - ringBand);
-                  const iconSize = slotEntry.insertD * iconScaleValue;
+                  const iconSize = slotEntry.insertD * iconScaleValue * iconVisibleCompValue;
                   const iconX = slotEntry.cx - (iconSize / 2);
                   const iconY = slotEntry.cy - (iconSize / 2);
                   const isActive = slotId === activeSlotId;
