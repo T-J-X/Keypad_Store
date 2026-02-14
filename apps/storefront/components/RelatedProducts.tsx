@@ -21,7 +21,7 @@ export default function RelatedProducts({
           return (
             <Link
               key={product.id}
-              href={`/product/${product.slug}`}
+              href={`/shop/product/${product.slug}`}
               className="card-soft flex h-full flex-col gap-3 p-4 transition hover:-translate-y-1 hover:shadow-soft"
             >
               <div className="overflow-hidden rounded-2xl bg-[linear-gradient(to_bottom,#f4f4f5_0%,#e4e4e7_50%,#ffffff_100%)]">

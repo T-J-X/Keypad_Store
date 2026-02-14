@@ -13,6 +13,7 @@ import {
   type IconProduct,
   type KeypadProduct,
 } from '../lib/vendure';
+import { modelCodeToPkpSlug } from '../lib/keypadUtils';
 import { useShopLandingSubcategoryIcons } from '../lib/useShopLandingSubcategoryIcons';
 import { ensureShopHubAnchor } from '../lib/shopHistory';
 import BaseShopHero from './BaseShopHero';
@@ -428,7 +429,8 @@ export default function ShopClient({
           : categorySlugValues[0];
       params.set('cat', categoryForBreadcrumb);
     }
-    return `/product/${slug}?${params.toString()}`;
+    const normalizedSlug = section === 'keypads' ? (modelCodeToPkpSlug(slug) ?? slug) : slug;
+    return `/shop/product/${encodeURIComponent(normalizedSlug)}?${params.toString()}`;
   };
 
   const toCategoryHref = (categorySlugValue: string) => {

@@ -1,10 +1,28 @@
 import type { Metadata } from 'next';
-import { notFound } from 'next/navigation';
+import { notFound, redirect } from 'next/navigation';
 import { Suspense } from 'react';
-import KeypadConfigurator from '../../../components/configurator/KeypadConfigurator';
-import { resolveKeypadShellAssetPath } from '../../../lib/keypadShellAsset';
-import { resolvePkpModelCode } from '../../../lib/keypadUtils';
-import { fetchProductBySlug } from '../../../lib/vendure.server';
+import KeypadConfigurator from '../../../../components/configurator/KeypadConfigurator';
+import { resolveKeypadShellAssetPath } from '../../../../lib/keypadShellAsset';
+import { modelCodeToPkpSlug, resolvePkpModelCode } from '../../../../lib/keypadUtils';
+import { fetchProductBySlug } from '../../../../lib/vendure.server';
+
+async function fetchKeypadForSlug(slug: string) {
+  const normalizedInput = slug.trim();
+  if (!normalizedInput) return null;
+
+  const candidates = new Set<string>([normalizedInput]);
+  const canonical = modelCodeToPkpSlug(normalizedInput);
+  if (canonical) {
+    candidates.add(canonical);
+  }
+
+  for (const candidate of candidates) {
+    const product = await fetchProductBySlug(candidate);
+    if (product) return product;
+  }
+
+  return null;
+}
 
 export async function generateMetadata({
   params,
@@ -12,14 +30,14 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const resolved = await params;
-  const product = await fetchProductBySlug(resolved.slug);
+  const product = await fetchKeypadForSlug(resolved.slug);
 
   if (!product) {
     return {
       title: 'Configurator Not Found | Keypad Store',
       description: 'The requested keypad configurator page could not be found.',
       alternates: {
-        canonical: `/configurator/${encodeURIComponent(resolved.slug)}`,
+        canonical: `/configurator/keypad/${encodeURIComponent(resolved.slug)}`,
       },
       robots: {
         index: false,
@@ -29,11 +47,12 @@ export async function generateMetadata({
   }
 
   const modelCode = resolvePkpModelCode(product.slug, product.name) || product.name.toUpperCase();
+  const canonicalSlug = modelCodeToPkpSlug(product.slug) ?? modelCodeToPkpSlug(modelCode) ?? product.slug;
   return {
     title: `${modelCode} Configurator | Keypad Store`,
     description: `Configure ${modelCode} with per-slot inserts, glow rings, and production-ready layout precision.`,
     alternates: {
-      canonical: `/configurator/${encodeURIComponent(product.slug)}`,
+      canonical: `/configurator/keypad/${encodeURIComponent(canonicalSlug)}`,
     },
   };
 }
@@ -64,16 +83,21 @@ async function ConfiguratorModelContent({
   paramsPromise: Promise<{ slug: string }>;
 }) {
   const resolved = await paramsPromise;
-  const product = await fetchProductBySlug(resolved.slug);
+  const requestedSlug = resolved.slug.trim();
+  const product = await fetchKeypadForSlug(requestedSlug);
   if (!product) return notFound();
 
   const modelCode = resolvePkpModelCode(product.slug, product.name) || product.name.toUpperCase();
+  const canonicalSlug = modelCodeToPkpSlug(product.slug) ?? modelCodeToPkpSlug(modelCode) ?? product.slug;
+  if (requestedSlug.toLowerCase() !== canonicalSlug.toLowerCase()) {
+    redirect(`/configurator/keypad/${encodeURIComponent(canonicalSlug)}`);
+  }
 
   return (
     <KeypadConfigurator
       keypad={{
         id: product.id,
-        slug: product.slug,
+        slug: canonicalSlug,
         name: product.name,
         modelCode,
         description: product.description ?? null,

@@ -1,7 +1,7 @@
 'use client';
 
 import { useMemo } from 'react';
-import { getLayoutForModel, hasLayoutForModel } from '../../lib/keypad-layouts';
+import { getSlotIdsForModel, KEYPAD_MODEL_GEOMETRIES } from '../../config/layouts/geometry';
 import KeypadPreview from './KeypadPreview';
 import type { SlotVisualState } from '../../lib/configuratorStore';
 import type { SlotId } from '../../lib/keypadConfiguration';
@@ -28,14 +28,14 @@ const DEBUG_SHELL_BY_MODEL: Record<string, string> = {
 
 function resolveDebugModelCode(input: string | null | undefined) {
   const normalized = (input ?? '').trim().toUpperCase();
-  if (normalized && hasLayoutForModel(normalized)) return normalized;
+  if (normalized && KEYPAD_MODEL_GEOMETRIES[normalized]) return normalized;
   return 'PKP-2200-SI';
 }
 
 function buildDebugSlots(modelCode: string): Record<SlotId, SlotVisualState> {
-  const layout = getLayoutForModel(modelCode);
-  return layout.slots.reduce<Record<SlotId, SlotVisualState>>((map, slotEntry) => {
-    map[slotEntry.id as SlotId] = {
+  const slotIds = getSlotIdsForModel(modelCode);
+  return slotIds.reduce<Record<SlotId, SlotVisualState>>((map, slotId) => {
+    map[slotId as SlotId] = {
       ...EMPTY_SLOT,
     };
     return map;

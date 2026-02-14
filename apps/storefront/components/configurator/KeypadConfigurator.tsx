@@ -6,11 +6,11 @@ import { use } from 'react';
 import ConfigurationSidebar from './ConfigurationSidebar';
 import KeypadPreview from './KeypadPreview';
 import KeypadProvider, { KeypadContext } from './KeypadProvider';
-import SaveDesignModal from './SaveDesignModal';
 import type { PilotKeypadProduct } from './types';
 
 const ConfiguratorActions = dynamic(() => import('./ConfiguratorActions'));
 const IconSelectionPopup = dynamic(() => import('./IconSelectionPopup'));
+const SaveDesignModal = dynamic(() => import('./SaveDesignModal'));
 
 const Keypad = {
   Provider: KeypadProvider,

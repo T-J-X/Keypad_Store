@@ -1,15 +1,15 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { Suspense } from 'react';
-import ButtonInsertPdp from '../../../components/ProductPdp/ButtonInsertPdp';
-import KeypadPdp from '../../../components/ProductPdp/KeypadPdp';
-import ProductJsonLd from '../../../components/ProductPdp/ProductJsonLd';
-import PriceAndStock from '../../../components/ProductPdp/PriceAndStock';
-import ShopHubBackAnchor from '../../../components/ShopHubBackAnchor';
-import { resolvePkpModelCode } from '../../../lib/keypadUtils';
-import { resolveSeoDescription } from '../../../lib/productSeo';
-import { type CatalogProduct, type IconProduct } from '../../../lib/vendure';
-import { fetchIconProducts, fetchProductBySlug } from '../../../lib/vendure.server';
+import ButtonInsertPdp from '../../../../components/ProductPdp/ButtonInsertPdp';
+import KeypadPdp from '../../../../components/ProductPdp/KeypadPdp';
+import ProductJsonLd from '../../../../components/ProductPdp/ProductJsonLd';
+import PriceAndStock from '../../../../components/ProductPdp/PriceAndStock';
+import ShopHubBackAnchor from '../../../../components/ShopHubBackAnchor';
+import { resolvePkpModelCode } from '../../../../lib/keypadUtils';
+import { resolveSeoDescription } from '../../../../lib/productSeo';
+import { type CatalogProduct, type IconProduct } from '../../../../lib/vendure';
+import { fetchIconProducts, fetchProductBySlug } from '../../../../lib/vendure.server';
 
 type ProductSearchParams = {
   from?: string | string[];
@@ -93,7 +93,7 @@ function resolveCanonicalUrl(product: CatalogProduct, fallbackSlug: string) {
     }
   }
   const slug = product.slug || fallbackSlug;
-  return `/product/${encodeURIComponent(slug)}`;
+  return `/shop/product/${encodeURIComponent(slug)}`;
 }
 
 export async function generateMetadata({
@@ -109,7 +109,7 @@ export async function generateMetadata({
       title: 'Product Not Found | Keypad Store',
       description: 'The requested product could not be found.',
       alternates: {
-        canonical: `/product/${encodeURIComponent(resolvedParams.slug)}`,
+        canonical: `/shop/product/${encodeURIComponent(resolvedParams.slug)}`,
       },
       robots: {
         index: false,

@@ -85,7 +85,7 @@ export default function ProductCard({
   return (
     <div className="card-soft group relative flex h-full flex-col gap-3 p-3.5 transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-1 hover:shadow-premium sm:gap-5 sm:p-5">
       <Link
-        href={productHref ?? `/product/${product.slug}`}
+        href={productHref ?? `/shop/product/${product.slug}`}
         replace={replaceProductNavigation}
         aria-label={`View ${product.name}`}
         className="absolute inset-0 z-0 rounded-2xl"

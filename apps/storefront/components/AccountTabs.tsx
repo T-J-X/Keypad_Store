@@ -430,7 +430,7 @@ function SavedDesignsPanel({
         {items.map((item) => {
           const modelSlug = modelCodeToPkpSlug(item.keypadModel);
           const editHref = modelSlug
-            ? `/configurator/${modelSlug}?load=${encodeURIComponent(item.id)}`
+            ? `/configurator/keypad/${modelSlug}?load=${encodeURIComponent(item.id)}`
             : null;
 
           return (

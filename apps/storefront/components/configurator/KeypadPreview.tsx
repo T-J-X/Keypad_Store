@@ -1,15 +1,13 @@
 'use client';
 
 import { createContext, use, useEffect, useId, useMemo, useRef, useState } from 'react';
+import {
+  getGeometryForModel,
+  getSlotIdsForGeometry,
+  type KeypadModelGeometry,
+} from '../../config/layouts/geometry';
 import type { SlotVisualState } from '../../lib/configuratorStore';
 import type { SlotId } from '../../lib/keypadConfiguration';
-import {
-  cloneModelLayout,
-  getLayoutForModel,
-  getSlotIdsForLayout,
-  type ModelLayout,
-  type Slot,
-} from '../../lib/keypad-layouts';
 import { assetUrl } from '../../lib/vendure';
 import BacklitGlow from './BacklitGlow';
 import { KeypadContext } from './KeypadProvider';
@@ -79,6 +77,22 @@ type SlotBinding = {
 type IntrinsicSize = {
   width: number;
   height: number;
+};
+
+type PreviewSlot = {
+  id: string;
+  label: string;
+  cx: number;
+  cy: number;
+  insertD: number;
+  bezelD: number;
+};
+
+type PreviewLayout = {
+  model: string;
+  baseW: number;
+  baseH: number;
+  slots: PreviewSlot[];
 };
 
 type PreviewInteractionContextValue = {
@@ -166,24 +180,59 @@ function isEditableTarget(target: EventTarget | null) {
 }
 
 function withUpdatedSlot(
-  layout: ModelLayout,
+  layout: PreviewLayout,
   slotId: string,
-  updater: (slotEntry: Slot) => Slot,
-): ModelLayout {
+  updater: (slotEntry: PreviewSlot) => PreviewSlot,
+): PreviewLayout {
   return {
     ...layout,
     slots: layout.slots.map((slotEntry) => (slotEntry.id === slotId ? updater(slotEntry) : slotEntry)),
   };
 }
 
-function buildSlotBindings(layout: ModelLayout): SlotBinding[] {
-  const slotIds = getSlotIdsForLayout(layout);
-  return slotIds.map((slotId, index) => {
+function slotSizePercent(slot: KeypadModelGeometry['slots'][string]) {
+  if (Number.isFinite(slot.sizePct)) return slot.sizePct;
+  return slot.r * 200;
+}
+
+function geometryToPreviewLayout(geometry: KeypadModelGeometry): PreviewLayout {
+  const baseW = Math.max(1, geometry.intrinsicSize.width);
+  const baseH = Math.max(1, geometry.intrinsicSize.height);
+  const slotIds = getSlotIdsForGeometry(geometry);
+
+  return {
+    model: geometry.modelCode,
+    baseW,
+    baseH,
+    slots: slotIds.map((slotId) => {
+      const slot = geometry.slots[slotId]!;
+      const slotDiameterPx = (slotSizePercent(slot) / 100) * baseW;
+      return {
+        id: slotId,
+        label: slot.label,
+        cx: slot.cx * baseW,
+        cy: slot.cy * baseH,
+        insertD: slotDiameterPx * (geometry.buttonVisual.iconDiameterPctOfSlot / 100),
+        bezelD: slotDiameterPx * (geometry.buttonVisual.ringDiameterPctOfSlot / 100),
+      };
+    }),
+  };
+}
+
+function clonePreviewLayout(layout: PreviewLayout): PreviewLayout {
+  return {
+    ...layout,
+    slots: layout.slots.map((slotEntry) => ({ ...slotEntry })),
+  };
+}
+
+function buildSlotBindings(layout: PreviewLayout): SlotBinding[] {
+  return layout.slots.map((slotEntry, index) => {
     const key = SLOT_SELECT_KEYS[index] ?? '';
-    const numeric = slotId.match(/\d+/)?.[0] ?? String(index + 1);
+    const numeric = slotEntry.id.match(/\d+/)?.[0] ?? String(index + 1);
     return {
       key,
-      slotId,
+      slotId: slotEntry.id,
       slotLabel: `Slot ${numeric}`,
     };
   });
@@ -196,7 +245,7 @@ function PreviewEditStatus({
   effectiveIconMultiplier,
   slotBindingList,
 }: {
-  selectedSlot: Slot | null;
+  selectedSlot: PreviewSlot | null;
   iconScaleValue: number;
   iconVisibleCompValue: number;
   effectiveIconMultiplier: number;
@@ -263,7 +312,8 @@ export default function KeypadPreview({
   onToggleGlows?: () => void;
 }) {
   const keypadContext = use(KeypadContext);
-  const resolvedModelCode = modelCode ?? keypadContext?.state.modelCode ?? 'PKP-2200-SI';
+  const fallbackModelCode = modelCode ?? keypadContext?.state.modelCode ?? 'PKP-2200-SI';
+  const resolvedGeometry = keypadContext?.meta.geometry ?? getGeometryForModel(fallbackModelCode);
   const resolvedShellAssetPath = shellAssetPath ?? keypadContext?.meta.keypad.shellAssetPath ?? null;
   const resolvedSlots = slots ?? keypadContext?.state.slots ?? {};
   const resolvedActiveSlotId = activeSlotId ?? keypadContext?.state.popupSlotId ?? null;
@@ -278,8 +328,8 @@ export default function KeypadPreview({
   const resolvedOnRotate = onRotate ?? keypadContext?.actions.rotatePreview;
   const resolvedOnToggleGlows = onToggleGlows ?? keypadContext?.actions.togglePreviewGlows;
 
-  const baseLayout = useMemo(() => getLayoutForModel(resolvedModelCode), [resolvedModelCode]);
-  const [editableLayout, setEditableLayout] = useState<ModelLayout>(() => cloneModelLayout(baseLayout));
+  const baseLayout = useMemo(() => geometryToPreviewLayout(resolvedGeometry), [resolvedGeometry]);
+  const [editableLayout, setEditableLayout] = useState<PreviewLayout>(() => clonePreviewLayout(baseLayout));
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
   const [showSelectedGuidesOnly, setShowSelectedGuidesOnly] = useState(false);
   const [hoveredSlotId, setHoveredSlotId] = useState<SlotId | null>(null);
@@ -292,7 +342,7 @@ export default function KeypadPreview({
   const rotationFrameRef = useRef<number | null>(null);
 
   useEffect(() => {
-    setEditableLayout(cloneModelLayout(baseLayout));
+    setEditableLayout(clonePreviewLayout(baseLayout));
   }, [baseLayout]);
 
   useEffect(() => {
@@ -300,7 +350,11 @@ export default function KeypadPreview({
   }, [baseLayout.model, resolvedIconScale]);
 
   const renderLayout = resolvedEditMode ? editableLayout : baseLayout;
-  const slotIds = useMemo(() => getSlotIdsForLayout(renderLayout), [renderLayout]);
+  const slotIds = useMemo(() => renderLayout.slots.map((slotEntry) => slotEntry.id), [renderLayout.slots]);
+  const slotsById = useMemo(
+    () => new Map(renderLayout.slots.map((slotEntry) => [slotEntry.id, slotEntry])),
+    [renderLayout.slots],
+  );
   const iconVisibleCompValue = useMemo(
     () => normalizeIconVisibleComp(resolvedIconVisibleComp),
     [resolvedIconVisibleComp],
@@ -338,10 +392,8 @@ export default function KeypadPreview({
   }, [resolvedEditMode, slotIds]);
 
   const selectedSlot = useMemo(
-    () => (selectedSlotId
-      ? (renderLayout.slots.find((slotEntry) => slotEntry.id === selectedSlotId) ?? null)
-      : null),
-    [renderLayout.slots, selectedSlotId],
+    () => (selectedSlotId ? (slotsById.get(selectedSlotId) ?? null) : null),
+    [selectedSlotId, slotsById],
   );
 
   useEffect(() => {
@@ -515,7 +567,7 @@ export default function KeypadPreview({
     }
 
     try {
-      const normalized: ModelLayout = {
+      const normalized = {
         model: editableLayout.model,
         baseW: editableLayout.baseW,
         baseH: editableLayout.baseH,
@@ -566,7 +618,7 @@ export default function KeypadPreview({
   const safeSvgIdPrefix = useMemo(() => sanitizeSvgId(svgIdPrefix), [svgIdPrefix]);
   const visualRotationDeg = Math.abs(displayRotationDeg) < 0.001 ? 0 : displayRotationDeg;
   const groupTransform = visualRotationDeg ? `rotate(${visualRotationDeg} ${baseW / 2} ${baseH / 2})` : undefined;
-  const layoutLabel = MODEL_LAYOUT_LABELS[renderLayout.model] ?? `${renderLayout.slots.length} slots`;
+  const layoutLabel = resolvedGeometry.layoutLabel || MODEL_LAYOUT_LABELS[renderLayout.model] || `${renderLayout.slots.length} slots`;
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -726,7 +778,7 @@ export default function KeypadPreview({
             >
               <defs>
                 {slotIds.map((slotId) => {
-                  const slotEntry = renderLayout.slots.find((item) => item.id === slotId);
+                  const slotEntry = slotsById.get(slotId);
                   if (!slotEntry) return null;
                   return (
                     <clipPath key={`${slotId}-clip`} id={`${safeSvgIdPrefix}-insert-${slotId}`}>
@@ -740,7 +792,7 @@ export default function KeypadPreview({
                 <image href={shellSrc} x={0} y={0} width={baseW} height={baseH} preserveAspectRatio="xMidYMid meet" />
 
                 {slotIds.map((slotId, slotIndex) => {
-                  const slotEntry = renderLayout.slots.find((item) => item.id === slotId);
+                  const slotEntry = slotsById.get(slotId);
                   if (!slotEntry) return null;
 
                   const slotVisual = resolvedSlots[slotId] ?? EMPTY_SLOT_VISUAL_STATE;

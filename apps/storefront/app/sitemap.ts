@@ -24,7 +24,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   }
 
   const productEntries: MetadataRoute.Sitemap = Array.from(uniqueProductSlugs).map((slug) => ({
-    url: `${base}/product/${encodeURIComponent(slug)}`,
+    url: `${base}/shop/product/${encodeURIComponent(slug)}`,
     lastModified: now,
     changeFrequency: 'weekly',
     priority: 0.7,
