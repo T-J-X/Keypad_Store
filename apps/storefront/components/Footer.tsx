@@ -102,7 +102,11 @@ export default function Footer() {
         <div className="mt-16 border-t border-white/5 pt-8">
           <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
             <p className="text-xs text-panel-muted">
-              &copy; 2026 Keypad Co. All rights reserved.
+              &copy; 2026 Keypad Co. All rights reserved. <br className="sm:hidden" />
+              <span className="hidden sm:inline"> | </span>
+              Registered in UK: 12345678 | VAT: GB 123 4567 89
+              <br />
+              123 Tech Avenue, London, EC1A 1BB
             </p>
 
             <div className="flex flex-wrap gap-6 text-xs text-panel-muted">

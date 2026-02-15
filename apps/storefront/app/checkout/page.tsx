@@ -91,6 +91,7 @@ type CheckoutFieldErrors = Partial<Record<CheckoutField, string>>;
 type CheckoutSelectionErrors = {
   shippingMethodId?: string;
   paymentMethodCode?: string;
+  termsAccepted?: string;
 };
 
 const REQUIRED_FIELD_ORDER: CheckoutField[] = [
@@ -128,8 +129,9 @@ export default function CheckoutPage() {
 
   const [shippingMethodId, setShippingMethodId] = useState('');
   const [paymentMethodCode, setPaymentMethodCode] = useState('');
+  const [termsAccepted, setTermsAccepted] = useState(false);
   const [fieldErrors, setFieldErrors] = useState<CheckoutFieldErrors>({});
-  const [selectionErrors, setSelectionErrors] = useState<CheckoutSelectionErrors>({});
+  const [selectionErrors, setSelectionErrors] = useState<CheckoutSelectionErrors & { termsAccepted?: string }>({});
   const emailRef = useRef<HTMLInputElement | null>(null);
   const firstNameRef = useRef<HTMLInputElement | null>(null);
   const lastNameRef = useRef<HTMLInputElement | null>(null);
@@ -324,6 +326,7 @@ export default function CheckoutPage() {
     const nextSelectionErrors: CheckoutSelectionErrors = {};
     if (!shippingMethodId) nextSelectionErrors.shippingMethodId = 'Select a shipping method.';
     if (!paymentMethodCode) nextSelectionErrors.paymentMethodCode = 'Select a payment method.';
+    if (!termsAccepted) nextSelectionErrors.termsAccepted = 'You must agree to the terms to proceed.';
 
     if (Object.keys(nextFieldErrors).length > 0 || Object.keys(nextSelectionErrors).length > 0) {
       setFieldErrors(nextFieldErrors);
@@ -838,6 +841,27 @@ export default function CheckoutPage() {
                 <span>Total</span>
                 <span>{totals.total}</span>
               </div>
+
+              <div className="mt-6">
+                <label className="flex items-start gap-3">
+                  <input
+                    type="checkbox"
+                    checked={termsAccepted}
+                    onChange={(e) => {
+                      setTermsAccepted(e.target.checked);
+                      if (e.target.checked) clearSelectionError('termsAccepted' as keyof CheckoutSelectionErrors);
+                    }}
+                    className="mt-1 h-4 w-4 rounded border-white/20 bg-white/10 text-blue-500 focus:ring-blue-500 focus:ring-offset-gray-900"
+                  />
+                  <span className="text-xs text-panel-muted">
+                    I have read and agree to the <Link href="/terms" target="_blank" className="text-blue-400 hover:underline">Terms of Service</Link>, <Link href="/privacy" target="_blank" className="text-blue-400 hover:underline">Privacy Policy</Link>, and <Link href="/cookies" target="_blank" className="text-blue-400 hover:underline">Cookie Policy</Link>.
+                  </span>
+                </label>
+                {selectionErrors.termsAccepted ? (
+                  <p role="alert" className="mt-2 text-xs font-semibold text-rose-200">{selectionErrors.termsAccepted}</p>
+                ) : null}
+              </div>
+
               <Button
                 type="submit"
                 disabled={!canSubmit}
@@ -850,7 +874,7 @@ export default function CheckoutPage() {
           </form>
         ) : null}
       </div>
-    </div>
+    </div >
   );
 }
 
