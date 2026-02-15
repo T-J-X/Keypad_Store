@@ -87,7 +87,7 @@ function NavPill({
   expandOnHover?: boolean;
 }) {
   const isActiveStyle = active
-    ? 'bg-blue-600/20 text-blue-200 border-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,0.15)]'
+    ? 'bg-blue-600 text-white shadow-md shadow-blue-900/20 ring-1 ring-blue-500/50'
     : '';
 
   const inactiveStyle = inverse
@@ -229,7 +229,7 @@ export default function Navbar() {
 
   useEffect(() => {
     const onScroll = () => {
-      setIsScrolled(window.scrollY > 10);
+      setIsScrolled(window.scrollY > 100);
     };
 
     onScroll();
@@ -358,7 +358,7 @@ export default function Navbar() {
   }, [sessionSummary.customer]);
 
   const desktopPanelClass =
-    'border border-white/10 bg-[#060a12]/90 backdrop-blur-2xl shadow-[0_24px_54px_rgba(0,0,0,0.6)] ring-1 ring-white/5';
+    'border border-white/10 bg-[#0B1221]/95 backdrop-blur-2xl shadow-[0_24px_54px_rgba(0,0,0,0.6)] ring-1 ring-white/5';
 
   return (
     <>
@@ -374,10 +374,10 @@ export default function Navbar() {
 
       <header
         className={[
-          'sticky top-0 z-50 transition-all duration-500 will-change-[height,background-color]',
+          'sticky top-0 z-50 transition-all duration-700 ease-[cubic-bezier(0.25,0.1,0.25,1.0)] wil-change-[height,background-color]',
           isScrolled
             ? 'h-16 border-b border-white/10 bg-[rgba(6,10,18,0.92)] shadow-[0_16px_36px_rgba(2,8,24,0.6)] backdrop-blur-xl lg:h-[72px]'
-            : 'h-20 border-b border-transparent bg-transparent lg:h-[88px]',
+            : 'h-24 border-b border-transparent bg-transparent lg:h-[100px]',
         ].join(' ')}
       >
         <div className="relative mx-auto flex h-full w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">

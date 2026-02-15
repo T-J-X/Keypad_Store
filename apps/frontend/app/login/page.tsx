@@ -53,28 +53,53 @@ async function LoginPageContent({
     ?? getSafeRelativePath(requestedRedirect, '/account');
 
   return (
-    <div className="mx-auto flex w-full max-w-6xl flex-col gap-10 px-4 pb-20 pt-16 sm:px-6 lg:flex-row lg:items-start lg:gap-20 lg:px-8">
-      <div className="flex-1 space-y-6 pt-4">
-        <div>
-          <h1 className="text-3xl font-semibold tracking-tight text-white md:text-5xl">Welcome back.</h1>
-          <p className="mt-4 max-w-md text-base leading-relaxed text-panel-muted">
-            Sign in to review orders, manage saved configurations, and continue building your next keypad layout.
-          </p>
-        </div>
+    <div className="flex min-h-[calc(100vh-80px)] w-full items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
+      <div className="relative w-full max-w-5xl rounded-[32px] p-[1px]">
+        {/* Gradient Border Background */}
+        <div className="absolute inset-0 rounded-[32px] bg-gradient-to-br from-blue-500/20 via-purple-500/10 to-blue-500/20" />
 
-        <div className="flex items-center gap-4 rounded-2xl border border-white/10 bg-white/5 p-5 backdrop-blur-sm">
-          <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-blue-500/20 text-blue-300">
-            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2" /><circle cx="8.5" cy="7" r="4" /><line x1="20" y1="8" x2="20" y2="14" /><line x1="23" y1="11" x2="17" y2="11" /></svg>
-          </div>
-          <div className="text-sm">
-            <div className="font-medium text-white">New to VCT?</div>
-            <Link href="/signup" className="text-blue-300 hover:text-blue-200 hover:underline">Create an account</Link> to get started.
-          </div>
-        </div>
-      </div>
+        {/* Main Card Container */}
+        <div className="relative flex min-h-[600px] w-full flex-col overflow-hidden rounded-[31px] bg-[#020916] shadow-2xl lg:flex-row">
 
-      <div className="card-panel w-full flex-1 p-6 sm:p-8">
-        <LoginForm redirectTo={redirectTo} />
+          {/* Left Panel (Info) */}
+          <div className="flex w-full flex-col justify-between bg-[#081831] p-8 text-white lg:w-5/12 lg:p-12">
+            <div className="space-y-6">
+              <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 backdrop-blur-sm">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-300"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /><polyline points="10 17 15 12 10 7" /><line x1="15" y1="12" x2="3" y2="12" /></svg>
+              </div>
+              <h1 className="text-3xl font-bold tracking-tight md:text-4xl">Welcome to VCT.</h1>
+              <p className="text-base text-blue-100/70 leading-relaxed">
+                Log in to access your saved configurations, track orders, and manage your vehicle control systems.
+              </p>
+            </div>
+
+            <div className="mt-12 rounded-2xl bg-blue-500/10 p-6 backdrop-blur-sm border border-blue-400/10">
+              <h3 className="mb-2 font-semibold text-blue-200">New Customer?</h3>
+              <p className="mb-4 text-sm text-blue-100/60">Create an account to save your designs and speed up checkout.</p>
+              <Link
+                href="/signup"
+                className="inline-flex items-center text-sm font-semibold text-white hover:text-blue-200 transition-colors"
+              >
+                Create an account <span aria-hidden="true" className="ml-1">→</span>
+              </Link>
+            </div>
+          </div>
+
+          {/* Right Panel (Login Form) */}
+          <div className="flex w-full flex-col justify-center bg-[#020916] p-8 lg:w-7/12 lg:p-16">
+            <div className="mx-auto w-full max-w-md space-y-8">
+              <div>
+                <h2 className="text-2xl font-bold tracking-tight text-white">Sign in to your account</h2>
+                <p className="mt-2 text-sm text-panel-muted">
+                  Enter your details below to continue.
+                </p>
+              </div>
+
+              <LoginForm redirectTo={redirectTo} />
+            </div>
+          </div>
+
+        </div>
       </div>
     </div>
   );

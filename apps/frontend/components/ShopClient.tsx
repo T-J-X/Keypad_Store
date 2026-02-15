@@ -20,6 +20,7 @@ import CategoryCard from './CategoryCard';
 import KeypadCard from './KeypadCard';
 import ProductCard from './ProductCard';
 import { Button, buttonVariants } from './ui/Button';
+import { LayoutGrid, List as ListIcon } from 'lucide-react';
 
 const PAGE_SIZE_OPTIONS = [24, 48, 96] as const;
 const ringBlueHoverClass =
@@ -203,6 +204,7 @@ export default function ShopClient({
   const lastParams = useRef('');
   const wasSpokeSectionRef = useRef(false);
   const debouncedQuery = useDebouncedValue(query, 300);
+  const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
   useEffect(() => {
     setQuery(initialQuery ?? '');
@@ -604,33 +606,63 @@ export default function ShopClient({
     );
   };
 
-  const renderIconsGrid = (iconItems: IconProduct[]) => (
-    <div className="staggered grid grid-cols-2 gap-3 min-[480px]:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7">
-      {iconItems.map((icon) => {
-        const iconCategoryNames = categoryNamesByIconId.get(icon.id) ?? [];
-        const primaryCategoryName = iconCategoryNames[0] ?? '';
-        const primaryCategorySlug = primaryCategoryName ? categorySlug(primaryCategoryName) : '';
-        const breadcrumbCategorySlug = resolveProductCategoryForBreadcrumb(icon);
 
-        return (
-          <ProductCard
-            key={icon.id}
-            product={icon}
-            categoryLabel={toCardCategoryLabel(iconCategoryNames)}
-            categoryHref={primaryCategorySlug ? toCategoryHref(primaryCategorySlug) : undefined}
-            productHref={toProductHref(
-              icon.slug,
-              'button-inserts',
-              activeCategorySlugs,
-              breadcrumbCategorySlug,
-              { hubReady: isIconsSection || isAllSection },
-            )}
-            replaceProductNavigation={isIconsSection}
-          />
-        );
-      })}
+
+  const renderViewToggle = () => (
+    <div className="flex items-center rounded-lg border border-ink/10 bg-white p-1">
+      <button
+        type="button"
+        onClick={() => setViewMode('grid')}
+        className={`rounded-md p-1.5 transition-colors ${viewMode === 'grid' ? 'bg-ink/5 text-ink' : 'text-ink/40 hover:bg-ink/5 hover:text-ink/60'}`}
+        aria-label="Grid view"
+      >
+        <LayoutGrid className="h-4 w-4" />
+      </button>
+      <button
+        type="button"
+        onClick={() => setViewMode('list')}
+        className={`rounded-md p-1.5 transition-colors ${viewMode === 'list' ? 'bg-ink/5 text-ink' : 'text-ink/40 hover:bg-ink/5 hover:text-ink/60'}`}
+        aria-label="List view"
+      >
+        <ListIcon className="h-4 w-4" />
+      </button>
     </div>
   );
+
+  const renderIconsGrid = (iconItems: IconProduct[]) => {
+    const gridClasses = viewMode === 'grid'
+      ? 'staggered grid grid-cols-2 gap-3 min-[480px]:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-6'
+      : 'flex flex-col gap-3';
+
+    return (
+      <div className={gridClasses}>
+        {iconItems.map((icon) => {
+          const iconCategoryNames = categoryNamesByIconId.get(icon.id) ?? [];
+          const primaryCategoryName = iconCategoryNames[0] ?? '';
+          const primaryCategorySlug = primaryCategoryName ? categorySlug(primaryCategoryName) : '';
+          const breadcrumbCategorySlug = resolveProductCategoryForBreadcrumb(icon);
+
+          return (
+            <ProductCard
+              key={icon.id}
+              product={icon}
+              categoryLabel={toCardCategoryLabel(iconCategoryNames)}
+              categoryHref={primaryCategorySlug ? toCategoryHref(primaryCategorySlug) : undefined}
+              productHref={toProductHref(
+                icon.slug,
+                'button-inserts',
+                activeCategorySlugs,
+                breadcrumbCategorySlug,
+                { hubReady: isIconsSection || isAllSection },
+              )}
+              replaceProductNavigation={isIconsSection}
+              layout={viewMode}
+            />
+          );
+        })}
+      </div>
+    );
+  };
 
   const renderKeypadsGrid = (
     keypadItems: KeypadProduct[],
@@ -672,8 +704,9 @@ export default function ShopClient({
               )}
             </div>
           )}
-          <div className={`text-sm text-ink/60 ${isCatalogWideSection ? 'ml-auto' : ''}`}>
+          <div className={`flex items-center gap-4 text-sm text-ink/60 ${isCatalogWideSection ? 'ml-auto' : ''}`}>
             {availableResultCount} {visibleResultLabel} available
+            {renderViewToggle()}
           </div>
         </div>
         <form onSubmit={onSearch} className="flex flex-col gap-3 md:flex-row md:flex-nowrap md:items-center">
