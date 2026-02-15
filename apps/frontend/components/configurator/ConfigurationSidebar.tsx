@@ -106,8 +106,8 @@ function DesktopSlotItem({
   return (
     <div
       className={`group relative flex flex-col justify-between overflow-hidden rounded-xl border transition-all duration-300 ease-out ${isActive
-        ? 'border-panel-accent ring-2 ring-panel-accent ring-offset-2 ring-offset-[#0B1221] bg-white shadow-[0_0_30px_-5px_rgba(59,130,246,0.5)] scale-[1.02]'
-        : 'border-white/10 bg-white shadow-sm hover:shadow-xl hover:-translate-y-1 hover:bg-white/95'
+        ? 'border-panel-accent ring-2 ring-panel-accent ring-offset-2 ring-offset-[#0B1221] bg-gradient-to-br from-white to-blue-50 shadow-[0_0_30px_-5px_rgba(59,130,246,0.5)] scale-[1.02]'
+        : 'border-white/10 bg-gradient-to-br from-white to-slate-100/50 shadow-sm hover:shadow-xl hover:-translate-y-1 hover:border-white/30'
         }`}
     >
       <button
@@ -115,7 +115,7 @@ function DesktopSlotItem({
         onClick={onClick}
         className="flex h-full w-full flex-col text-left"
       >
-        <div className="flex w-full items-start justify-between px-3 py-2">
+        <div className="flex w-full items-start justify-between px-3 py-2 border-b border-black/5">
           <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-ink/40 group-hover:text-ink/60 transition-colors">
             {label}
           </span>
@@ -141,25 +141,30 @@ function DesktopSlotItem({
           )}
         </div>
 
-        <div className="flex flex-1 items-center justify-center py-4 min-h-[5rem]">
+        <div className="flex flex-1 items-center justify-center py-4 min-h-[6rem] relative">
+          {/* Subtle Glow behind icon */}
+          {previewImage && (
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(59,130,246,0.1)_0%,transparent_70%)] opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+          )}
+
           {previewImage ? (
-            <div className="relative h-16 w-16 transition-transform duration-300 group-hover:scale-110">
+            <div className="relative h-20 w-20 transition-transform duration-300 group-hover:scale-110 drop-shadow-md">
               <Image
                 src={previewImage}
                 alt={iconName || 'Slot icon'}
                 fill
                 className="object-contain"
-                sizes="64px"
+                sizes="96px"
               />
             </div>
           ) : (
-            <div className="flex h-12 w-12 items-center justify-center rounded-full border border-dashed border-ink/10 text-ink/20 opacity-70 group-hover:border-ink/20 group-hover:text-ink/40 transition-colors">
-              <Plus size={20} />
+            <div className="flex h-14 w-14 items-center justify-center rounded-full border border-dashed border-ink/10 text-ink/20 opacity-70 group-hover:border-ink/30 group-hover:text-ink/50 group-hover:bg-ink/[0.03] transition-all">
+              <Plus size={24} />
             </div>
           )}
         </div>
 
-        <div className="bg-ink/[0.02] px-3 py-2">
+        <div className="bg-white/50 px-3 py-2 border-t border-black/5 backdrop-blur-sm">
           <div className="truncate text-xs font-semibold text-ink">
             {iconName || <span className="text-ink/30 italic font-normal">Select icon...</span>}
           </div>
