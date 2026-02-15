@@ -23,7 +23,7 @@ export default function ProductJsonLd({
 }: {
   product: CatalogProduct;
 }) {
-  const storefrontOrigin = process.env.NEXT_PUBLIC_STOREFRONT_URL || process.env.NEXT_PUBLIC_SITE_URL || '';
+  const siteOrigin = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_STOREFRONT_URL || '';
   const primaryVariant = product.variants?.[0];
   const availability = hasStock(primaryVariant)
     ? 'https://schema.org/InStock'
@@ -55,8 +55,8 @@ export default function ProductJsonLd({
 
   if (priceWithTax && primaryVariant?.currencyCode) {
     const productPath = `/shop/product/${encodeURIComponent(product.slug)}`;
-    const offerUrl = storefrontOrigin
-      ? `${storefrontOrigin.replace(/\/+$/, '')}${productPath}`
+    const offerUrl = siteOrigin
+      ? `${siteOrigin.replace(/\/+$/, '')}${productPath}`
       : productPath;
     schema.offers = {
       '@type': 'Offer',
