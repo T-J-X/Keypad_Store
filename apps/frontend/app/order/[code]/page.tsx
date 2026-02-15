@@ -72,7 +72,7 @@ function OrderConfirmationContent({
   const paymentMethod = toStringParam(resolvedSearch.payment) || 'card';
 
   return (
-    <div className="mx-auto w-full max-w-4xl px-4 pb-20 pt-14 sm:px-6 lg:px-8">
+    <div className="mx-auto w-full max-w-4xl px-4 py-24 sm:px-6 lg:px-8">
       <div className="card-soft p-8 sm:p-10">
         <div className="pill">Order confirmed</div>
         <h1 className="mt-4 text-3xl font-semibold tracking-tight text-ink md:text-4xl">Thank you for your order</h1>

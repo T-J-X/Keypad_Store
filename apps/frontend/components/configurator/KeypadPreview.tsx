@@ -194,6 +194,7 @@ export default function KeypadPreview({
   onToggleGlows,
   onResetSlots,
   onZoom,
+  description,
 }: {
   modelCode?: string;
   shellAssetPath?: string | null;
@@ -211,8 +212,15 @@ export default function KeypadPreview({
   onToggleGlows?: () => void;
   onResetSlots?: () => void;
   onZoom?: (direction: 'in' | 'out') => void;
+  description?: string;
 }) {
   const baseLayout = useMemo(() => getLayoutForModel(modelCode), [modelCode]);
+  const getInitialZoom = (model: string | undefined) => {
+    if (model === 'PKP-2200-SI') return 1.5;
+    if (model === 'PKP-2300-SI') return 1.25;
+    return 1;
+  };
+
   const [editableLayout, setEditableLayout] = useState<ModelLayout>(() => cloneModelLayout(baseLayout));
   const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
   const [showSelectedGuidesOnly, setShowSelectedGuidesOnly] = useState(false);
@@ -222,12 +230,13 @@ export default function KeypadPreview({
   const [layoutCopyStatus, setLayoutCopyStatus] = useState<'idle' | 'copied' | 'error'>('idle');
   const [tuningCopyStatus, setTuningCopyStatus] = useState<'idle' | 'copied' | 'error'>('idle');
   const [shellNaturalSize, setShellNaturalSize] = useState<IntrinsicSize | null>(null);
-  const [zoomLevel, setZoomLevel] = useState(1);
+  const [zoomLevel, setZoomLevel] = useState(getInitialZoom(modelCode));
   const displayRotationRef = useRef(rotationDeg);
   const rotationFrameRef = useRef<number | null>(null);
 
   useEffect(() => {
     setEditableLayout(cloneModelLayout(baseLayout));
+    setZoomLevel(getInitialZoom(baseLayout.model));
   }, [baseLayout]);
 
   useEffect(() => {
@@ -554,54 +563,12 @@ export default function KeypadPreview({
   }, [baseH, baseW, debugMode, hasNaturalSizeMismatch, renderLayout.model, shellNaturalSize]);
 
   return (
-    <div className="card glow-isolate relative overflow-hidden border border-white/10 bg-deep-navy p-5 shadow-2xl sm:p-6">
-      <div className="mb-4 flex items-center justify-between gap-3">
-        <div>
-          <h2 className="text-lg font-semibold tracking-tight text-white">{renderLayout.model}</h2>
-        </div>
-        <div className="flex items-center gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              setZoomLevel((prev) => Math.max(0.5, prev - 0.25));
-            }}
-            className="inline-flex min-h-9 items-center rounded-lg border border-white/15 bg-white/5 px-3 text-[11px] font-semibold text-blue-100 transition hover:border-white/30 hover:bg-white/10"
-            aria-label="Zoom out"
-          >
-            −
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setZoomLevel((prev) => Math.min(2.5, prev + 0.25));
-            }}
-            className="inline-flex min-h-9 items-center rounded-lg border border-white/15 bg-white/5 px-3 text-[11px] font-semibold text-blue-100 transition hover:border-white/30 hover:bg-white/10"
-            aria-label="Zoom in"
-          >
-            +
-          </button>
-          <button
-            type="button"
-            onClick={onRotate}
-            className="inline-flex min-h-9 items-center rounded-lg border border-white/15 bg-white/5 px-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-blue-100 transition hover:border-white/30 hover:bg-white/10"
-          >
-            Rotate
-          </button>
-          <button
-            type="button"
-            onClick={onResetSlots}
-            className="inline-flex min-h-9 items-center rounded-lg border border-white/15 bg-white/5 px-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-blue-100 transition hover:border-white/30 hover:bg-white/10"
-          >
-            Reset
-          </button>
-          <div className="rounded-full border border-white/20 bg-[#06122a]/65 px-3 py-1 text-xs font-semibold tracking-[0.14em] text-blue-100">
-            {layoutLabel}
-          </div>
-        </div>
-      </div>
+    <div className="card glow-isolate relative flex h-full flex-col overflow-hidden border border-white/10 bg-deep-navy py-[50px] px-6 shadow-2xl">
+      <h1 className="mt-4 text-4xl font-semibold tracking-tight text-white sm:text-5xl">{renderLayout.model}</h1>
+      {description && <p className="mt-2 max-w-2xl text-sm text-panel-muted mb-6">{description}</p>}
 
       {editMode ? (
-        <div className="mb-4 rounded-2xl border border-white/20 bg-[#071634]/70 px-4 py-3 text-xs text-blue-100/95">
+        <div className="mb-4 flex-shrink-0 rounded-2xl border border-white/20 bg-[#071634]/70 px-4 py-3 text-xs text-blue-100/95">
           <div className="flex flex-wrap items-center justify-between gap-2">
             <div className="font-semibold uppercase tracking-[0.14em] text-blue-100">Edit mode</div>
             <div className="flex items-center gap-2">
@@ -665,9 +632,49 @@ export default function KeypadPreview({
         </div>
       ) : null}
 
-      <div className="flex w-full justify-center">
+      <div className="flex flex-1 w-full flex-col items-center justify-center">
+        <div className="mb-4 flex w-full max-w-[1024px] items-center justify-end gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setZoomLevel((prev) => Math.max(0.5, prev - 0.25));
+            }}
+            className="inline-flex min-h-9 items-center rounded-lg border border-white/15 bg-white/5 px-3 text-[11px] font-semibold text-blue-100 transition hover:border-white/30 hover:bg-white/10"
+            aria-label="Zoom out"
+          >
+            −
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setZoomLevel((prev) => Math.min(2.5, prev + 0.25));
+            }}
+            className="inline-flex min-h-9 items-center rounded-lg border border-white/15 bg-white/5 px-3 text-[11px] font-semibold text-blue-100 transition hover:border-white/30 hover:bg-white/10"
+            aria-label="Zoom in"
+          >
+            +
+          </button>
+          <button
+            type="button"
+            onClick={onRotate}
+            className="inline-flex min-h-9 items-center rounded-lg border border-white/15 bg-white/5 px-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-blue-100 transition hover:border-white/30 hover:bg-white/10"
+          >
+            Rotate
+          </button>
+          <button
+            type="button"
+            onClick={onResetSlots}
+            className="inline-flex min-h-9 items-center rounded-lg border border-white/15 bg-white/5 px-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-blue-100 transition hover:border-white/30 hover:bg-white/10"
+          >
+            Reset
+          </button>
+          <div className="rounded-full border border-white/20 bg-[#06122a]/65 px-3 py-1 text-xs font-semibold tracking-[0.14em] text-blue-100">
+            {layoutLabel}
+          </div>
+        </div>
+
         <div
-          className="relative h-auto w-[clamp(360px,64vw,920px)] max-w-full rounded-[28px] border border-white/20 bg-[#010714] overflow-hidden"
+          className="relative h-auto w-full max-w-[1024px] rounded-[28px] border border-white/20 bg-[#010714] overflow-hidden"
           style={{ aspectRatio: `${vbW} / ${vbH}` }}
         >
           {showCalibrationGuides ? (
