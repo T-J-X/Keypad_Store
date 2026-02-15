@@ -54,11 +54,11 @@ export default function KeypadCard({
           href={detailHref}
           replace={replaceDetailNavigation}
           aria-label={`View ${product.name}`}
-          className="absolute inset-0 z-0 rounded-2xl"
+          className="absolute inset-0 z-10 rounded-2xl"
         />
       )}
       <div
-        className={`relative z-10 overflow-hidden rounded-2xl bg-[linear-gradient(to_bottom,#f4f4f5_0%,#e4e4e7_50%,#ffffff_100%)] ${isShopCard ? 'pointer-events-none' : ''
+        className={`relative overflow-hidden rounded-2xl bg-[linear-gradient(to_bottom,#f4f4f5_0%,#e4e4e7_50%,#ffffff_100%)] ${isShopCard ? '' : ''
           }`}
       >
         {image ? (
@@ -78,7 +78,7 @@ export default function KeypadCard({
         )}
       </div>
       <div
-        className={`relative z-10 flex flex-1 flex-col justify-between gap-3 ${isShopCard ? 'pointer-events-none' : ''
+        className={`relative flex flex-1 flex-col justify-between gap-3 ${isShopCard ? '' : ''
           }`}
       >
         <div>
