@@ -329,8 +329,7 @@ export default function Navbar() {
       setIsAccountMenuOpen(false);
       setIsMenuOpen(false);
       notifyCartUpdated();
-      void refreshSessionSummary();
-      window.location.assign('/');
+      window.location.reload();
     }
   };
 
