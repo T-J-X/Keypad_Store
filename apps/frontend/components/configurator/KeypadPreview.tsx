@@ -633,43 +633,53 @@ export default function KeypadPreview({
       ) : null}
 
       <div className="flex flex-1 w-full flex-col items-center justify-center">
-        <div className="mb-4 flex w-full max-w-[1024px] items-center justify-end gap-2">
-          <button
-            type="button"
-            onClick={() => {
-              setZoomLevel((prev) => Math.max(0.5, prev - 0.25));
-            }}
-            className="inline-flex min-h-9 items-center rounded-lg border border-white/15 bg-white/5 px-3 text-[11px] font-semibold text-blue-100 transition hover:border-white/30 hover:bg-white/10"
-            aria-label="Zoom out"
-          >
-            −
-          </button>
-          <button
-            type="button"
-            onClick={() => {
-              setZoomLevel((prev) => Math.min(2.5, prev + 0.25));
-            }}
-            className="inline-flex min-h-9 items-center rounded-lg border border-white/15 bg-white/5 px-3 text-[11px] font-semibold text-blue-100 transition hover:border-white/30 hover:bg-white/10"
-            aria-label="Zoom in"
-          >
-            +
-          </button>
-          <button
-            type="button"
-            onClick={onRotate}
-            className="inline-flex min-h-9 items-center rounded-lg border border-white/15 bg-white/5 px-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-blue-100 transition hover:border-white/30 hover:bg-white/10"
-          >
-            Rotate
-          </button>
-          <button
-            type="button"
-            onClick={onResetSlots}
-            className="inline-flex min-h-9 items-center rounded-lg border border-white/15 bg-white/5 px-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-blue-100 transition hover:border-white/30 hover:bg-white/10"
-          >
-            Reset
-          </button>
-          <div className="rounded-full border border-white/20 bg-[#06122a]/65 px-3 py-1 text-xs font-semibold tracking-[0.14em] text-blue-100">
+        <div className="mb-6 flex w-full max-w-[1024px] items-center justify-between">
+          <div className="rounded-full border border-white/10 bg-[#06122a]/50 px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-blue-100/50 backdrop-blur-sm">
             {layoutLabel}
+          </div>
+
+          <div className="flex items-center gap-4">
+            <div className="flex items-center gap-1 rounded-lg border border-white/10 bg-white/5 p-1">
+              <button
+                type="button"
+                onClick={() => {
+                  setZoomLevel((prev) => Math.max(0.5, prev - 0.25));
+                }}
+                className="flex h-7 w-7 items-center justify-center rounded-md text-[14px] font-medium text-blue-100 hover:bg-white/10 transition-colors"
+                aria-label="Zoom out"
+              >
+                −
+              </button>
+              <div className="h-4 w-[1px] bg-white/10" />
+              <button
+                type="button"
+                onClick={() => {
+                  setZoomLevel((prev) => Math.min(2.5, prev + 0.25));
+                }}
+                className="flex h-7 w-7 items-center justify-center rounded-md text-[14px] font-medium text-blue-100 hover:bg-white/10 transition-colors"
+                aria-label="Zoom in"
+              >
+                +
+              </button>
+            </div>
+
+            <button
+              type="button"
+              onClick={onRotate}
+              className="flex h-9 items-center rounded-lg border border-white/10 bg-white/5 px-4 text-[10px] font-bold uppercase tracking-[0.12em] text-blue-100 transition hover:border-white/25 hover:bg-white/10"
+            >
+              Rotate
+            </button>
+
+            <div className="h-6 w-[1px] bg-white/10" />
+
+            <button
+              type="button"
+              onClick={onResetSlots}
+              className="flex h-9 items-center gap-2 rounded-lg px-3 text-[10px] font-bold uppercase tracking-[0.12em] text-rose-300/80 transition hover:text-rose-300 hover:bg-rose-500/10"
+            >
+              Reset
+            </button>
           </div>
         </div>
 
