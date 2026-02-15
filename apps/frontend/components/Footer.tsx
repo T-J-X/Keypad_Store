@@ -109,7 +109,7 @@ export default function Footer() {
         {/* Bottom Section */}
         <div className="relative mt-16 pt-8">
           <div className="absolute top-0 left-0 h-[2px] w-full bg-gradient-to-r from-transparent via-blue-400 to-transparent shadow-[0_0_20px_2px_rgba(96,165,250,0.6)]" />
-          <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-col-reverse gap-6 md:flex-row md:items-center md:justify-between">
             <p className="text-xs text-panel-muted">
               &copy; <CopyrightYear /> Vehicle Control Technologies
             </p>

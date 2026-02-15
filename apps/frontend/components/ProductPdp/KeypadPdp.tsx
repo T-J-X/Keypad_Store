@@ -195,7 +195,7 @@ export default function KeypadPdp({
   });
 
   return (
-    <div className="mx-auto w-full max-w-6xl bg-transparent px-6 py-24">
+    <div className="mx-auto w-full max-w-6xl bg-transparent px-6 py-12 lg:py-24">
       <div className="mb-6">
         <Breadcrumbs items={breadcrumbs} />
       </div>
@@ -259,7 +259,7 @@ export default function KeypadPdp({
         </div>
       </div>
 
-      <div className="mt-20 space-y-12">
+      <div className="mt-12 space-y-12 lg:mt-20">
         <PdpTabs panels={tabPanels} defaultTabId="overview" />
       </div>
     </div>
