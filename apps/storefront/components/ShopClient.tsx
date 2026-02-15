@@ -143,9 +143,10 @@ function boundedLevenshtein(a: string, b: string, maxDistance: number) {
 
 function tokenFuzzyMatch(term: string, token: string) {
   if (token.includes(term) || token.startsWith(term)) return true;
-  if (term.length >= 3 && isSubsequence(term, token)) return true;
+  if (term.length >= 2 && isSubsequence(term, token)) return true;
   if (term.length < 3) return false;
-  const maxDistance = term.length >= 6 ? 2 : 1;
+  // Increase tolerance: 2 for short words, 3 for longer words
+  const maxDistance = term.length >= 5 ? 3 : 2;
   return boundedLevenshtein(term, token, maxDistance) <= maxDistance;
 }
 

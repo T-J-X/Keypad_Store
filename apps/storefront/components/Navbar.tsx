@@ -366,8 +366,8 @@ export default function Navbar() {
         className={[
           'sticky top-0 z-50 transition-[background-color,border-color,box-shadow,backdrop-filter] duration-300',
           isScrolled
-            ? 'border-b border-white/14 bg-[rgba(6,10,18,0.34)] shadow-[0_16px_36px_rgba(2,8,24,0.3)] backdrop-blur-lg'
-            : 'border-b border-transparent bg-transparent',
+            ? 'border-b border-white/10 bg-[rgba(6,10,18,0.85)] shadow-[0_16px_36px_rgba(2,8,24,0.6)] backdrop-blur-xl'
+            : 'border-b border-transparent bg-[rgba(6,10,18,0.5)] backdrop-blur-md',
         ].join(' ')}
       >
         <div className="relative mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:h-[74px] lg:px-8">
@@ -379,11 +379,8 @@ export default function Navbar() {
               onClick={() => setIsMenuOpen((current) => !current)}
               className={[
                 'inline-flex h-11 w-11 items-center justify-center rounded-full border transition lg:hidden',
-                isScrolled
-                  ? 'border-white/15 bg-white/[0.08] text-white hover:bg-white/[0.14]'
-                  : 'border-ink/12 bg-white/70 text-ink hover:bg-white',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky/45 focus-visible:ring-offset-2',
-                isScrolled ? 'focus-visible:ring-offset-black/40' : 'focus-visible:ring-offset-white',
+                'border-white/15 bg-white/[0.08] text-white hover:bg-white/[0.14]',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky/45 focus-visible:ring-offset-2 focus-visible:ring-offset-black/40',
               ].join(' ')}
             >
               {isMenuOpen ? <X className="h-[18px] w-[18px]" /> : <Menu className="h-[18px] w-[18px]" />}
@@ -394,9 +391,8 @@ export default function Navbar() {
               aria-label="Go to homepage"
               className={[
                 'absolute left-1/2 -translate-x-1/2 text-sm font-bold uppercase tracking-[0.22em] transition-opacity hover:opacity-85',
-                isScrolled ? 'text-white' : 'text-ink',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky/45 focus-visible:ring-offset-2',
-                isScrolled ? 'focus-visible:ring-offset-black/40' : 'focus-visible:ring-offset-white',
+                'text-white',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky/45 focus-visible:ring-offset-2 focus-visible:ring-offset-black/40',
                 'lg:static lg:translate-x-0 lg:text-[15px]',
               ].join(' ')}
             >
@@ -418,14 +414,14 @@ export default function Navbar() {
                   onFocus={openShopMenu}
                   className={[
                     'group relative inline-flex items-center gap-1 text-sm font-medium tracking-tight transition-colors duration-200',
-                    isScrolled ? 'text-white/80 hover:text-white' : 'text-ink/75 hover:text-ink',
+                    'text-white/80 hover:text-white',
                   ].join(' ')}
                 >
                   <span>Shop</span>
                   <ChevronDown className={['h-4 w-4 transition-transform', isShopMenuOpen ? 'rotate-180' : 'rotate-0'].join(' ')} />
                   <span className={[
                     'absolute -bottom-1 left-0 h-px w-0 transition-all duration-300 group-hover:w-full',
-                    isScrolled ? 'bg-white' : 'bg-ink',
+                    'bg-white',
                   ].join(' ')} />
                 </Link>
 
@@ -463,7 +459,7 @@ export default function Navbar() {
               </div>
 
               {primaryLinks.map((item) => (
-                <NavTextLink key={item.href} href={item.href} label={item.label} inverse={isScrolled} />
+                <NavTextLink key={item.href} href={item.href} label={item.label} inverse={true} />
               ))}
             </nav>
           </div>
@@ -474,7 +470,7 @@ export default function Navbar() {
                 label={'Open search'}
                 expanded={isSearchOpen}
                 onClick={() => setIsSearchOpen(true)}
-                inverse={isScrolled}
+                inverse={true}
               >
                 <Search className="h-4 w-4" strokeWidth={1.9} />
               </IconButton>
@@ -487,7 +483,7 @@ export default function Navbar() {
                   buttonRef={accountButtonRef}
                   expanded={isAccountMenuOpen}
                   onClick={() => setIsAccountMenuOpen((current) => !current)}
-                  inverse={isScrolled}
+                  inverse={true}
                 >
                   <UserRound className="h-4 w-4" strokeWidth={1.9} />
                 </IconButton>
@@ -528,18 +524,18 @@ export default function Navbar() {
                 </div>
               </div>
             ) : (
-              <IconLink href="/login" label="Sign in" className="hidden lg:inline-flex" inverse={isScrolled}>
+              <IconLink href="/login" label="Sign in" className="hidden lg:inline-flex" inverse={true}>
                 <UserRound className="h-4 w-4" strokeWidth={1.9} />
               </IconLink>
             )}
 
-            <IconLink href="/cart" label="Open cart" className="relative" inverse={isScrolled}>
+            <IconLink href="/cart" label="Open cart" className="relative" inverse={true}>
               <ShoppingBag className="h-4 w-4" strokeWidth={1.9} />
               {showCartBadge ? (
                 <span
                   className={[
                     'absolute -right-1 -top-1 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[10px] font-semibold leading-none',
-                    isScrolled ? 'border border-black/30 bg-white text-ink' : 'border border-white bg-ink text-white',
+                    'border border-black/30 bg-white text-ink',
                   ].join(' ')}
                 >
                   {cartQuantity}
