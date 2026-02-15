@@ -28,8 +28,8 @@ export default function SaveDesignModal({
   const resolvedSaveName = saveName ?? context?.state.saveName ?? '';
   const resolvedSaving = savingToAccount ?? context?.state.busy.savingToAccount ?? false;
   const resolvedHasLoadedConfig = hasLoadedSavedConfig ?? context?.state.hasLoadedSavedConfig ?? false;
-  const resolvedOnSaveNameChange = onSaveNameChange ?? context?.actions.setSaveName ?? (() => {});
-  const resolvedOnClose = onClose ?? context?.actions.closeSaveModal ?? (() => {});
+  const resolvedOnSaveNameChange = onSaveNameChange ?? context?.actions.setSaveName ?? (() => { });
+  const resolvedOnClose = onClose ?? context?.actions.closeSaveModal ?? (() => { });
   const resolvedOnSubmit = onSubmit ?? (() => {
     if (!context) return;
     void context.actions.submitSave();
@@ -41,25 +41,26 @@ export default function SaveDesignModal({
     <AccessibleModal
       open={resolvedOpen}
       onClose={resolvedOnClose}
-      panelClassName="w-full max-w-md rounded-3xl border border-white/20 bg-white p-6 shadow-[0_24px_60px_rgba(0,0,0,0.35)]"
+      panelClassName="w-full max-w-md rounded-3xl border border-panel-border bg-panel text-white p-6 shadow-[0_30px_80px_rgba(2,8,24,0.55)]"
     >
-      <h3 className="text-lg font-semibold text-ink">Name your configuration</h3>
-      <p className="mt-1 text-sm text-ink/60">This name appears in your account under My Saved Designs.</p>
+      <h3 className="text-lg font-semibold text-white">Name your configuration</h3>
+      <p className="mt-1 text-sm text-panel-muted">This name appears in your account under My Saved Designs.</p>
 
       <input
         type="text"
         value={resolvedSaveName}
         onChange={(event) => resolvedOnSaveNameChange(event.target.value)}
         maxLength={160}
-        className="mt-4 w-full rounded-full border border-ink/15 px-4 py-2 text-sm text-ink outline-none focus:border-ink/30"
+        className="mt-5 w-full rounded-full border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none focus:border-panel-accent focus:bg-white/10 transition-colors placeholder:text-white/30"
         placeholder="My Racing Setup"
+        autoFocus
       />
 
-      <div className="mt-4 flex justify-end gap-2">
+      <div className="mt-6 flex justify-end gap-3">
         <button
           type="button"
           onClick={resolvedOnClose}
-          className="rounded-full border border-ink/15 px-4 py-2 text-sm font-semibold text-ink"
+          className="rounded-full border border-white/10 px-5 py-2.5 text-xs font-semibold uppercase tracking-wider text-white hover:bg-white/5 transition-colors"
           disabled={resolvedSaving}
         >
           Cancel
@@ -68,7 +69,7 @@ export default function SaveDesignModal({
           type="button"
           onClick={resolvedOnSubmit}
           disabled={resolvedSaving}
-          className="rounded-full bg-ink px-4 py-2 text-sm font-semibold text-white disabled:opacity-60"
+          className="btn-premium rounded-full text-xs font-semibold uppercase tracking-wider disabled:opacity-60 disabled:cursor-not-allowed"
         >
           {resolvedSaving ? 'Saving...' : resolvedHasLoadedConfig ? 'Update' : 'Save'}
         </button>

@@ -136,53 +136,33 @@ function SavedDesignsAction() {
 
 function ConfiguratorActionsRoot({
   variant = 'inline',
-  isComplete,
-  hasVariant,
-  isEditingLine,
-  addingToCart,
-  savingToAccount,
-  downloadingPdf,
-  canOpenSave,
-  canDownloadPdf,
-  hasLoadedSavedConfig,
-  onAddToCart,
-  onOpenSaveModal,
-  onDownloadPdf,
 }: ConfiguratorActionsProps) {
   const context = use(KeypadContext);
-  if (context) {
-    if (variant === 'sticky') {
-      return (
-        <ActionFrame placement="sticky">
-          <AddToCartAction compact />
-          <SaveAction compact />
-        </ActionFrame>
-      );
-    }
+  if (!context) return null;
 
-    return (
-      <>
-        <ActionFrame placement="inline">
-          <AddToCartAction />
-          <SaveAction />
-        </ActionFrame>
-        <div className="mt-2 grid gap-2 sm:grid-cols-2">
-          <DownloadPdfAction />
-          <SavedDesignsAction />
-        </div>
-      </>
-    );
-  }
+  const { state, actions } = context;
 
-  const resolvedIsComplete = Boolean(isComplete);
-  const resolvedHasVariant = Boolean(hasVariant);
-  const resolvedIsEditingLine = Boolean(isEditingLine);
-  const resolvedAddingToCart = Boolean(addingToCart);
-  const resolvedSavingToAccount = Boolean(savingToAccount);
-  const resolvedDownloadingPdf = Boolean(downloadingPdf);
-  const resolvedCanOpenSave = Boolean(canOpenSave);
-  const resolvedCanDownloadPdf = Boolean(canDownloadPdf);
-  const resolvedHasLoadedSavedConfig = Boolean(hasLoadedSavedConfig);
+  const resolvedAddingToCart = state.busy.addingToCart;
+  const resolvedIsEditingLine = state.mode === 'edit-line';
+  const resolvedIsComplete = state.isComplete;
+  const resolvedHasVariant = state.hasVariant;
+  const resolvedSavingToAccount = state.busy.savingToAccount;
+  const resolvedCanOpenSave = state.canOpenSaveAction;
+  const resolvedHasLoadedSavedConfig = state.hasLoadedSavedConfig;
+  const resolvedCanDownloadPdf = state.canDownloadPdf;
+  const resolvedDownloadingPdf = state.busy.downloadingPdf;
+
+  const onAddToCart = () => {
+    void actions.addToCart();
+  };
+
+  const onOpenSaveModal = () => {
+    actions.openSaveModal();
+  };
+
+  const onDownloadPdf = () => {
+    void actions.downloadPdf();
+  };
 
   if (variant === 'sticky') {
     return (
@@ -218,12 +198,12 @@ function ConfiguratorActionsRoot({
           type="button"
           onClick={onAddToCart}
           disabled={!resolvedIsComplete || !resolvedHasVariant || resolvedAddingToCart}
-          className={`${primaryActionClass} min-h-11 px-4 text-xs font-semibold uppercase tracking-[0.12em]`}
+          className={`btn-premium min-h-11 px-4 text-xs font-semibold uppercase tracking-[0.12em]`}
         >
           <PrimaryButtonLabel
             label={resolvedAddingToCart
               ? (resolvedIsEditingLine ? 'Updating...' : 'Adding...')
-              : (resolvedIsEditingLine ? 'Update Cart Line' : 'Add Configured Keypad')}
+              : (resolvedIsEditingLine ? 'Update Cart Line' : 'Add Keypad to Cart')}
           />
         </button>
 
@@ -231,7 +211,7 @@ function ConfiguratorActionsRoot({
           type="button"
           onClick={onOpenSaveModal}
           disabled={!resolvedIsComplete || resolvedSavingToAccount || !resolvedCanOpenSave}
-          className={`${primaryActionClass} min-h-11 px-4 text-xs font-semibold uppercase tracking-[0.12em]`}
+          className={`btn-save-account min-h-11 px-4 text-xs font-semibold uppercase tracking-[0.12em]`}
         >
           <PrimaryButtonLabel label={resolvedHasLoadedSavedConfig ? 'Update Saved Design' : 'Save To Account'} />
         </button>
@@ -242,16 +222,17 @@ function ConfiguratorActionsRoot({
           type="button"
           onClick={onDownloadPdf}
           disabled={!resolvedCanDownloadPdf || resolvedDownloadingPdf}
-          className={`${strongGhostClass} min-h-11 px-4 text-xs font-semibold uppercase tracking-[0.12em] text-[#0d2f63] disabled:cursor-not-allowed disabled:opacity-50`}
+          className={`btn-pdf min-h-11 px-4 text-xs font-semibold uppercase tracking-[0.12em]`}
         >
           {resolvedDownloadingPdf ? 'Generating...' : 'Download PDF'}
         </button>
-        <Link
-          href="/account"
-          className={`${strongGhostClass} min-h-11 px-4 text-xs font-semibold uppercase tracking-[0.12em] text-[#5c6f90] hover:text-[#1e3355]`}
+        <button
+          type="button"
+          onClick={actions.openSavedDesignsModal}
+          className={`min-h-11 flex items-center justify-center rounded-btn border border-surface-border bg-white px-4 text-xs font-semibold uppercase tracking-[0.12em] text-ink-muted transition-colors hover:border-ink-muted hover:text-ink w-full`}
         >
-          Open My Saved Designs
-        </Link>
+          My Saved Designs
+        </button>
       </div>
     </>
   );

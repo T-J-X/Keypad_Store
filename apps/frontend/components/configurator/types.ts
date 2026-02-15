@@ -67,14 +67,32 @@ export type KeypadConfiguratorState = {
   canOpenSaveAction: boolean;
   canDownloadPdf: boolean;
   saveModalOpen: boolean;
+  savedDesignsModalOpen: boolean;
   saveName: string;
   icons: IconCatalogItem[];
   iconsError: string | null;
   savedConfigError: string | null;
+  savedDesigns: SavedConfigurationItem[];
+  savedDesignsLoading: boolean;
+  savedDesignsError: string | null;
   cartStatus: StatusMessage | null;
   saveStatus: StatusMessage | null;
-  busy: KeypadConfiguratorBusyState;
-  preview: KeypadPreviewState;
+  busy: {
+    iconsLoading: boolean;
+    loadingSavedConfig: boolean;
+    addingToCart: boolean;
+    savingToAccount: boolean;
+    downloadingPdf: boolean;
+  };
+  preview: {
+    rotationDeg: number;
+    showGlows: boolean;
+    iconScale: number;
+    iconVisibleComp: number | undefined;
+    debugMode: boolean;
+    editMode: boolean;
+    descriptionText: string;
+  };
 };
 
 export type KeypadConfiguratorActions = {
@@ -89,8 +107,10 @@ export type KeypadConfiguratorActions = {
   addToCart: () => Promise<void>;
   openSaveModal: () => void;
   closeSaveModal: () => void;
+  openSavedDesignsModal: () => void;
+  closeSavedDesignsModal: () => void;
   submitSave: () => Promise<void>;
-  setSaveName: (value: string) => void;
+  setSaveName: (name: string) => void;
   downloadPdf: () => Promise<void>;
 };
 

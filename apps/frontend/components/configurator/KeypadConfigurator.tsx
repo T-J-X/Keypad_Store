@@ -11,6 +11,7 @@ import type { PilotKeypadProduct } from './types';
 const ConfiguratorActions = dynamic(() => import('./ConfiguratorActions'));
 const IconSelectionPopup = dynamic(() => import('./IconSelectionPopup'));
 const SaveDesignModal = dynamic(() => import('./SaveDesignModal'));
+const SavedDesignsModal = dynamic(() => import('./SavedDesignsModal'));
 
 const Keypad = {
   Provider: KeypadProvider,
@@ -20,6 +21,7 @@ const Keypad = {
   Actions: ConfiguratorActions,
   IconPicker: IconSelectionPopup,
   SaveDialog: SaveDesignModal,
+  SavedDesignsModal,
 };
 
 function KeypadConfiguratorShell() {
@@ -91,12 +93,13 @@ function KeypadConfiguratorShell() {
                 >
                   {state.busy.downloadingPdf ? 'Generating...' : 'Download PDF'}
                 </button>
-                <Link
-                  href="/account"
+                <button
+                  type="button"
+                  onClick={actions.openSavedDesignsModal}
                   className="btn-secondary dark w-full justify-center text-xs uppercase tracking-[0.12em]"
                 >
                   My Saved Designs
-                </Link>
+                </button>
               </div>
             )}
           </Keypad.Sidebar>
@@ -109,6 +112,7 @@ function KeypadConfiguratorShell() {
 
       <Keypad.IconPicker />
       <Keypad.SaveDialog />
+      <Keypad.SavedDesignsModal />
     </div>
   );
 }

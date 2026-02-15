@@ -140,6 +140,45 @@ export default function KeypadProvider({
   const [saveStatus, setSaveStatus] = useState<StatusMessage | null>(null);
   const [savingToAccount, setSavingToAccount] = useState(false);
 
+  // NEW: Saved Designs Modal State
+  const [isSavedDesignsModalOpen, setIsSavedDesignsModalOpen] = useState(false);
+  const [savedDesigns, setSavedDesigns] = useState<SavedConfigurationItem[]>([]);
+  const [savedDesignsLoading, setSavedDesignsLoading] = useState(false);
+  const [savedDesignsError, setSavedDesignsError] = useState<string | null>(null);
+
+  const fetchSavedDesigns = async () => {
+    setSavedDesignsLoading(true);
+    setSavedDesignsError(null);
+    try {
+      const response = await fetch('/api/account/saved-configurations', {
+        method: 'GET',
+        cache: 'no-store',
+      });
+      const payload = (await response.json().catch(() => ({}))) as { items?: SavedConfigurationItem[]; error?: string };
+
+      if (!response.ok) {
+        throw new Error(payload.error || 'Could not load saved designs.');
+      }
+      setSavedDesigns(payload.items || []);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Could not load saved designs.';
+      setSavedDesignsError(message);
+    } finally {
+      setSavedDesignsLoading(false);
+    }
+  };
+
+  const openSavedDesignsModal = () => {
+    if (isAuthenticated === false) {
+      const query = searchParams.toString();
+      const redirectTo = `${pathname}${query ? `?${query}` : ''}`;
+      window.location.assign(`/login?redirectTo=${encodeURIComponent(redirectTo)}`);
+      return;
+    }
+    setIsSavedDesignsModalOpen(true);
+    void fetchSavedDesigns();
+  };
+
   const [downloadingPdf, setDownloadingPdf] = useState(false);
   const hydratedLoadIdRef = useRef<string | null>(null);
   const hydratedLineIdRef = useRef<string | null>(null);
@@ -736,10 +775,15 @@ export default function KeypadProvider({
       canOpenSaveAction,
       canDownloadPdf,
       saveModalOpen: isSaveModalOpen,
+      savedDesignsModalOpen: isSavedDesignsModalOpen, // NEW state
       saveName,
       icons,
       iconsError,
       savedConfigError,
+      // NEW state
+      savedDesigns,
+      savedDesignsLoading,
+      savedDesignsError,
       cartStatus,
       saveStatus,
       busy: {
@@ -779,6 +823,10 @@ export default function KeypadProvider({
       openSaveModal,
       closeSaveModal: () => {
         setIsSaveModalOpen(false);
+      },
+      openSavedDesignsModal, // NEW action
+      closeSavedDesignsModal: () => { // NEW action
+        setIsSavedDesignsModalOpen(false);
       },
       submitSave,
       setSaveName,
