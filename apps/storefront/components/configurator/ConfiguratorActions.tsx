@@ -29,7 +29,7 @@ type CompoundActionProps = {
   compact?: boolean;
 };
 
-const primaryActionClass = 'btn-primary';
+const primaryActionClass = 'btn-premium';
 
 const strongGhostClass = 'btn-secondary dark justify-center';
 

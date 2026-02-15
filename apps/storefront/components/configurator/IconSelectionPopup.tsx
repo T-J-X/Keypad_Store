@@ -493,7 +493,7 @@ function IconPickerSwatches() {
         <button
           type="button"
           onClick={context.actions.close}
-          className="btn-primary"
+          className="btn-premium"
         >
           Done
         </button>

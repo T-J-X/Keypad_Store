@@ -127,8 +127,24 @@ export default function ConfiguredKeypadThumbnail({
     };
   }, [geometry.aspectRatio, shellSrc]);
 
+  const rotationDeg = configuration._meta?.rotation ?? 0;
+  const rotationRad = (rotationDeg * Math.PI) / 180;
+  // If rotated 90/270, the visual bounding box is tall.
+  // To minimize clipping in square containers (like cart), we scale down if needed.
+  // Simple heuristic: if rotated near 90deg, scale by aspect ratio inverse if it's > 1.
+  const isLandscape = renderAspectRatio > 1;
+  const isRotatedSide = Math.abs(rotationDeg) % 180 !== 0;
+  const scale = isRotatedSide && isLandscape ? 1 / renderAspectRatio : 1;
+
   return (
-    <div className={sizeClass} style={{ aspectRatio: String(renderAspectRatio) }}>
+    <div
+      className={sizeClass}
+      style={{
+        aspectRatio: String(renderAspectRatio),
+        transform: `rotate(${rotationDeg}deg) scale(${scale})`,
+        transformOrigin: 'center center',
+      }}
+    >
       <div className="relative h-full w-full overflow-visible rounded-xl border border-[#0f2c5a]/20 bg-[radial-gradient(145%_125%_at_50%_0%,#2c75d8_0%,#12335f_40%,#081427_100%)]">
         <div className="absolute inset-0 overflow-hidden rounded-xl">
           {shellSrc ? (

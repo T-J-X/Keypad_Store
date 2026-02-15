@@ -434,6 +434,9 @@ export default function KeypadProvider({
 
         if (!cancelled) {
           hydrateFromSavedConfiguration(parsed.value, icons, slotIds);
+          if (parsed.value._meta?.rotation != null) {
+            setPreviewRotationDeg(parsed.value._meta.rotation);
+          }
           setEditLineQuantity(Math.max(1, Math.floor(line.quantity ?? 1)));
           const lastConfiguredIconId = slotIds
             .map((slotId) => parsed.value[slotId]?.iconId ?? '')
@@ -515,25 +518,31 @@ export default function KeypadProvider({
     try {
       const response = editLineId
         ? await fetch('/api/cart/update-line', {
-            method: 'POST',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({
-              orderLineId: editLineId,
-              quantity: editLineQuantity,
-              configuration: strictConfiguration,
-            }),
-          })
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            orderLineId: editLineId,
+            quantity: editLineQuantity,
+            configuration: {
+              ...strictConfiguration,
+              _meta: { rotation: previewRotationDeg },
+            },
+          }),
+        })
         : await fetch('/api/cart/add-item', {
-            method: 'POST',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({
-              productVariantId: keypad.productVariantId,
-              quantity: 1,
-              customFields: {
-                configuration: strictConfiguration,
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({
+            productVariantId: keypad.productVariantId,
+            quantity: 1,
+            customFields: {
+              configuration: {
+                ...strictConfiguration,
+                _meta: { rotation: previewRotationDeg },
               },
-            }),
-          });
+            },
+          }),
+        });
 
       const payload = (await response.json().catch(() => ({}))) as {
         orderCode?: string;

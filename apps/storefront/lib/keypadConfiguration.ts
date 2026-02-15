@@ -7,14 +7,18 @@ export type SlotConfigurationDraft = {
   color: string | null;
 };
 
-export type KeypadConfigurationDraft = Record<string, SlotConfigurationDraft>;
+export type KeypadConfigurationDraft = Record<string, SlotConfigurationDraft> & {
+  _meta?: { rotation?: number };
+};
 
 export type SlotConfiguration = {
   iconId: string;
   color: string | null;
 };
 
-export type KeypadConfiguration = Record<string, SlotConfiguration>;
+export type KeypadConfiguration = Record<string, SlotConfiguration> & {
+  _meta?: { rotation?: number };
+};
 
 const ICON_ID_PATTERN = /^[A-Za-z0-9]{3,4}$/;
 const HEX_COLOR_PATTERN = /^#[0-9A-F]{6}$/;
@@ -115,6 +119,9 @@ export function serializeConfiguration(
 ): string {
   const keys = resolveSlotIds(slotIds, getOrderedSlotIdsFromConfiguration(configuration));
   const orderedConfiguration: KeypadConfigurationDraft | KeypadConfiguration = {};
+  if (configuration._meta) {
+    orderedConfiguration._meta = configuration._meta;
+  }
   for (const slotId of keys) {
     const slot = configuration[slotId];
     orderedConfiguration[slotId] = {
@@ -127,13 +134,13 @@ export function serializeConfiguration(
 
 type ValidationResult =
   | {
-      ok: true;
-      value: KeypadConfigurationDraft;
-    }
+    ok: true;
+    value: KeypadConfigurationDraft;
+  }
   | {
-      ok: false;
-      error: string;
-    };
+    ok: false;
+    error: string;
+  };
 
 export function validateAndNormalizeConfigurationInput(
   input: unknown,
@@ -182,6 +189,9 @@ export function validateAndNormalizeConfigurationInput(
   }
 
   const normalized = createEmptyConfigurationDraft(slotIds);
+  if (payload._meta && typeof payload._meta === 'object') {
+    normalized._meta = payload._meta as { rotation?: number };
+  }
 
   for (const slotId of slotIds) {
     if (!(slotId in payload)) {
