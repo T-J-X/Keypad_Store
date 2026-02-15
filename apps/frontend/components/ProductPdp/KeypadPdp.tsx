@@ -195,7 +195,7 @@ export default function KeypadPdp({
   });
 
   return (
-    <div className="mx-auto w-full max-w-6xl bg-transparent px-6 pb-20 pt-12">
+    <div className="mx-auto w-full max-w-6xl bg-transparent px-6 py-24">
       <div className="mb-6">
         <Breadcrumbs items={breadcrumbs} />
       </div>
