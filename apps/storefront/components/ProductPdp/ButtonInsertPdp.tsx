@@ -13,11 +13,7 @@ import DownloadsList from './DownloadsList';
 import PdpTabs, { type PdpTabPanel } from './PdpTabs';
 import ProductHero from './ProductHero';
 import { normalizeSpecValue, resolveAdditionalSpecs, resolveInTheBoxItems, resolveProductDownloads } from './productFieldData';
-
-type BreadcrumbItem = {
-  label: string;
-  href?: string;
-};
+import { Breadcrumbs, type BreadcrumbItem } from '../Breadcrumbs';
 
 const WHY_CHOOSE_ITEMS = [
   {
@@ -267,21 +263,8 @@ export default function ButtonInsertPdp({
 
   return (
     <div className="mx-auto w-full max-w-6xl bg-transparent px-6 pb-20 pt-12">
-      <div className="mb-6 text-xs font-semibold uppercase tracking-wide text-ink/50">
-        <nav aria-label="Breadcrumb">
-          <ol className="flex flex-wrap items-center gap-2">
-            {breadcrumbs.map((crumb, index) => (
-              <li key={`${crumb.label}-${index}`} className="flex items-center gap-2">
-                {crumb.href ? (
-                  <Link href={crumb.href} className="hover:text-ink">{crumb.label}</Link>
-                ) : (
-                  <span className="text-ink">{crumb.label}</span>
-                )}
-                {index < breadcrumbs.length - 1 && <span className="text-ink/35">/</span>}
-              </li>
-            ))}
-          </ol>
-        </nav>
+      <div className="mb-6">
+        <Breadcrumbs items={breadcrumbs} />
       </div>
 
       <ProductHero
