@@ -376,7 +376,7 @@ export default function Navbar() {
         className={[
           'sticky top-0 z-50 transition-all duration-300 ease-in-out wil-change-[height,background-color]',
           isScrolled
-            ? 'h-[72px] border-b border-white/10 bg-[rgba(6,10,18,0.92)] shadow-[0_10px_40px_rgba(22,30,44,0.6)] backdrop-blur-xl lg:h-[76px]'
+            ? 'h-[76px] border-b border-white/10 bg-[rgba(6,10,18,0.92)] shadow-[0_10px_40px_rgba(22,30,44,0.6)] backdrop-blur-xl lg:h-[80px]'
             : 'h-20 border-b border-transparent bg-transparent shadow-[0_4px_24px_rgba(0,0,0,0.25)] lg:h-[84px]',
         ].join(' ')}
       >
@@ -414,7 +414,8 @@ export default function Navbar() {
                 height={64}
                 className={[
                   'w-auto transition-all duration-500',
-                  isScrolled ? 'h-10 brightness-0 invert' : 'h-14',
+                  'h-14',
+                  isScrolled ? 'brightness-0 invert' : '',
                 ].join(' ')}
                 priority
               />
