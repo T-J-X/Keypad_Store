@@ -566,8 +566,6 @@ export default function KeypadPreview({
 
   return (
     <div className="card glow-isolate relative flex h-full flex-col overflow-hidden border border-white/10 bg-deep-navy py-[50px] px-6 shadow-2xl">
-      <h1 className="mt-4 text-4xl font-semibold tracking-tight text-white sm:text-5xl">{renderLayout.model}</h1>
-      {description && <p className="mt-2 max-w-2xl text-sm text-panel-muted mb-6">{description}</p>}
 
       {editMode ? (
         <div className="mb-4 flex-shrink-0 rounded-2xl border border-white/20 bg-[#071634]/70 px-4 py-3 text-xs text-blue-100/95">
@@ -1024,7 +1022,7 @@ export default function KeypadPreview({
       </div>
 
       <div className="mt-4 space-y-1 text-xs text-white/90">
-        <p className="text-[#f0f7ff]">Select a button insert for each slot, then pick a ring glow color to preview your final keypad layout.</p>
+        <h3 className="text-lg font-medium text-white mb-2 leading-relaxed">Select a button insert for each slot, then pick a ring glow color to preview your final keypad layout.</h3>
         {descriptionText ? <p className="text-[#d7e8ff]/90">{descriptionText}</p> : null}
       </div>
     </div>

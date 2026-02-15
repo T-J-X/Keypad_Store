@@ -513,7 +513,7 @@ function IconPickerModal() {
     ? 'fixed inset-0 z-[80] flex items-end bg-[#020a18]/74 px-0 py-0 backdrop-blur-[2px]'
     : 'fixed inset-0 z-[80] flex items-center justify-center bg-[#020a18]/74 px-4 py-6 backdrop-blur-[2px]';
   const panelClass = context.props.isMobile
-    ? 'h-[74vh] w-full overflow-hidden rounded-t-3xl border border-panel-border border-b-0 bg-panel shadow-[0_-20px_80px_rgba(2,8,24,0.55)]'
+    ? 'h-[85vh] w-full overflow-hidden rounded-t-3xl border border-panel-border border-b-0 bg-panel shadow-[0_-20px_80px_rgba(2,8,24,0.55)]'
     : 'h-[78vh] w-full max-w-5xl overflow-hidden rounded-3xl border border-panel-border bg-panel shadow-[0_30px_80px_rgba(2,8,24,0.55)]';
 
   return (
@@ -525,7 +525,7 @@ function IconPickerModal() {
       backdropClassName={overlayClass}
       panelClassName={`${panelClass} flex flex-col`}
     >
-      <div className="flex shrink-0 items-center justify-between border-b border-white/12 px-5 py-4 sm:px-6">
+      <div className={`flex shrink-0 items-center justify-between border-b border-white/12 px-5 py-4 sm:px-6 ${context.props.isMobile ? 'py-3' : ''}`}>
         <div>
           <div id={descriptionId} className="text-xs font-semibold uppercase tracking-[0.16em] text-panel-muted">Icon Library</div>
           <h3 id={titleId} className="mt-1 text-lg font-semibold text-white">{context.props.slotLabel}</h3>
