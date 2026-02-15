@@ -552,8 +552,7 @@ export default function KeypadPreview({
     <div className="card glow-isolate relative overflow-hidden border border-white/10 bg-deep-navy p-5 shadow-2xl sm:p-6">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
-          <div className="text-xs font-semibold uppercase tracking-[0.18em] text-blue-100/80">Command View</div>
-          <h2 className="mt-1 text-lg font-semibold tracking-tight text-white">{renderLayout.model} Preview</h2>
+          <h2 className="text-lg font-semibold tracking-tight text-white">{renderLayout.model} Preview</h2>
         </div>
         <div className="flex items-center gap-2">
           <button
