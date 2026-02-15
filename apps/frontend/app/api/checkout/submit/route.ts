@@ -321,7 +321,7 @@ export async function POST(request: Request) {
         method: selectedPaymentMethodCode,
         metadata: {
           strategy: 'standard-payment',
-          source: 'storefront-checkout',
+          source: 'frontend-checkout',
           emailAddress,
           timestamp: new Date().toISOString(),
         },

@@ -322,7 +322,7 @@ export async function fetchKeypadProducts(): Promise<KeypadProduct[]> {
   // Define the desired order based on model numbers
   const preferredOrder = ['2200', '2300', '2400', '2500', '2600', '3500'];
 
-  return keypads.sort((a, b) => {
+  return keypads.sort((a: KeypadProduct, b: KeypadProduct) => {
     // Helper to find the index of the model number in the product name or slug
     const getOrderIndex = (product: KeypadProduct) => {
       const identifier = (product.slug + product.name).toLowerCase();
