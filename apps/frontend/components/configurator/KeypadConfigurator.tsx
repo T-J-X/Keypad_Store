@@ -3,6 +3,7 @@
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { use, Suspense } from 'react';
+import { Breadcrumbs } from '../Breadcrumbs';
 import ConfigurationSidebar from './ConfigurationSidebar';
 import KeypadPreview from './KeypadPreview';
 import KeypadProvider, { KeypadContext } from './KeypadProvider';
@@ -36,7 +37,13 @@ function KeypadConfiguratorShell() {
       <div className="card-panel p-6 sm:p-8">
         <div className="mb-6 flex flex-wrap items-end justify-between gap-4">
           <div>
-            <div className="pill">Pilot Configurator</div>
+            <Breadcrumbs
+              items={[
+                { label: 'Configurator', href: '/configurator' },
+                { label: state.modelCode },
+              ]}
+              className="text-panel-muted [&_a]:text-panel-muted [&_a:hover]:text-white [&_span[aria-current]]:text-white [&_svg]:text-panel-muted"
+            />
             <h1 className="mt-4 text-3xl font-semibold tracking-tight text-white sm:text-4xl">{state.modelCode}</h1>
             <p className="mt-2 max-w-2xl text-sm text-panel-muted">
               {isEditingLine
