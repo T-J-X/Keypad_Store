@@ -315,9 +315,23 @@ export async function fetchIconProductsPage({
 export async function fetchKeypadProducts(): Promise<KeypadProduct[]> {
   const products = await fetchAllProducts();
 
-  return products
+  const keypads = products
     .filter((item) => item?.customFields?.isKeypadProduct)
     .map((item) => item as KeypadProduct);
+
+  // Define the desired order based on model numbers
+  const preferredOrder = ['2200', '2300', '2400', '2500', '2600', '3500'];
+
+  return keypads.sort((a, b) => {
+    // Helper to find the index of the model number in the product name or slug
+    const getOrderIndex = (product: KeypadProduct) => {
+      const identifier = (product.slug + product.name).toLowerCase();
+      const index = preferredOrder.findIndex((model) => identifier.includes(model));
+      return index === -1 ? 999 : index; // Place unknown models at the end
+    };
+
+    return getOrderIndex(a) - getOrderIndex(b);
+  });
 }
 
 const fetchProductBySlugUncached = async (slug: string): Promise<CatalogProduct | null> => {
