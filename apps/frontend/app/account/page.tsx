@@ -6,7 +6,7 @@ const AccountTabs = dynamic(() => import('../../components/AccountTabs'), {
 });
 
 export const metadata: Metadata = {
-  title: 'Account | Keypad Store',
+  title: 'Account | VCT',
   description: 'Manage saved keypad configurations and review orders.',
   alternates: {
     canonical: '/account',

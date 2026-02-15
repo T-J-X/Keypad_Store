@@ -18,5 +18,5 @@ export function resolveSeoDescription(product: CatalogProduct) {
   if (seoDescription) return seoDescription;
   const productDescription = stripHtml(product.description ?? '');
   if (productDescription) return truncate(productDescription, 160);
-  return `Explore ${product.name} at Keypad Store.`;
+  return `Explore ${product.name} at VCT.`;
 }

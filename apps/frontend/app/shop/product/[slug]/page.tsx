@@ -123,7 +123,7 @@ export async function generateMetadata({
 
   if (!product) {
     return {
-      title: 'Product Not Found | Keypad Store',
+      title: 'Product Not Found | VCT',
       description: 'The requested product could not be found.',
       alternates: {
         canonical: `/shop/product/${encodeURIComponent(resolvedParams.slug)}`,
@@ -135,7 +135,7 @@ export async function generateMetadata({
     };
   }
 
-  const seoTitle = toTrimmedString(product.customFields?.seoTitle) || `${product.name} | Keypad Store`;
+  const seoTitle = toTrimmedString(product.customFields?.seoTitle) || `${product.name} | VCT`;
   const canonical = resolveCanonicalUrl(product, resolvedParams.slug);
   const noIndex = product.customFields?.seoNoIndex === true;
 

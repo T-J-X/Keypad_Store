@@ -259,7 +259,7 @@ export default function MobileMenu({
 
                     <div className="border-t border-panel-border p-6">
                         <div className="text-xs text-panel-muted">
-                            &copy; 2026 Keypad Co.
+                            &copy; 2026 Vehicle Control Technologies
                         </div>
                     </div>
                 </div>

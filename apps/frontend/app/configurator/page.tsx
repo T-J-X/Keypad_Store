@@ -5,7 +5,7 @@ import KeypadCard from '../../components/KeypadCard';
 import { fetchKeypadProducts } from '../../lib/vendure.server';
 
 export const metadata: Metadata = {
-  title: 'Configurator | Keypad Store',
+  title: 'Configurator | VCT',
   description: 'Choose a keypad model and configure slot-by-slot inserts with engineering-ready precision.',
   alternates: {
     canonical: '/configurator',

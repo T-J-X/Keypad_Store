@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import Image from 'next/image';
 import { ChevronDown, Menu, Search, ShoppingBag, UserRound, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode, type RefObject } from 'react';
 import { CART_UPDATED_EVENT, notifyCartUpdated } from '../lib/cartEvents';
@@ -366,11 +367,11 @@ export default function Navbar() {
         className={[
           'sticky top-0 z-50 transition-[background-color,border-color,box-shadow,backdrop-filter] duration-300',
           isScrolled
-            ? 'border-b border-white/10 bg-[rgba(6,10,18,0.85)] shadow-[0_16px_36px_rgba(2,8,24,0.6)] backdrop-blur-xl'
-            : 'border-b border-transparent bg-[rgba(6,10,18,0.5)] backdrop-blur-md',
+            ? 'border-b border-white/10 bg-[rgba(6,10,18,0.92)] shadow-[0_16px_36px_rgba(2,8,24,0.6)] backdrop-blur-xl'
+            : 'border-b border-transparent bg-transparent',
         ].join(' ')}
       >
-        <div className="relative mx-auto flex h-16 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:h-[74px] lg:px-8">
+        <div className="relative mx-auto flex h-20 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:h-[88px] lg:px-8">
           <div className="flex min-w-0 items-center gap-3 lg:gap-8">
             <button
               type="button"
@@ -379,7 +380,9 @@ export default function Navbar() {
               onClick={() => setIsMenuOpen((current) => !current)}
               className={[
                 'inline-flex h-11 w-11 items-center justify-center rounded-full border transition lg:hidden',
-                'border-white/15 bg-white/[0.08] text-white hover:bg-white/[0.14]',
+                isScrolled
+                  ? 'border-white/15 bg-white/[0.08] text-white hover:bg-white/[0.14]'
+                  : 'border-ink/15 bg-ink/[0.06] text-ink hover:bg-ink/[0.12]',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky/45 focus-visible:ring-offset-2 focus-visible:ring-offset-black/40',
               ].join(' ')}
             >
@@ -390,13 +393,22 @@ export default function Navbar() {
               href="/"
               aria-label="Go to homepage"
               className={[
-                'absolute left-1/2 -translate-x-1/2 text-sm font-bold uppercase tracking-[0.22em] transition-opacity hover:opacity-85',
-                'text-white',
+                'absolute left-1/2 -translate-x-1/2 transition-all duration-300 hover:opacity-85',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky/45 focus-visible:ring-offset-2 focus-visible:ring-offset-black/40',
-                'lg:static lg:translate-x-0 lg:text-[15px]',
+                'lg:static lg:translate-x-0',
               ].join(' ')}
             >
-              KEYPAD CO.
+              <Image
+                src="/vct-logo.png"
+                alt="Vehicle Control Technologies"
+                width={200}
+                height={64}
+                className={[
+                  'h-14 w-auto transition-[filter] duration-300',
+                  isScrolled ? 'brightness-0 invert' : '',
+                ].join(' ')}
+                priority
+              />
             </Link>
 
             <nav className="hidden items-center gap-7 lg:flex" aria-label="Primary navigation">
@@ -414,14 +426,14 @@ export default function Navbar() {
                   onFocus={openShopMenu}
                   className={[
                     'group relative inline-flex items-center gap-1 text-sm font-medium tracking-tight transition-colors duration-200',
-                    'text-white/80 hover:text-white',
+                    isScrolled ? 'text-white/80 hover:text-white' : 'text-ink/75 hover:text-ink',
                   ].join(' ')}
                 >
                   <span>Shop</span>
                   <ChevronDown className={['h-4 w-4 transition-transform', isShopMenuOpen ? 'rotate-180' : 'rotate-0'].join(' ')} />
                   <span className={[
                     'absolute -bottom-1 left-0 h-px w-0 transition-all duration-300 group-hover:w-full',
-                    'bg-white',
+                    isScrolled ? 'bg-white' : 'bg-ink',
                   ].join(' ')} />
                 </Link>
 
@@ -459,7 +471,7 @@ export default function Navbar() {
               </div>
 
               {primaryLinks.map((item) => (
-                <NavTextLink key={item.href} href={item.href} label={item.label} inverse={true} />
+                <NavTextLink key={item.href} href={item.href} label={item.label} inverse={isScrolled} />
               ))}
             </nav>
           </div>
@@ -470,7 +482,7 @@ export default function Navbar() {
                 label={'Open search'}
                 expanded={isSearchOpen}
                 onClick={() => setIsSearchOpen(true)}
-                inverse={true}
+                inverse={isScrolled}
               >
                 <Search className="h-4 w-4" strokeWidth={1.9} />
               </IconButton>
@@ -483,7 +495,7 @@ export default function Navbar() {
                   buttonRef={accountButtonRef}
                   expanded={isAccountMenuOpen}
                   onClick={() => setIsAccountMenuOpen((current) => !current)}
-                  inverse={true}
+                  inverse={isScrolled}
                 >
                   <UserRound className="h-4 w-4" strokeWidth={1.9} />
                 </IconButton>
@@ -524,12 +536,12 @@ export default function Navbar() {
                 </div>
               </div>
             ) : (
-              <IconLink href="/login" label="Sign in" className="hidden lg:inline-flex" inverse={true}>
+              <IconLink href="/login" label="Sign in" className="hidden lg:inline-flex" inverse={isScrolled}>
                 <UserRound className="h-4 w-4" strokeWidth={1.9} />
               </IconLink>
             )}
 
-            <IconLink href="/cart" label="Open cart" className="relative" inverse={true}>
+            <IconLink href="/cart" label="Open cart" className="relative" inverse={isScrolled}>
               <ShoppingBag className="h-4 w-4" strokeWidth={1.9} />
               {showCartBadge ? (
                 <span

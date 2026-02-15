@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-    title: 'Privacy Policy | Keypad Store',
+    title: 'Privacy Policy | VCT',
     description: 'How we collect, use, and protect your data.',
 };
 
@@ -19,7 +19,7 @@ export default function PrivacyPage() {
 
             <div className="prose prose-neutral max-w-none text-ink/80 prose-headings:font-semibold prose-headings:tracking-tight">
                 <p>
-                    Keypad Store ("we", "our", "us") is committed to protecting your privacy. This policy details how we handle your personal information in compliance with the UK Data Protection Act 2018 and the GDPR.
+                    Vehicle Control Technologies ("we", "our", "us") is committed to protecting your privacy. This policy details how we handle your personal information in compliance with the UK Data Protection Act 2018 and the GDPR.
                 </p>
 
                 <h3>1. Information We Collect</h3>
@@ -55,7 +55,7 @@ export default function PrivacyPage() {
 
                 <h3>5. Contact Us</h3>
                 <p>
-                    If you have any questions about this privacy policy or our privacy practices, please contact us at support@keypad-store.com.
+                    If you have any questions about this privacy policy or our privacy practices, please contact us at support@vc-tech.co.uk.
                 </p>
             </div>
         </div>

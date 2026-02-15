@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-    title: 'Cookie Policy | Keypad Store',
+    title: 'Cookie Policy | VCT',
     description: 'Information about the cookies we use on our website.',
 };
 

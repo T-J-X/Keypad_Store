@@ -1,4 +1,5 @@
 import Link from 'next/link';
+import Image from 'next/image';
 
 const footerGroups = [
   {
@@ -28,7 +29,7 @@ const footerGroups = [
   {
     title: 'Company',
     links: [
-      { label: 'About Keypad Co.', href: '/about' },
+      { label: 'About VCT', href: '/about' },
       { label: 'Partners', href: '/partners' },
       { label: 'Careers', href: '/careers' },
     ],
@@ -46,9 +47,15 @@ export default function Footer() {
         {/* Top Section: Newsletter & Intro */}
         <div className="mb-16 grid gap-12 lg:grid-cols-[1fr_400px]">
           <div className="max-w-md space-y-4">
-            <h2 className="text-lg font-bold tracking-tight">Keypad Co.</h2>
+            <Image
+              src="/vct-logo.png"
+              alt="Vehicle Control Technologies"
+              width={240}
+              height={80}
+              className="h-16 w-auto brightness-0 invert"
+            />
             <p className="text-sm leading-relaxed text-white/80">
-              Engineering-grade control interfaces for demanding environments.
+              Engineering-grade vehicle control interfaces for demanding environments.
               Configure, customize, and order technical keypads with ease.
             </p>
           </div>
@@ -102,7 +109,7 @@ export default function Footer() {
         <div className="mt-16 border-t border-white/5 pt-8">
           <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
             <p className="text-xs text-panel-muted">
-              &copy; 2026 Keypad Co. All rights reserved. <br className="sm:hidden" />
+              &copy; 2026 Vehicle Control Technologies Ltd. All rights reserved. <br className="sm:hidden" />
               <span className="hidden sm:inline"> | </span>
               Registered in UK: 12345678 | VAT: GB 123 4567 89
               <br />

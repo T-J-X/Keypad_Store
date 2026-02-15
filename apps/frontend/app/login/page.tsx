@@ -5,7 +5,7 @@ import LoginForm from '../../components/LoginForm';
 import { getSafeRelativePath } from '../../lib/googleAuth';
 
 export const metadata: Metadata = {
-  title: 'Login | Keypad Store',
+  title: 'Login | VCT',
   description: 'Sign in to manage keypad layouts and orders.',
   alternates: {
     canonical: '/login',
@@ -61,7 +61,7 @@ async function LoginPageContent({
           Sign in to review orders, manage saved configurations, and continue building your next keypad layout.
         </p>
         <div className="card-soft p-4 text-xs text-ink/60">
-          New to Keypad Store? <Link href="/signup" className="font-semibold text-moss">Create an account</Link>.
+          New to VCT? <Link href="/signup" className="font-semibold text-moss">Create an account</Link>.
         </div>
       </div>
 

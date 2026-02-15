@@ -13,11 +13,13 @@ import { resolveMetadataBase } from '../lib/siteUrl';
 export const metadata: Metadata = {
   metadataBase: resolveMetadataBase(),
   title: {
-    default: 'Keypad Store | Configure Technical Keypads',
-    template: '%s | Keypad Store',
+    default: 'VCT | Vehicle Control Technologies',
+    template: '%s | VCT',
   },
   description: 'Configure technical keypads, map icon IDs, and export engineering-ready specifications.',
   keywords: [
+    'vehicle control technologies',
+    'VCT',
     'keypad configurator',
     'custom keypad',
     'marine keypad icons',
@@ -28,15 +30,15 @@ export const metadata: Metadata = {
     canonical: '/',
   },
   openGraph: {
-    title: 'Keypad Store | Configure Technical Keypads',
+    title: 'VCT | Vehicle Control Technologies',
     description: 'Configure technical keypads, map icon IDs, and export engineering-ready specifications.',
     url: '/',
-    siteName: 'Keypad Store',
+    siteName: 'Vehicle Control Technologies',
     type: 'website',
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Keypad Store | Configure Technical Keypads',
+    title: 'VCT | Vehicle Control Technologies',
     description: 'Configure technical keypads, map icon IDs, and export engineering-ready specifications.',
   },
 };

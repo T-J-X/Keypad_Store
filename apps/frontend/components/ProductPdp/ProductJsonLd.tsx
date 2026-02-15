@@ -40,7 +40,7 @@ export default function ProductJsonLd({
     description: resolveSeoDescription(product),
     brand: {
       '@type': 'Brand',
-      name: 'Keypad Co.',
+      name: 'Vehicle Control Technologies',
     },
   };
 
