@@ -15,6 +15,7 @@ interface ProductCardProps {
   categoryHref?: string;
   productHref?: string;
   replaceProductNavigation?: boolean;
+  layout?: 'grid' | 'list';
 }
 
 export default function ProductCard({
@@ -23,7 +24,9 @@ export default function ProductCard({
   categoryHref,
   productHref,
   replaceProductNavigation = false,
+  layout = 'grid',
 }: ProductCardProps) {
+  const isList = layout === 'list';
   const image = product.featuredAsset?.preview ?? product.featuredAsset?.source ?? '';
   const iconId = product.customFields?.iconId ?? product.name;
   const primaryVariant = product.variants?.[0];
@@ -64,11 +67,11 @@ export default function ProductCard({
   const finalProductHref = productHref ?? `/shop/product/${product.slug}`;
 
   return (
-    <div className="group relative flex flex-col rounded-2xl bg-white transition-all duration-300 hover:shadow-soft hover:-translate-y-1">
+    <div className={`group relative flex ${isList ? 'flex-row items-center gap-4 p-2' : 'flex-col'} rounded-2xl bg-white transition-all duration-300 hover:shadow-soft hover:-translate-y-1`}>
       {/* Image Container */}
       <Link
         href={finalProductHref}
-        className="relative aspect-square w-full overflow-hidden rounded-t-2xl bg-surface-alt flex items-center justify-center p-6"
+        className={`relative overflow-hidden ${isList ? 'h-24 w-24 rounded-xl' : 'aspect-square w-full rounded-t-2xl'} bg-surface-alt flex items-center justify-center ${isList ? 'p-2' : 'p-6'}`}
         replace={replaceProductNavigation}
       >
         {image ? (
@@ -92,7 +95,7 @@ export default function ProductCard({
       </Link>
 
       {/* Content */}
-      <div className="flex flex-1 flex-col p-4 sm:p-5">
+      <div className={`flex flex-1 flex-col ${isList ? 'justify-center pr-4' : 'p-4 sm:p-5'}`}>
         <div className="mb-2 flex items-center justify-between gap-2">
           {categoryHref ? (
             <Link
@@ -121,7 +124,7 @@ export default function ProductCard({
         </Link>
 
         {/* Price & Action */}
-        <div className="mt-4 flex items-center justify-between border-t border-surface-border pt-3">
+        <div className={`mt-4 flex items-center justify-between ${isList ? '' : 'border-t border-surface-border pt-3'}`}>
           <div className="flex flex-col">
             <span className="text-sm font-semibold text-ink">
               {priceWithVatLabel || 'Unavailable'}
