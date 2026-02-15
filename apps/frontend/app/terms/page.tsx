@@ -2,8 +2,8 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-    title: 'Terms of Service | Keypad Store',
-    description: 'Terms and conditions for use of the Keypad Store and purchase of products.',
+    title: 'Terms of Service | VCT',
+    description: 'Terms and conditions for use of Vehicle Control Technologies and purchase of products.',
 };
 
 export default function TermsPage() {
@@ -20,7 +20,7 @@ export default function TermsPage() {
 
             <div className="prose prose-neutral max-w-none text-ink/80 prose-headings:font-semibold prose-headings:tracking-tight prose-a:text-blue-600 prose-a:no-underline hover:prose-a:underline">
                 <p>
-                    Welcome to Keypad Store. By accessing our website and purchasing our products, you agree to bound by the following terms and conditions.
+                    Welcome to Vehicle Control Technologies. By accessing our website and purchasing our products, you agree to bound by the following terms and conditions.
                 </p>
 
                 <h3>1. General</h3>
@@ -47,7 +47,7 @@ export default function TermsPage() {
 
                 <h3>4. Limitation of Liability</h3>
                 <p>
-                    Keypad Store shall not be liable for any indirect, incidental, or consequential damages arising from the use or inability to use our products.
+                    Vehicle Control Technologies shall not be liable for any indirect, incidental, or consequential damages arising from the use or inability to use our products.
                 </p>
 
                 <h3>5. Governing Law</h3>

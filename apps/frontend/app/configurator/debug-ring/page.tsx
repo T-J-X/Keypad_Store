@@ -7,7 +7,7 @@ import { resolvePkpModelCode } from '../../../lib/keypadUtils';
 import { fetchKeypadProducts } from '../../../lib/vendure.server';
 
 export const metadata: Metadata = {
-  title: 'Configurator Debug Ring | Keypad Store',
+  title: 'Configurator Debug Ring | VCT',
   description: 'Internal calibration route for keypad slot and ring geometry.',
   robots: {
     index: false,

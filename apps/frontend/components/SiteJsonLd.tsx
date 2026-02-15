@@ -10,14 +10,14 @@ export default function SiteJsonLd() {
       {
         '@type': 'Organization',
         '@id': `${base}/#organization`,
-        name: 'Keypad Store',
+        name: 'Vehicle Control Technologies',
         url: base,
       },
       {
         '@type': 'WebSite',
         '@id': `${base}/#website`,
         url: base,
-        name: 'Keypad Store',
+        name: 'Vehicle Control Technologies',
         potentialAction: {
           '@type': 'SearchAction',
           target: `${base}/shop?q={search_term_string}`,

@@ -687,7 +687,7 @@ function renderPdfHtml({
         <main class="sheet">
           <section class="header">
             <div>
-              <div class="title">KEYPAD CO. CUSTOM CONFIGURATION</div>
+              <div class="title">VCT CUSTOM CONFIGURATION</div>
               <div style="font-size:11px;margin-top:6px;color:#4f6384;">Technical specification sheet</div>
             </div>
             <div class="meta">
@@ -722,8 +722,8 @@ function renderPdfHtml({
           </section>
 
           <section class="footer">
-            <div>Keypad Co. Authorized Technical Partner</div>
-            <div>support@keypadco.example · +44 0000 000000</div>
+            <div>Vehicle Control Technologies</div>
+            <div>support@vc-tech.co.uk · +44 0000 000000</div>
           </section>
         </main>
       </body>

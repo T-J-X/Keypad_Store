@@ -3,7 +3,7 @@ import Link from 'next/link';
 import { Button } from '../components/ui/Button';
 
 export const metadata: Metadata = {
-  title: 'Keypad Store | Configure Technical Keypads',
+  title: 'VCT | Vehicle Control Technologies',
   description: 'Choose a keypad model, map icon inserts, and export production-ready keypad configurations.',
   alternates: {
     canonical: '/',
@@ -15,7 +15,7 @@ export default function HomePage() {
     <div className="mx-auto w-full max-w-6xl px-6 pb-20 pt-16">
       <section className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
         <div className="space-y-6">
-          <div className="pill">Premium keypad systems</div>
+          <div className="pill">Vehicle Control Technologies</div>
           <h1 className="text-4xl font-semibold tracking-tight text-ink md:text-5xl">
             Build a keypad that feels custom from the first press.
           </h1>

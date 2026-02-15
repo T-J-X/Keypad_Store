@@ -3,8 +3,8 @@ import Link from 'next/link';
 import SignupForm from '../../components/SignupForm';
 
 export const metadata: Metadata = {
-  title: 'Sign Up | Keypad Store',
-  description: 'Create a Keypad Store account to save and manage keypad configurations.',
+  title: 'Sign Up | VCT',
+  description: 'Create a VCT account to save and manage keypad configurations.',
   alternates: {
     canonical: '/signup',
   },
