@@ -24,6 +24,7 @@ export default function MobileMenu({
 }: MobileMenuProps) {
     const pathname = usePathname();
     const [isRendered, setIsRendered] = useState(false);
+    const [isVisible, setIsVisible] = useState(false);
     const [mounted, setMounted] = useState(false);
 
     useEffect(() => {
@@ -33,32 +34,41 @@ export default function MobileMenu({
     useEffect(() => {
         if (isOpen) {
             setIsRendered(true);
+            // Double RAF to ensure browser paints the "mounted" state (hidden) before we switch to "visible"
+            requestAnimationFrame(() => {
+                requestAnimationFrame(() => {
+                    setIsVisible(true);
+                });
+            });
             document.body.style.overflow = 'hidden';
         } else {
-            const timer = setTimeout(() => setIsRendered(false), 300);
-            document.body.style.overflow = '';
+            setIsVisible(false);
+            const timer = setTimeout(() => {
+                setIsRendered(false);
+                document.body.style.overflow = '';
+            }, 300);
             return () => clearTimeout(timer);
         }
     }, [isOpen]);
 
     // Close menu when route changes
     useEffect(() => {
-        onClose();
-    }, [pathname, onClose]);
+        if (isOpen) onClose();
+    }, [pathname]);
 
     if (!mounted || !isRendered) return null;
 
     return createPortal(
-        <div className="fixed inset-0 z-[100]" aria-modal="true" role="dialog">
+        <div className="fixed inset-0 z-[150]" aria-modal="true" role="dialog">
             {/* Backdrop */}
             <div
-                className={`absolute inset-0 bg-ink/60 backdrop-blur-sm transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0'}`}
+                className={`absolute inset-0 bg-ink/60 backdrop-blur-sm transition-opacity duration-300 ${isVisible ? 'opacity-100' : 'opacity-0'}`}
                 onClick={onClose}
             />
 
             {/* Drawer */}
             <div
-                className={`absolute inset-y-0 right-0 w-full max-w-xs border-l border-white/10 bg-[rgba(6,10,18,0.9)] backdrop-blur-xl text-white shadow-2xl transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
+                className={`absolute inset-y-0 right-0 w-full max-w-xs border-l border-white/10 bg-[rgba(6,10,18,0.9)] backdrop-blur-xl text-white shadow-2xl transition-transform duration-300 ease-out ${isVisible ? 'translate-x-0' : 'translate-x-full'}`}
             >
                 <div className="flex h-full flex-col">
                     <div className="flex items-center justify-between border-b border-panel-border px-6 py-4">
