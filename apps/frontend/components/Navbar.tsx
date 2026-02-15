@@ -240,7 +240,7 @@ export default function Navbar() {
       // Smart hide/show logic
       if (currentScrollY < 10) {
         setIsVisible(true);
-      } else if (currentScrollY > lastScrollY.current && currentScrollY > 350) {
+      } else if (currentScrollY > lastScrollY.current && currentScrollY > 500) {
         // Scrolling down & past header (increased threshold for "delay")
         setIsVisible(false);
       } else if (currentScrollY < lastScrollY.current) {
@@ -315,6 +315,7 @@ export default function Navbar() {
 
       setIsAccountMenuOpen(false);
       setIsShopMenuOpen(false);
+      setIsCartMenuOpen(false);
     };
 
     const onKeyDown = (event: KeyboardEvent) => {
@@ -395,7 +396,7 @@ export default function Navbar() {
           'sticky top-0 z-50 transition-all duration-500 ease-in-out will-change-[transform,height,background-color]',
           isVisible ? 'translate-y-0' : '-translate-y-full',
           isScrolled
-            ? 'h-[76px] border-b border-white/10 bg-[#06152e]/90 shadow-[0_10px_40px_rgba(0,0,0,0.4)] backdrop-blur-xl lg:h-[80px]'
+            ? 'h-[76px] border-b border-white/10 bg-[#020a18]/90 shadow-[0_10px_40px_rgba(0,0,0,0.4)] backdrop-blur-xl lg:h-[80px]'
             : 'h-20 border-b border-transparent bg-transparent shadow-[0_4px_24px_rgba(0,0,0,0.25)] lg:h-[84px]',
         ].join(' ')}
       >
