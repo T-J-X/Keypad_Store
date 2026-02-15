@@ -352,8 +352,12 @@ export default function ShopClient({
 
   const onSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    setQuery(query.trim());
+    const nextQuery = query.trim();
+    setQuery(nextQuery);
     setPage(1);
+    if (activeSection === 'landing' && nextQuery) {
+      setActiveSection('all');
+    }
   };
 
   const scrollToPageTop = () => {

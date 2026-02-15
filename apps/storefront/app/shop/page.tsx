@@ -251,7 +251,11 @@ async function ShopPageContent({
   const resolvedSearchParams = await searchParamsPromise;
   const query = toStringParam(resolvedSearchParams?.q);
   const sectionRaw = toStringParam(resolvedSearchParams?.section);
-  const section = normalizeSection(sectionRaw);
+  let section = normalizeSection(sectionRaw);
+  // If we have a search query but are on the landing page, switch to 'all' to show results
+  if (section === 'landing' && query.trim().length > 0) {
+    section = 'all';
+  }
   const selectedCategories =
     section === 'button-inserts'
       ? parseCategorySlugs(resolvedSearchParams?.cats, resolvedSearchParams?.cat)

@@ -13,6 +13,8 @@ interface MobileMenuProps {
     onOpenSearch: () => void;
 }
 
+import { createPortal } from 'react-dom';
+
 export default function MobileMenu({
     isOpen,
     onClose,
@@ -22,6 +24,11 @@ export default function MobileMenu({
 }: MobileMenuProps) {
     const pathname = usePathname();
     const [isRendered, setIsRendered] = useState(false);
+    const [mounted, setMounted] = useState(false);
+
+    useEffect(() => {
+        setMounted(true);
+    }, []);
 
     useEffect(() => {
         if (isOpen) {
@@ -39,10 +46,10 @@ export default function MobileMenu({
         onClose();
     }, [pathname, onClose]);
 
-    if (!isRendered) return null;
+    if (!mounted || !isRendered) return null;
 
-    return (
-        <div className="fixed inset-0 z-[90] lg:hidden" aria-modal="true" role="dialog">
+    return createPortal(
+        <div className="fixed inset-0 z-[100]" aria-modal="true" role="dialog">
             {/* Backdrop */}
             <div
                 className={`absolute inset-0 bg-ink/60 backdrop-blur-sm transition-opacity duration-300 ${isOpen ? 'opacity-100' : 'opacity-0'}`}
@@ -51,7 +58,7 @@ export default function MobileMenu({
 
             {/* Drawer */}
             <div
-                className={`absolute inset-y-0 right-0 w-full max-w-xs bg-panel text-white shadow-2xl transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
+                className={`absolute inset-y-0 right-0 w-full max-w-xs border-l border-white/10 bg-[rgba(6,10,18,0.9)] backdrop-blur-xl text-white shadow-2xl transition-transform duration-300 ease-out ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}
             >
                 <div className="flex h-full flex-col">
                     <div className="flex items-center justify-between border-b border-panel-border px-6 py-4">
@@ -113,7 +120,8 @@ export default function MobileMenu({
                     </div>
                 </div>
             </div>
-        </div>
+        </div>,
+        document.body
     );
 }
 
@@ -122,8 +130,8 @@ function MobileLink({ href, label, icon, highlight }: { href: string; label: str
         <Link
             href={href}
             className={`group flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-colors ${highlight
-                    ? 'bg-sky-500/10 text-sky-400 hover:bg-sky-500/20'
-                    : 'text-white/80 hover:bg-white/5 hover:text-white'
+                ? 'bg-sky-500/10 text-sky-400 hover:bg-sky-500/20'
+                : 'text-white/80 hover:bg-white/5 hover:text-white'
                 }`}
         >
             <div className="flex items-center gap-3">
