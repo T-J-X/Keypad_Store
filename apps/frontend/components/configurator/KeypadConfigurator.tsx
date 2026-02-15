@@ -55,13 +55,6 @@ function KeypadConfiguratorShell() {
             <Link href="/shop" className="btn-secondary dark">
               Browse icon catalog
             </Link>
-            <button
-              type="button"
-              onClick={actions.resetSlots}
-              className="btn-secondary dark"
-            >
-              Reset slots
-            </button>
           </div>
         </div>
 
@@ -82,6 +75,7 @@ function KeypadConfiguratorShell() {
               showGlows={state.preview.showGlows}
               onRotate={actions.rotatePreview}
               onToggleGlows={actions.togglePreviewGlows}
+              onResetSlots={actions.resetSlots}
             />
           </div>
 
@@ -96,7 +90,7 @@ function KeypadConfiguratorShell() {
                     void actions.downloadPdf();
                   }}
                   disabled={!state.canDownloadPdf || state.busy.downloadingPdf}
-                  className="btn-secondary dark w-full justify-center text-xs uppercase tracking-[0.12em] disabled:cursor-not-allowed disabled:opacity-50"
+                  className="btn-pdf w-full justify-center min-h-11 text-xs font-semibold uppercase tracking-[0.12em] disabled:cursor-not-allowed disabled:opacity-50"
                 >
                   {state.busy.downloadingPdf ? 'Generating...' : 'Download PDF'}
                 </button>

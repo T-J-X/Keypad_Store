@@ -192,6 +192,8 @@ export default function KeypadPreview({
   showGlows = true,
   onRotate,
   onToggleGlows,
+  onResetSlots,
+  onZoom,
 }: {
   modelCode?: string;
   shellAssetPath?: string | null;
@@ -207,6 +209,8 @@ export default function KeypadPreview({
   showGlows?: boolean;
   onRotate?: () => void;
   onToggleGlows?: () => void;
+  onResetSlots?: () => void;
+  onZoom?: (direction: 'in' | 'out') => void;
 }) {
   const baseLayout = useMemo(() => getLayoutForModel(modelCode), [modelCode]);
   const [editableLayout, setEditableLayout] = useState<ModelLayout>(() => cloneModelLayout(baseLayout));
@@ -218,6 +222,7 @@ export default function KeypadPreview({
   const [layoutCopyStatus, setLayoutCopyStatus] = useState<'idle' | 'copied' | 'error'>('idle');
   const [tuningCopyStatus, setTuningCopyStatus] = useState<'idle' | 'copied' | 'error'>('idle');
   const [shellNaturalSize, setShellNaturalSize] = useState<IntrinsicSize | null>(null);
+  const [zoomLevel, setZoomLevel] = useState(1);
   const displayRotationRef = useRef(rotationDeg);
   const rotationFrameRef = useRef<number | null>(null);
 
@@ -552,9 +557,29 @@ export default function KeypadPreview({
     <div className="card glow-isolate relative overflow-hidden border border-white/10 bg-deep-navy p-5 shadow-2xl sm:p-6">
       <div className="mb-4 flex items-center justify-between gap-3">
         <div>
-          <h2 className="text-lg font-semibold tracking-tight text-white">{renderLayout.model} Preview</h2>
+          <h2 className="text-lg font-semibold tracking-tight text-white">{renderLayout.model}</h2>
         </div>
         <div className="flex items-center gap-2">
+          <button
+            type="button"
+            onClick={() => {
+              setZoomLevel((prev) => Math.max(0.5, prev - 0.25));
+            }}
+            className="inline-flex min-h-9 items-center rounded-lg border border-white/15 bg-white/5 px-3 text-[11px] font-semibold text-blue-100 transition hover:border-white/30 hover:bg-white/10"
+            aria-label="Zoom out"
+          >
+            −
+          </button>
+          <button
+            type="button"
+            onClick={() => {
+              setZoomLevel((prev) => Math.min(2.5, prev + 0.25));
+            }}
+            className="inline-flex min-h-9 items-center rounded-lg border border-white/15 bg-white/5 px-3 text-[11px] font-semibold text-blue-100 transition hover:border-white/30 hover:bg-white/10"
+            aria-label="Zoom in"
+          >
+            +
+          </button>
           <button
             type="button"
             onClick={onRotate}
@@ -564,10 +589,10 @@ export default function KeypadPreview({
           </button>
           <button
             type="button"
-            onClick={onToggleGlows}
+            onClick={onResetSlots}
             className="inline-flex min-h-9 items-center rounded-lg border border-white/15 bg-white/5 px-3 text-[11px] font-semibold uppercase tracking-[0.1em] text-blue-100 transition hover:border-white/30 hover:bg-white/10"
           >
-            {showGlows ? 'Glows on' : 'Glows off'}
+            Reset
           </button>
           <div className="rounded-full border border-white/20 bg-[#06122a]/65 px-3 py-1 text-xs font-semibold tracking-[0.14em] text-blue-100">
             {layoutLabel}
@@ -642,7 +667,7 @@ export default function KeypadPreview({
 
       <div className="flex w-full justify-center">
         <div
-          className="relative h-auto w-[clamp(360px,64vw,920px)] max-w-full rounded-[28px] border border-white/20 bg-[#010714]"
+          className="relative h-auto w-[clamp(360px,64vw,920px)] max-w-full rounded-[28px] border border-white/20 bg-[#010714] overflow-hidden"
           style={{ aspectRatio: `${vbW} / ${vbH}` }}
         >
           {showCalibrationGuides ? (
@@ -664,6 +689,7 @@ export default function KeypadPreview({
               preserveAspectRatio="xMidYMid meet"
               role="img"
               aria-label={`${renderLayout.model} shell preview`}
+              style={zoomLevel !== 1 ? { transform: `scale(${zoomLevel})`, transformOrigin: 'center center', transition: 'transform 200ms ease-out' } : undefined}
             >
               <g transform={groupTransform}>
                 <defs>
