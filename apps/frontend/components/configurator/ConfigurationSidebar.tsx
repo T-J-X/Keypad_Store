@@ -60,14 +60,32 @@ export default function ConfigurationSidebar({
   const resolvedOnClearSlot = onClearSlot ?? context?.actions.clearSlot ?? (() => { });
   const totalSlots = resolvedSlotIds.length;
 
+  const modelCode = context?.state.modelCode;
+
+  const getGridClass = (code: string | undefined) => {
+    switch (code) {
+      case 'PKP-2300-SI':
+        return 'xl:grid-cols-3';
+      case 'PKP-2400-SI':
+      case 'PKP-2600-SI':
+        return 'xl:grid-cols-4';
+      case 'PKP-2500-SI':
+      case 'PKP-3500-SI':
+        return 'xl:grid-cols-5';
+      default:
+        // Default (e.g. 2200) fits nicely in 2 cols
+        return 'xl:grid-cols-2';
+    }
+  };
+
   return (
-    <section className="card-soft relative p-5 sm:p-6">
-      <h2 className="text-lg font-semibold tracking-tight text-[#10223f]">Slot Configuration</h2>
-      <p className="mt-1 text-sm text-[#324a71]">
+    <section className="card-soft relative py-[50px] px-6">
+      <h1 className="mt-4 text-4xl font-semibold tracking-tight text-[#10223f] sm:text-5xl">Slot Configuration</h1>
+      <p className="mt-16 text-sm text-[#324a71]">
         Each slot requires a valid alphanumeric icon ID before checkout and account save.
       </p>
 
-      <div className="mt-4 grid grid-cols-1 md:grid-cols-2 gap-3">
+      <div className={`mt-4 grid grid-cols-1 md:grid-cols-2 gap-3 ${getGridClass(modelCode)}`}>
         {resolvedSlotIds.map((slotId) => {
           const slot = resolvedSlots[slotId] ?? {
             iconId: null,
@@ -98,10 +116,10 @@ export default function ConfigurationSidebar({
                 className="relative block w-full border-b border-surface-border/50 bg-surface-alt/30 transition-colors hover:bg-surface-alt/60 text-left"
               >
                 <div className="absolute left-3 top-3 z-10">
-                  <div className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#4c648a] transition-colors group-hover:text-sky">{label}</div>
+                  <div className="text-xl font-bold uppercase tracking-[0.14em] text-[#4c648a] transition-colors group-hover:text-sky">{label}</div>
                 </div>
 
-                <div className="flex h-32 w-full items-center justify-center p-4">
+                <div className={`flex w-full items-center justify-center ${modelCode === 'PKP-2200-SI' ? 'h-32 p-4' : 'h-48 pt-14 pb-4 px-4'}`}>
                   {previewImage ? (
                     <div className="relative h-full w-full transition-transform duration-500 group-hover:scale-105">
                       <Image
@@ -114,8 +132,8 @@ export default function ConfigurationSidebar({
                     </div>
                   ) : (
                     <div className="flex flex-col items-center justify-center gap-2 opacity-30 transition-opacity group-hover:opacity-50">
-                      <div className="h-8 w-8 rounded-full border-2 border-dashed border-current" />
-                      <span className="text-[10px] uppercase tracking-wider font-medium">Empty</span>
+                      <div className="h-12 w-12 rounded-full border-2 border-dashed border-current" />
+                      <span className="text-xs uppercase tracking-wider font-medium">Empty</span>
                     </div>
                   )}
                 </div>

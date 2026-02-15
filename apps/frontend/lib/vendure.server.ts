@@ -416,44 +416,73 @@ function levenshtein(a: string, b: string): number {
 function scoreProduct(product: CatalogProduct, normalizedQuery: string): number {
   let maxScore = 0;
 
-  const fieldsToCheck = [
+  // 1. Boost Keypads for explicit "keypad" searches
+  if (product.customFields?.isKeypadProduct && (normalizedQuery.includes('keypad') || normalizedQuery.includes('keyboard'))) {
+    maxScore += 50;
+  }
+
+  const primaryFields = [
     product.name,
     product.slug,
     product.customFields?.iconId,
     ...(product.customFields?.iconCategories ?? []),
-    product.customFields?.keypadModelCode,
+    product.variants?.[0]?.customFields?.keypadModelCode as string | undefined,
+  ];
+
+  const secondaryFields = [
     product.description
   ];
 
   const queryTerms = normalizedQuery.split(' ').filter(t => t.length > 0);
 
-  for (const field of fieldsToCheck) {
-    if (!field) continue;
-    const normalizedField = normalizeForSearch(field);
+  // Helper to check fields
+  const checkFields = (fields: (string | null | undefined)[], isPrimary: boolean) => {
+    for (const field of fields) {
+      if (!field || typeof field !== 'string') continue;
+      const normalizedField = normalizeForSearch(field);
 
-    // Check against the full field
-    if (normalizedField === normalizedQuery) return 100; // Exact match
-    if (normalizedField.includes(normalizedQuery)) maxScore = Math.max(maxScore, 80);
+      // Exact match
+      if (normalizedField === normalizedQuery) {
+        maxScore = Math.max(maxScore, isPrimary ? 100 : 50);
+        continue;
+      }
 
-    // Check individual terms
-    for (const term of queryTerms) {
-      if (normalizedField.includes(term)) {
-        maxScore = Math.max(maxScore, 60);
-      } else {
-        // Fuzzy check for terms
-        const words = normalizedField.split(' ');
-        for (const word of words) {
-          if (Math.abs(word.length - term.length) > 2) continue; // Too different in length
-          const dist = levenshtein(word, term);
-          // Allow 1 edit for short words, 2 for longer
-          const threshold = term.length > 4 ? 2 : 1;
-          if (dist <= threshold) {
-            maxScore = Math.max(maxScore, 40);
+      // Contains full query
+      if (normalizedField.includes(normalizedQuery)) {
+        maxScore = Math.max(maxScore, isPrimary ? 80 : 30);
+      }
+
+      // Term checks
+      for (const term of queryTerms) {
+        if (normalizedField.includes(term)) {
+          maxScore = Math.max(maxScore, isPrimary ? 60 : 20);
+        } else if (isPrimary) {
+          // Fuzzy check ONLY for primary fields
+          const words = normalizedField.split(' ');
+          for (const word of words) {
+            if (Math.abs(word.length - term.length) > 2) continue;
+
+            // Stricter fuzzy: 
+            // Length <= 3: Exact match only (already handled by includes) or distance 0? No, just skip fuzzy.
+            // Length > 3: Distance 1
+            // Length > 6: Distance 2
+
+            if (term.length <= 3) continue;
+
+            const dist = levenshtein(word, term);
+            const threshold = term.length > 6 ? 2 : 1;
+
+            if (dist <= threshold) {
+              maxScore = Math.max(maxScore, 40);
+            }
           }
         }
       }
     }
-  }
+  };
+
+  checkFields(primaryFields, true);
+  checkFields(secondaryFields, false);
 
   return maxScore;
 }
@@ -470,8 +499,9 @@ export async function searchGlobalProducts(query: string): Promise<CatalogProduc
   }));
 
   // Filter out low scores and sort
+  // Increased threshold to 10 to filter out very weak noise if any
   return scored
-    .filter(item => item.score > 0)
+    .filter(item => item.score > 20) // Only return reasonably relevant results (e.g. at least a description match or fuzzy name)
     .sort((a, b) => b.score - a.score)
     .map(item => item.product);
 }
