@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
@@ -51,7 +52,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
         </a>
         <SiteJsonLd />
         <div className="page-shell">
-          <Navbar />
+          <Suspense fallback={<div className="h-16 w-full border-b border-white/10" />}>
+            <Navbar />
+          </Suspense>
           <main id="main-content" className="flex-1">{children}</main>
           <Footer />
           <GlobalToastViewport />

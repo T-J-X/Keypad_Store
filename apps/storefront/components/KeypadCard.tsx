@@ -3,7 +3,7 @@ import Image from 'next/image';
 import type { KeypadProduct } from '../lib/vendure';
 import { assetUrl } from '../lib/vendure';
 import { resolvePkpModelCode } from '../lib/keypadUtils';
-import { buttonPrimaryClass, buttonSecondaryClass } from './buttonStyles';
+import { Button } from './ui/Button';
 import {
   cardPlaceholderTextClass,
   cardSupportingTextClass,
@@ -38,10 +38,12 @@ export default function KeypadCard({
   const modelCode = resolvePkpModelCode(product.slug, product.name) || product.name;
   const productSlug = (product.slug || modelCode).trim();
   const encodedProductSlug = encodeURIComponent(productSlug);
+  const configuratorSlug = (modelCode || product.slug).trim();
+  const encodedConfiguratorSlug = encodeURIComponent(configuratorSlug);
   const description = resolveDescription(modelCode);
   const isShopCard = mode === 'shop';
   const detailHref = learnMoreHref ?? `/shop/product/${encodedProductSlug}`;
-  const configuratorHref = `/configurator/keypad/${encodedProductSlug}`;
+  const configuratorHref = `/configurator/keypad/${encodedConfiguratorSlug}`;
   const mediaHeightClass = isShopCard ? 'h-56' : 'h-44';
   const mediaPaddingClass = isShopCard ? 'p-5' : 'p-4';
 
@@ -56,9 +58,8 @@ export default function KeypadCard({
         />
       )}
       <div
-        className={`relative z-10 overflow-hidden rounded-2xl bg-[linear-gradient(to_bottom,#f4f4f5_0%,#e4e4e7_50%,#ffffff_100%)] ${
-          isShopCard ? 'pointer-events-none' : ''
-        }`}
+        className={`relative z-10 overflow-hidden rounded-2xl bg-[linear-gradient(to_bottom,#f4f4f5_0%,#e4e4e7_50%,#ffffff_100%)] ${isShopCard ? 'pointer-events-none' : ''
+          }`}
       >
         {image ? (
           <Image
@@ -77,37 +78,39 @@ export default function KeypadCard({
         )}
       </div>
       <div
-        className={`relative z-10 flex flex-1 flex-col justify-between gap-3 ${
-          isShopCard ? 'pointer-events-none' : ''
-        }`}
+        className={`relative z-10 flex flex-1 flex-col justify-between gap-3 ${isShopCard ? 'pointer-events-none' : ''
+          }`}
       >
         <div>
           <div className={cardTitleTextClass}>{isShopCard ? modelCode : product.name}</div>
           <div className={`mt-1 ${cardSupportingTextClass}`}>{description}</div>
         </div>
         {isShopCard ? (
-          <div className="pointer-events-auto relative z-20 flex flex-col gap-2 sm:flex-row">
-            <Link
-              href={detailHref}
-              replace={replaceDetailNavigation}
-              className={`${buttonSecondaryClass} w-full sm:w-auto`}
-            >
-              Learn more
-            </Link>
-            <Link
-              href={configuratorHref}
-              className={`${buttonPrimaryClass} w-full sm:w-auto`}
-            >
-              Customize now
-            </Link>
+          <div className="pointer-events-auto relative z-20 flex flex-col gap-2">
+            <Button asChild variant="secondary" className="w-full justify-center">
+              <Link
+                href={detailHref}
+                replace={replaceDetailNavigation}
+              >
+                Learn more
+              </Link>
+            </Button>
+            <Button asChild variant="premium" className="w-full justify-center">
+              <Link
+                href={configuratorHref}
+              >
+                Customize now
+              </Link>
+            </Button>
           </div>
         ) : (
-          <Link
-            href={configuratorHref}
-            className={`${buttonPrimaryClass} w-fit`}
-          >
-            Configure now
-          </Link>
+          <Button asChild variant="premium" className="w-fit">
+            <Link
+              href={configuratorHref}
+            >
+              Configure now
+            </Link>
+          </Button>
         )}
       </div>
     </div>

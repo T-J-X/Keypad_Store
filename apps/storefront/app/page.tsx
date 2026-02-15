@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { Button } from '../components/ui/Button';
 
 export const metadata: Metadata = {
   title: 'Keypad Store | Configure Technical Keypads',
@@ -23,8 +24,12 @@ export default function HomePage() {
             is built for clarity, contrast, and tactile rhythm.
           </p>
           <div className="flex flex-wrap gap-4">
-            <Link href="/shop" className="btn-primary">Shop icons</Link>
-            <Link href="/configurator" className="btn-ghost">Start configuring</Link>
+            <Button asChild variant="premium">
+              <Link href="/shop">Shop icons</Link>
+            </Button>
+            <Button asChild variant="ghost">
+              <Link href="/configurator">Start configuring</Link>
+            </Button>
           </div>
           <div className="flex flex-wrap gap-6 text-xs font-semibold uppercase tracking-wide text-ink/45">
             <span>212+ icons</span>
@@ -84,7 +89,9 @@ export default function HomePage() {
             <div className="text-xs font-semibold uppercase tracking-wide text-ink/40">Start here</div>
             <h2 className="mt-2 text-3xl font-semibold text-ink">Pick your path</h2>
           </div>
-          <Link href="/shop" className="btn-primary">Browse the catalog</Link>
+          <Button asChild variant="premium">
+            <Link href="/shop">Browse the catalog</Link>
+          </Button>
         </div>
         <div className="mt-6 grid gap-6 md:grid-cols-2">
           <div className="card p-6">

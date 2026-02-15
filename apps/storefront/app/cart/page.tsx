@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { Button } from '../../components/ui/Button';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import ConfiguredKeypadThumbnail from '../../components/configurator/ConfiguredKeypadThumbnail';
 import { notifyCartUpdated } from '../../lib/cartEvents';
@@ -213,12 +214,9 @@ export default function CartPage() {
             <h1 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">Cart</h1>
             <p className="mt-1 text-sm text-panel-muted">Review your selected keypad components before checkout.</p>
           </div>
-          <Link
-            href="/shop"
-            className="btn-secondary dark w-full sm:w-auto"
-          >
-            Continue shopping
-          </Link>
+          <Button asChild variant="secondaryDark" className="w-full sm:w-auto">
+            <Link href="/shop">Continue shopping</Link>
+          </Button>
         </div>
 
         {isLoading ? (
@@ -234,12 +232,9 @@ export default function CartPage() {
             <p className="text-base font-semibold text-white">Your cart is empty.</p>
             <p className="mt-2 text-sm text-panel-muted">Add products from the shop to see them here.</p>
             <div className="mt-5">
-              <Link
-                href="/shop"
-                className="btn-primary-dark w-full sm:w-auto"
-              >
-                Browse products
-              </Link>
+              <Button asChild variant="premium" className="w-full sm:w-auto">
+                <Link href="/shop">Browse products</Link>
+              </Button>
             </div>
           </div>
         ) : null}
@@ -350,8 +345,14 @@ export default function CartPage() {
                             </ul>
                           </div>
                         ) : null}
+                      </div>
 
-                        <div className="mt-3 inline-flex items-center rounded-full border border-white/20 bg-white/[0.08]">
+                      <div className="flex flex-col items-end gap-2 text-right">
+                        <div className="text-sm font-semibold text-white">
+                          {formatMinor(line.linePriceWithTax, line.productVariant?.currencyCode || order.currencyCode)}
+                        </div>
+
+                        <div className="inline-flex items-center rounded-full border border-white/20 bg-white/[0.08]">
                           <button
                             type="button"
                             aria-label="Decrease quantity"
@@ -374,12 +375,14 @@ export default function CartPage() {
                         </div>
 
                         {editConfigurationHref ? (
-                          <Link
-                            href={editConfigurationHref}
-                            className="ml-3 inline-flex min-h-[44px] items-center rounded-xl border border-[#1EA7FF]/45 bg-[#1EA7FF]/10 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.11em] text-[#b7e7ff] whitespace-nowrap transition hover:border-[#6fd0ff] hover:bg-[#1EA7FF]/20"
-                          >
-                            Edit Configuration
-                          </Link>
+                          <div className="mt-1">
+                            <Link
+                              href={editConfigurationHref}
+                              className="text-[10px] font-semibold uppercase tracking-[0.11em] text-[#b7e7ff] underline underline-offset-4 transition hover:text-[#6fd0ff] hover:no-underline"
+                            >
+                              Edit Config
+                            </Link>
+                          </div>
                         ) : null}
 
                         <button
@@ -389,14 +392,10 @@ export default function CartPage() {
                             void updateLine(line.id, 0);
                           }}
                           disabled={isUpdatingLine}
-                          className="ml-3 text-xs font-semibold text-blue-100/70 underline-offset-4 transition hover:text-rose-300 hover:underline disabled:cursor-not-allowed disabled:opacity-40"
+                          className="text-xs font-semibold text-blue-100/70 underline-offset-4 transition hover:text-rose-300 hover:underline disabled:cursor-not-allowed disabled:opacity-40"
                         >
                           Remove
                         </button>
-                      </div>
-
-                      <div className="text-right text-sm font-semibold text-white">
-                        {formatMinor(line.linePriceWithTax, line.productVariant?.currencyCode || order.currencyCode)}
                       </div>
                     </li>
                   );
@@ -422,12 +421,9 @@ export default function CartPage() {
                 <span>Total</span>
                 <span>{orderTotals.total}</span>
               </div>
-              <Link
-                href="/checkout"
-                className="btn-primary-dark mt-5 w-full"
-              >
-                Proceed to Checkout
-              </Link>
+              <Button asChild variant="premium" className="mt-5 w-full">
+                <Link href="/checkout">Proceed to Checkout</Link>
+              </Button>
             </aside>
           </div>
         ) : null}

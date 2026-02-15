@@ -4,6 +4,8 @@ import Link from 'next/link';
 import { ChevronDown, Menu, Search, ShoppingBag, UserRound, X } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode, type RefObject } from 'react';
 import { CART_UPDATED_EVENT, notifyCartUpdated } from '../lib/cartEvents';
+import SearchModal from './ui/SearchModal';
+import MobileMenu from './ui/MobileMenu';
 
 const primaryLinks = [{ href: '/configurator', label: 'Configurator' }] as const;
 
@@ -27,11 +29,6 @@ const shopCollectionLinks = [
 
 const FOCUSABLE_SELECTOR =
   'a[href], button:not([disabled]), textarea, input, select, [tabindex]:not([tabindex="-1"])';
-const MOBILE_SECTION_LABEL_CLASS = 'text-[10px] font-semibold uppercase tracking-widest text-white/45';
-const MOBILE_DRAWER_LINK_CLASS =
-  'flex min-h-12 items-center rounded-xl border border-white/10 px-4 py-3 text-base font-semibold text-white transition hover:border-white/30 hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/35 focus-visible:ring-offset-2 focus-visible:ring-offset-black';
-const MOBILE_DRAWER_SUBLINK_CLASS =
-  'flex min-h-[52px] flex-col justify-center rounded-xl border border-white/10 px-4 py-3 text-left transition hover:border-white/30 hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/35 focus-visible:ring-offset-2 focus-visible:ring-offset-black';
 
 type SessionSummary = {
   authenticated: boolean;
@@ -111,7 +108,7 @@ function IconLink({
         inverse
           ? 'border-white/15 bg-white/[0.06] text-white/85 hover:-translate-y-px hover:border-white/28 hover:bg-white/[0.14] hover:text-white'
           : 'border-ink/10 bg-white/70 text-ink/75 hover:-translate-y-px hover:border-ink/20 hover:bg-white hover:text-ink',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7aa0e4]/45 focus-visible:ring-offset-2',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky/45 focus-visible:ring-offset-2',
         inverse ? 'focus-visible:ring-offset-black/30' : 'focus-visible:ring-offset-white',
         className,
       ].join(' ')}
@@ -151,7 +148,7 @@ function IconButton({
         inverse
           ? 'border-white/15 bg-white/[0.06] text-white/85 hover:-translate-y-px hover:border-white/28 hover:bg-white/[0.14] hover:text-white'
           : 'border-ink/10 bg-white/70 text-ink/75 hover:-translate-y-px hover:border-ink/20 hover:bg-white hover:text-ink',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7aa0e4]/45 focus-visible:ring-offset-2',
+        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky/45 focus-visible:ring-offset-2',
         inverse ? 'focus-visible:ring-offset-black/30' : 'focus-visible:ring-offset-white',
         className,
       ].join(' ')}
@@ -166,22 +163,15 @@ export default function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isShopMenuOpen, setIsShopMenuOpen] = useState(false);
   const [isSearchOpen, setIsSearchOpen] = useState(false);
-  const [desktopSearch, setDesktopSearch] = useState('');
 
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
   const [isLoggingOut, setIsLoggingOut] = useState(false);
   const [sessionSummary, setSessionSummary] = useState<SessionSummary>(EMPTY_SESSION_SUMMARY);
 
-  const closeButtonRef = useRef<HTMLButtonElement | null>(null);
-  const menuPanelRef = useRef<HTMLDivElement | null>(null);
-  const lastFocusedElementRef = useRef<HTMLElement | null>(null);
   const accountMenuRef = useRef<HTMLDivElement | null>(null);
   const accountButtonRef = useRef<HTMLButtonElement | null>(null);
   const shopMenuRef = useRef<HTMLDivElement | null>(null);
   const shopMenuCloseTimerRef = useRef<number | null>(null);
-  const searchPanelRef = useRef<HTMLDivElement | null>(null);
-  const searchButtonRef = useRef<HTMLButtonElement | null>(null);
-  const searchInputRef = useRef<HTMLInputElement | null>(null);
 
   const openShopMenu = useCallback(() => {
     if (shopMenuCloseTimerRef.current != null) {
@@ -277,84 +267,17 @@ export default function Navbar() {
     };
   }, [refreshSessionSummary]);
 
+  // Handle outside clicks for dropdowns
   useEffect(() => {
-    if (!isMenuOpen) {
-      return;
-    }
-
-    const body = document.body;
-    const previousOverflow = body.style.overflow;
-    body.style.overflow = 'hidden';
-
-    lastFocusedElementRef.current =
-      document.activeElement instanceof HTMLElement ? document.activeElement : null;
-
-    const focusCloseButton = window.setTimeout(() => {
-      closeButtonRef.current?.focus();
-    }, 0);
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        setIsMenuOpen(false);
-        return;
-      }
-
-      if (event.key !== 'Tab') {
-        return;
-      }
-
-      const panel = menuPanelRef.current;
-      if (!panel) {
-        return;
-      }
-
-      const elements = Array.from(panel.querySelectorAll<HTMLElement>(FOCUSABLE_SELECTOR)).filter(
-        (element) => !element.hasAttribute('disabled') && element.tabIndex !== -1,
-      );
-
-      if (elements.length === 0) {
-        event.preventDefault();
-        return;
-      }
-
-      const first = elements[0];
-      const last = elements[elements.length - 1];
-      const activeElement = document.activeElement;
-
-      if (event.shiftKey) {
-        if (activeElement === first || !panel.contains(activeElement)) {
-          event.preventDefault();
-          last.focus();
-        }
-        return;
-      }
-
-      if (activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-
-    window.addEventListener('keydown', onKeyDown);
-    return () => {
-      window.clearTimeout(focusCloseButton);
-      window.removeEventListener('keydown', onKeyDown);
-      body.style.overflow = previousOverflow;
-      lastFocusedElementRef.current?.focus();
-    };
-  }, [isMenuOpen]);
-
-  useEffect(() => {
-    if (!(isAccountMenuOpen || isShopMenuOpen || isSearchOpen)) return;
+    if (!(isAccountMenuOpen || isShopMenuOpen)) return;
 
     const onPointerDown = (event: Event) => {
       const target = event.target as Node | null;
       if (!target) return;
 
       if (
-        accountMenuRef.current?.contains(target)
-        || accountButtonRef.current?.contains(target)
+        accountMenuRef.current?.contains(target) ||
+        accountButtonRef.current?.contains(target)
       ) {
         return;
       }
@@ -363,23 +286,14 @@ export default function Navbar() {
         return;
       }
 
-      if (
-        searchPanelRef.current?.contains(target)
-        || searchButtonRef.current?.contains(target)
-      ) {
-        return;
-      }
-
       setIsAccountMenuOpen(false);
       setIsShopMenuOpen(false);
-      setIsSearchOpen(false);
     };
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
       setIsAccountMenuOpen(false);
       setIsShopMenuOpen(false);
-      setIsSearchOpen(false);
     };
 
     document.addEventListener('mousedown', onPointerDown);
@@ -391,25 +305,7 @@ export default function Navbar() {
       document.removeEventListener('touchstart', onPointerDown);
       window.removeEventListener('keydown', onKeyDown);
     };
-  }, [isAccountMenuOpen, isSearchOpen, isShopMenuOpen]);
-
-  useEffect(() => {
-    if (!isSearchOpen) return;
-
-    const timer = window.setTimeout(() => {
-      searchInputRef.current?.focus();
-      searchInputRef.current?.select();
-    }, 50);
-
-    return () => window.clearTimeout(timer);
-  }, [isSearchOpen]);
-
-  useEffect(() => {
-    if (!isMenuOpen) return;
-    setIsAccountMenuOpen(false);
-    setIsShopMenuOpen(false);
-    setIsSearchOpen(false);
-  }, [isMenuOpen]);
+  }, [isAccountMenuOpen, isShopMenuOpen]);
 
   useEffect(() => {
     return () => {
@@ -438,13 +334,6 @@ export default function Navbar() {
     }
   };
 
-  const onDesktopSearchSubmit = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    const term = desktopSearch.trim();
-    window.location.assign(term ? `/shop?q=${encodeURIComponent(term)}` : '/shop');
-    setIsSearchOpen(false);
-  };
-
   const isAuthenticated = sessionSummary.authenticated;
   const cartQuantity = sessionSummary.totalQuantity;
   const showCartBadge = cartQuantity > 0;
@@ -464,6 +353,15 @@ export default function Navbar() {
 
   return (
     <>
+      <SearchModal isOpen={isSearchOpen} onClose={() => setIsSearchOpen(false)} />
+      <MobileMenu
+        isOpen={isMenuOpen}
+        onClose={() => setIsMenuOpen(false)}
+        isAuthenticated={isAuthenticated}
+        onLogout={onLogout}
+        onOpenSearch={() => setIsSearchOpen(true)}
+      />
+
       <header
         className={[
           'sticky top-0 z-50 transition-[background-color,border-color,box-shadow,backdrop-filter] duration-300',
@@ -477,7 +375,6 @@ export default function Navbar() {
             <button
               type="button"
               aria-label={isMenuOpen ? 'Close navigation menu' : 'Open navigation menu'}
-              aria-controls="mobile-navigation"
               aria-expanded={isMenuOpen}
               onClick={() => setIsMenuOpen((current) => !current)}
               className={[
@@ -485,7 +382,7 @@ export default function Navbar() {
                 isScrolled
                   ? 'border-white/15 bg-white/[0.08] text-white hover:bg-white/[0.14]'
                   : 'border-ink/12 bg-white/70 text-ink hover:bg-white',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7aa0e4]/45 focus-visible:ring-offset-2',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky/45 focus-visible:ring-offset-2',
                 isScrolled ? 'focus-visible:ring-offset-black/40' : 'focus-visible:ring-offset-white',
               ].join(' ')}
             >
@@ -498,7 +395,7 @@ export default function Navbar() {
               className={[
                 'absolute left-1/2 -translate-x-1/2 text-sm font-bold uppercase tracking-[0.22em] transition-opacity hover:opacity-85',
                 isScrolled ? 'text-white' : 'text-ink',
-                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7aa0e4]/45 focus-visible:ring-offset-2',
+                'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky/45 focus-visible:ring-offset-2',
                 isScrolled ? 'focus-visible:ring-offset-black/40' : 'focus-visible:ring-offset-white',
                 'lg:static lg:translate-x-0 lg:text-[15px]',
               ].join(' ')}
@@ -574,47 +471,13 @@ export default function Navbar() {
           <div className="flex items-center gap-2 sm:gap-2.5">
             <div className="relative hidden lg:block">
               <IconButton
-                label={isSearchOpen ? 'Close search' : 'Open search'}
-                buttonRef={searchButtonRef}
+                label={'Open search'}
                 expanded={isSearchOpen}
-                onClick={() => setIsSearchOpen((current) => !current)}
+                onClick={() => setIsSearchOpen(true)}
                 inverse={isScrolled}
               >
                 <Search className="h-4 w-4" strokeWidth={1.9} />
               </IconButton>
-
-              <div
-                ref={searchPanelRef}
-                className={[
-                  'absolute right-0 top-[calc(100%+12px)] z-30 w-[320px] rounded-2xl border p-3 backdrop-blur-xl transition-all duration-150',
-                  desktopPanelClass,
-                  isSearchOpen ? 'pointer-events-auto translate-y-0 opacity-100' : 'pointer-events-none -translate-y-1 opacity-0',
-                ].join(' ')}
-              >
-                <form onSubmit={onDesktopSearchSubmit} className="flex items-center gap-2">
-                  <input
-                    ref={searchInputRef}
-                    value={desktopSearch}
-                    onChange={(event) => setDesktopSearch(event.target.value)}
-                    placeholder="Search inserts, keypads, IDs"
-                    aria-label="Search products"
-                    className={[
-                      'w-full rounded-full input input-dark px-4 py-2 text-sm outline-none transition',
-                      'placeholder:text-panel-muted',
-                    ].join(' ')}
-                  />
-                  <button
-                    type="submit"
-                    className={[
-                      'inline-flex h-10 w-10 items-center justify-center rounded-full border transition',
-                      'border-white/20 bg-white/[0.08] text-white hover:bg-white/[0.14]',
-                    ].join(' ')}
-                    aria-label="Submit product search"
-                  >
-                    <Search className="h-4 w-4" strokeWidth={1.9} />
-                  </button>
-                </form>
-              </div>
             </div>
 
             {isAuthenticated ? (
@@ -644,7 +507,7 @@ export default function Navbar() {
                     href="/account"
                     onClick={() => setIsAccountMenuOpen(false)}
                     className={[
-                      'block rounded-xl px-3 py-2 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7aa0e4]/45',
+                      'block rounded-xl px-3 py-2 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky/45',
                       'text-white/85 hover:bg-white/[0.08] hover:text-white',
                     ].join(' ')}
                   >
@@ -656,7 +519,7 @@ export default function Navbar() {
                     onClick={onLogout}
                     disabled={isLoggingOut}
                     className={[
-                      'mt-1 block w-full rounded-xl px-3 py-2 text-left text-sm transition disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#7aa0e4]/45',
+                      'mt-1 block w-full rounded-xl px-3 py-2 text-left text-sm transition disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky/45',
                       'text-white/85 hover:bg-white/[0.08] hover:text-white',
                     ].join(' ')}
                   >
@@ -686,148 +549,6 @@ export default function Navbar() {
           </div>
         </div>
       </header>
-
-      <div
-        className={`fixed inset-0 z-[60] lg:hidden ${isMenuOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}
-        aria-hidden={!isMenuOpen}
-      >
-        <div
-          className={`absolute inset-0 bg-[rgba(5,8,14,0.62)] backdrop-blur-sm transition-opacity duration-300 ${isMenuOpen ? 'opacity-100' : 'opacity-0'
-            }`}
-          onClick={() => setIsMenuOpen(false)}
-        />
-
-        <div
-          id="mobile-navigation"
-          role="dialog"
-          aria-modal="true"
-          aria-label="Mobile navigation"
-          ref={menuPanelRef}
-          className={`absolute inset-y-0 left-0 flex w-[90vw] max-w-[22rem] flex-col overflow-y-auto overscroll-contain border-r border-panel-border bg-panel px-5 pb-[calc(1.5rem+env(safe-area-inset-bottom))] pt-5 text-white shadow-[0_24px_58px_rgba(0,0,0,0.55)] transition-transform duration-300 ${isMenuOpen ? 'translate-x-0' : '-translate-x-full'
-            }`}
-        >
-          <div className="mb-7 flex items-center justify-between">
-            <div className="text-sm font-bold uppercase tracking-[0.2em] text-white">KEYPAD CO.</div>
-            <button
-              ref={closeButtonRef}
-              type="button"
-              onClick={() => setIsMenuOpen(false)}
-              aria-label="Close navigation menu"
-              className="inline-flex h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-white/[0.06] text-white transition hover:bg-white/[0.12] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/35 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-            >
-              <X className="h-[18px] w-[18px]" />
-            </button>
-          </div>
-
-          <div className="mb-5 rounded-2xl border border-white/10 bg-white/[0.03] p-3">
-            <p className={MOBILE_SECTION_LABEL_CLASS}>Search</p>
-            <Link
-              href="/shop"
-              onClick={() => setIsMenuOpen(false)}
-              className="mt-2 inline-flex min-h-12 w-full items-center gap-2 rounded-xl input input-dark px-4 py-3 text-sm font-medium text-white transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/35 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-            >
-              <Search className="h-4 w-4" />
-              Search products
-            </Link>
-          </div>
-
-          <nav aria-label="Mobile primary navigation" className="space-y-4">
-            <div className="space-y-2">
-              <p className={MOBILE_SECTION_LABEL_CLASS}>Shop</p>
-              <Link
-                href="/shop"
-                onClick={() => setIsMenuOpen(false)}
-                className={MOBILE_DRAWER_LINK_CLASS}
-              >
-                Shop Home
-              </Link>
-              <Link
-                href="/shop?section=button-inserts"
-                onClick={() => setIsMenuOpen(false)}
-                className={MOBILE_DRAWER_SUBLINK_CLASS}
-              >
-                <span className="text-base font-semibold text-white">Button Inserts</span>
-                <span className="mt-0.5 text-xs text-white/62">Category-sorted icon library</span>
-              </Link>
-              <Link
-                href="/shop?section=keypads"
-                onClick={() => setIsMenuOpen(false)}
-                className={MOBILE_DRAWER_SUBLINK_CLASS}
-              >
-                <span className="text-base font-semibold text-white">Keypads</span>
-                <span className="mt-0.5 text-xs text-white/62">Hardware models and layouts</span>
-              </Link>
-            </div>
-
-            <div className="space-y-2">
-              <p className={MOBILE_SECTION_LABEL_CLASS}>Build</p>
-              <Link
-                href="/configurator"
-                onClick={() => setIsMenuOpen(false)}
-                className={MOBILE_DRAWER_LINK_CLASS}
-              >
-                Configurator
-              </Link>
-            </div>
-          </nav>
-
-          <div className="my-5 h-px w-full bg-white/12" />
-
-          <nav aria-label="Mobile secondary navigation" className="space-y-2">
-            <p className={MOBILE_SECTION_LABEL_CLASS}>Account</p>
-            {isAuthenticated ? (
-              <>
-                <Link
-                  href="/account"
-                  onClick={() => setIsMenuOpen(false)}
-                  className="flex min-h-12 items-center rounded-xl border border-white/10 px-4 py-3 text-sm font-medium text-white/90 transition hover:border-white/30 hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/35 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-                >
-                  Profile
-                </Link>
-                <button
-                  type="button"
-                  onClick={onLogout}
-                  disabled={isLoggingOut}
-                  className="block min-h-12 w-full rounded-xl border border-white/10 px-4 py-3 text-left text-sm font-medium text-white/90 transition hover:border-white/30 hover:bg-white/[0.06] disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/35 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-                >
-                  {isLoggingOut ? 'Logging out...' : 'Logout'}
-                </button>
-              </>
-            ) : (
-              <>
-                <Link
-                  href="/login"
-                  onClick={() => setIsMenuOpen(false)}
-                  className="flex min-h-12 items-center rounded-xl border border-white/10 px-4 py-3 text-sm font-medium text-white/90 transition hover:border-white/30 hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/35 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-                >
-                  Sign in
-                </Link>
-                <Link
-                  href="/signup"
-                  onClick={() => setIsMenuOpen(false)}
-                  className="flex min-h-12 items-center rounded-xl border border-white/10 px-4 py-3 text-sm font-medium text-white/90 transition hover:border-white/30 hover:bg-white/[0.06] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/35 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-                >
-                  Create account
-                </Link>
-              </>
-            )}
-          </nav>
-
-          <div className="mt-5 rounded-2xl border border-white/12 bg-white/[0.04] p-4">
-            <p className="text-[10px] font-semibold uppercase tracking-widest text-white/55">Cart status</p>
-            <div className="mt-2 text-sm text-white/85">
-              {showCartBadge ? `${cartQuantity} item${cartQuantity > 1 ? 's' : ''} in cart` : 'Cart is empty'}
-            </div>
-            <Link
-              href="/cart"
-              onClick={() => setIsMenuOpen(false)}
-              className="mt-3 inline-flex min-h-11 items-center rounded-full border border-white/18 px-4 py-2 text-sm font-semibold text-white transition hover:bg-white/[0.08] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/35 focus-visible:ring-offset-2 focus-visible:ring-offset-black"
-            >
-              Open cart
-            </Link>
-          </div>
-        </div>
-      </div>
     </>
   );
 }

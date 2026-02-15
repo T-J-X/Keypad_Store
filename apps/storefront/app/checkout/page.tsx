@@ -2,6 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
+import { Button } from '../../components/ui/Button';
 import { useRouter } from 'next/navigation';
 import { FormEvent, useEffect, useMemo, useRef, useState } from 'react';
 import ConfiguredKeypadThumbnail from '../../components/configurator/ConfiguredKeypadThumbnail';
@@ -396,12 +397,9 @@ export default function CheckoutPage() {
             <h1 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">Checkout</h1>
             <p className="mt-1 text-sm text-panel-muted">Enter shipping and payment details to confirm your order.</p>
           </div>
-          <Link
-            href="/cart"
-            className="btn-secondary dark w-full sm:w-auto"
-          >
-            Back to Cart
-          </Link>
+          <Button asChild variant="secondaryDark" className="w-full sm:w-auto">
+            <Link href="/cart">Back to Cart</Link>
+          </Button>
         </div>
 
         {isLoading ? (
@@ -424,12 +422,9 @@ export default function CheckoutPage() {
             <p className="text-base font-semibold text-white">Your cart is empty.</p>
             <p className="mt-2 text-sm text-panel-muted">Add items before starting checkout.</p>
             <div className="mt-5">
-              <Link
-                href="/shop"
-                className="btn-primary-dark w-full sm:w-auto"
-              >
-                Browse products
-              </Link>
+              <Button asChild variant="premium" className="w-full sm:w-auto">
+                <Link href="/shop">Browse products</Link>
+              </Button>
             </div>
           </div>
         ) : null}
@@ -491,10 +486,40 @@ export default function CheckoutPage() {
                                 Custom configuration: {configuredSlots}/{slotIds.length} slots defined
                               </div>
                             ) : null}
-                            <div className="mt-1 text-xs text-blue-100/70">Qty {line.quantity}</div>
                           </div>
-                          <div className="text-right text-xs font-semibold text-white">
-                            {formatMinor(line.linePriceWithTax, line.productVariant?.currencyCode || order.currencyCode)}
+                          <div className="flex flex-col items-end gap-2 text-right">
+                            <div className="text-xs font-semibold text-white">
+                              {formatMinor(line.linePriceWithTax, line.productVariant?.currencyCode || order.currencyCode)}
+                            </div>
+
+                            {/* Quantity Controls */}
+                            <div className="inline-flex items-center rounded-full border border-white/20 bg-white/[0.08]">
+                              <button
+                                type="button"
+                                aria-label="Decrease quantity"
+                                disabled={line.quantity <= 1}
+                                className="h-7 w-7 rounded-l-full text-sm text-blue-50 transition hover:bg-white/20 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                              >
+                                -
+                              </button>
+                              <span className="min-w-[2rem] px-1 text-center text-xs font-semibold text-white">
+                                {line.quantity}
+                              </span>
+                              <button
+                                type="button"
+                                aria-label="Increase quantity"
+                                className="h-7 w-7 rounded-r-full text-sm text-blue-50 transition hover:bg-white/20 hover:text-white disabled:cursor-not-allowed disabled:opacity-40"
+                              >
+                                +
+                              </button>
+                            </div>
+
+                            <button
+                              type="button"
+                              className="text-[10px] font-semibold text-blue-100/60 underline-offset-4 transition hover:text-rose-300 hover:underline"
+                            >
+                              Remove
+                            </button>
                           </div>
                         </article>
                       );
@@ -813,13 +838,14 @@ export default function CheckoutPage() {
                 <span>Total</span>
                 <span>{totals.total}</span>
               </div>
-              <button
+              <Button
                 type="submit"
                 disabled={!canSubmit}
-                className="btn-primary-dark mt-5 w-full disabled:cursor-not-allowed disabled:opacity-60"
+                variant="premium"
+                className="mt-5 w-full"
               >
-                {isSubmitting ? 'Placing Order…' : 'Place Order'}
-              </button>
+                {isSubmitting ? 'Processing order...' : `Pay ${totals.total}`}
+              </Button>
             </aside>
           </form>
         ) : null}

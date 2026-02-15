@@ -2,7 +2,7 @@
 
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
-import { use } from 'react';
+import { use, Suspense } from 'react';
 import ConfigurationSidebar from './ConfigurationSidebar';
 import KeypadPreview from './KeypadPreview';
 import KeypadProvider, { KeypadContext } from './KeypadProvider';
@@ -117,8 +117,10 @@ export default function KeypadConfigurator({
   keypad: PilotKeypadProduct;
 }) {
   return (
-    <Keypad.Provider keypad={keypad}>
-      <KeypadConfiguratorShell />
-    </Keypad.Provider>
+    <Suspense fallback={<div className="h-96 animate-pulse rounded-3xl bg-surface-alt/50" />}>
+      <Keypad.Provider keypad={keypad}>
+        <KeypadConfiguratorShell />
+      </Keypad.Provider>
+    </Suspense>
   );
 }

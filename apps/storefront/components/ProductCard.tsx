@@ -7,20 +7,15 @@ import type { IconProduct } from '../lib/vendure';
 import { assetUrl } from '../lib/vendure';
 import { notifyCartUpdated } from '../lib/cartEvents';
 import { useUIStore } from '../lib/uiStore';
-import {
-  cardIdentifierTextClass,
-  cardPlaceholderTextClass,
-  cardSupportingTextClass,
-  cardTitleTextClass,
-} from './cardTypography';
+import { Plus } from 'lucide-react';
 
-const placeholder = (
-  <div
-    className={`flex aspect-square items-center justify-center rounded-2xl bg-gradient-to-br from-slate-100 via-white to-slate-200 ${cardPlaceholderTextClass}`}
-  >
-    Render pending
-  </div>
-);
+interface ProductCardProps {
+  product: IconProduct;
+  categoryLabel: string;
+  categoryHref?: string;
+  productHref?: string;
+  replaceProductNavigation?: boolean;
+}
 
 export default function ProductCard({
   product,
@@ -28,37 +23,30 @@ export default function ProductCard({
   categoryHref,
   productHref,
   replaceProductNavigation = false,
-}: {
-  product: IconProduct;
-  categoryLabel: string;
-  categoryHref?: string;
-  productHref?: string;
-  replaceProductNavigation?: boolean;
-}) {
+}: ProductCardProps) {
   const image = product.featuredAsset?.preview ?? product.featuredAsset?.source ?? '';
   const iconId = product.customFields?.iconId ?? product.name;
   const primaryVariant = product.variants?.[0];
   const [adding, setAdding] = useState(false);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const showToast = useUIStore((state) => state.showToast);
 
   const priceWithVatLabel = formatPrice(primaryVariant?.priceWithTax, primaryVariant?.currencyCode);
-  const priceExVatLabel = formatPriceExVatUk(primaryVariant?.priceWithTax, primaryVariant?.currencyCode);
 
-  const onAddToCart = async () => {
+  const onAddToCart = async (e: React.MouseEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
+
     if (!primaryVariant?.id || adding) return;
     setAdding(true);
-    setErrorMessage(null);
     try {
       const response = await fetch('/api/cart/add-item', {
         method: 'POST',
         headers: { 'content-type': 'application/json' },
         body: JSON.stringify({ productVariantId: primaryVariant.id, quantity: 1 }),
       });
-      const payload = (await response.json().catch(() => ({}))) as { error?: string };
-      if (!response.ok) {
-        throw new Error(payload.error || 'Could not add this button insert to cart.');
-      }
+
+      if (!response.ok) throw new Error('Could not add item');
+
       notifyCartUpdated();
       showToast({
         message: 'Added to cart',
@@ -66,79 +54,100 @@ export default function ProductCard({
         ctaLabel: 'View cart',
       });
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Could not add this button insert to cart.';
-      setErrorMessage(message);
+      console.error(error);
+      showToast({ message: 'Failed to add item', ctaLabel: '', ctaHref: '' });
     } finally {
       setAdding(false);
     }
   };
 
-  const addToCartClass = 'btn-primary w-full gap-2 text-xs sm:text-sm md:text-base';
+  const finalProductHref = productHref ?? `/shop/product/${product.slug}`;
 
   return (
-    <div className="card group relative flex h-full flex-col gap-3 p-3.5 transition-[transform,box-shadow,border-color] duration-300 hover:-translate-y-1 hover:shadow-premium sm:gap-5 sm:p-5">
+    <div className="group relative flex flex-col rounded-2xl bg-white transition-all duration-300 hover:shadow-soft hover:-translate-y-1">
+      {/* Image Container */}
       <Link
-        href={productHref ?? `/shop/product/${product.slug}`}
+        href={finalProductHref}
+        className="relative aspect-square w-full overflow-hidden rounded-t-2xl bg-surface-alt flex items-center justify-center p-6"
         replace={replaceProductNavigation}
-        aria-label={`View ${product.name}`}
-        className="absolute inset-0 z-0 rounded-2xl"
-      />
-      <div className="pointer-events-none relative z-10 flex flex-1 flex-col gap-4">
+      >
         {image ? (
-          <div className="relative aspect-square overflow-hidden rounded-2xl bg-[linear-gradient(to_bottom,#f4f4f5_0%,#e4e4e7_50%,#ffffff_100%)]">
+          <div className="relative h-[70%] w-[70%]">
             <Image
               src={assetUrl(image)}
               alt={product.name}
               fill
-              sizes="(max-width: 768px) 100vw, (max-width: 1280px) 50vw, 25vw"
-              className="object-contain p-3 transition-transform duration-300 group-hover:scale-[1.03] sm:p-6"
-              loading="lazy"
+              className="object-contain object-center transition-transform duration-500 group-hover:scale-105"
+              sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"
             />
           </div>
         ) : (
-          placeholder
+          <div className="flex h-full w-full items-center justify-center bg-surface-alt text-ink-subtle">
+            No Image
+          </div>
         )}
-        <div className="space-y-1.5">
-          <div className={cardTitleTextClass}>{product.name}</div>
-          <div className={cardIdentifierTextClass}>{iconId}</div>
+
+        {/* Hover Overlay */}
+        <div className="absolute inset-0 bg-ink/0 transition-colors group-hover:bg-ink/[0.02]" />
+      </Link>
+
+      {/* Content */}
+      <div className="flex flex-1 flex-col p-4 sm:p-5">
+        <div className="mb-2 flex items-center justify-between gap-2">
           {categoryHref ? (
             <Link
               href={categoryHref}
-              onClick={(event) => event.stopPropagation()}
-              className={`${cardSupportingTextClass} pointer-events-auto relative z-20 inline-flex text-[11px] uppercase tracking-widest text-ink-subtle transition hover:text-ink hover:underline`}
+              className="text-[10px] font-bold uppercase tracking-wider text-ink-subtle transition-colors hover:text-sky"
+              onClick={(e) => e.stopPropagation()}
             >
               {categoryLabel}
             </Link>
           ) : (
-            <div className={`${cardSupportingTextClass} text-[11px] uppercase tracking-widest text-ink-subtle`}>{categoryLabel}</div>
+            <span className="text-[10px] font-bold uppercase tracking-wider text-ink-subtle">
+              {categoryLabel}
+            </span>
           )}
+          <span className="font-mono text-[10px] font-medium text-ink-subtle/70">{iconId}</span>
         </div>
-      </div>
-      <div className="relative z-20 mt-auto space-y-2">
-        <div className="space-y-3">
-          <div className="space-y-0.5">
-            <div className="flex items-end gap-1.5">
-              <div className="text-sm font-bold tracking-tight text-ink md:text-base">
-                {priceWithVatLabel || 'Price unavailable'}
-              </div>
-              {priceWithVatLabel && (
-                <div className="pb-0.5 text-[10px] font-semibold tracking-wide text-ink/55">(INCL)</div>
-              )}
-            </div>
-            {priceExVatLabel && (
-              <div className="text-[10px] font-semibold tracking-wide text-ink/55">{priceExVatLabel} (EXCL)</div>
+
+        <Link
+          href={finalProductHref}
+          className="group/title mb-auto block"
+          replace={replaceProductNavigation}
+        >
+          <h3 className="font-medium text-ink transition-colors group-hover/title:text-sky line-clamp-2">
+            {product.name}
+          </h3>
+        </Link>
+
+        {/* Price & Action */}
+        <div className="mt-4 flex items-center justify-between border-t border-surface-border pt-3">
+          <div className="flex flex-col">
+            <span className="text-sm font-semibold text-ink">
+              {priceWithVatLabel || 'Unavailable'}
+            </span>
+            {priceWithVatLabel && (
+              <span className="text-[9px] font-medium text-ink-muted">INCL VAT</span>
             )}
           </div>
+
           <button
             type="button"
             onClick={onAddToCart}
-            disabled={!primaryVariant?.id || adding}
-            className={addToCartClass}
+            disabled={adding || !primaryVariant?.id}
+            className={`flex h-8 w-8 items-center justify-center rounded-full transition-all disabled:opacity-50 ${adding
+              ? 'bg-ink-muted text-white cursor-wait'
+              : 'bg-surface-alt text-ink hover:bg-ink hover:text-white hover:scale-105'
+              }`}
+            aria-label={adding ? 'Adding to cart' : `Add ${product.name} to cart`}
           >
-            <span className="relative z-10">{adding ? 'Adding…' : 'Add to Cart'}</span>
+            {adding ? (
+              <span className="h-1.5 w-1.5 animate-ping rounded-full bg-white" />
+            ) : (
+              <Plus className="h-4 w-4" />
+            )}
           </button>
         </div>
-        {errorMessage ? <div className="text-xs font-medium text-rose-700">{errorMessage}</div> : null}
       </div>
     </div>
   );
@@ -156,10 +165,4 @@ function formatPrice(priceWithTax?: number | null, currencyCode?: string | null)
   } catch {
     return `${(priceWithTax / 100).toFixed(2)} ${currency}`;
   }
-}
-
-function formatPriceExVatUk(priceWithTax?: number | null, currencyCode?: string | null) {
-  if (typeof priceWithTax !== 'number') return null;
-  const exVatMinor = Math.round(priceWithTax / 1.2);
-  return formatPrice(exVatMinor, currencyCode);
 }
