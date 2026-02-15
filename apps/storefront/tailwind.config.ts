@@ -56,19 +56,24 @@ export default {
       },
       borderRadius: {
         DEFAULT: '8px',
-        btn: '8px',
-        input: '8px',
-        card: '12px',
+        btn: '10px',
+        input: '10px',
+        card: '16px',
         sm: '4px',
         md: '8px',
-        lg: '8px',
-        xl: '12px',
-        '2xl': '16px',
+        lg: '12px',
+        xl: '16px',
+        '2xl': '24px',
       },
       boxShadow: {
-        soft: '0 4px 20px -2px rgba(0, 0, 0, 0.08)',
-        refined: '0 2px 8px -2px rgba(0, 0, 0, 0.05)',
-        glow: '0 0 0 1px rgba(56, 189, 248, 0.25), 0 8px 20px rgba(56, 189, 248, 0.1)',
+        soft: '0 4px 20px -2px rgba(14, 17, 26, 0.08)',
+        refined: '0 2px 8px -1px rgba(14, 17, 26, 0.04)',
+        glow: '0 0 0 1px rgba(56, 189, 248, 0.25), 0 8px 24px rgba(56, 189, 248, 0.15)',
+        premium: '0 20px 40px -4px rgba(14, 17, 26, 0.08), 0 0 2px rgba(14, 17, 26, 0.04)',
+      },
+      animation: {
+        'fade-up': 'fade-up 0.6s ease-out forwards',
+        'scale-in': 'scale-in 0.2s ease-out forwards',
       }
     }
   },
