@@ -358,6 +358,7 @@ export default function Navbar() {
         isOpen={isMenuOpen}
         onClose={() => setIsMenuOpen(false)}
         isAuthenticated={isAuthenticated}
+        cartQuantity={cartQuantity}
         onLogout={onLogout}
         onOpenSearch={() => setIsSearchOpen(true)}
       />
