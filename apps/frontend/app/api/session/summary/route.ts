@@ -7,6 +7,26 @@ type SessionSummaryResponse = {
   activeOrder?: {
     id: string;
     totalQuantity?: number | null;
+    totalWithTax?: number;
+    currencyCode?: string;
+    lines?: Array<{
+      id: string;
+      quantity: number;
+      linePriceWithTax: number;
+      productVariant?: {
+        id: string;
+        name?: string;
+        product?: {
+          id: string;
+          name?: string;
+          slug?: string;
+          featuredAsset?: {
+            preview: string | null;
+            source: string | null;
+          } | null;
+        } | null;
+      } | null;
+    }>;
   } | null;
   activeCustomer?: {
     id: string;
@@ -21,6 +41,26 @@ const SESSION_SUMMARY_QUERY = `
     activeOrder {
       id
       totalQuantity
+      totalWithTax
+      currencyCode
+      lines {
+        id
+        quantity
+        linePriceWithTax
+        productVariant {
+          id
+          name
+          product {
+            id
+            name
+            slug
+            featuredAsset {
+              preview
+              source
+            }
+          }
+        }
+      }
     }
     activeCustomer {
       id
@@ -56,21 +96,42 @@ export async function GET(request: Request) {
         authenticated: false,
         totalQuantity: 0,
         customer: null,
+        cart: null,
       });
       return withSessionCookie(fallback, vendureResponse);
     }
 
     const customer = json.data?.activeCustomer ?? null;
+    const order = json.data?.activeOrder;
 
     const response = NextResponse.json({
       authenticated: Boolean(customer?.id),
-      totalQuantity: normalizeInt(json.data?.activeOrder?.totalQuantity),
+      totalQuantity: normalizeInt(order?.totalQuantity),
       customer: customer
         ? {
           id: customer.id,
           firstName: customer.firstName ?? null,
           lastName: customer.lastName ?? null,
           emailAddress: customer.emailAddress ?? null,
+        }
+        : null,
+      cart: order
+        ? {
+          totalWithTax: order.totalWithTax,
+          currencyCode: order.currencyCode,
+          lines: order.lines?.map((line) => ({
+            id: line.id,
+            quantity: line.quantity,
+            linePriceWithTax: line.linePriceWithTax,
+            productVariant: {
+              name: line.productVariant?.name,
+              product: {
+                name: line.productVariant?.product?.name,
+                slug: line.productVariant?.product?.slug,
+                featuredAsset: line.productVariant?.product?.featuredAsset,
+              },
+            },
+          })) ?? [],
         }
         : null,
     });
@@ -81,6 +142,7 @@ export async function GET(request: Request) {
       authenticated: false,
       totalQuantity: 0,
       customer: null,
+      cart: null,
     });
   }
 }

@@ -20,6 +20,7 @@ const ACTIVE_ORDER_QUERY = `
         }
         productVariant {
           id
+          sku
           name
           currencyCode
           product {
@@ -29,6 +30,16 @@ const ACTIVE_ORDER_QUERY = `
             featuredAsset {
               preview
               source
+            }
+            facetValues {
+              id
+              name
+              code
+              facet {
+                id
+                name
+                code
+              }
             }
           }
         }
@@ -57,6 +68,7 @@ type ActiveOrderResponse = {
       } | null;
       productVariant?: {
         id: string;
+        sku?: string | null;
         name?: string | null;
         currencyCode?: string | null;
         product?: {
@@ -67,6 +79,16 @@ type ActiveOrderResponse = {
             preview?: string | null;
             source?: string | null;
           } | null;
+          facetValues?: Array<{
+            id: string;
+            name: string;
+            code: string;
+            facet: {
+              id: string;
+              name: string;
+              code: string;
+            };
+          }> | null;
         } | null;
       } | null;
     }> | null;
@@ -120,6 +142,7 @@ export async function GET(request: Request) {
             productVariant: line.productVariant
               ? {
                 id: line.productVariant.id,
+                sku: line.productVariant.sku ?? null,
                 name: line.productVariant.name ?? 'Product variant',
                 currencyCode: line.productVariant.currencyCode ?? order.currencyCode ?? 'USD',
                 product: line.productVariant.product
@@ -133,6 +156,7 @@ export async function GET(request: Request) {
                         source: line.productVariant.product.featuredAsset.source ?? null,
                       }
                       : null,
+                    category: line.productVariant.product.facetValues?.find(fv => fv.facet.code === 'category')?.name || null,
                   }
                   : null,
               }

@@ -66,11 +66,11 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
                     </div>
                 )}
                 <div className="space-y-2">
-                    <label htmlFor="login-email" className="text-xs font-semibold uppercase tracking-wide text-ink/50">Email</label>
+                    <label htmlFor="login-email" className="text-xs font-semibold uppercase tracking-wide text-blue-100/70">Email</label>
                     <input
                         id="login-email"
                         name="email"
-                        className="input"
+                        className="input input-dark"
                         type="email"
                         autoComplete="email"
                         spellCheck={false}
@@ -81,11 +81,11 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
                     />
                 </div>
                 <div className="space-y-2">
-                    <label htmlFor="login-password" className="text-xs font-semibold uppercase tracking-wide text-ink/50">Password</label>
+                    <label htmlFor="login-password" className="text-xs font-semibold uppercase tracking-wide text-blue-100/70">Password</label>
                     <input
                         id="login-password"
                         name="password"
-                        className="input"
+                        className="input input-dark"
                         type="password"
                         autoComplete="current-password"
                         placeholder="Enter your password…"
@@ -98,15 +98,15 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
                     {loading ? 'Signing in…' : 'Sign in'}
                 </button>
                 <div className="relative py-1">
-                    <div className="h-px w-full bg-ink/10" />
-                    <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-ink/45">
+                    <div className="h-px w-full bg-white/10" />
+                    <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-[#060a12] px-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-panel-muted">
                         Or
                     </span>
                 </div>
                 <GoogleLoginButton redirectTo={redirectTo} />
-                <div className="flex items-center justify-between text-xs text-ink/50">
-                    <span>Forgot your password?</span>
-                    <Link href="/signup" className="font-semibold text-moss">Create account</Link>
+                <div className="flex items-center justify-between text-xs text-panel-muted">
+                    <button type="button" className="hover:text-white hover:underline">Forgot your password?</button>
+                    <Link href="/signup" className="font-semibold text-[#6fd0ff] hover:text-[#9dcfff]">Create account</Link>
                 </div>
             </form>
 
