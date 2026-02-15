@@ -397,7 +397,7 @@ ul.list-disc.space-y-3.pl-5.text-base.leading-7.text-ink\/75 li>span {
     border-radius: theme('borderRadius.input');
     border: 1px solid var(--surface-border);
     padding: 12px 16px;
-    font-size: 14px;
+    font-size: 16px;
     background: #ffffff;
     color: var(--ink);
     outline: none;

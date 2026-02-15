@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import Image from 'next/image';
 import { use } from 'react';
+import { Plus, X } from 'lucide-react';
 import { assetUrl } from '../../lib/vendure';
 import type { SlotVisualState } from '../../lib/configuratorStore';
 import type { SlotId } from '../../lib/keypadConfiguration';
@@ -11,16 +12,13 @@ import { KeypadContext } from './KeypadProvider';
 
 const primarySlotButtonClass = 'btn-primary min-h-10 px-3 text-xs tracking-[0.1em] uppercase';
 
-const strongGhostButtonClass =
-  'btn-secondary dark min-h-10 items-center justify-center px-3 text-xs uppercase tracking-[0.1em]';
-
 type ConfigurationSidebarProps = {
   slotIds?: SlotId[];
   slotLabels?: Record<string, string>;
   slots?: Record<string, SlotVisualState>;
   isComplete?: boolean;
   loadingSavedConfig?: boolean;
-  iconsLoading?: boolean;
+  iconsLoading?: boolean; // Keep for backward compat/props
   iconsError?: string | null;
   savedConfigError?: string | null;
   cartStatus?: StatusMessage | null;
@@ -29,6 +27,150 @@ type ConfigurationSidebarProps = {
   onClearSlot?: (slotId: SlotId) => void;
   children?: React.ReactNode;
 };
+
+// --- Mobile Component: Circular Icon-Only ---
+function MobileSlotItem({
+  slotId,
+  label,
+  slot,
+  isActive,
+  onClick,
+}: {
+  slotId: string;
+  label: string;
+  slot: SlotVisualState;
+  isActive: boolean;
+  onClick: () => void;
+}) {
+  const isAssigned = Boolean(slot.iconId);
+  const previewImage = slot.matteAssetPath ? assetUrl(slot.matteAssetPath) : null;
+
+  if (isAssigned && previewImage) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        className={`relative flex aspect-square w-full items-center justify-center transition-transform active:scale-95 ${isActive ? 'scale-105 contrast-125' : ''
+          }`}
+        aria-label={`Configure ${label}`}
+      >
+        <div className="relative h-full w-full drop-shadow-md">
+          <Image
+            src={previewImage}
+            alt={label}
+            fill
+            className="object-contain"
+            sizes="(max-width: 768px) 25vw, 10vw"
+          />
+        </div>
+      </button>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={`relative flex aspect-square w-full items-center justify-center rounded-full border-2 border-dashed transition-all active:scale-95 ${isActive
+        ? 'border-sky-500 bg-sky-50 text-sky-600'
+        : 'border-white/30 bg-white/20 backdrop-blur-sm text-white/50 hover:border-white/50 hover:bg-white/30 hover:text-white/80'
+        }`}
+      aria-label={`Configure ${label}`}
+    >
+      <Plus size={24} />
+    </button>
+  );
+}
+
+// --- Desktop/Tablet Component: Compact Tile ---
+function DesktopSlotItem({
+  slotId,
+  label,
+  slot,
+  isActive,
+  onClick,
+  onClear,
+}: {
+  slotId: string;
+  label: string;
+  slot: SlotVisualState;
+  isActive: boolean;
+  onClick: () => void;
+  onClear: () => void;
+}) {
+  const isAssigned = Boolean(slot.iconId);
+  const iconName = slot.iconName?.trim() || null;
+  const iconId = slot.iconId?.trim() || null;
+  const previewImage = slot.matteAssetPath ? assetUrl(slot.matteAssetPath) : null;
+
+  return (
+    <div
+      className={`group relative flex flex-col justify-between overflow-hidden rounded-xl border transition-all duration-300 ease-out ${isActive
+        ? 'border-panel-accent ring-2 ring-panel-accent ring-offset-2 ring-offset-[#0B1221] bg-white shadow-[0_0_30px_-5px_rgba(59,130,246,0.5)] scale-[1.02]'
+        : 'border-white/10 bg-white shadow-sm hover:shadow-xl hover:-translate-y-1 hover:bg-white/95'
+        }`}
+    >
+      <button
+        type="button"
+        onClick={onClick}
+        className="flex h-full w-full flex-col text-left"
+      >
+        <div className="flex w-full items-start justify-between p-3">
+          <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-ink/40 group-hover:text-ink/60 transition-colors">
+            {label}
+          </span>
+          {isAssigned && (
+            <div
+              role="button"
+              tabIndex={0}
+              onClick={(e) => {
+                e.stopPropagation();
+                onClear();
+              }}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.stopPropagation();
+                  onClear();
+                }
+              }}
+              className="z-10 -mr-1 -mt-1 flex h-6 w-6 items-center justify-center rounded-full text-ink/30 hover:bg-rose-100 hover:text-rose-500 transition-colors"
+              title="Clear slot"
+            >
+              <X size={12} />
+            </div>
+          )}
+        </div>
+
+        <div className="flex flex-1 items-center justify-center py-4 min-h-[5rem]">
+          {previewImage ? (
+            <div className="relative h-16 w-16 transition-transform duration-300 group-hover:scale-110">
+              <Image
+                src={previewImage}
+                alt={iconName || 'Slot icon'}
+                fill
+                className="object-contain"
+                sizes="64px"
+              />
+            </div>
+          ) : (
+            <div className="flex h-12 w-12 items-center justify-center rounded-full border border-dashed border-ink/10 text-ink/20 opacity-70 group-hover:border-ink/20 group-hover:text-ink/40 transition-colors">
+              <Plus size={20} />
+            </div>
+          )}
+        </div>
+
+        <div className="bg-ink/[0.02] p-3 pt-2">
+          <div className="truncate text-xs font-semibold text-ink">
+            {iconName || <span className="text-ink/30 italic font-normal">Select icon...</span>}
+          </div>
+          <div className="mt-0.5 h-3 text-[9px] font-mono text-ink/40 truncate">
+            {iconId || ''}
+          </div>
+        </div>
+      </button>
+    </div>
+  );
+}
 
 export default function ConfigurationSidebar({
   slotIds,
@@ -59,156 +201,144 @@ export default function ConfigurationSidebar({
   const resolvedOnOpenSlotPopup = onOpenSlotPopup ?? context?.actions.openSlot ?? (() => { });
   const resolvedOnClearSlot = onClearSlot ?? context?.actions.clearSlot ?? (() => { });
   const totalSlots = resolvedSlotIds.length;
+  const activeSlotId = context?.state.popupSlotId;
 
+  // Use context for modelCode and isMobile
   const modelCode = context?.state.modelCode;
+  const isMobile = context?.state.isMobile ?? false;
 
-  const getGridClass = (code: string | undefined) => {
+  const getDesktopGridClass = (code: string | undefined) => {
     switch (code) {
-      case 'PKP-2300-SI':
-        return 'xl:grid-cols-3';
-      case 'PKP-2400-SI':
-      case 'PKP-2600-SI':
-        return 'xl:grid-cols-4';
-      case 'PKP-2500-SI':
-      case 'PKP-3500-SI':
-        return 'xl:grid-cols-5';
+      case 'PKP-2300-SI': // 2x3 (6)
+        return 'grid-cols-2 lg:grid-cols-3';
+      case 'PKP-2400-SI': // 2x4 (8)
+      case 'PKP-2600-SI': // 2x6 (12)
+        return 'grid-cols-2 lg:grid-cols-4';
+      case 'PKP-2500-SI': // 2x5 (10)
+      case 'PKP-3500-SI': // 3x5 (15)
+        return 'grid-cols-3 lg:grid-cols-5';
       default:
-        // Default (e.g. 2200) fits nicely in 2 cols
-        return 'xl:grid-cols-2';
+        // PKP-2200 (4)
+        return 'grid-cols-2';
     }
   };
 
-  return (
-    <section className="card-soft relative py-[50px] px-6">
-      <h1 className="mt-4 text-4xl font-semibold tracking-tight text-[#10223f] sm:text-5xl">Slot Configuration</h1>
-      <p className="mt-16 text-sm text-[#324a71]">
-        Each slot requires a valid alphanumeric icon ID before checkout and account save.
+  const getMobileGridClass = (code: string | undefined) => {
+    // Mimic keypad layout roughly, or just fit them nicely
+    switch (code) {
+      case 'PKP-3500-SI':
+        return 'grid-cols-5'; // 5 wide
+      case 'PKP-2600-SI':
+      case 'PKP-2500-SI':
+      case 'PKP-2400-SI':
+        return 'grid-cols-4';
+      case 'PKP-2300-SI':
+        return 'grid-cols-3';
+      default:
+        return 'grid-cols-4'; // Fallback
+    }
+  };
+
+  const renderHeader = () => (
+    <div className={`flex flex-col gap-2 ${isMobile ? 'text-center' : 'mb-6 border-b border-white/10 pb-6'}`}>
+      <h1 className={`font-semibold tracking-tight text-white ${isMobile ? 'text-xl' : 'text-3xl sm:text-4xl lg:text-5xl'}`}>
+        Slot Configuration
+      </h1>
+      <p className={`text-panel-muted ${isMobile ? 'text-xs px-8' : 'max-w-xl text-sm'}`}>
+        Tap a slot to assign an icon. {isMobile ? 'Use preview above.' : 'Drag to rotate the preview.'}
       </p>
+    </div>
+  );
 
-      <div className={`mt-4 grid grid-cols-1 md:grid-cols-2 gap-3 ${getGridClass(modelCode)}`}>
-        {resolvedSlotIds.map((slotId) => {
-          const slot = resolvedSlots[slotId] ?? {
-            iconId: null,
-            iconName: null,
-            matteAssetPath: null,
-            glossyAssetPath: null,
-            productId: null,
-            variantId: null,
-            category: null,
-            sizeMm: null,
-            color: null,
-          };
-          const label = resolvedSlotLabels?.[slotId] ?? slotId.replace('_', ' ');
-          const isAssigned = Boolean(slot.iconId);
-          const iconName = slot.iconName?.trim() || null;
-          const iconId = slot.iconId?.trim() || null;
-          const previewImage = slot.matteAssetPath ? assetUrl(slot.matteAssetPath) : null;
+  return (
+    <section className={`relative transition-all ${isMobile ? 'px-4 pb-8 pt-0' : 'px-6 pb-20 pt-6 lg:pt-[50px]'}`}>
 
-          return (
-            <div
-              key={slotId}
-              className="group flex flex-col justify-between rounded-xl border border-surface-border bg-white transition-all hover:shadow-soft overflow-hidden"
-            >
-              {/* Top Section: Header & Preview */}
-              <button
-                type="button"
-                onClick={() => resolvedOnOpenSlotPopup(slotId)}
-                className="relative block w-full border-b border-surface-border/50 bg-surface-alt/30 transition-colors hover:bg-surface-alt/60 text-left"
-              >
-                <div className="absolute left-3 top-3 z-10">
-                  <div className="text-xl font-bold uppercase tracking-[0.14em] text-[#4c648a] transition-colors group-hover:text-sky">{label}</div>
-                </div>
+      {/* Desktop: Header Top */}
+      {!isMobile && renderHeader()}
 
-                <div className={`flex w-full items-center justify-center ${modelCode === 'PKP-2200-SI' ? 'h-32 p-4' : 'h-48 pt-14 pb-4 px-4'}`}>
-                  {previewImage ? (
-                    <div className="relative h-full w-full transition-transform duration-500 group-hover:scale-105">
-                      <Image
-                        src={previewImage}
-                        alt={`Slot ${label} - ${iconName}`}
-                        fill
-                        className="object-contain"
-                        sizes="(max-width: 768px) 50vw, 20vw"
-                      />
-                    </div>
-                  ) : (
-                    <div className="flex flex-col items-center justify-center gap-2 opacity-30 transition-opacity group-hover:opacity-50">
-                      <div className="h-12 w-12 rounded-full border-2 border-dashed border-current" />
-                      <span className="text-xs uppercase tracking-wider font-medium">Empty</span>
-                    </div>
-                  )}
-                </div>
-              </button>
+      {/* Grid Area */}
+      {isMobile ? (
+        <div className="space-y-6">
+          {/* Mobile: Containerized Grid */}
+          <div className="-mt-12 relative z-20 rounded-[40px] bg-white/15 backdrop-blur-md p-6 shadow-[0_32px_64px_-12px_rgba(14,17,26,0.12)] border border-white/25 ring-1 ring-white/10">
+            <div className={`grid gap-4 ${getMobileGridClass(modelCode)} mx-auto max-w-sm`}>
+              {resolvedSlotIds.map((slotId) => {
+                const slot = resolvedSlots[slotId] ?? {};
+                const label = resolvedSlotLabels?.[slotId] ?? slotId.replace('_', ' '); // Keep label for MobileSlotItem if it needs it
+                const isActive = slotId === activeSlotId;
 
-              {/* Middle Section: Details */}
-              <div className="flex flex-1 flex-col p-3">
-                <div className="min-h-[2.5rem]">
-                  <div className="truncate text-sm font-semibold text-[#0f2241]">
-                    {iconName || <span className="text-ink-subtle italic opacity-50">Select an insert</span>}
-                  </div>
-                  {isAssigned ? (
-                    <div className="font-mono text-[10px] text-[#4d5f7f] mt-0.5">ID: {iconId}</div>
-                  ) : (
-                    <div className="text-[10px] text-ink-subtle mt-0.5">No ID assigned</div>
-                  )}
-                </div>
-
-                {slot.color && (
-                  <div className="mt-2 text-[10px] font-medium text-[#4d5f7f]">
-                    Glow: <span className="text-ink">{slot.color}</span>
-                  </div>
-                )}
-              </div>
-
-              {/* Bottom Section: Actions */}
-              <div className="flex items-center gap-2 border-t border-surface-border p-2 bg-surface-alt/20">
-                <button
-                  type="button"
-                  onClick={() => resolvedOnOpenSlotPopup(slotId)}
-                  className="btn-premium min-h-[32px] h-8 w-full justify-center text-[10px] uppercase tracking-wider shadow-sm hover:shadow-md"
-                  aria-label={`${isAssigned ? 'Change' : 'Choose'} insert for ${label}`}
-                >
-                  {isAssigned ? 'Change' : 'Choose'}
-                </button>
-                {isAssigned && (
-                  <button
-                    type="button"
-                    onClick={() => resolvedOnClearSlot(slotId)}
-                    className="h-8 w-8 flex items-center justify-center rounded-md text-ink-subtle hover:bg-rose-50 hover:text-rose-600 transition-colors"
-                    aria-label={`Clear insert for ${label}`}
-                    title="Clear slot"
-                  >
-                    <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M18 6 6 18" /><path d="m6 6 12 12" /></svg>
-                  </button>
-                )}
-              </div>
+                return (
+                  <MobileSlotItem
+                    key={slotId}
+                    slotId={slotId}
+                    label={label} // Assuming label is still needed or can be removed if not used by MobileSlotItem
+                    slot={slot as SlotVisualState} // Changed to value={slot} in example, but keeping original prop name for consistency with MobileSlotItem definition
+                    isActive={isActive}
+                    onClick={() => resolvedOnOpenSlotPopup(slotId)} // Changed to onSlotClick(slotId) in example, but keeping original prop name
+                  />
+                );
+              })}
             </div>
-          );
-        })}
+          </div>
+
+
+          {/* Mobile: Header Bottom */}
+        </div>
+      ) : (
+        <div className={`grid gap-4 ${getDesktopGridClass(modelCode)}`}>
+          {resolvedSlotIds.map((slotId) => {
+            const slot = resolvedSlots[slotId] ?? {};
+            const label = resolvedSlotLabels?.[slotId] ?? slotId.replace('_', ' ');
+            const isActive = slotId === activeSlotId;
+
+            return (
+              <DesktopSlotItem
+                key={slotId}
+                slotId={slotId}
+                label={label}
+                slot={slot as SlotVisualState}
+                isActive={isActive}
+                onClick={() => resolvedOnOpenSlotPopup(slotId)}
+                onClear={() => resolvedOnClearSlot(slotId)}
+              />
+            );
+          })}
+        </div>
+      )}
+
+
+      <div className="mt-8">
+        {children}
       </div>
 
-      {children}
+      <div className={`space-y-2 border-t border-white/10 pt-4 ${isMobile ? 'mt-4 text-center' : 'mt-6'}`}>
+        {!resolvedIsComplete ? (
+          <p className="text-xs font-semibold text-rose-400">
+            * All {totalSlots} slots must be assigned.
+          </p>
+        ) : (
+          <p className="text-xs font-semibold text-emerald-400">
+            ✓ All slots assigned. Ready for checkout.
+          </p>
+        )}
 
-      {!resolvedIsComplete ? (
-        <p className="mt-2 text-xs font-semibold text-[#8a2f2f]">
-          All {totalSlots} slots must be filled before Add to cart and Save to account.
-        </p>
-      ) : null}
-
-      {resolvedLoadingSavedConfig ? <p className="mt-3 text-xs text-[#445f89]">Loading saved design...</p> : null}
-      {resolvedIconsLoading ? <p className="mt-3 text-xs text-[#445f89]">Loading icon catalog...</p> : null}
-      {resolvedIconsError ? <p className="mt-3 text-xs font-semibold text-rose-700">{resolvedIconsError}</p> : null}
-      {resolvedSavedConfigError ? <p className="mt-3 text-xs font-semibold text-rose-700">{resolvedSavedConfigError}</p> : null}
-      {resolvedCartStatus ? (
-        <p className={resolvedCartStatus.type === 'success' ? 'mt-3 text-sm font-semibold text-[#123f2f]' : 'mt-3 text-sm font-semibold text-rose-700'}>
-          {resolvedCartStatus.message}
-        </p>
-      ) : null}
-      {resolvedSaveStatus ? (
-        <p className={resolvedSaveStatus.type === 'success' ? 'mt-3 text-sm font-semibold text-[#123f2f]' : 'mt-3 text-sm font-semibold text-rose-700'}>
-          {resolvedSaveStatus.message}
-        </p>
-      ) : null}
-
+        {resolvedLoadingSavedConfig && <p className="text-xs text-panel-muted">Loading saved design...</p>}
+        {resolvedIconsLoading && <p className="text-xs text-panel-muted">Loading icon catalog...</p>}
+        {resolvedIconsError && <p className="text-xs font-semibold text-rose-400">{resolvedIconsError}</p>}
+        {resolvedSavedConfigError && <p className="text-xs font-semibold text-rose-400">{resolvedSavedConfigError}</p>}
+        {resolvedCartStatus && (
+          <p className={`text-sm font-semibold ${resolvedCartStatus.type === 'success' ? 'text-emerald-400' : 'text-rose-400'
+            }`}>
+            {resolvedCartStatus.message}
+          </p>
+        )}
+        {resolvedSaveStatus && (
+          <p className={`text-sm font-semibold ${resolvedSaveStatus.type === 'success' ? 'text-emerald-400' : 'text-rose-400'
+            }`}>
+            {resolvedSaveStatus.message}
+          </p>
+        )}
+      </div>
     </section>
   );
 }

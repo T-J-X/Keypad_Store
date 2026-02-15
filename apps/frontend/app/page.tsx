@@ -16,7 +16,7 @@ export default function HomePage() {
       <section className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
         <div className="space-y-6">
           <div className="pill">Vehicle Control Technologies</div>
-          <h1 className="text-4xl font-semibold tracking-tight text-ink md:text-5xl">
+          <h1 className="text-3xl font-semibold tracking-tight text-ink sm:text-4xl md:text-5xl">
             Build a keypad that feels custom from the first press.
           </h1>
           <p className="max-w-xl text-base text-ink/70">
