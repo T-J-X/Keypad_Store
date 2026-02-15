@@ -7,6 +7,7 @@ import { categorySlug } from '../../lib/vendure';
 import { notifyCartUpdated } from '../../lib/cartEvents';
 import { useUIStore } from '../../lib/uiStore';
 import AccessibleModal from '../ui/AccessibleModal';
+import { Button } from '../ui/Button';
 
 type StockSummary = {
   label: string;
@@ -269,31 +270,22 @@ export default function PurchasePanel({
       </div>
 
       <div className="mt-12 grid gap-3">
-        <button
+        <Button
           type="button"
           onClick={onAddToCart}
           disabled={!canPurchase || adding || buyingNow}
-          className={[
-            'group relative isolate inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-2xl border border-transparent px-6 py-4 text-sm font-medium text-white whitespace-nowrap',
-            'bg-[linear-gradient(90deg,#040F2E_0%,#112B5D_55%,#29457A_100%),linear-gradient(90deg,#203f7a_0%,#2f5da8_55%,#4b7fca_100%)] [background-origin:padding-box,border-box] [background-clip:padding-box,border-box]',
-            'transition-[background,box-shadow,transform] duration-300',
-            'hover:-translate-y-[1px] hover:bg-[linear-gradient(270deg,#040F2E_0%,#112B5D_55%,#29457A_100%),linear-gradient(90deg,#24497d_0%,#39629a_55%,#537bb0_100%)] hover:shadow-[0_0_0_1px_rgba(72,116,194,0.56),0_10px_24px_rgba(4,15,46,0.29)]',
-            'focus:outline-none focus-visible:ring-2 focus-visible:ring-[#29457A]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white',
-            pulse ? 'animate-soft-pulse' : '',
-            'disabled:cursor-not-allowed disabled:opacity-50',
-          ].join(' ')}
+          variant="premium"
+          className={`w-full ${pulse ? 'animate-soft-pulse' : ''} min-h-[44px]`}
         >
-          <span className="pointer-events-none absolute inset-0 rounded-2xl bg-[linear-gradient(270deg,rgba(255,255,255,0.10)_0%,rgba(255,255,255,0.02)_45%,rgba(255,255,255,0.08)_100%)] opacity-0 transition-opacity duration-300 group-hover:opacity-45" />
-          <span className="pointer-events-none absolute -inset-[1px] -z-10 rounded-2xl bg-[linear-gradient(90deg,rgba(11,27,58,0.44)_0%,rgba(27,52,95,0.30)_55%,rgba(58,116,198,0.30)_100%)] opacity-0 transition-opacity duration-300 group-hover:opacity-55" />
           {loading ? (
             <>
-              <span className="relative z-10 h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white motion-reduce:animate-none" />
+              <span className="relative z-10 h-4 w-4 animate-spin rounded-full border-2 border-white/30 border-t-white motion-reduce:animate-none mr-2" />
               <span className="relative z-10">Adding…</span>
             </>
           ) : (
             <span className="relative z-10">Add to Cart</span>
           )}
-        </button>
+        </Button>
 
         <button
           type="button"

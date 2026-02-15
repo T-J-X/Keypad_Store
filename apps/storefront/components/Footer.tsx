@@ -4,105 +4,112 @@ const footerGroups = [
   {
     title: 'Shop',
     links: [
-      { href: '/shop?section=button-inserts', label: 'Button Inserts' },
-      { href: '/shop?section=keypads', label: 'Keypads' },
-      { href: '/shop?section=all', label: 'All Products' },
-      { href: '/cart', label: 'Cart' },
+      { label: 'All Products', href: '/shop' },
+      { label: 'Button Inserts', href: '/shop?section=button-inserts' },
+      { label: 'Keypads', href: '/shop?section=keypads' },
+      { label: 'Quick Order', href: '/quick-order' },
     ],
   },
   {
     title: 'Configure',
     links: [
-      { href: '/configurator', label: 'Configurator' },
-      { href: '/shop?section=keypads', label: 'Model Selection' },
-      { href: '/account', label: 'Saved Layouts' },
-      { href: '/order/TEST-CODE', label: 'Order Tracking' },
+      { label: 'Build a Keypad', href: '/configurator' },
+      { label: 'Saved Designs', href: '/account' },
     ],
   },
   {
     title: 'Support',
     links: [
-      { href: '/login', label: 'Account Help' },
-      { href: '/signup', label: 'Create Account' },
-      { href: '/shop', label: 'Catalog Guide' },
-      { href: '/checkout', label: 'Checkout Help' },
+      { label: 'Documentation', href: '/docs' },
+      { label: 'Install Guides', href: '/guides' },
+      { label: 'Contact Sales', href: '/contact' },
     ],
   },
   {
     title: 'Company',
     links: [
-      { href: '/', label: 'About Keypad Co.' },
-      { href: '/', label: 'Shipping Policy' },
-      { href: '/', label: 'Returns Policy' },
-      { href: '/', label: 'Privacy' },
+      { label: 'About Keypad Co.', href: '/about' },
+      { label: 'Partners', href: '/partners' },
+      { label: 'Careers', href: '/careers' },
     ],
   },
-] as const;
+];
 
 export default function Footer() {
   return (
-    <footer className="mt-20 border-t border-panel-border bg-panel text-white">
-      <div className="mx-auto w-full max-w-7xl px-6 pb-10 pt-14 lg:px-8">
-        <div className="mb-10 rounded-2xl border border-white/10 bg-white/[0.03] px-5 py-6 backdrop-blur">
-          <div className="flex flex-col gap-2 sm:flex-row sm:items-end sm:justify-between">
-            <div>
-              <div className="text-[10px] font-semibold uppercase tracking-widest text-white/50">Keypad Co.</div>
-              <div className="mt-2 text-xl font-semibold tracking-tight">Precision hardware for demanding control systems.</div>
-            </div>
-            <div className="text-sm text-panel-muted">Frontend `:3001` • Vendure `:3000`</div>
+    <footer className="relative mt-20 border-t border-panel-border bg-panel text-white overflow-hidden">
+      <div className="absolute inset-0 bg-[linear-gradient(to_bottom,theme(colors.panel.DEFAULT),theme(colors.panel.light))] pointer-events-none" />
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,rgba(56,189,248,0.15),transparent_70%)] opacity-40 pointer-events-none" />
+
+      <div className="relative z-10 mx-auto w-full max-w-7xl px-6 pb-12 pt-16 lg:px-8">
+
+        {/* Top Section: Newsletter & Intro */}
+        <div className="mb-16 grid gap-12 lg:grid-cols-[1fr_400px]">
+          <div className="max-w-md space-y-4">
+            <h2 className="text-lg font-bold tracking-tight">Keypad Co.</h2>
+            <p className="text-sm leading-relaxed text-white/80">
+              Engineering-grade control interfaces for demanding environments.
+              Configure, customize, and order technical keypads with ease.
+            </p>
+          </div>
+
+          <div className="space-y-4">
+            <h3 className="text-sm font-semibold">Stay updated</h3>
+            <form className="relative flex gap-2">
+              <input
+                type="email"
+                placeholder="Enter your email"
+                className="w-full rounded-xl border border-panel-ring bg-panel-input px-4 py-3 text-sm text-white placeholder:text-panel-muted focus:border-sky/50 focus:outline-none focus:ring-2 focus:ring-sky/20"
+                aria-label="Email address for newsletter"
+              />
+              <button
+                type="button"
+                className="absolute right-1.5 top-1.5 flex h-[calc(100%-12px)] items-center justify-center rounded-lg bg-white px-3 text-sm font-semibold text-ink transition hover:bg-white/90"
+              >
+                Subscribe
+              </button>
+            </form>
+            <p className="text-xs text-panel-muted">
+              Updates on new hardware families and software features.
+            </p>
           </div>
         </div>
 
-        <div className="grid gap-8 md:grid-cols-2 xl:grid-cols-5">
+        {/* Links Grid */}
+        <div className="grid gap-10 sm:grid-cols-2 md:grid-cols-4 lg:gap-8">
           {footerGroups.map((group) => (
-            <div key={group.title} className="space-y-3">
-              <div className="text-[10px] font-semibold uppercase tracking-widest text-white/45">{group.title}</div>
-              <div className="space-y-2.5 text-sm">
-                {group.links.map((item) => (
-                  <Link
-                    key={`${group.title}-${item.label}`}
-                    href={item.href}
-                    className="block text-white/80 transition-colors hover:text-white"
-                  >
-                    {item.label}
-                  </Link>
-                ))}
+            <div key={group.title} className="space-y-4">
+              <div className="font-mono text-xs font-bold uppercase tracking-widest text-white/90">
+                {group.title}
               </div>
+              <ul className="space-y-3">
+                {group.links.map((item) => (
+                  <li key={`${group.title}-${item.label}`}>
+                    <Link
+                      href={item.href}
+                      className="block text-sm text-white/70 transition-colors hover:text-white"
+                    >
+                      {item.label}
+                    </Link>
+                  </li>
+                ))}
+              </ul>
             </div>
           ))}
-
-          <div className="space-y-3">
-            <div className="text-[10px] font-semibold uppercase tracking-widest text-white/45">Newsletter</div>
-            <p className="text-sm text-white/70">
-              Stay in the loop on new keypad launches, insert drops, and configurator updates.
-            </p>
-            <form className="rounded-full border border-panel-border bg-panel-light p-1">
-              <div className="flex items-center gap-2">
-                <input
-                  className="input input-dark w-full border-none bg-transparent px-3 py-2 shadow-none focus:ring-0"
-                  placeholder="you@company.com"
-                  aria-label="Email address"
-                />
-                <button
-                  className="btn-primary rounded-full px-4 py-2 text-xs"
-                  type="button"
-                >
-                  Join
-                </button>
-              </div>
-            </form>
-            <div className="text-xs text-white/45">No spam. One concise update per month.</div>
-          </div>
         </div>
-      </div>
 
-      <div className="border-t border-white/10 py-5">
-        <div className="mx-auto flex w-full max-w-7xl flex-col gap-2 px-6 text-xs text-white/45 sm:flex-row sm:items-center sm:justify-between lg:px-8">
-          <span>(c) 2026 Keypad Co. All rights reserved.</span>
-          <div className="flex flex-wrap gap-4">
-            <span>Terms</span>
-            <span>Privacy</span>
-            <span>Accessibility</span>
+        {/* Bottom Section */}
+        <div className="mt-16 border-t border-white/5 pt-8">
+          <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
+            <p className="text-xs text-panel-muted">
+              &copy; 2026 Keypad Co. All rights reserved.
+            </p>
+
+            <div className="flex flex-wrap gap-6 text-xs text-panel-muted">
+              <Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
+              <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
+              <Link href="/cookies" className="hover:text-white transition-colors">Cookie Settings</Link>
+            </div>
           </div>
         </div>
       </div>

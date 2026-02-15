@@ -19,6 +19,7 @@ import BaseShopHero from './BaseShopHero';
 import CategoryCard from './CategoryCard';
 import KeypadCard from './KeypadCard';
 import ProductCard from './ProductCard';
+import { Button, buttonVariants } from './ui/Button';
 
 const PAGE_SIZE_OPTIONS = [24, 48, 96] as const;
 const ringBlueHoverClass =
@@ -599,7 +600,7 @@ export default function ShopClient({
   };
 
   const renderIconsGrid = (iconItems: IconProduct[]) => (
-    <div className="staggered grid grid-cols-2 gap-3 min-[430px]:grid-cols-3 lg:grid-cols-4">
+    <div className="staggered grid grid-cols-2 gap-3 min-[480px]:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 2xl:grid-cols-7">
       {iconItems.map((icon) => {
         const iconCategoryNames = categoryNamesByIconId.get(icon.id) ?? [];
         const primaryCategoryName = iconCategoryNames[0] ?? '';
@@ -630,7 +631,7 @@ export default function ShopClient({
     keypadItems: KeypadProduct[],
     options?: { hubReady?: boolean; replaceDetailNavigation?: boolean },
   ) => (
-    <div className="staggered grid gap-6 sm:grid-cols-2 xl:grid-cols-2">
+    <div className="staggered grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
       {keypadItems.map((keypad) => (
         <KeypadCard
           key={keypad.id}
@@ -687,7 +688,7 @@ export default function ShopClient({
                   : 'Search products'
             }
           />
-          <button type="submit" className="btn-primary shrink-0">Search</button>
+          <Button type="submit" variant="premium" className="shrink-0">Search</Button>
         </form>
       </div>
 
@@ -714,8 +715,8 @@ export default function ShopClient({
                 const tileSubtitle = tile.subtitle?.trim() || '';
 
                 const cardClass = `group relative overflow-hidden rounded-2xl text-left ${shouldUseRingBlue ? ringBlueHoverClass : 'border border-ink/10 bg-white'} ${isInteractive
-                    ? 'cursor-pointer transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5'
-                    : 'cursor-default'
+                  ? 'cursor-pointer transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5'
+                  : 'cursor-default'
                   }`;
 
                 const content = (
@@ -734,8 +735,8 @@ export default function ShopClient({
                     {isInteractive && tileImage ? (
                       <div
                         className={`pointer-events-none absolute inset-0 transition-opacity duration-200 ${isExploreMoreTile
-                            ? 'bg-black/45 opacity-60 group-hover:opacity-85'
-                            : 'bg-black/25 opacity-55 group-hover:opacity-75'
+                          ? 'bg-black/45 opacity-60 group-hover:opacity-85'
+                          : 'bg-black/25 opacity-55 group-hover:opacity-75'
                           }`}
                       />
                     ) : null}
@@ -748,9 +749,9 @@ export default function ShopClient({
                       ) : null}
                       {isInteractive ? (
                         <span
-                          className={`btn-primary mt-4 translate-y-2 opacity-0 transition-[opacity,transform] duration-200 group-hover:translate-y-0 group-hover:opacity-100 ${isExploreMoreTile
-                              ? 'bg-surface text-ink shadow-sm'
-                              : ''
+                          className={`mt-4 translate-y-2 opacity-0 transition-[opacity,transform] duration-200 group-hover:translate-y-0 group-hover:opacity-100 ${buttonVariants({ variant: 'premium' })} ${isExploreMoreTile
+                            ? 'bg-surface text-ink shadow-sm'
+                            : ''
                             }`}
                         >
                           {tile.kind === 'exploreMore' ? 'Discover more' : 'Explore'}
@@ -785,13 +786,13 @@ export default function ShopClient({
                   Button Insert Categories
                 </h2>
               </div>
-              <button
+              <Button
                 type="button"
                 onClick={() => onSectionChange('button-inserts', { scrollToTop: true })}
-                className="btn-secondary"
+                variant="secondary"
               >
                 View all inserts
-              </button>
+              </Button>
             </div>
             {landingDisciplineTiles.length > 0 ? (
               <div className="grid auto-rows-fr gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -832,13 +833,13 @@ export default function ShopClient({
                   Popular Keypads to Start From
                 </h2>
               </div>
-              <button
+              <Button
                 type="button"
                 onClick={() => onSectionChange('keypads', { scrollToTop: true })}
-                className="inline-flex min-h-[44px] items-center justify-center rounded-2xl border border-ink/15 px-5 py-2 text-sm font-semibold text-ink whitespace-nowrap transition hover:border-ink/35"
+                variant="secondary"
               >
                 View all keypads
-              </button>
+              </Button>
             </div>
             {featuredLandingKeypads.length > 0 ? (
               <div className="grid gap-6 lg:grid-cols-3">
@@ -881,8 +882,8 @@ export default function ShopClient({
                     aria-pressed={isAllSection}
                     onClick={() => onSectionChange('all', { scrollToTop: true })}
                     className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-sm font-semibold tracking-tight transition ${isAllSection
-                        ? 'border-ink bg-ink text-white'
-                        : 'border-surface-border bg-surface text-ink hover:border-ink/25 hover:bg-surface-alt'
+                      ? 'border-ink bg-ink text-white'
+                      : 'border-surface-border bg-surface text-ink hover:border-ink/25 hover:bg-surface-alt'
                       }`}
                   >
                     <span>All products</span>
@@ -896,8 +897,8 @@ export default function ShopClient({
                     aria-pressed={isIconsSection}
                     onClick={() => onSectionChange('button-inserts', { scrollToTop: true })}
                     className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-sm font-semibold tracking-tight transition ${isIconsSection
-                        ? 'border-ink bg-ink text-white'
-                        : 'border-surface-border bg-surface text-ink hover:border-ink/25 hover:bg-surface-alt'
+                      ? 'border-ink bg-ink text-white'
+                      : 'border-surface-border bg-surface text-ink hover:border-ink/25 hover:bg-surface-alt'
                       }`}
                   >
                     <span>Button Inserts</span>
@@ -909,8 +910,8 @@ export default function ShopClient({
                     aria-pressed={isKeypadsSection}
                     onClick={() => onSectionChange('keypads', { scrollToTop: true })}
                     className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-sm font-semibold tracking-tight transition ${isKeypadsSection
-                        ? 'border-ink bg-ink text-white'
-                        : 'border-surface-border bg-surface text-ink hover:border-ink/25 hover:bg-surface-alt'
+                      ? 'border-ink bg-ink text-white'
+                      : 'border-surface-border bg-surface text-ink hover:border-ink/25 hover:bg-surface-alt'
                       }`}
                   >
                     <span>Keypads</span>
@@ -1001,13 +1002,14 @@ export default function ShopClient({
                     </button>
                   ))}
                   {hasActiveFilters && (
-                    <button
+                    <Button
                       type="button"
                       onClick={clearFilters}
-                      className="btn-ghost px-3 py-1 text-xs"
+                      variant="ghost"
+                      className="px-3 py-1 text-xs h-auto"
                     >
                       Clear all filters
-                    </button>
+                    </Button>
                   )}
                 </div>
               ) : (

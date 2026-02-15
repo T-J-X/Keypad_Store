@@ -42,7 +42,7 @@ export default function KeypadPdp({
   const description = product.description?.trim() || 'PKP-SI keypads are built for configurable, rugged control systems.';
   const downloads = resolveProductDownloads(product);
   const inTheBoxItems = resolveInTheBoxItems(product);
-  const configuratorSlug = (product.slug || modelCode).trim();
+  const configuratorSlug = (modelCode || product.slug).trim();
   const configuratorHref = `/configurator/keypad/${encodeURIComponent(configuratorSlug)}`;
   const primaryVariant = product.variants?.[0];
   const priceWithVatLabel = formatPrice(primaryVariant?.priceWithTax, primaryVariant?.currencyCode);
