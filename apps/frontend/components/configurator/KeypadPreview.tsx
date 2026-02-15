@@ -231,6 +231,7 @@ export default function KeypadPreview({
   const [tuningCopyStatus, setTuningCopyStatus] = useState<'idle' | 'copied' | 'error'>('idle');
   const [shellNaturalSize, setShellNaturalSize] = useState<IntrinsicSize | null>(null);
   const [zoomLevel, setZoomLevel] = useState(getInitialZoom(modelCode));
+  const [showInitialTooltip, setShowInitialTooltip] = useState(true);
   const displayRotationRef = useRef(rotationDeg);
   const rotationFrameRef = useRef<number | null>(null);
 
@@ -245,6 +246,7 @@ export default function KeypadPreview({
 
   const renderLayout = editMode ? editableLayout : baseLayout;
   const slotIds = useMemo(() => getSlotIdsForLayout(renderLayout), [renderLayout]);
+  const nextSlotId = useMemo(() => slotIds.find((id) => !slots[id]?.iconId), [slotIds, slots]);
   const iconVisibleCompValue = useMemo(() => normalizeIconVisibleComp(iconVisibleComp), [iconVisibleComp]);
   const iconScaleValue = useMemo(
     () => (editMode ? editableIconScale : normalizeIconScale(iconScale)),
@@ -730,6 +732,9 @@ export default function KeypadPreview({
                   const iconY = slotEntry.cy - (iconSize / 2);
                   const isActive = slotId === activeSlotId;
                   const isSelected = editMode && slotId === selectedSlotId;
+                  const isNextSlot = slotId === nextSlotId;
+                  const isPulsating = isNextSlot && !isActive;
+
                   const showSlotGuides = showCalibrationGuides
                     && (!showSelectedGuidesOnly || !editMode || slotId === selectedSlotId);
 
@@ -757,6 +762,7 @@ export default function KeypadPreview({
                         }
                       }}
                       onClick={() => {
+                        setShowInitialTooltip(false);
                         if (editMode) {
                           setSelectedSlotId(slotId);
                           return;
@@ -811,6 +817,7 @@ export default function KeypadPreview({
                           preserveAspectRatio="xMidYMid meet"
                           transform={visualRotationDeg ? `rotate(${-visualRotationDeg} ${slotEntry.cx} ${slotEntry.cy})` : undefined}
                           clipPath={`url(#${safeSvgIdPrefix}-insert-${slotId})`}
+                          className={isPulsating ? 'animate-icon-pulse-blue' : ''}
                           style={{
                             filter: isWhiteGlow ? 'brightness(0.82)' : 'brightness(0.9)',
                             transition: 'filter 180ms ease-out',
@@ -826,16 +833,117 @@ export default function KeypadPreview({
                             stroke="rgba(255,255,255,0.2)"
                             strokeWidth={Math.max(1, slotEntry.insertD * 0.02)}
                           />
-                          <text
-                            x={slotEntry.cx}
-                            y={slotEntry.cy + Math.max(6, slotEntry.insertD * 0.08)}
-                            textAnchor="middle"
-                            fontSize={Math.max(16, slotEntry.insertD * 0.34)}
-                            fontWeight={600}
-                            fill="rgba(255,255,255,0.65)"
-                          >
-                            +
-                          </text>
+                          {!isPulsating && (
+                            <text
+                              x={slotEntry.cx}
+                              y={slotEntry.cy + Math.max(6, slotEntry.insertD * 0.08)}
+                              textAnchor="middle"
+                              fontSize={Math.max(16, slotEntry.insertD * 0.34)}
+                              fontWeight={200}
+                              fill="rgba(255,0,0,0.5)"
+                            >
+                              +
+                            </text>
+                          )}
+                          {isPulsating && (
+                            <>
+                              <circle
+                                cx={slotEntry.cx}
+                                cy={slotEntry.cy}
+                                r={slotEntry.insertD / (modelCode === 'PKP-2200-SI' ? 2.35 : 1.8)}
+                                fill="none"
+                                stroke="rgba(2, 6, 23, 0.53)"
+                                strokeWidth="1.5"
+                                strokeDasharray="3 2"
+                                className="animate-spin-slow"
+                                style={{ transformOrigin: `${slotEntry.cx}px ${slotEntry.cy}px`, animationDuration: '10s' }}
+                              />
+                              <g className="animate-icon-pulse-blue" style={{ transformOrigin: `${slotEntry.cx}px ${slotEntry.cy}px` }}>
+                                <circle
+                                  cx={slotEntry.cx}
+                                  cy={slotEntry.cy}
+                                  r={slotEntry.insertD / (modelCode === 'PKP-2200-SI' ? 2.4 : 1.85)}
+                                  fill="rgba(2, 6, 23, 0.64)"
+                                />
+                                <text
+                                  x={slotEntry.cx}
+                                  y={slotEntry.cy + Math.max(6, slotEntry.insertD * 0.08)}
+                                  textAnchor="middle"
+                                  fontSize={Math.max(16, slotEntry.insertD * 0.34)}
+                                  fontWeight={200}
+                                  fill="rgba(255,0,0,0.5)"
+                                >
+                                  +
+                                </text>
+                                <image
+                                  href="/vct-logo.png"
+                                  x={slotEntry.cx - (slotEntry.insertD * (modelCode === 'PKP-2200-SI' ? 0.65 : 0.85)) / 2}
+                                  y={slotEntry.cy - (slotEntry.insertD * (modelCode === 'PKP-2200-SI' ? 0.65 : 0.85) * 0.32) / 2}
+                                  width={slotEntry.insertD * (modelCode === 'PKP-2200-SI' ? 0.65 : 0.85)}
+                                  height={slotEntry.insertD * (modelCode === 'PKP-2200-SI' ? 0.65 : 0.85) * 0.32}
+                                  style={{
+                                    filter: 'brightness(0) invert(1)',
+                                    opacity: 0.95,
+                                  }}
+                                  transform={visualRotationDeg ? `rotate(${-visualRotationDeg} ${slotEntry.cx} ${slotEntry.cy})` : undefined}
+                                />
+                              </g>
+                              {(showInitialTooltip || (slotId === nextSlotId && !slots[slotId]?.iconId)) && (() => {
+                                const isMassiveTooltipModel = [
+                                  'PKP-3500-SI',
+                                  'PKP-2500-SI',
+                                  'PKP-2400-SI',
+                                  'PKP-2300-SI'
+                                ].includes(modelCode || '');
+                                const isMidLargeTooltipModel = [
+                                  'PKP-2600-SI',
+                                  'PKP-2200-SI'
+                                ].includes(modelCode || '');
+
+                                // Default to "Large" (190px, 13px font) for any other potential models
+                                let width = 190;
+                                let height = 70;
+                                let dx = 95;
+                                let dy = 55;
+                                let style: React.CSSProperties | undefined = { fontSize: '13px', padding: '10px 20px' };
+
+                                if (isMassiveTooltipModel) {
+                                  width = 280;
+                                  height = 100;
+                                  dx = 140;
+                                  dy = 85;
+                                  style = { fontSize: '22px', padding: '18px 32px' };
+                                } else if (isMidLargeTooltipModel) {
+                                  width = 230;
+                                  height = 86;
+                                  dx = 115;
+                                  dy = 75;
+                                  style = { fontSize: '17px', padding: '15px 26px' };
+                                }
+
+                                return (
+                                  <foreignObject
+                                    x={slotEntry.cx - dx}
+                                    y={slotEntry.cy - slotEntry.insertD / 1.4 - dy}
+                                    width={width}
+                                    height={height}
+                                    className="overflow-visible"
+                                    transform={visualRotationDeg ? `rotate(${-visualRotationDeg} ${slotEntry.cx} ${slotEntry.cy})` : undefined}
+                                  >
+                                    <div className="flex justify-center">
+                                      <div
+                                        className="tooltip-bubble"
+                                        style={style}
+                                      >
+                                        Please select an icon
+                                      </div>
+                                    </div>
+                                  </foreignObject>
+                                );
+                              })()}
+                            </>
+                          )}
+
                         </>
                       )}
 
