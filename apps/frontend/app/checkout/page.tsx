@@ -461,14 +461,14 @@ export default function CheckoutPage() {
 
                       return (
                         <article key={line.id} className="flex items-start gap-3 rounded-2xl border border-white/12 bg-[#081831]/65 p-3">
-                          <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl bg-neutral-100">
+                          <div className={`relative shrink-0 overflow-hidden rounded-xl flex items-center justify-center ${hasConfiguration ? 'h-20 w-24 bg-[#020916]' : 'h-20 w-20 bg-neutral-100'}`}>
                             {hasConfiguration ? (
                               <ConfiguredKeypadThumbnail
                                 modelCode={modelCode}
                                 shellAssetPath={imagePath || null}
                                 configuration={previewConfiguration ?? emptyPreviewConfiguration()}
                                 iconLookup={iconLookup}
-                                size="sm"
+                                size="fill"
                               />
                             ) : imageSrc ? (
                               <Image

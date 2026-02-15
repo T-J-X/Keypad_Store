@@ -628,9 +628,8 @@ export default function KeypadProvider({
     }
 
     if (isAuthenticated === false) {
-      const query = searchParams.toString();
-      const redirectTo = `${pathname}${query ? `?${query}` : ''}`;
-      window.location.assign(`/login?redirectTo=${encodeURIComponent(redirectTo)}`);
+      // Show inline login via the Saved Designs modal instead of navigating away
+      setIsSavedDesignsModalOpen(true);
       return;
     }
 
