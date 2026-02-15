@@ -26,6 +26,8 @@
 
 html {
   background: #fff;
+  scroll-behavior: smooth;
+  -webkit-font-smoothing: antialiased;
 }
 
 body {
@@ -34,6 +36,25 @@ body {
   color: var(--ink);
   background: linear-gradient(180deg, #ffffff 0%, #fbfcfe 48%, #f9fbff 100%);
   min-height: 100vh;
+}
+
+/* Scrollbar Styling */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(14, 17, 26, 0.15);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(14, 17, 26, 0.25);
 }
 
 h1,
@@ -55,7 +76,8 @@ img {
 }
 
 ::selection {
-  background: rgba(255, 107, 87, 0.25);
+  background: rgba(74, 164, 255, 0.15);
+  color: var(--ink);
 }
 
 .page-shell {
@@ -65,7 +87,8 @@ img {
   position: relative;
   overflow-x: clip;
   background:
-    radial-gradient(140% 72% at 50% -22%, rgba(12, 17, 26, 0.05) 0%, rgba(12, 17, 26, 0) 58%),
+    radial-gradient(140% 72% at 50% -22%, rgba(12, 17, 26, 0.03) 0%, rgba(12, 17, 26, 0) 58%),
+    url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.8' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)' opacity='0.03'/%3E%3C/svg%3E"),
     linear-gradient(180deg, #ffffff 0%, #f9fbff 100%);
 }
 
@@ -92,6 +115,18 @@ ul.list-disc.space-y-3.pl-5.text-base.leading-7.text-ink\/75 li>span {
   to {
     opacity: 1;
     transform: translateY(0);
+  }
+}
+
+@keyframes scale-in {
+  from {
+    opacity: 0;
+    transform: scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
   }
 }
 
