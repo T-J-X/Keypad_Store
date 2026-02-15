@@ -294,14 +294,14 @@ export default function CartPage() {
 
                   return (
                     <li key={line.id} className="flex gap-4 p-4 sm:p-5">
-                      <div className="relative h-20 w-20 shrink-0 overflow-hidden rounded-xl border border-white/15 bg-[#020916]">
+                      <div className={`relative shrink-0 overflow-hidden rounded-xl border border-white/15 bg-[#020916] flex items-center justify-center ${hasConfiguration ? 'h-20 w-24 sm:h-24 sm:w-32' : 'h-20 w-20'}`}>
                         {hasConfiguration ? (
                           <ConfiguredKeypadThumbnail
                             modelCode={modelCode}
                             shellAssetPath={imagePath || null}
                             configuration={previewConfiguration ?? emptyPreviewConfiguration()}
                             iconLookup={iconLookup}
-                            size="sm"
+                            size="fill"
                           />
                         ) : imageSrc ? (
                           <Image

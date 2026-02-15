@@ -4,11 +4,12 @@ import Link from 'next/link';
 import { useCallback, useEffect, useId, useMemo, useState } from 'react';
 import { notifyCartUpdated } from '../lib/cartEvents';
 import { modelCodeToPkpSlug } from '../lib/keypadUtils';
-import { resolvePreviewSlotIds } from '../lib/configuredKeypadPreview';
+import { buildConfiguredIconLookupFromPayload, parseConfigurationForPreview, emptyPreviewConfiguration, resolvePreviewSlotIds, type ConfiguredIconLookup } from '../lib/configuredKeypadPreview';
 import {
   validateAndNormalizeConfigurationInput,
 } from '../lib/keypadConfiguration';
 import { getGeometryForModel } from '../config/layouts/geometry';
+import ConfiguredKeypadThumbnail from './configurator/ConfiguredKeypadThumbnail';
 import AccessibleModal from './ui/AccessibleModal';
 
 type TabId = 'orders' | 'saved';
@@ -72,6 +73,7 @@ export default function AccountTabs() {
   const [enquireId, setEnquireId] = useState<string | null>(null);
   const [enquireNote, setEnquireNote] = useState('');
   const [pendingId, setPendingId] = useState<string | null>(null);
+  const [iconLookup, setIconLookup] = useState<ConfiguredIconLookup>(new Map());
 
   const isAuthenticated = session?.authenticated === true;
 
@@ -125,6 +127,21 @@ export default function AccountTabs() {
     if (!isAuthenticated) return;
     void loadSavedConfigurations();
   }, [isAuthenticated, loadSavedConfigurations]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadIcons = async () => {
+      try {
+        const response = await fetch('/api/configurator/icon-catalog', { method: 'GET', cache: 'no-store' });
+        const payload = (await response.json().catch(() => ({}))) as { icons?: Array<{ iconId: string; name?: string; matteAssetPath: string | null; categories: string[] }> };
+        if (!cancelled && response.ok) {
+          setIconLookup(buildConfiguredIconLookupFromPayload(payload.icons ?? []));
+        }
+      } catch { /* keep empty map */ }
+    };
+    void loadIcons();
+    return () => { cancelled = true; };
+  }, []);
 
   const previewItem = useMemo(
     () => savedConfigs.find((item) => item.id === previewId) ?? null,
@@ -298,11 +315,10 @@ export default function AccountTabs() {
         {tabs.map((tab) => (
           <button
             key={tab.id}
-            className={`inline-flex min-h-11 min-w-[170px] items-center justify-center rounded-full px-4 text-sm font-semibold transition ${
-              active === tab.id
+            className={`inline-flex min-h-11 min-w-[170px] items-center justify-center rounded-full px-4 text-sm font-semibold transition ${active === tab.id
                 ? 'bg-ink text-white'
                 : 'border border-ink/10 text-ink/60 hover:border-ink/25'
-            }`}
+              }`}
             onClick={() => setActive(tab.id)}
             type="button"
           >
@@ -328,6 +344,7 @@ export default function AccountTabs() {
             onDownloadPdf={onDownloadPdf}
             onPreview={setPreviewId}
             onEnquireOpen={setEnquireId}
+            iconLookup={iconLookup}
           />
         )}
       </div>
@@ -377,6 +394,7 @@ function SavedDesignsPanel({
   onDownloadPdf,
   onPreview,
   onEnquireOpen,
+  iconLookup,
 }: {
   authenticated: boolean;
   customerName: string;
@@ -390,6 +408,7 @@ function SavedDesignsPanel({
   onDownloadPdf: (item: SavedConfigurationRecord) => void;
   onPreview: (id: string) => void;
   onEnquireOpen: (id: string) => void;
+  iconLookup: ConfiguredIconLookup;
 }) {
   if (!authenticated) {
     return (
@@ -435,14 +454,24 @@ function SavedDesignsPanel({
 
           return (
             <article key={item.id} className="card-soft border border-ink/8 p-4">
-              <div className="flex flex-wrap items-start justify-between gap-3">
-                <div>
-                  <h3 className="text-base font-semibold text-ink">{item.name}</h3>
-                  <div className="mt-1 text-xs text-ink/55">
-                    {item.keypadModel} · Updated {formatDate(item.updatedAt)}
-                  </div>
+              <div className="flex items-start gap-4">
+                <div className="relative h-16 w-20 shrink-0 overflow-hidden rounded-xl border border-ink/10 bg-[#020916]">
+                  <ConfiguredKeypadThumbnail
+                    modelCode={item.keypadModel}
+                    configuration={parseConfigurationForPreview(item.configuration) ?? emptyPreviewConfiguration()}
+                    iconLookup={iconLookup}
+                    size="fill"
+                  />
                 </div>
-                <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink/45">{item.id}</div>
+                <div className="flex flex-1 flex-wrap items-start justify-between gap-3">
+                  <div>
+                    <h3 className="text-base font-semibold text-ink">{item.name}</h3>
+                    <div className="mt-1 text-xs text-ink/55">
+                      {item.keypadModel} · Updated {formatDate(item.updatedAt)}
+                    </div>
+                  </div>
+                  <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-ink/45">{item.id}</div>
+                </div>
               </div>
 
               <div className="mt-3 grid gap-2 sm:grid-cols-6">

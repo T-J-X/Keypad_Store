@@ -42,7 +42,8 @@ function resolveMatteAssetPath(iconId: string | null, icon: ConfiguredIconLookup
   return null;
 }
 
-function sizeClassFromVariant(size: 'sm' | 'md' | 'lg') {
+function sizeClassFromVariant(size: 'sm' | 'md' | 'lg' | 'fill') {
+  if (size === 'fill') return 'w-full h-full';
   if (size === 'lg') return 'w-full max-w-[320px]';
   if (size === 'md') return 'w-28';
   return 'w-20';
@@ -60,7 +61,7 @@ export default function ConfiguredKeypadThumbnail({
   shellAssetPath?: string | null;
   configuration: KeypadConfigurationDraft;
   iconLookup: ConfiguredIconLookup;
-  size?: 'sm' | 'md' | 'lg';
+  size?: 'sm' | 'md' | 'lg' | 'fill';
   showSlotLabels?: boolean;
 }) {
   const resolvedModelCode = useMemo(() => {
@@ -138,12 +139,18 @@ export default function ConfiguredKeypadThumbnail({
 
   return (
     <div
-      className={sizeClass}
-      style={{
-        aspectRatio: String(renderAspectRatio),
-        transform: `rotate(${rotationDeg}deg) scale(${scale})`,
-        transformOrigin: 'center center',
-      }}
+      className={`${sizeClass}${size === 'fill' ? '' : ''}`}
+      style={size === 'fill'
+        ? {
+          transform: `rotate(${rotationDeg}deg) scale(${scale})`,
+          transformOrigin: 'center center',
+        }
+        : {
+          aspectRatio: String(renderAspectRatio),
+          transform: `rotate(${rotationDeg}deg) scale(${scale})`,
+          transformOrigin: 'center center',
+        }
+      }
     >
       <div className="relative h-full w-full overflow-visible rounded-xl border border-[#0f2c5a]/20 bg-[radial-gradient(145%_125%_at_50%_0%,#2c75d8_0%,#12335f_40%,#081427_100%)]">
         <div className="absolute inset-0 overflow-hidden rounded-xl">
