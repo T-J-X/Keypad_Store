@@ -1,5 +1,6 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import CopyrightYear from './CopyrightYear';
 
 const footerGroups = [
   {
@@ -106,14 +107,11 @@ export default function Footer() {
         </div>
 
         {/* Bottom Section */}
-        <div className="mt-16 border-t border-white/5 pt-8">
+        <div className="relative mt-16 pt-8">
+          <div className="absolute top-0 left-0 h-[2px] w-full bg-gradient-to-r from-transparent via-blue-400 to-transparent shadow-[0_0_20px_2px_rgba(96,165,250,0.6)]" />
           <div className="flex flex-col gap-6 md:flex-row md:items-center md:justify-between">
             <p className="text-xs text-panel-muted">
-              &copy; 2026 Vehicle Control Technologies Ltd. All rights reserved. <br className="sm:hidden" />
-              <span className="hidden sm:inline"> | </span>
-              Registered in UK: 12345678 | VAT: GB 123 4567 89
-              <br />
-              123 Tech Avenue, London, EC1A 1BB
+              &copy; <CopyrightYear /> Vehicle Control Technologies
             </p>
 
             <div className="flex flex-wrap gap-6 text-xs text-panel-muted">

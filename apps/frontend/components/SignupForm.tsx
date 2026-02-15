@@ -123,11 +123,11 @@ export default function SignupForm() {
                 )}
                 <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
-                        <label htmlFor="signup-first-name" className="text-xs font-semibold uppercase tracking-wide text-ink/50">First name</label>
+                        <label htmlFor="signup-first-name" className="text-xs font-semibold uppercase tracking-wide text-blue-100/70">First name</label>
                         <input
                             id="signup-first-name"
                             name="firstName"
-                            className="input"
+                            className="input input-dark"
                             type="text"
                             autoComplete="given-name"
                             placeholder="Jane"
@@ -137,11 +137,11 @@ export default function SignupForm() {
                         />
                     </div>
                     <div className="space-y-2">
-                        <label htmlFor="signup-last-name" className="text-xs font-semibold uppercase tracking-wide text-ink/50">Last name</label>
+                        <label htmlFor="signup-last-name" className="text-xs font-semibold uppercase tracking-wide text-blue-100/70">Last name</label>
                         <input
                             id="signup-last-name"
                             name="lastName"
-                            className="input"
+                            className="input input-dark"
                             type="text"
                             autoComplete="family-name"
                             placeholder="Doe"
@@ -152,11 +152,11 @@ export default function SignupForm() {
                     </div>
                 </div>
                 <div className="space-y-2">
-                    <label htmlFor="signup-email" className="text-xs font-semibold uppercase tracking-wide text-ink/50">Email</label>
+                    <label htmlFor="signup-email" className="text-xs font-semibold uppercase tracking-wide text-blue-100/70">Email</label>
                     <input
                         id="signup-email"
                         name="email"
-                        className="input"
+                        className="input input-dark"
                         type="email"
                         autoComplete="email"
                         spellCheck={false}
@@ -169,11 +169,11 @@ export default function SignupForm() {
 
                 {/* ── Password ───────────────────────────────────────── */}
                 <div className="space-y-2">
-                    <label htmlFor="signup-password" className="text-xs font-semibold uppercase tracking-wide text-ink/50">Password</label>
+                    <label htmlFor="signup-password" className="text-xs font-semibold uppercase tracking-wide text-blue-100/70">Password</label>
                     <input
                         id="signup-password"
                         name="password"
-                        className="input"
+                        className="input input-dark"
                         type="password"
                         autoComplete="new-password"
                         placeholder="Create a strong password…"
@@ -198,7 +198,7 @@ export default function SignupForm() {
                                 >
                                     {rule.pass ? '✓' : '✗'}
                                 </span>
-                                <span className={rule.pass ? 'text-ink/60' : 'text-ink/45'}>
+                                <span className={rule.pass ? 'text-blue-100/60' : 'text-blue-100/40'}>
                                     {rule.label}
                                 </span>
                             </li>
@@ -208,12 +208,12 @@ export default function SignupForm() {
 
                 {/* ── Confirm password ──────────────────────────────── */}
                 <div className="space-y-2">
-                    <label htmlFor="signup-confirm-password" className="text-xs font-semibold uppercase tracking-wide text-ink/50">Confirm password</label>
+                    <label htmlFor="signup-confirm-password" className="text-xs font-semibold uppercase tracking-wide text-blue-100/70">Confirm password</label>
                     <input
                         id="signup-confirm-password"
                         name="confirmPassword"
                         className={[
-                            'input',
+                            'input input-dark',
                             showMismatch ? 'ring-2 ring-rose-400/50' : '',
                         ].join(' ')}
                         type="password"
@@ -235,10 +235,10 @@ export default function SignupForm() {
                 >
                     {loading ? 'Creating account…' : 'Create account'}
                 </button>
-                <div className="text-xs text-ink/50">
+                <div className="text-xs text-blue-100/40">
                     By continuing you agree to our{' '}
-                    <Link href="/terms" className="font-semibold text-moss hover:underline">Terms</Link> and{' '}
-                    <Link href="/privacy" className="font-semibold text-moss hover:underline">Privacy Policy</Link>.
+                    <Link href="/terms" className="font-semibold text-blue-300 hover:text-white hover:underline">Terms</Link> and{' '}
+                    <Link href="/privacy" className="font-semibold text-blue-300 hover:text-white hover:underline">Privacy Policy</Link>.
                 </div>
             </form>
 
