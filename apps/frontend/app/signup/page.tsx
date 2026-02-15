@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import SignupForm from '../../components/SignupForm';
 
 export const metadata: Metadata = {
   title: 'Sign Up | Keypad Store',
@@ -29,46 +30,7 @@ export default function SignupPage() {
       </div>
 
       <div className="card w-full flex-1 p-6">
-        <form className="space-y-4">
-          <div className="space-y-2">
-            <label htmlFor="signup-name" className="text-xs font-semibold uppercase tracking-wide text-ink/50">Name</label>
-            <input
-              id="signup-name"
-              name="name"
-              className="input"
-              type="text"
-              autoComplete="name"
-              placeholder="Jane Doe"
-            />
-          </div>
-          <div className="space-y-2">
-            <label htmlFor="signup-email" className="text-xs font-semibold uppercase tracking-wide text-ink/50">Email</label>
-            <input
-              id="signup-email"
-              name="email"
-              className="input"
-              type="email"
-              autoComplete="email"
-              spellCheck={false}
-              placeholder="you@company.com"
-            />
-          </div>
-          <div className="space-y-2">
-            <label htmlFor="signup-password" className="text-xs font-semibold uppercase tracking-wide text-ink/50">Password</label>
-            <input
-              id="signup-password"
-              name="password"
-              className="input"
-              type="password"
-              autoComplete="new-password"
-              placeholder="Create a strong password…"
-            />
-          </div>
-          <button className="btn-primary w-full" type="button">Create account</button>
-          <div className="text-xs text-ink/50">
-            By continuing you agree to our Terms and Privacy Policy.
-          </div>
-        </form>
+        <SignupForm />
       </div>
     </div>
   );

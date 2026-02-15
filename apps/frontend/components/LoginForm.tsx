@@ -1,0 +1,116 @@
+'use client';
+
+import { useState } from 'react';
+import Link from 'next/link';
+import GoogleLoginButton from './GoogleLoginButton';
+import Toast from './ui/Toast';
+
+export default function LoginForm({ redirectTo }: { redirectTo: string }) {
+    const [email, setEmail] = useState('');
+    const [password, setPassword] = useState('');
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
+    const [toast, setToast] = useState<string | null>(null);
+
+    const handleSubmit = async () => {
+        if (!email.trim() || !password) {
+            setError('Please enter your email and password.');
+            return;
+        }
+
+        setLoading(true);
+        setError('');
+
+        try {
+            const res = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ email: email.trim(), password }),
+            });
+
+            const data = await res.json();
+
+            if (data.success) {
+                const name = [data.firstName, data.lastName].filter(Boolean).join(' ');
+                if (name) {
+                    setToast(`Welcome back, ${name}`);
+                    // Wait for toast to be visible before redirecting
+                    setTimeout(() => {
+                        window.location.assign(redirectTo);
+                    }, 1500);
+                } else {
+                    window.location.assign(redirectTo);
+                }
+            } else {
+                setError(data.error || 'Login failed. Please try again.');
+            }
+        } catch {
+            setError('Unable to connect. Please try again.');
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    return (
+        <>
+            <form
+                className="space-y-4"
+                onSubmit={(e) => {
+                    e.preventDefault();
+                    void handleSubmit();
+                }}
+            >
+                {error && (
+                    <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-600">
+                        {error}
+                    </div>
+                )}
+                <div className="space-y-2">
+                    <label htmlFor="login-email" className="text-xs font-semibold uppercase tracking-wide text-ink/50">Email</label>
+                    <input
+                        id="login-email"
+                        name="email"
+                        className="input"
+                        type="email"
+                        autoComplete="email"
+                        spellCheck={false}
+                        placeholder="you@company.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                        disabled={loading}
+                    />
+                </div>
+                <div className="space-y-2">
+                    <label htmlFor="login-password" className="text-xs font-semibold uppercase tracking-wide text-ink/50">Password</label>
+                    <input
+                        id="login-password"
+                        name="password"
+                        className="input"
+                        type="password"
+                        autoComplete="current-password"
+                        placeholder="Enter your password…"
+                        value={password}
+                        onChange={(e) => setPassword(e.target.value)}
+                        disabled={loading}
+                    />
+                </div>
+                <button className="btn-primary w-full" type="submit" disabled={loading}>
+                    {loading ? 'Signing in…' : 'Sign in'}
+                </button>
+                <div className="relative py-1">
+                    <div className="h-px w-full bg-ink/10" />
+                    <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-ink/45">
+                        Or
+                    </span>
+                </div>
+                <GoogleLoginButton redirectTo={redirectTo} />
+                <div className="flex items-center justify-between text-xs text-ink/50">
+                    <span>Forgot your password?</span>
+                    <Link href="/signup" className="font-semibold text-moss">Create account</Link>
+                </div>
+            </form>
+
+            {toast && <Toast message={toast} onDismiss={() => setToast(null)} />}
+        </>
+    );
+}

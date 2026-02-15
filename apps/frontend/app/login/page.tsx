@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Suspense } from 'react';
-import GoogleLoginButton from '../../components/GoogleLoginButton';
+import LoginForm from '../../components/LoginForm';
 import { getSafeRelativePath } from '../../lib/googleAuth';
 
 export const metadata: Metadata = {
@@ -66,43 +66,7 @@ async function LoginPageContent({
       </div>
 
       <div className="card w-full flex-1 p-6">
-        <form className="space-y-4">
-          <div className="space-y-2">
-            <label htmlFor="login-email" className="text-xs font-semibold uppercase tracking-wide text-ink/50">Email</label>
-            <input
-              id="login-email"
-              name="email"
-              className="input"
-              type="email"
-              autoComplete="email"
-              spellCheck={false}
-              placeholder="you@company.com"
-            />
-          </div>
-          <div className="space-y-2">
-            <label htmlFor="login-password" className="text-xs font-semibold uppercase tracking-wide text-ink/50">Password</label>
-            <input
-              id="login-password"
-              name="password"
-              className="input"
-              type="password"
-              autoComplete="current-password"
-              placeholder="Enter your password…"
-            />
-          </div>
-          <button className="btn-primary w-full" type="button">Sign in</button>
-          <div className="relative py-1">
-            <div className="h-px w-full bg-ink/10" />
-            <span className="absolute left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 bg-white px-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-ink/45">
-              Or
-            </span>
-          </div>
-          <GoogleLoginButton redirectTo={redirectTo} />
-          <div className="flex items-center justify-between text-xs text-ink/50">
-            <span>Forgot your password?</span>
-            <Link href="/signup" className="font-semibold text-moss">Create account</Link>
-          </div>
-        </form>
+        <LoginForm redirectTo={redirectTo} />
       </div>
     </div>
   );

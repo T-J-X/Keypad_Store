@@ -97,6 +97,9 @@ export const config: VendureConfig = {
   authOptions: {
     // Use cookie-based sessions for the Admin UI.
     tokenMethod: 'cookie',
+    // In dev, skip email verification so new accounts work immediately.
+    // In production, require email verification before login.
+    requireVerification: isProduction,
     shopAuthenticationStrategy: [
       new NativeAuthenticationStrategy(),
       new GoogleAuthenticationStrategy(),
