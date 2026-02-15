@@ -75,7 +75,7 @@ export default function ConfiguratorModelPage({
 
 function ConfiguratorModelFallback() {
   return (
-    <div className="mx-auto w-full max-w-7xl px-4 pb-20 pt-10 sm:px-6 lg:px-8">
+    <div className="mx-auto w-full max-w-7xl px-4 py-24 sm:px-6 lg:px-8">
       <div className="h-[640px] animate-pulse rounded-3xl bg-[linear-gradient(180deg,#dbe8f9_0%,#f4f7fc_100%)]" />
     </div>
   );

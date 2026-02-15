@@ -1,5 +1,5 @@
 import { type NextRequest, NextResponse } from 'next/server';
-import { fetchIconProductsPage } from '../../../lib/vendure.server';
+import { fetchIconProductsPage, searchGlobalProducts } from '../../../lib/vendure.server';
 import { assetUrl } from '../../../lib/vendure';
 
 
@@ -14,21 +14,18 @@ export async function GET(request: NextRequest) {
     }
 
     try {
-        const { items } = await fetchIconProductsPage({
-            page: 1,
-            take: 8, // Limit for live search results
-            query: q,
-        });
+        const products = await searchGlobalProducts(q);
+        const topResults = products.slice(0, 8); // Limit for live dropdown
 
         // Simplify the response for the search dropdown
-        const results = items.map(icon => ({
-            id: icon.id,
-            name: icon.name,
-            slug: icon.slug,
-            iconId: icon.customFields?.iconId,
-            image: icon.featuredAsset ? assetUrl(icon.featuredAsset.preview) : null,
-            price: icon.variants?.[0]?.priceWithTax,
-            currency: icon.variants?.[0]?.currencyCode,
+        const results = topResults.map(product => ({
+            id: product.id,
+            name: product.name,
+            slug: product.slug,
+            iconId: product.customFields?.iconId,
+            image: product.featuredAsset ? assetUrl(product.featuredAsset.preview) : null,
+            price: product.variants?.[0]?.priceWithTax,
+            currency: product.variants?.[0]?.currencyCode,
         }));
 
         return NextResponse.json({ items: results });

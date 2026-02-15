@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import ShopClient from '../../components/ShopClient';
 import type { IconProduct, KeypadProduct, VendureAsset, VendureProductVariant } from '../../lib/vendure';
-import { fetchIconProducts, fetchIconProductsPage, fetchKeypadProducts, fetchShopLandingContent } from '../../lib/vendure.server';
+import { fetchIconProducts, fetchIconProductsPage, fetchKeypadProducts, fetchShopLandingContent, searchGlobalProducts } from '../../lib/vendure.server';
 
 type SearchParams = {
   q?: string | string[];
@@ -262,6 +262,70 @@ async function ShopPageContent({
       : [];
   const requestedPage = toPositiveInteger(toStringParam(resolvedSearchParams?.page), 1);
   const requestedTake = toPageSize(toStringParam(resolvedSearchParams?.take));
+
+  // --- Search Logic ---
+  if (query.trim().length > 0) {
+    const allResults = await searchGlobalProducts(query);
+
+    const totalItems = allResults.length;
+    const totalPages = Math.max(1, Math.ceil(totalItems / requestedTake));
+    const safePage = Math.min(requestedPage, totalPages);
+    const start = (safePage - 1) * requestedTake;
+    const paginatedResults = allResults.slice(start, start + requestedTake);
+
+    const icons = paginatedResults
+      .filter(p => !p.customFields?.isKeypadProduct) // Treat anything not strictly keypad as icon/other for now
+      .map(p => p as IconProduct)
+      .map(pickIconCardFields);
+
+    // For Keypads, we might want to show them ALL or consistent with pagination?
+    // The current ShopClient expects `keypads` to be a separate list.
+    // If we are searching, we probably want to pass the matching keypads.
+    // However, ShopClient logic for "all" section displays icons grid AND keypads grid.
+    // Let's filter keypads from the FULL results to show them all (or maybe top N?), 
+    // and let the icons pagination handle the mixed list if we want a unified view?
+    // 
+    // Current ShopClient behavior:
+    // - `icons`: displayed in grid, paginated.
+    // - `keypads`: displayed in separate grid.
+
+    const matchedKeypads = allResults
+      .filter(p => p.customFields?.isKeypadProduct)
+      .map(p => p as KeypadProduct)
+      .map(pickKeypadCardFields);
+
+    // If we are in "all" section, we show keypads + icons.
+    // Let's populate `icons` with the paginated non-keypad results.
+
+    // We also need `categorySourceIcons` for the sidebar to work, purely for facets.
+    // We can fetch all icons for that, or just use the search results?
+    // Fetching all icons is safer for facet generation.
+    const allIcons = await fetchIconProducts();
+    const categorySourceIcons = allIcons.map(pickCategorySourceIconFields);
+    const baseShopConfig = await fetchShopLandingContent();
+
+    return (
+      <div className="mx-auto w-full max-w-[88rem] bg-white px-4 py-24 sm:px-6">
+        <ShopClient
+          icons={icons}
+          keypads={matchedKeypads}
+          baseShopConfig={baseShopConfig}
+          categorySourceIcons={categorySourceIcons}
+          initialQuery={query}
+          initialCategories={selectedCategories}
+          initialSection={section}
+          initialPage={safePage}
+          initialTake={requestedTake}
+          pagedTotalItems={totalItems - matchedKeypads.length} // Subtract keypads from total count? Or just use totalItems?
+          // Actually, if we split them, we should probably output total count of ICONS.
+          isIconsPaginationActive={true}
+        />
+      </div>
+    );
+  }
+
+  // --- Normal Navigation Logic (No Search) ---
+
   const enableIconsPagination =
     (section === 'button-inserts' && selectedCategories.length === 0) || section === 'all';
 
@@ -292,7 +356,10 @@ async function ShopPageContent({
 
     const allIcons = await allIconsPromise;
     icons = pagedIcons.items.map(pickIconCardFields);
+    // categorySourceIcons = allIcons.map(pickCategorySourceIconFields);
+    // Optimization: we only need this for facets.
     categorySourceIcons = allIcons.map(pickCategorySourceIconFields);
+
     pagination = {
       page: safePage,
       take: requestedTake,
@@ -308,7 +375,7 @@ async function ShopPageContent({
   const trimmedKeypads = keypads.map(pickKeypadCardFields);
 
   return (
-    <div className="mx-auto w-full max-w-[88rem] bg-white px-4 pb-12 pt-8 sm:px-6">
+    <div className="mx-auto w-full max-w-[88rem] bg-white px-4 py-24 sm:px-6">
       <ShopClient
         icons={icons}
         keypads={trimmedKeypads}

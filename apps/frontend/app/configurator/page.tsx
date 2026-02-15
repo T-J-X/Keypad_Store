@@ -40,7 +40,7 @@ async function KeypadGrid() {
 
 export default function ConfiguratorPage() {
   return (
-    <div className="mx-auto w-full max-w-6xl px-6 pb-20 pt-12">
+    <div className="mx-auto w-full max-w-6xl px-6 py-24">
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
           <div className="pill">Configurator</div>

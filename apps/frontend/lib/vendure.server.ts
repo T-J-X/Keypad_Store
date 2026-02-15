@@ -377,3 +377,101 @@ const fetchProductBySlugUncached = async (slug: string): Promise<CatalogProduct 
 export const fetchProductBySlug = cache(async (slug: string): Promise<CatalogProduct | null> => {
   return fetchProductBySlugUncached(slug);
 });
+
+// --- Universal Fuzzy Search Logic ---
+
+function normalizeForSearch(text: string) {
+  return text.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim();
+}
+
+function levenshtein(a: string, b: string): number {
+  const an = a.length;
+  const bn = b.length;
+  if (an === 0) return bn;
+  if (bn === 0) return an;
+  const matrix = Array.from({ length: bn + 1 }, (_, i) => [i]);
+  const firstRow = matrix[0];
+  if (!firstRow) return 0; // Should not happen given constraints
+  for (let j = 0; j <= an; j++) {
+    firstRow[j] = j;
+  }
+  for (let i = 1; i <= bn; i++) {
+    for (let j = 1; j <= an; j++) {
+      const cost = b[i - 1] === a[j - 1] ? 0 : 1;
+      const row = matrix[i];
+      const prevRow = matrix[i - 1];
+      if (row && prevRow) {
+        row[j] = Math.min(
+          prevRow[j]! + 1, // deletion
+          row[j - 1]! + 1, // insertion
+          prevRow[j - 1]! + cost // substitution
+        );
+      }
+    }
+  }
+  return matrix[bn]?.[an] ?? bn;
+}
+
+
+function scoreProduct(product: CatalogProduct, normalizedQuery: string): number {
+  let maxScore = 0;
+
+  const fieldsToCheck = [
+    product.name,
+    product.slug,
+    product.customFields?.iconId,
+    ...(product.customFields?.iconCategories ?? []),
+    product.customFields?.keypadModelCode,
+    product.description
+  ];
+
+  const queryTerms = normalizedQuery.split(' ').filter(t => t.length > 0);
+
+  for (const field of fieldsToCheck) {
+    if (!field) continue;
+    const normalizedField = normalizeForSearch(field);
+
+    // Check against the full field
+    if (normalizedField === normalizedQuery) return 100; // Exact match
+    if (normalizedField.includes(normalizedQuery)) maxScore = Math.max(maxScore, 80);
+
+    // Check individual terms
+    for (const term of queryTerms) {
+      if (normalizedField.includes(term)) {
+        maxScore = Math.max(maxScore, 60);
+      } else {
+        // Fuzzy check for terms
+        const words = normalizedField.split(' ');
+        for (const word of words) {
+          if (Math.abs(word.length - term.length) > 2) continue; // Too different in length
+          const dist = levenshtein(word, term);
+          // Allow 1 edit for short words, 2 for longer
+          const threshold = term.length > 4 ? 2 : 1;
+          if (dist <= threshold) {
+            maxScore = Math.max(maxScore, 40);
+          }
+        }
+      }
+    }
+  }
+
+  return maxScore;
+}
+
+export async function searchGlobalProducts(query: string): Promise<CatalogProduct[]> {
+  const allProducts = await fetchAllProducts();
+  const normalizedQuery = normalizeForSearch(query);
+
+  if (!normalizedQuery) return [];
+
+  const scored = allProducts.map(p => ({
+    product: p,
+    score: scoreProduct(p, normalizedQuery)
+  }));
+
+  // Filter out low scores and sort
+  return scored
+    .filter(item => item.score > 0)
+    .sort((a, b) => b.score - a.score)
+    .map(item => item.product);
+}

@@ -1,5 +1,6 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import Image from 'next/image';
 import { Suspense } from 'react';
 import LoginForm from '../../components/LoginForm';
 import { getSafeRelativePath } from '../../lib/googleAuth';
@@ -53,7 +54,7 @@ async function LoginPageContent({
     ?? getSafeRelativePath(requestedRedirect, '/account');
 
   return (
-    <div className="flex min-h-[calc(100vh-80px)] w-full items-center justify-center px-4 py-12 sm:px-6 lg:px-8">
+    <div className="flex min-h-[calc(100vh-80px)] w-full items-center justify-center px-4 py-32 sm:px-6 lg:px-8">
       <div className="relative w-full max-w-5xl rounded-[32px] p-[1px]">
         {/* Gradient Border Background */}
         <div className="absolute inset-0 rounded-[32px] bg-gradient-to-br from-blue-500/20 via-purple-500/10 to-blue-500/20" />
@@ -64,12 +65,17 @@ async function LoginPageContent({
           {/* Left Panel (Info) */}
           <div className="flex w-full flex-col justify-between bg-[#081831] p-8 text-white lg:w-5/12 lg:p-12">
             <div className="space-y-6">
-              <div className="inline-flex h-12 w-12 items-center justify-center rounded-2xl bg-white/10 backdrop-blur-sm">
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-blue-300"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4" /><polyline points="10 17 15 12 10 7" /><line x1="15" y1="12" x2="3" y2="12" /></svg>
-              </div>
-              <h1 className="text-3xl font-bold tracking-tight md:text-4xl">Welcome to VCT.</h1>
+              <Image
+                src="/vct-logo.png"
+                alt="Vehicle Control Technologies"
+                width={200}
+                height={64}
+                className="h-16 w-auto brightness-0 invert lg:h-20"
+                priority
+              />
+              <h1 className="text-3xl font-bold tracking-tight md:text-4xl">Welcome to Vehicle Control Technologies</h1>
               <p className="text-base text-blue-100/70 leading-relaxed">
-                Log in to access your saved configurations, track orders, and manage your vehicle control systems.
+                Log in to access your account. Track order progress, Manage & edit Keypad configurations and more!
               </p>
             </div>
 
