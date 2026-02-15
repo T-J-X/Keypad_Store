@@ -1,4 +1,5 @@
 'use client';
+import { useSearchParams } from 'next/navigation';
 
 import Link from 'next/link';
 import { useCallback, useEffect, useId, useMemo, useState } from 'react';
@@ -63,7 +64,9 @@ const accountPrimaryGlowRingClass =
   'pointer-events-none absolute -inset-[1px] -z-10 rounded-full bg-[linear-gradient(90deg,rgba(11,27,58,0.44)_0%,rgba(27,52,95,0.30)_55%,rgba(58,116,198,0.30)_100%)] opacity-0 transition-opacity duration-300 group-hover:opacity-55';
 
 export default function AccountTabs() {
-  const [active, setActive] = useState<TabId>('saved');
+  const searchParams = useSearchParams();
+  const initialTab = searchParams.get('tab') === 'orders' ? 'orders' : 'saved';
+  const [active, setActive] = useState<TabId>(initialTab);
   const [session, setSession] = useState<SessionSummary | null>(null);
   const [savedConfigs, setSavedConfigs] = useState<SavedConfigurationRecord[]>([]);
   const [loadingSaved, setLoadingSaved] = useState(false);
@@ -316,8 +319,8 @@ export default function AccountTabs() {
           <button
             key={tab.id}
             className={`inline-flex min-h-11 min-w-[170px] items-center justify-center rounded-full px-4 text-sm font-semibold transition ${active === tab.id
-                ? 'bg-ink text-white'
-                : 'border border-ink/10 text-ink/60 hover:border-ink/25'
+              ? 'bg-ink text-white'
+              : 'border border-ink/10 text-ink/60 hover:border-ink/25'
               }`}
             onClick={() => setActive(tab.id)}
             type="button"

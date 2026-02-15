@@ -4,7 +4,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import { ChevronDown, Menu, Search, ShoppingBag, UserRound, X, Settings2, Store } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode, type RefObject } from 'react';
-import { usePathname } from 'next/navigation';
+import { usePathname, useSearchParams } from 'next/navigation';
 import { CART_UPDATED_EVENT, notifyCartUpdated } from '../lib/cartEvents';
 import SearchModal from './ui/SearchModal';
 import MobileMenu from './ui/MobileMenu';
@@ -377,7 +377,7 @@ export default function Navbar() {
           'sticky top-0 z-50 transition-all duration-300 ease-in-out wil-change-[height,background-color]',
           isScrolled
             ? 'h-[72px] border-b border-white/10 bg-[rgba(6,10,18,0.92)] shadow-[0_10px_40px_rgba(22,30,44,0.6)] backdrop-blur-xl lg:h-[76px]'
-            : 'h-20 border-b border-transparent bg-transparent lg:h-[84px]',
+            : 'h-20 border-b border-transparent bg-transparent shadow-[0_4px_24px_rgba(0,0,0,0.25)] lg:h-[84px]',
         ].join(' ')}
       >
         <div className="relative mx-auto flex h-full w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
@@ -499,7 +499,7 @@ export default function Navbar() {
             {isAuthenticated ? (
               <div className="relative hidden lg:block" ref={accountMenuRef}>
                 <NavPill
-                  label={isAccountMenuOpen ? 'Close Menu' : customerLabel}
+                  label={isAccountMenuOpen ? 'Close Menu' : 'Account'}
                   icon={UserRound}
                   buttonRef={accountButtonRef}
                   onClick={() => setIsAccountMenuOpen((current) => !current)}
@@ -517,7 +517,7 @@ export default function Navbar() {
                     isAccountMenuOpen ? 'pointer-events-auto translate-y-0 opacity-100' : 'pointer-events-none -translate-y-2 opacity-0',
                   ].join(' ')}
                 >
-                  <div className="px-3 pb-2 pt-2 text-xs font-semibold uppercase tracking-wider text-white/40">Account</div>
+                  <div className="px-3 pb-2 pt-2 text-xs font-semibold uppercase tracking-wider text-white/70">Account</div>
                   <Link
                     role="menuitem"
                     href="/account"
@@ -527,7 +527,29 @@ export default function Navbar() {
                       'text-white/80 hover:bg-white/[0.08] hover:text-white',
                     ].join(' ')}
                   >
-                    Profile & Orders
+                    Profile
+                  </Link>
+                  <Link
+                    role="menuitem"
+                    href="/account?tab=orders"
+                    onClick={() => setIsAccountMenuOpen(false)}
+                    className={[
+                      'block rounded-xl px-3 py-2.5 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky/45',
+                      'text-white/80 hover:bg-white/[0.08] hover:text-white',
+                    ].join(' ')}
+                  >
+                    Orders
+                  </Link>
+                  <Link
+                    role="menuitem"
+                    href="/account?tab=saved"
+                    onClick={() => setIsAccountMenuOpen(false)}
+                    className={[
+                      'block rounded-xl px-3 py-2.5 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky/45',
+                      'text-white/80 hover:bg-white/[0.08] hover:text-white',
+                    ].join(' ')}
+                  >
+                    Saved Configurations
                   </Link>
                   <button
                     role="menuitem"
@@ -558,8 +580,6 @@ export default function Navbar() {
             <div
               className="relative"
               ref={cartMenuRef}
-              onMouseEnter={openCartMenu}
-              onMouseLeave={scheduleCloseCartMenu}
             >
               <NavPill
                 href="/cart"
@@ -568,6 +588,8 @@ export default function Navbar() {
                 badge={cartQuantity > 0 ? cartQuantity : undefined}
                 inverse={isScrolled}
                 active={pathname === '/cart' || isCartMenuOpen}
+                as="button"
+                onClick={() => setIsCartMenuOpen((prev) => !prev)}
               />
 
               <div
