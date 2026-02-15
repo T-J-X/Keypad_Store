@@ -85,9 +85,11 @@ export function parseConfigurationForPreview(input: unknown): KeypadConfiguratio
 export function countConfiguredSlots(configuration: KeypadConfigurationDraft | null): number {
   if (!configuration) return 0;
 
+  const slotIds = getOrderedSlotIdsFromConfiguration(configuration);
   let count = 0;
-  for (const slot of Object.values(configuration)) {
-    if (typeof slot.iconId === 'string' && slot.iconId.trim().length > 0) {
+  for (const slotId of slotIds) {
+    const slot = configuration[slotId];
+    if (slot && typeof slot.iconId === 'string' && slot.iconId.trim().length > 0) {
       count += 1;
     }
   }
