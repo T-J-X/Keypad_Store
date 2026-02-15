@@ -33,6 +33,7 @@ function slotIdToIndex(slotId: string) {
 }
 
 export function isSlotId(value: string): value is SlotId {
+  if (value === '_meta') return false;
   return SLOT_ID_PATTERN.test(value);
 }
 
@@ -173,6 +174,7 @@ export function validateAndNormalizeConfigurationInput(
   }
 
   const expectedSlotIds = sortSlotIds(options.slotIds ?? []);
+  // FORCE REBUILD: explicit filter for _meta
   const payloadSlotIds = sortSlotIds(payloadKeys);
   const slotIds = expectedSlotIds.length > 0 ? expectedSlotIds : payloadSlotIds;
 
