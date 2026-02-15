@@ -55,12 +55,12 @@ async function LoginPageContent({
 
   return (
     <div className="flex min-h-[calc(100vh-80px)] w-full items-center justify-center px-4 py-32 sm:px-6 lg:px-8">
-      <div className="relative w-full max-w-5xl rounded-[32px] p-[1px]">
+      <div className="relative w-full max-w-5xl rounded-[32px] p-[1px] shadow-[0_20px_60px_-15px_rgba(30,64,175,0.6)]">
         {/* Gradient Border Background */}
         <div className="absolute inset-0 rounded-[32px] bg-gradient-to-br from-blue-500/20 via-purple-500/10 to-blue-500/20" />
 
         {/* Main Card Container */}
-        <div className="relative flex min-h-[600px] w-full flex-col overflow-hidden rounded-[31px] bg-[#020916] shadow-2xl lg:flex-row">
+        <div className="relative flex min-h-[600px] w-full flex-col overflow-hidden rounded-[31px] bg-[#020916] lg:flex-row">
 
           {/* Left Panel (Info) */}
           <div className="flex w-full flex-col justify-between bg-[#081831] p-8 text-white lg:w-5/12 lg:p-12">
