@@ -9,7 +9,9 @@ export type SlotConfiguration = {
   color: string | null;
 };
 
-export type StrictConfiguration = Record<SlotId, SlotConfiguration>;
+export type StrictConfiguration = Record<SlotId, SlotConfiguration> & {
+  _meta?: { rotation?: number };
+};
 
 const ICON_ID_PATTERN = /^[A-Za-z0-9]{3,4}$/;
 const HEX_COLOR_PATTERN = /^#[0-9A-F]{6}$/;
@@ -66,7 +68,7 @@ export function parseAndValidateStrictConfiguration(
 
   const payload = parsed as Record<string, unknown>;
   const payloadKeys = Object.keys(payload);
-  const nonSlotKeys = payloadKeys.filter((key) => !isSlotId(key));
+  const nonSlotKeys = payloadKeys.filter((key) => !isSlotId(key) && key !== '_meta');
   if (nonSlotKeys.length > 0) {
     throw new ConfigurationValidationError(`Unexpected slot key "${nonSlotKeys[0]}" in configuration.`);
   }
@@ -108,6 +110,10 @@ export function parseAndValidateStrictConfiguration(
     };
   }
 
+  if (payload._meta && typeof payload._meta === 'object') {
+    strictConfiguration._meta = payload._meta as { rotation?: number };
+  }
+
   return strictConfiguration;
 }
 
@@ -117,8 +123,10 @@ export async function findMissingIconIds(
   configuration: StrictConfiguration,
 ): Promise<string[]> {
   const requiredIconIds = new Set<string>();
-  for (const slot of Object.values(configuration)) {
-    requiredIconIds.add(slot.iconId);
+
+  const slotIds = sortSlotIds(Object.keys(configuration));
+  for (const slotId of slotIds) {
+    requiredIconIds.add(configuration[slotId].iconId);
   }
 
   if (requiredIconIds.size === 0) {
