@@ -7,6 +7,7 @@ import Navbar from '../components/Navbar';
 import Footer from '../components/Footer';
 import GlobalToastViewport from '../components/GlobalToastViewport';
 import SiteJsonLd from '../components/SiteJsonLd';
+import CookieBanner from '../components/CookieBanner';
 import { resolveMetadataBase } from '../lib/siteUrl';
 
 export const metadata: Metadata = {
@@ -58,6 +59,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           <main id="main-content" className="flex-1">{children}</main>
           <Footer />
           <GlobalToastViewport />
+          <CookieBanner />
         </div>
       </body>
     </html>
