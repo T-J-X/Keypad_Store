@@ -2,11 +2,13 @@
 
 import Link from 'next/link';
 import Image from 'next/image';
-import { ChevronDown, Menu, Search, ShoppingBag, UserRound, X } from 'lucide-react';
+import { ChevronDown, Menu, Search, ShoppingBag, UserRound, X, Settings2, Store } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode, type RefObject } from 'react';
+import { usePathname } from 'next/navigation';
 import { CART_UPDATED_EVENT, notifyCartUpdated } from '../lib/cartEvents';
 import SearchModal from './ui/SearchModal';
 import MobileMenu from './ui/MobileMenu';
+import MiniCart from './MiniCart';
 
 const primaryLinks = [{ href: '/configurator', label: 'Configurator' }] as const;
 
@@ -40,12 +42,18 @@ type SessionSummary = {
     lastName?: string | null;
     emailAddress?: string | null;
   } | null;
+  cart: {
+    totalWithTax: number;
+    currencyCode: string;
+    lines: Array<any>;
+  } | null;
 };
 
 const EMPTY_SESSION_SUMMARY: SessionSummary = {
   authenticated: false,
   totalQuantity: 0,
   customer: null,
+  cart: null,
 };
 
 function normalizeQuantity(input: unknown) {
@@ -53,116 +61,91 @@ function normalizeQuantity(input: unknown) {
   return Math.max(0, Math.floor(input));
 }
 
-function NavTextLink({
+function NavPill({
   href,
   label,
+  icon: Icon,
   onClick,
   inverse = false,
-}: {
-  href: string;
-  label: string;
-  onClick?: () => void;
-  inverse?: boolean;
-}) {
-  return (
-    <Link
-      href={href}
-      onClick={onClick}
-      className={[
-        'group relative text-sm font-medium tracking-tight transition-colors duration-200',
-        inverse ? 'text-white/78 hover:text-white' : 'text-ink/75 hover:text-ink',
-      ].join(' ')}
-    >
-      <span>{label}</span>
-      <span
-        className={[
-          'absolute -bottom-1 left-0 h-px w-0 transition-all duration-300 group-hover:w-full',
-          inverse ? 'bg-white' : 'bg-ink',
-        ].join(' ')}
-      />
-    </Link>
-  );
-}
-
-function IconLink({
-  href,
-  label,
-  children,
-  className = '',
-  onClick,
-  inverse = false,
-}: {
-  href: string;
-  label: string;
-  children: ReactNode;
-  className?: string;
-  onClick?: () => void;
-  inverse?: boolean;
-}) {
-  return (
-    <Link
-      href={href}
-      aria-label={label}
-      onClick={onClick}
-      className={[
-        'inline-flex h-10 w-10 items-center justify-center rounded-full border backdrop-blur transition-all duration-200',
-        inverse
-          ? 'border-white/15 bg-white/[0.06] text-white/85 hover:-translate-y-px hover:border-white/28 hover:bg-white/[0.14] hover:text-white'
-          : 'border-ink/10 bg-white/70 text-ink/75 hover:-translate-y-px hover:border-ink/20 hover:bg-white hover:text-ink',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky/45 focus-visible:ring-offset-2',
-        inverse ? 'focus-visible:ring-offset-black/30' : 'focus-visible:ring-offset-white',
-        className,
-      ].join(' ')}
-    >
-      {children}
-    </Link>
-  );
-}
-
-function IconButton({
-  label,
-  children,
-  className = '',
-  onClick,
+  badge,
   buttonRef,
-  expanded,
-  inverse = false,
+  as = 'link',
+  active = false,
+  showLabel = false, // If true, label is always visible (not just on hover)
+  expandOnHover = true,
 }: {
+  href?: string;
   label: string;
-  children: ReactNode;
-  className?: string;
+  icon?: typeof UserRound;
   onClick?: () => void;
-  buttonRef?: RefObject<HTMLButtonElement | null>;
-  expanded?: boolean;
   inverse?: boolean;
+  badge?: number;
+  buttonRef?: RefObject<HTMLButtonElement | null>;
+  as?: 'link' | 'button';
+  active?: boolean;
+  showLabel?: boolean;
+  expandOnHover?: boolean;
 }) {
+  const isActiveStyle = active
+    ? 'bg-blue-600/20 text-blue-200 border-blue-500/50 shadow-[0_0_15px_rgba(59,130,246,0.15)]'
+    : '';
+
+  const inactiveStyle = inverse
+    ? 'border-white/10 bg-white/[0.06] text-white hover:border-white/20 hover:bg-white/[0.12]'
+    : 'border-ink/10 bg-white/70 text-ink/80 hover:border-ink/20 hover:bg-white hover:text-ink';
+
+  const baseClasses = [
+    'group relative flex items-center rounded-full border transition-all duration-300',
+    isActiveStyle || inactiveStyle,
+    showLabel ? 'pr-5' : '',
+  ].join(' ');
+
+  const content = (
+    <>
+      <div className="flex h-10 w-10 shrink-0 items-center justify-center">
+        {Icon ? <Icon className="h-[18px] w-[18px]" strokeWidth={2} /> : null}
+        {badge ? (
+          <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-blue-500 text-[10px] font-bold text-white shadow-sm ring-2 ring-[#020916]">
+            {badge}
+          </span>
+        ) : null}
+      </div>
+
+      {showLabel ? (
+        <span className="text-sm font-medium">{label}</span>
+      ) : (
+        <div className={`max-w-0 overflow-hidden whitespace-nowrap opacity-0 transition-all duration-300 ${expandOnHover ? 'group-hover:max-w-[120px] group-hover:opacity-100' : ''}`}>
+          <span className="pr-4 text-sm font-medium">{label}</span>
+        </div>
+      )}
+    </>
+  );
+
+  if (as === 'button') {
+    return (
+      <button ref={buttonRef} type="button" onClick={onClick} className={baseClasses}>
+        {content}
+      </button>
+    );
+  }
+
   return (
-    <button
-      ref={buttonRef}
-      type="button"
-      aria-label={label}
-      aria-haspopup={expanded === undefined ? undefined : 'menu'}
-      aria-expanded={expanded}
-      onClick={onClick}
-      className={[
-        'inline-flex h-10 w-10 items-center justify-center rounded-full border backdrop-blur transition-all duration-200',
-        inverse
-          ? 'border-white/15 bg-white/[0.06] text-white/85 hover:-translate-y-px hover:border-white/28 hover:bg-white/[0.14] hover:text-white'
-          : 'border-ink/10 bg-white/70 text-ink/75 hover:-translate-y-px hover:border-ink/20 hover:bg-white hover:text-ink',
-        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky/45 focus-visible:ring-offset-2',
-        inverse ? 'focus-visible:ring-offset-black/30' : 'focus-visible:ring-offset-white',
-        className,
-      ].join(' ')}
-    >
-      {children}
-    </button>
+    <Link href={href || '#'} onClick={onClick} className={baseClasses}>
+      {content}
+    </Link>
   );
 }
+
+
+
+
 
 export default function Navbar() {
+  const pathname = usePathname();
   const [isScrolled, setIsScrolled] = useState(false);
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isShopMenuOpen, setIsShopMenuOpen] = useState(false);
+  const [isCartMenuOpen, setIsCartMenuOpen] = useState(false); // New state
   const [isSearchOpen, setIsSearchOpen] = useState(false);
 
   const [isAccountMenuOpen, setIsAccountMenuOpen] = useState(false);
@@ -173,6 +156,8 @@ export default function Navbar() {
   const accountButtonRef = useRef<HTMLButtonElement | null>(null);
   const shopMenuRef = useRef<HTMLDivElement | null>(null);
   const shopMenuCloseTimerRef = useRef<number | null>(null);
+  const cartMenuRef = useRef<HTMLDivElement | null>(null);
+  const cartMenuCloseTimerRef = useRef<number | null>(null);
 
   const openShopMenu = useCallback(() => {
     if (shopMenuCloseTimerRef.current != null) {
@@ -189,7 +174,25 @@ export default function Navbar() {
     shopMenuCloseTimerRef.current = window.setTimeout(() => {
       setIsShopMenuOpen(false);
       shopMenuCloseTimerRef.current = null;
-    }, 180);
+    }, 120);
+  }, []);
+
+  const openCartMenu = useCallback(() => {
+    if (cartMenuCloseTimerRef.current != null) {
+      window.clearTimeout(cartMenuCloseTimerRef.current);
+      cartMenuCloseTimerRef.current = null;
+    }
+    setIsCartMenuOpen(true);
+  }, []);
+
+  const scheduleCloseCartMenu = useCallback(() => {
+    if (cartMenuCloseTimerRef.current != null) {
+      window.clearTimeout(cartMenuCloseTimerRef.current);
+    }
+    cartMenuCloseTimerRef.current = window.setTimeout(() => {
+      setIsCartMenuOpen(false);
+      cartMenuCloseTimerRef.current = null;
+    }, 120);
   }, []);
 
   const refreshSessionSummary = useCallback(async () => {
@@ -217,6 +220,7 @@ export default function Navbar() {
           payload.customer && typeof payload.customer.id === 'string'
             ? payload.customer
             : null,
+        cart: (payload as any).cart || null,
       });
     } catch {
       setSessionSummary(EMPTY_SESSION_SUMMARY);
@@ -270,7 +274,7 @@ export default function Navbar() {
 
   // Handle outside clicks for dropdowns
   useEffect(() => {
-    if (!(isAccountMenuOpen || isShopMenuOpen)) return;
+    if (!(isAccountMenuOpen || isShopMenuOpen || isCartMenuOpen)) return;
 
     const onPointerDown = (event: Event) => {
       const target = event.target as Node | null;
@@ -287,6 +291,10 @@ export default function Navbar() {
         return;
       }
 
+      if (cartMenuRef.current?.contains(target)) {
+        return;
+      }
+
       setIsAccountMenuOpen(false);
       setIsShopMenuOpen(false);
     };
@@ -295,6 +303,7 @@ export default function Navbar() {
       if (event.key !== 'Escape') return;
       setIsAccountMenuOpen(false);
       setIsShopMenuOpen(false);
+      setIsCartMenuOpen(false);
     };
 
     document.addEventListener('mousedown', onPointerDown);
@@ -306,7 +315,7 @@ export default function Navbar() {
       document.removeEventListener('touchstart', onPointerDown);
       window.removeEventListener('keydown', onKeyDown);
     };
-  }, [isAccountMenuOpen, isShopMenuOpen]);
+  }, [isAccountMenuOpen, isShopMenuOpen, isCartMenuOpen]);
 
   useEffect(() => {
     return () => {
@@ -349,7 +358,7 @@ export default function Navbar() {
   }, [sessionSummary.customer]);
 
   const desktopPanelClass =
-    'border-white/18 bg-[rgba(7,12,20,0.78)] text-white shadow-[0_24px_54px_rgba(0,0,0,0.42)]';
+    'border border-white/10 bg-[#060a12]/90 backdrop-blur-2xl shadow-[0_24px_54px_rgba(0,0,0,0.6)] ring-1 ring-white/5';
 
   return (
     <>
@@ -365,13 +374,13 @@ export default function Navbar() {
 
       <header
         className={[
-          'sticky top-0 z-50 transition-[background-color,border-color,box-shadow,backdrop-filter] duration-300',
+          'sticky top-0 z-50 transition-all duration-500 will-change-[height,background-color]',
           isScrolled
-            ? 'border-b border-white/10 bg-[rgba(6,10,18,0.92)] shadow-[0_16px_36px_rgba(2,8,24,0.6)] backdrop-blur-xl'
-            : 'border-b border-transparent bg-transparent',
+            ? 'h-16 border-b border-white/10 bg-[rgba(6,10,18,0.92)] shadow-[0_16px_36px_rgba(2,8,24,0.6)] backdrop-blur-xl lg:h-[72px]'
+            : 'h-20 border-b border-transparent bg-transparent lg:h-[88px]',
         ].join(' ')}
       >
-        <div className="relative mx-auto flex h-20 w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:h-[88px] lg:px-8">
+        <div className="relative mx-auto flex h-full w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
           <div className="flex min-w-0 items-center gap-3 lg:gap-8">
             <button
               type="button"
@@ -404,38 +413,32 @@ export default function Navbar() {
                 width={200}
                 height={64}
                 className={[
-                  'h-14 w-auto transition-[filter] duration-300',
-                  isScrolled ? 'brightness-0 invert' : '',
+                  'w-auto transition-all duration-500',
+                  isScrolled ? 'h-10 brightness-0 invert' : 'h-14',
                 ].join(' ')}
                 priority
               />
             </Link>
 
-            <nav className="hidden items-center gap-7 lg:flex" aria-label="Primary navigation">
+            <nav className="hidden items-center gap-3 lg:flex" aria-label="Primary navigation">
+
+              {/* Shop Menu Trigger */}
               <div
                 ref={shopMenuRef}
                 className="relative"
                 onMouseEnter={openShopMenu}
                 onMouseLeave={scheduleCloseShopMenu}
               >
-                <Link
+                <NavPill
                   href="/shop"
-                  aria-haspopup="menu"
-                  aria-expanded={isShopMenuOpen}
+                  label="Shop"
+                  icon={Store}
                   onClick={() => setIsShopMenuOpen(false)}
-                  onFocus={openShopMenu}
-                  className={[
-                    'group relative inline-flex items-center gap-1 text-sm font-medium tracking-tight transition-colors duration-200',
-                    isScrolled ? 'text-white/80 hover:text-white' : 'text-ink/75 hover:text-ink',
-                  ].join(' ')}
-                >
-                  <span>Shop</span>
-                  <ChevronDown className={['h-4 w-4 transition-transform', isShopMenuOpen ? 'rotate-180' : 'rotate-0'].join(' ')} />
-                  <span className={[
-                    'absolute -bottom-1 left-0 h-px w-0 transition-all duration-300 group-hover:w-full',
-                    isScrolled ? 'bg-white' : 'bg-ink',
-                  ].join(' ')} />
-                </Link>
+                  inverse={isScrolled}
+                  active={pathname === '/shop' || pathname?.startsWith('/shop/')}
+                  as="link"
+                  showLabel
+                />
 
                 <div
                   role="menu"
@@ -443,9 +446,9 @@ export default function Navbar() {
                   onMouseEnter={openShopMenu}
                   onMouseLeave={scheduleCloseShopMenu}
                   className={[
-                    'absolute left-0 top-[calc(100%+14px)] z-30 w-[480px] rounded-2xl border p-4 backdrop-blur-xl transition-all duration-150',
+                    'absolute left-0 top-[calc(100%+8px)] z-30 w-[480px] rounded-3xl p-4 transition-all duration-200',
                     desktopPanelClass,
-                    isShopMenuOpen ? 'pointer-events-auto translate-y-0 opacity-100' : 'pointer-events-none -translate-y-1 opacity-0',
+                    isShopMenuOpen ? 'pointer-events-auto translate-y-0 opacity-100' : 'pointer-events-none -translate-y-2 opacity-0',
                   ].join(' ')}
                 >
                   <div className="grid gap-2">
@@ -470,56 +473,61 @@ export default function Navbar() {
                 </div>
               </div>
 
-              {primaryLinks.map((item) => (
-                <NavTextLink key={item.href} href={item.href} label={item.label} inverse={isScrolled} />
-              ))}
+              {/* Configurator Link */}
+              <NavPill
+                href="/configurator"
+                label="Configurator"
+                icon={Settings2}
+                inverse={isScrolled}
+                active={pathname === '/configurator' || pathname?.startsWith('/configurator/')}
+                showLabel
+              />
             </nav>
           </div>
 
-          <div className="flex items-center gap-2 sm:gap-2.5">
+          <div className="flex items-center gap-2 sm:gap-3">
             <div className="relative hidden lg:block">
-              <IconButton
-                label={'Open search'}
-                expanded={isSearchOpen}
+              <NavPill
+                label="Search"
+                icon={Search}
                 onClick={() => setIsSearchOpen(true)}
                 inverse={isScrolled}
-              >
-                <Search className="h-4 w-4" strokeWidth={1.9} />
-              </IconButton>
+                as="button"
+              />
             </div>
 
             {isAuthenticated ? (
               <div className="relative hidden lg:block" ref={accountMenuRef}>
-                <IconButton
-                  label="Open account menu"
+                <NavPill
+                  label={isAccountMenuOpen ? 'Close Menu' : customerLabel}
+                  icon={UserRound}
                   buttonRef={accountButtonRef}
-                  expanded={isAccountMenuOpen}
                   onClick={() => setIsAccountMenuOpen((current) => !current)}
                   inverse={isScrolled}
-                >
-                  <UserRound className="h-4 w-4" strokeWidth={1.9} />
-                </IconButton>
+                  active={pathname === '/account' || pathname?.startsWith('/account/') || isAccountMenuOpen}
+                  as="button"
+                />
 
                 <div
                   role="menu"
                   aria-label="Account menu"
                   className={[
-                    'absolute right-0 top-[calc(100%+12px)] z-20 min-w-[206px] rounded-2xl border p-2 backdrop-blur-xl transition-all duration-150',
+                    'absolute right-0 top-[calc(100%+8px)] z-20 min-w-[220px] rounded-3xl p-2 transition-all duration-200',
                     desktopPanelClass,
-                    isAccountMenuOpen ? 'pointer-events-auto translate-y-0 opacity-100' : 'pointer-events-none -translate-y-1 opacity-0',
+                    isAccountMenuOpen ? 'pointer-events-auto translate-y-0 opacity-100' : 'pointer-events-none -translate-y-2 opacity-0',
                   ].join(' ')}
                 >
-                  <div className="px-2 pb-2 pt-1 text-xs font-medium text-white/60">{customerLabel}</div>
+                  <div className="px-3 pb-2 pt-2 text-xs font-semibold uppercase tracking-wider text-white/40">Account</div>
                   <Link
                     role="menuitem"
                     href="/account"
                     onClick={() => setIsAccountMenuOpen(false)}
                     className={[
-                      'block rounded-xl px-3 py-2 text-sm transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky/45',
-                      'text-white/85 hover:bg-white/[0.08] hover:text-white',
+                      'block rounded-xl px-3 py-2.5 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky/45',
+                      'text-white/80 hover:bg-white/[0.08] hover:text-white',
                     ].join(' ')}
                   >
-                    Profile
+                    Profile & Orders
                   </Link>
                   <button
                     role="menuitem"
@@ -527,33 +535,56 @@ export default function Navbar() {
                     onClick={onLogout}
                     disabled={isLoggingOut}
                     className={[
-                      'mt-1 block w-full rounded-xl px-3 py-2 text-left text-sm transition disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky/45',
-                      'text-white/85 hover:bg-white/[0.08] hover:text-white',
+                      'mt-1 block w-full rounded-xl px-3 py-2.5 text-left text-sm font-medium transition disabled:cursor-not-allowed disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky/45',
+                      'text-white/80 hover:bg-white/[0.08] hover:text-white',
                     ].join(' ')}
                   >
-                    {isLoggingOut ? 'Logging out...' : 'Logout'}
+                    {isLoggingOut ? 'Logging out...' : 'Log out'}
                   </button>
                 </div>
               </div>
             ) : (
-              <IconLink href="/login" label="Sign in" className="hidden lg:inline-flex" inverse={isScrolled}>
-                <UserRound className="h-4 w-4" strokeWidth={1.9} />
-              </IconLink>
+              <div className="hidden lg:block">
+                <NavPill
+                  href="/login"
+                  label="Sign in"
+                  icon={UserRound}
+                  inverse={isScrolled}
+                  active={pathname === '/login'}
+                />
+              </div>
             )}
 
-            <IconLink href="/cart" label="Open cart" className="relative" inverse={isScrolled}>
-              <ShoppingBag className="h-4 w-4" strokeWidth={1.9} />
-              {showCartBadge ? (
-                <span
-                  className={[
-                    'absolute -right-1 -top-1 inline-flex h-4 min-w-[16px] items-center justify-center rounded-full px-1 text-[10px] font-semibold leading-none',
-                    'border border-black/30 bg-white text-ink',
-                  ].join(' ')}
-                >
-                  {cartQuantity}
-                </span>
-              ) : null}
-            </IconLink>
+            <div
+              className="relative"
+              ref={cartMenuRef}
+              onMouseEnter={openCartMenu}
+              onMouseLeave={scheduleCloseCartMenu}
+            >
+              <NavPill
+                href="/cart"
+                label="View Cart"
+                icon={ShoppingBag}
+                badge={cartQuantity > 0 ? cartQuantity : undefined}
+                inverse={isScrolled}
+                active={pathname === '/cart' || isCartMenuOpen}
+              />
+
+              <div
+                className={[
+                  'absolute right-0 top-[calc(100%+8px)] z-20 w-[340px] rounded-3xl p-3 transition-all duration-300',
+                  desktopPanelClass,
+                  isCartMenuOpen ? 'pointer-events-auto translate-y-0 opacity-100' : 'pointer-events-none -translate-y-2 opacity-0',
+                ].join(' ')}
+              >
+                <MiniCart
+                  lines={sessionSummary.cart?.lines || []}
+                  currencyCode={sessionSummary.cart?.currencyCode || 'USD'}
+                  totalWithTax={sessionSummary.cart?.totalWithTax || 0}
+                  onClose={() => setIsCartMenuOpen(false)}
+                />
+              </div>
+            </div>
           </div>
         </div>
       </header>

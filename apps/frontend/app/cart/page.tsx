@@ -28,6 +28,7 @@ type CartOrderLine = {
   } | null;
   productVariant: {
     id: string;
+    sku?: string | null;
     name: string;
     currencyCode: string;
     product: {
@@ -38,6 +39,7 @@ type CartOrderLine = {
         preview: string | null;
         source: string | null;
       } | null;
+      category?: string | null;
     } | null;
   } | null;
 };
@@ -294,7 +296,7 @@ export default function CartPage() {
 
                   return (
                     <li key={line.id} className="flex gap-4 p-4 sm:p-5">
-                      <div className={`relative shrink-0 overflow-hidden rounded-xl border border-white/15 bg-[#020916] flex items-center justify-center ${hasConfiguration ? 'h-20 w-24 sm:h-24 sm:w-32' : 'h-20 w-20'}`}>
+                      <div className={`relative shrink-0 overflow-hidden rounded-xl border border-white/15 flex items-center justify-center ${hasConfiguration ? 'h-20 w-24 bg-[#020916] sm:h-24 sm:w-32' : 'h-20 w-20 bg-white'}`}>
                         {hasConfiguration ? (
                           <ConfiguredKeypadThumbnail
                             modelCode={modelCode}
@@ -324,6 +326,22 @@ export default function CartPage() {
                             {line.productVariant?.name || line.productVariant?.product?.name || 'Product'}
                           </div>
                         )}
+
+                        {!hasConfiguration ? (
+                          <div className="mt-1 space-y-0.5">
+                            {line.productVariant?.sku ? (
+                              <div className="text-[11px] text-panel-muted">
+                                Insert Code: <span className="font-mono text-white/80">{line.productVariant.sku}</span>
+                              </div>
+                            ) : null}
+                            {line.productVariant?.product?.category ? (
+                              <div className="text-[11px] text-panel-muted">
+                                Category: <span className="text-white/80">{line.productVariant.product.category}</span>
+                              </div>
+                            ) : null}
+                          </div>
+                        ) : null}
+
                         {hasConfiguration ? (
                           <div className="mt-1 text-xs font-semibold uppercase tracking-[0.1em] text-[#9dcfff]">
                             Custom configuration: {configuredSlots}/{slotIds.length} slots defined
