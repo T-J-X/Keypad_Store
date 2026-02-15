@@ -3,6 +3,7 @@
 import { use, useCallback, useEffect, useState } from 'react';
 import { X, Search } from 'lucide-react';
 import AccessibleModal from '../ui/AccessibleModal';
+import Toast from '../ui/Toast';
 import GoogleLoginButton from '../GoogleLoginButton';
 import { KeypadContext } from './KeypadProvider';
 import type { SavedConfigurationItem } from './types';
@@ -20,6 +21,7 @@ function formatDate(isoString: string) {
 }
 
 type AuthState = 'checking' | 'logged-out' | 'logged-in';
+type AuthMode = 'login' | 'signup';
 
 export default function SavedDesignsModal() {
     const context = use(KeypadContext);
@@ -32,12 +34,24 @@ export default function SavedDesignsModal() {
     const [activeTab, setActiveTab] = useState<'current' | 'all'>('current');
     const [searchQuery, setSearchQuery] = useState('');
     const [authState, setAuthState] = useState<AuthState>('checking');
+    const [authMode, setAuthMode] = useState<AuthMode>('login');
 
     // Login form state
     const [loginEmail, setLoginEmail] = useState('');
     const [loginPassword, setLoginPassword] = useState('');
     const [loginError, setLoginError] = useState('');
     const [loginLoading, setLoginLoading] = useState(false);
+
+    // Signup form state
+    const [signupFirstName, setSignupFirstName] = useState('');
+    const [signupLastName, setSignupLastName] = useState('');
+    const [signupEmail, setSignupEmail] = useState('');
+    const [signupPassword, setSignupPassword] = useState('');
+    const [signupError, setSignupError] = useState('');
+    const [signupLoading, setSignupLoading] = useState(false);
+
+    // Toast
+    const [toast, setToast] = useState<string | null>(null);
 
     // Check auth when modal opens
     useEffect(() => {
@@ -49,6 +63,13 @@ export default function SavedDesignsModal() {
         setLoginPassword('');
         setLoginError('');
         setLoginLoading(false);
+        setAuthMode('login');
+        setSignupFirstName('');
+        setSignupLastName('');
+        setSignupEmail('');
+        setSignupPassword('');
+        setSignupError('');
+        setSignupLoading(false);
         setAuthState('checking');
 
         fetch('/api/session/summary')
@@ -84,8 +105,9 @@ export default function SavedDesignsModal() {
             const data = await res.json();
 
             if (data.success) {
+                const name = [data.firstName, data.lastName].filter(Boolean).join(' ');
+                if (name) setToast(`Welcome back, ${name}`);
                 setAuthState('logged-in');
-                // Trigger re-fetch of saved designs
                 actions.openSavedDesignsModal();
             } else {
                 setLoginError(data.error || 'Login failed. Please try again.');
@@ -96,6 +118,64 @@ export default function SavedDesignsModal() {
             setLoginLoading(false);
         }
     }, [loginEmail, loginPassword, actions]);
+
+    const handleSignup = useCallback(async () => {
+        if (!signupFirstName.trim() || !signupLastName.trim()) {
+            setSignupError('Please enter your first and last name.');
+            return;
+        }
+        if (!signupEmail.trim() || !signupPassword.trim()) {
+            setSignupError('Please enter your email and password.');
+            return;
+        }
+
+        setSignupLoading(true);
+        setSignupError('');
+
+        try {
+            const registerRes = await fetch('/api/auth/register', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({
+                    firstName: signupFirstName.trim(),
+                    lastName: signupLastName.trim(),
+                    email: signupEmail.trim(),
+                    password: signupPassword,
+                }),
+            });
+
+            const registerData = await registerRes.json();
+
+            if (!registerData.success) {
+                setSignupError(registerData.error || 'Registration failed. Please try again.');
+                setSignupLoading(false);
+                return;
+            }
+
+            const loginRes = await fetch('/api/auth/login', {
+                method: 'POST',
+                headers: { 'content-type': 'application/json' },
+                body: JSON.stringify({ email: signupEmail.trim(), password: signupPassword }),
+            });
+
+            const loginData = await loginRes.json();
+
+            if (loginData.success) {
+                const name = [loginData.firstName, loginData.lastName].filter(Boolean).join(' ');
+                setToast(name ? `Welcome, ${name}!` : 'Account created!');
+                setAuthState('logged-in');
+                actions.openSavedDesignsModal();
+            } else {
+                setSignupError('Account created! Please sign in.');
+                setAuthMode('login');
+                setLoginEmail(signupEmail);
+            }
+        } catch {
+            setSignupError('Unable to connect. Please try again.');
+        } finally {
+            setSignupLoading(false);
+        }
+    }, [signupFirstName, signupLastName, signupEmail, signupPassword, actions]);
 
     const filteredDesigns = savedDesigns.filter((item) => {
         if (activeTab === 'current' && item.keypadModel !== state.modelCode) {
@@ -156,76 +236,199 @@ export default function SavedDesignsModal() {
                 </button>
             </div>
 
-            {/* Body — auth check → login form or designs list */}
+            {/* Body — auth check → login/signup form or designs list */}
             {authState === 'checking' ? (
                 <div className="flex flex-1 items-center justify-center text-sm text-panel-muted">
                     Checking account…
                 </div>
             ) : authState === 'logged-out' ? (
-                /* ───── Inline Login Form ───── */
-                <div className="flex flex-1 flex-col items-center justify-center px-6 py-8">
+                /* ───── Inline Login / Signup ───── */
+                <div className="flex flex-1 flex-col items-center justify-center overflow-y-auto px-6 py-8">
                     <div className="w-full max-w-sm space-y-5">
+                        {/* Auth mode tabs */}
+                        <div className="flex gap-2">
+                            <button
+                                type="button"
+                                onClick={() => { setAuthMode('login'); setSignupError(''); }}
+                                className={`flex-1 rounded-xl py-2 text-[11px] font-semibold uppercase tracking-[0.12em] transition ${authMode === 'login'
+                                        ? 'bg-white/10 text-white'
+                                        : 'text-panel-muted hover:text-white/70'
+                                    }`}
+                            >
+                                Sign in
+                            </button>
+                            <button
+                                type="button"
+                                onClick={() => { setAuthMode('signup'); setLoginError(''); }}
+                                className={`flex-1 rounded-xl py-2 text-[11px] font-semibold uppercase tracking-[0.12em] transition ${authMode === 'signup'
+                                        ? 'bg-white/10 text-white'
+                                        : 'text-panel-muted hover:text-white/70'
+                                    }`}
+                            >
+                                Create account
+                            </button>
+                        </div>
+
                         <div className="text-center space-y-2">
-                            <h4 className="text-xl font-semibold text-white">Sign in to continue</h4>
+                            <h4 className="text-xl font-semibold text-white">
+                                {authMode === 'login' ? 'Sign in to continue' : 'Create your account'}
+                            </h4>
                             <p className="text-sm text-panel-muted">
-                                Log in to view and load your saved keypad designs.
+                                {authMode === 'login'
+                                    ? 'Log in to view and load your saved keypad designs.'
+                                    : 'Save layouts, track orders, and manage your configurations.'}
                             </p>
                         </div>
 
-                        {loginError && (
-                            <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-300">
-                                {loginError}
-                            </div>
+                        {authMode === 'login' ? (
+                            /* ── Login Fields ── */
+                            <>
+                                {loginError && (
+                                    <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-300">
+                                        {loginError}
+                                    </div>
+                                )}
+
+                                <div className="space-y-3">
+                                    <div className="space-y-1.5">
+                                        <label htmlFor="sd-login-email" className="text-[11px] font-semibold uppercase tracking-wider text-panel-muted">
+                                            Email
+                                        </label>
+                                        <input
+                                            id="sd-login-email"
+                                            type="email"
+                                            value={loginEmail}
+                                            onChange={(e) => setLoginEmail(e.target.value)}
+                                            className="input input-dark h-11 rounded-xl"
+                                            autoComplete="email"
+                                            spellCheck={false}
+                                            placeholder="you@company.com"
+                                            disabled={loginLoading}
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <label htmlFor="sd-login-password" className="text-[11px] font-semibold uppercase tracking-wider text-panel-muted">
+                                            Password
+                                        </label>
+                                        <input
+                                            id="sd-login-password"
+                                            type="password"
+                                            value={loginPassword}
+                                            onChange={(e) => setLoginPassword(e.target.value)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    e.preventDefault();
+                                                    void handleLogin();
+                                                }
+                                            }}
+                                            className="input input-dark h-11 rounded-xl"
+                                            autoComplete="current-password"
+                                            placeholder="Enter your password…"
+                                            disabled={loginLoading}
+                                        />
+                                    </div>
+                                </div>
+
+                                <button
+                                    type="button"
+                                    onClick={() => void handleLogin()}
+                                    disabled={loginLoading}
+                                    className="btn-premium w-full rounded-xl text-sm font-semibold"
+                                >
+                                    {loginLoading ? 'Signing in…' : 'Sign in'}
+                                </button>
+                            </>
+                        ) : (
+                            /* ── Signup Fields ── */
+                            <>
+                                {signupError && (
+                                    <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-300">
+                                        {signupError}
+                                    </div>
+                                )}
+
+                                <div className="space-y-3">
+                                    <div className="grid grid-cols-2 gap-3">
+                                        <div className="space-y-1.5">
+                                            <label htmlFor="sd-signup-first" className="text-[11px] font-semibold uppercase tracking-wider text-panel-muted">
+                                                First name
+                                            </label>
+                                            <input
+                                                id="sd-signup-first"
+                                                type="text"
+                                                value={signupFirstName}
+                                                onChange={(e) => setSignupFirstName(e.target.value)}
+                                                className="input input-dark h-11 rounded-xl"
+                                                autoComplete="given-name"
+                                                placeholder="Jane"
+                                                disabled={signupLoading}
+                                            />
+                                        </div>
+                                        <div className="space-y-1.5">
+                                            <label htmlFor="sd-signup-last" className="text-[11px] font-semibold uppercase tracking-wider text-panel-muted">
+                                                Last name
+                                            </label>
+                                            <input
+                                                id="sd-signup-last"
+                                                type="text"
+                                                value={signupLastName}
+                                                onChange={(e) => setSignupLastName(e.target.value)}
+                                                className="input input-dark h-11 rounded-xl"
+                                                autoComplete="family-name"
+                                                placeholder="Doe"
+                                                disabled={signupLoading}
+                                            />
+                                        </div>
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <label htmlFor="sd-signup-email" className="text-[11px] font-semibold uppercase tracking-wider text-panel-muted">
+                                            Email
+                                        </label>
+                                        <input
+                                            id="sd-signup-email"
+                                            type="email"
+                                            value={signupEmail}
+                                            onChange={(e) => setSignupEmail(e.target.value)}
+                                            className="input input-dark h-11 rounded-xl"
+                                            autoComplete="email"
+                                            spellCheck={false}
+                                            placeholder="you@company.com"
+                                            disabled={signupLoading}
+                                        />
+                                    </div>
+                                    <div className="space-y-1.5">
+                                        <label htmlFor="sd-signup-password" className="text-[11px] font-semibold uppercase tracking-wider text-panel-muted">
+                                            Password
+                                        </label>
+                                        <input
+                                            id="sd-signup-password"
+                                            type="password"
+                                            value={signupPassword}
+                                            onChange={(e) => setSignupPassword(e.target.value)}
+                                            onKeyDown={(e) => {
+                                                if (e.key === 'Enter') {
+                                                    e.preventDefault();
+                                                    void handleSignup();
+                                                }
+                                            }}
+                                            className="input input-dark h-11 rounded-xl"
+                                            autoComplete="new-password"
+                                            placeholder="Create a strong password…"
+                                            disabled={signupLoading}
+                                        />
+                                    </div>
+                                </div>
+
+                                <button
+                                    type="button"
+                                    onClick={() => void handleSignup()}
+                                    disabled={signupLoading}
+                                    className="btn-premium w-full rounded-xl text-sm font-semibold"
+                                >
+                                    {signupLoading ? 'Creating account…' : 'Create account'}
+                                </button>
+                            </>
                         )}
-
-                        <div className="space-y-3">
-                            <div className="space-y-1.5">
-                                <label htmlFor="sd-login-email" className="text-[11px] font-semibold uppercase tracking-wider text-panel-muted">
-                                    Email
-                                </label>
-                                <input
-                                    id="sd-login-email"
-                                    type="email"
-                                    value={loginEmail}
-                                    onChange={(e) => setLoginEmail(e.target.value)}
-                                    className="input input-dark h-11 rounded-xl"
-                                    autoComplete="email"
-                                    spellCheck={false}
-                                    placeholder="you@company.com"
-                                    disabled={loginLoading}
-                                />
-                            </div>
-                            <div className="space-y-1.5">
-                                <label htmlFor="sd-login-password" className="text-[11px] font-semibold uppercase tracking-wider text-panel-muted">
-                                    Password
-                                </label>
-                                <input
-                                    id="sd-login-password"
-                                    type="password"
-                                    value={loginPassword}
-                                    onChange={(e) => setLoginPassword(e.target.value)}
-                                    onKeyDown={(e) => {
-                                        if (e.key === 'Enter') {
-                                            e.preventDefault();
-                                            void handleLogin();
-                                        }
-                                    }}
-                                    className="input input-dark h-11 rounded-xl"
-                                    autoComplete="current-password"
-                                    placeholder="Enter your password…"
-                                    disabled={loginLoading}
-                                />
-                            </div>
-                        </div>
-
-                        <button
-                            type="button"
-                            onClick={() => void handleLogin()}
-                            disabled={loginLoading}
-                            className="btn-premium w-full rounded-xl text-sm font-semibold"
-                        >
-                            {loginLoading ? 'Signing in…' : 'Sign in'}
-                        </button>
 
                         <div className="relative py-1">
                             <div className="h-px w-full bg-white/10" />
@@ -238,13 +441,6 @@ export default function SavedDesignsModal() {
                             redirectTo={typeof window !== 'undefined' ? window.location.pathname + window.location.search : '/configurator'}
                             className="rounded-xl border-white/15 bg-white/5 text-white hover:border-white/30 hover:bg-white/10 hover:shadow-none"
                         />
-
-                        <p className="text-center text-xs text-panel-muted">
-                            Don&apos;t have an account?{' '}
-                            <a href="/signup" className="font-semibold text-sky hover:underline">
-                                Create one
-                            </a>
-                        </p>
                     </div>
                 </div>
             ) : (
@@ -340,6 +536,8 @@ export default function SavedDesignsModal() {
                     </div>
                 </>
             )}
+
+            {toast && <Toast message={toast} onDismiss={() => setToast(null)} />}
         </AccessibleModal>
     );
 }
