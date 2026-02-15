@@ -87,12 +87,12 @@ function NavPill({
   expandOnHover?: boolean;
 }) {
   const isActiveStyle = active
-    ? 'bg-blue-600 text-white shadow-md shadow-blue-900/20 ring-1 ring-blue-500/50'
+    ? 'bg-[rgb(24,65,121)] text-white shadow-md shadow-[rgb(24,65,121)]/20 ring-1 ring-white/10'
     : '';
 
   const inactiveStyle = inverse
-    ? 'border-white/10 bg-white/[0.06] text-white hover:border-white/20 hover:bg-white/[0.12]'
-    : 'border-ink/10 bg-white/70 text-ink/80 hover:border-ink/20 hover:bg-white hover:text-ink';
+    ? 'border-white/10 bg-white/[0.06] text-white hover:bg-[rgb(24,65,121)] hover:border-[rgb(24,65,121)] hover:text-white'
+    : 'border-ink/10 bg-white/70 text-ink/80 hover:bg-[rgb(24,65,121)] hover:border-[rgb(24,65,121)] hover:text-white';
 
   const baseClasses = [
     'group relative flex items-center rounded-full border transition-all duration-300',
@@ -105,7 +105,7 @@ function NavPill({
       <div className="flex h-10 w-10 shrink-0 items-center justify-center">
         {Icon ? <Icon className="h-[18px] w-[18px]" strokeWidth={2} /> : null}
         {badge ? (
-          <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-blue-500 text-[10px] font-bold text-white shadow-sm ring-2 ring-[#020916]">
+          <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[rgb(24,65,121)] text-[10px] font-bold text-white shadow-sm ring-2 ring-[#020916]">
             {badge}
           </span>
         ) : null}
@@ -229,7 +229,7 @@ export default function Navbar() {
 
   useEffect(() => {
     const onScroll = () => {
-      setIsScrolled(window.scrollY > 100);
+      setIsScrolled(window.scrollY > 10);
     };
 
     onScroll();
@@ -374,10 +374,10 @@ export default function Navbar() {
 
       <header
         className={[
-          'sticky top-0 z-50 transition-all duration-700 ease-[cubic-bezier(0.25,0.1,0.25,1.0)] wil-change-[height,background-color]',
+          'sticky top-0 z-50 transition-all duration-300 ease-in-out wil-change-[height,background-color]',
           isScrolled
-            ? 'h-16 border-b border-white/10 bg-[rgba(6,10,18,0.92)] shadow-[0_16px_36px_rgba(2,8,24,0.6)] backdrop-blur-xl lg:h-[72px]'
-            : 'h-24 border-b border-transparent bg-transparent lg:h-[100px]',
+            ? 'h-[72px] border-b border-white/10 bg-[rgba(6,10,18,0.92)] shadow-[0_10px_40px_rgba(22,30,44,0.6)] backdrop-blur-xl lg:h-[76px]'
+            : 'h-20 border-b border-transparent bg-transparent lg:h-[84px]',
         ].join(' ')}
       >
         <div className="relative mx-auto flex h-full w-full max-w-7xl items-center justify-between px-4 sm:px-6 lg:px-8">
@@ -451,7 +451,7 @@ export default function Navbar() {
                     isShopMenuOpen ? 'pointer-events-auto translate-y-0 opacity-100' : 'pointer-events-none -translate-y-2 opacity-0',
                   ].join(' ')}
                 >
-                  <div className="grid gap-2">
+                  <div className="flex flex-col gap-1">
                     {shopCollectionLinks.map((item) => (
                       <Link
                         key={item.href}
@@ -459,12 +459,12 @@ export default function Navbar() {
                         role="menuitem"
                         onClick={() => setIsShopMenuOpen(false)}
                         className={[
-                          'rounded-xl border px-3 py-3 transition-colors',
-                          'border-white/12 bg-white/[0.03] hover:border-white/32 hover:bg-white/[0.1]',
+                          'relative flex flex-col rounded-xl px-4 py-3 transition-all duration-200',
+                          'text-white/80 hover:bg-white/[0.08] hover:text-white hover:pl-5',
                         ].join(' ')}
                       >
-                        <div className="text-sm font-semibold tracking-tight">{item.label}</div>
-                        <div className="mt-1 text-xs text-white/70">
+                        <div className="text-sm font-semibold tracking-wide text-white">{item.label}</div>
+                        <div className="mt-0.5 text-xs text-white/50 group-hover:text-white/70">
                           {item.description}
                         </div>
                       </Link>
