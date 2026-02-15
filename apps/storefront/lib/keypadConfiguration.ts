@@ -167,7 +167,7 @@ export function validateAndNormalizeConfigurationInput(
   const payload = parsed as Record<string, unknown>;
   const payloadKeys = Object.keys(payload);
 
-  const nonSlotKeys = payloadKeys.filter((key) => !isSlotId(key));
+  const nonSlotKeys = payloadKeys.filter((key) => !isSlotId(key) && key !== '_meta');
   if (nonSlotKeys.length > 0) {
     return { ok: false, error: `Unexpected key "${nonSlotKeys[0]}" in configuration.` };
   }
