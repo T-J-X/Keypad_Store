@@ -115,7 +115,7 @@ function DesktopSlotItem({
         onClick={onClick}
         className="flex h-full w-full flex-col text-left"
       >
-        <div className="flex w-full items-start justify-between p-3">
+        <div className="flex w-full items-start justify-between px-3 py-2">
           <span className="text-[10px] font-bold uppercase tracking-[0.14em] text-ink/40 group-hover:text-ink/60 transition-colors">
             {label}
           </span>
@@ -159,7 +159,7 @@ function DesktopSlotItem({
           )}
         </div>
 
-        <div className="bg-ink/[0.02] p-3 pt-2">
+        <div className="bg-ink/[0.02] px-3 py-2">
           <div className="truncate text-xs font-semibold text-ink">
             {iconName || <span className="text-ink/30 italic font-normal">Select icon...</span>}
           </div>
@@ -240,13 +240,18 @@ export default function ConfigurationSidebar({
   };
 
   const renderHeader = () => (
-    <div className={`flex flex-col gap-2 ${isMobile ? 'text-center' : 'mb-6 border-b border-white/10 pb-6'}`}>
-      <h1 className={`font-semibold tracking-tight text-white ${isMobile ? 'text-xl' : 'text-3xl sm:text-4xl lg:text-5xl'}`}>
-        Slot Configuration
-      </h1>
-      <p className={`text-panel-muted ${isMobile ? 'text-xs px-8' : 'max-w-xl text-sm'}`}>
-        Tap a slot to assign an icon. {isMobile ? 'Use preview above.' : 'Drag to rotate the preview.'}
-      </p>
+    <div className={`relative ${isMobile ? 'flex flex-col gap-2 text-center' : 'mb-6 pb-6'}`}>
+      {!isMobile && (
+        <div className="absolute bottom-0 left-0 h-[1px] w-full bg-gradient-to-r from-transparent via-blue-400 to-transparent shadow-[0_0_20px_2px_rgba(96,165,250,0.6)] opacity-50" />
+      )}
+      <div className={`flex ${isMobile ? 'contents' : 'flex-row items-end justify-between'}`}>
+        <h1 className={`font-semibold tracking-tight text-white ${isMobile ? 'text-xl' : 'text-3xl sm:text-4xl lg:text-5xl'}`}>
+          Slot Configuration
+        </h1>
+        <p className={`text-panel-muted ${isMobile ? 'text-xs px-8' : 'max-w-xs text-sm text-right'}`}>
+          Tap a slot to assign an icon. {isMobile ? 'Use preview above.' : 'Drag to rotate the preview.'}
+        </p>
+      </div>
     </div>
   );
 
@@ -285,7 +290,7 @@ export default function ConfigurationSidebar({
           {/* Mobile: Header Bottom */}
         </div>
       ) : (
-        <div className={`grid gap-4 ${getDesktopGridClass(modelCode)}`}>
+        <div className={`grid gap-3 ${getDesktopGridClass(modelCode)}`}>
           {resolvedSlotIds.map((slotId) => {
             const slot = resolvedSlots[slotId] ?? {};
             const label = resolvedSlotLabels?.[slotId] ?? slotId.replace('_', ' ');
@@ -311,7 +316,8 @@ export default function ConfigurationSidebar({
         {children}
       </div>
 
-      <div className={`space-y-2 border-t border-white/10 pt-4 ${isMobile ? 'mt-4 text-center' : 'mt-6'}`}>
+      <div className={`relative space-y-2 pt-4 ${isMobile ? 'mt-4 text-center' : 'mt-6'}`}>
+        <div className="absolute top-0 left-0 h-[1px] w-full bg-gradient-to-r from-transparent via-blue-400 to-transparent shadow-[0_0_20px_2px_rgba(96,165,250,0.6)] opacity-50" />
         {!resolvedIsComplete ? (
           <p className="text-xs font-semibold text-rose-400">
             * All {totalSlots} slots must be assigned.
