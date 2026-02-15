@@ -172,7 +172,7 @@ function ConfiguratorActionsRoot({
             type="button"
             onClick={onAddToCart}
             disabled={!resolvedIsComplete || !resolvedHasVariant || resolvedAddingToCart}
-            className={`${primaryActionClass} min-h-11 px-3 text-[11px] font-semibold uppercase tracking-[0.11em]`}
+            className="btn-premium min-h-11 px-3 text-[11px] font-semibold uppercase tracking-[0.11em]"
           >
             <PrimaryButtonLabel
               label={resolvedAddingToCart ? (resolvedIsEditingLine ? 'Updating...' : 'Adding...') : (resolvedIsEditingLine ? 'Update Cart' : 'Add To Cart')}
@@ -182,7 +182,7 @@ function ConfiguratorActionsRoot({
             type="button"
             onClick={onOpenSaveModal}
             disabled={!resolvedIsComplete || resolvedSavingToAccount || !resolvedCanOpenSave}
-            className={`${primaryActionClass} min-h-11 px-3 text-[11px] font-semibold uppercase tracking-[0.11em]`}
+            className="btn-save-account min-h-11 px-3 text-[11px] font-semibold uppercase tracking-[0.11em]"
           >
             <PrimaryButtonLabel label={resolvedHasLoadedSavedConfig ? 'Update Save' : 'Save To Account'} />
           </button>
