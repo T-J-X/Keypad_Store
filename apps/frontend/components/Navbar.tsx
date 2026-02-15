@@ -227,12 +227,30 @@ export default function Navbar() {
     }
   }, []);
 
+  const [isVisible, setIsVisible] = useState(true);
+  const lastScrollY = useRef(0);
+
   useEffect(() => {
     const onScroll = () => {
-      setIsScrolled(window.scrollY > 10);
+      const currentScrollY = window.scrollY;
+
+      // Determine if scrolled for styling
+      setIsScrolled(currentScrollY > 10);
+
+      // Smart hide/show logic
+      if (currentScrollY < 10) {
+        setIsVisible(true);
+      } else if (currentScrollY > lastScrollY.current && currentScrollY > 350) {
+        // Scrolling down & past header (increased threshold for "delay")
+        setIsVisible(false);
+      } else if (currentScrollY < lastScrollY.current) {
+        // Scrolling up
+        setIsVisible(true);
+      }
+
+      lastScrollY.current = currentScrollY;
     };
 
-    onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
@@ -374,9 +392,10 @@ export default function Navbar() {
 
       <header
         className={[
-          'sticky top-0 z-50 transition-all duration-300 ease-in-out wil-change-[height,background-color]',
+          'sticky top-0 z-50 transition-all duration-500 ease-in-out will-change-[transform,height,background-color]',
+          isVisible ? 'translate-y-0' : '-translate-y-full',
           isScrolled
-            ? 'h-[76px] border-b border-white/10 bg-[rgba(6,10,18,0.92)] shadow-[0_10px_40px_rgba(22,30,44,0.6)] backdrop-blur-xl lg:h-[80px]'
+            ? 'h-[76px] border-b border-white/10 bg-[#06152e]/90 shadow-[0_10px_40px_rgba(0,0,0,0.4)] backdrop-blur-xl lg:h-[80px]'
             : 'h-20 border-b border-transparent bg-transparent shadow-[0_4px_24px_rgba(0,0,0,0.25)] lg:h-[84px]',
         ].join(' ')}
       >
