@@ -12,7 +12,7 @@ export const metadata: Metadata = {
 
 export default function HomePage() {
   return (
-    <div className="mx-auto w-full max-w-6xl px-6 py-24">
+    <div className="mx-auto w-full max-w-6xl px-6">
       <section className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
         <div className="space-y-6">
           <div className="pill">Vehicle Control Technologies</div>

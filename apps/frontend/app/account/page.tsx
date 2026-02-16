@@ -19,7 +19,7 @@ export const metadata: Metadata = {
 
 export default function AccountPage() {
   return (
-    <div className="mx-auto w-full max-w-6xl px-6 py-24">
+    <div className="mx-auto w-full max-w-6xl px-6">
       <div className="rounded-3xl border border-[#0f2c5a] bg-[radial-gradient(130%_130%_at_50%_0%,#1b5dae_0%,#0e2a55_36%,#050f23_100%)] p-5 shadow-[0_34px_100px_rgba(2,10,28,0.45)] sm:p-6">
         <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
           <div>

@@ -260,7 +260,7 @@ export default function ProductDetailPage({
 
 function ProductPageFallback() {
   return (
-    <div className="mx-auto w-full max-w-6xl px-6 pb-20 pt-12">
+    <div className="mx-auto w-full max-w-6xl px-6 pb-20">
       <div className="mb-3 h-3 w-28 animate-pulse rounded-full bg-gray-200" />
       <div className="mb-6 h-4 w-48 animate-pulse rounded bg-gray-200" />
       <div className="grid gap-10 lg:grid-cols-[1.15fr_0.85fr]">

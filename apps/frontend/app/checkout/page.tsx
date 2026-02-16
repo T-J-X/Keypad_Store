@@ -393,7 +393,7 @@ export default function CheckoutPage() {
   const canSubmit = !isSubmitting;
 
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 py-24 sm:px-6 lg:px-8">
+    <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8">
       <div className="card-panel p-5 sm:p-6">
         <div className="mb-8 flex items-center justify-between gap-4">
           <div>

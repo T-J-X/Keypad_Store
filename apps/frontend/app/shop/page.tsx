@@ -231,7 +231,7 @@ export default function ShopPage({
 
 function ShopPageFallback() {
   return (
-    <div className="mx-auto w-full max-w-[88rem] bg-white px-6 py-12">
+    <div className="mx-auto w-full max-w-[88rem] bg-white px-6">
       <div className="mb-3 h-3 w-28 animate-pulse rounded-full bg-gray-200" />
       <div className="mb-8 h-10 w-72 animate-pulse rounded bg-gray-200" />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
@@ -305,7 +305,7 @@ async function ShopPageContent({
     const baseShopConfig = await fetchShopLandingContent();
 
     return (
-      <div className="mx-auto w-full max-w-[88rem] bg-white px-4 py-24 sm:px-6">
+      <div className="mx-auto w-full max-w-[88rem] bg-white px-4 sm:px-6">
         <ShopClient
           icons={icons}
           keypads={matchedKeypads}
@@ -375,7 +375,7 @@ async function ShopPageContent({
   const trimmedKeypads = keypads.map(pickKeypadCardFields);
 
   return (
-    <div className="mx-auto w-full max-w-[88rem] bg-white px-4 py-24 sm:px-6">
+    <div className="mx-auto w-full max-w-[88rem] bg-white px-4 sm:px-6">
       <ShopClient
         icons={icons}
         keypads={trimmedKeypads}
