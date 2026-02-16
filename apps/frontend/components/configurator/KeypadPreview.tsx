@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useMemo, useRef, useState } from 'react';
+import { useEffect, useId, useMemo, useRef, useState, memo } from 'react';
 import type { SlotVisualState } from '../../lib/configuratorStore';
 import type { SlotId } from '../../lib/keypadConfiguration';
 import {
@@ -176,6 +176,362 @@ function buildSlotBindings(layout: ModelLayout): SlotBinding[] {
     };
   });
 }
+
+// --- Extracted Slot Component for Performance ---
+const MemoizedKeypadSlot = memo(function KeypadSlot({
+  slotId,
+  slotIndex,
+  slotEntry,
+  slotVisual,
+  isActive,
+  isSelected,
+  isNextSlot,
+  showSlotGuides,
+  iconScaleValue,
+  iconVisibleCompValue,
+  onSlotClick,
+  onMouseEnter,
+  onMouseLeave,
+  onFocus,
+  onBlur,
+  editMode,
+  setSelectedSlotId,
+  safeSvgIdPrefix,
+  modelCode,
+  shouldShowTooltip,
+  visualRotationDeg,
+  showGlows,
+}: {
+  slotId: string;
+  slotIndex: number;
+  slotEntry: Slot;
+  slotVisual: SlotVisualState;
+  isActive: boolean;
+  isSelected: boolean;
+  isNextSlot: boolean;
+  showSlotGuides: boolean;
+  iconScaleValue: number;
+  iconVisibleCompValue: number;
+  onSlotClick: (id: SlotId) => void;
+  onMouseEnter: (id: SlotId) => void;
+  onMouseLeave: (id: SlotId) => void;
+  onFocus: (id: SlotId) => void;
+  onBlur: (id: SlotId) => void;
+  editMode: boolean;
+  setSelectedSlotId: (id: string) => void;
+  safeSvgIdPrefix: string;
+  modelCode: string | undefined;
+  shouldShowTooltip: boolean;
+  visualRotationDeg: number;
+  showGlows: boolean;
+}) {
+  const matteSrc = slotVisual.matteAssetPath ? assetUrl(slotVisual.matteAssetPath) : '';
+  const ringColor = slotVisual.color;
+  const ringLuminance = colorLuminance(ringColor);
+  const isWhiteGlow = ringLuminance >= WHITE_GLOW_LUMINANCE_THRESHOLD;
+  const hitRadius = Math.max(slotEntry.insertD, slotEntry.bezelD) / 2;
+  const ringOuter = slotEntry.bezelD / 2;
+  const ringBand = Math.max(3, slotEntry.bezelD * 0.075);
+  const ringInner = Math.max(1, ringOuter - ringBand);
+  const iconSize = slotEntry.insertD * iconScaleValue * iconVisibleCompValue;
+  const iconX = slotEntry.cx - (iconSize / 2);
+  const iconY = slotEntry.cy - (iconSize / 2);
+  const isPulsating = isNextSlot && !isActive;
+
+  return (
+    <g
+      role="button"
+      tabIndex={0}
+      style={{ cursor: 'pointer', outline: 'none' }}
+      aria-label={`Configure Slot ${slotIndex + 1}`}
+      onMouseEnter={() => onMouseEnter(slotId as SlotId)}
+      onMouseLeave={() => onMouseLeave(slotId as SlotId)}
+      onFocus={() => onFocus(slotId as SlotId)}
+      onBlur={() => onBlur(slotId as SlotId)}
+      onClick={(e) => {
+        e.stopPropagation();
+        if (editMode) {
+          setSelectedSlotId(slotId);
+          return;
+        }
+        onSlotClick(slotId as SlotId);
+      }}
+      onKeyDown={(event) => {
+        if (event.key === 'Enter' || event.key === ' ') {
+          event.preventDefault();
+          event.stopPropagation();
+          if (editMode) {
+            setSelectedSlotId(slotId);
+            return;
+          }
+          onSlotClick(slotId as SlotId);
+        }
+      }}
+    >
+      <circle cx={slotEntry.cx} cy={slotEntry.cy} r={hitRadius} fill="transparent" />
+
+      {isActive ? (
+        <circle
+          cx={slotEntry.cx}
+          cy={slotEntry.cy}
+          r={Math.max(slotEntry.insertD / 2, ringInner)}
+          fill="rgba(255,255,255,0.04)"
+          stroke="rgba(170,189,216,0.45)"
+          strokeWidth={Math.max(1, slotEntry.bezelD * 0.015)}
+          className="animate-pulse"
+        />
+      ) : null}
+
+      {/* Ring / Bezel */}
+      {/* We use fill for body and separate stroke if needed, but original code used circles with fills */}
+      {/* Wait, original code at 822 had logic for isActive ring.
+          Then logic for BacklitGlow.
+          Then logic for Matte Insert or Placeholder.
+          Then logic for Selection Ring.
+          Then logic for Guides.
+      */}
+
+      {/* Backlit Glow (if any) */}
+      {ringColor && showGlows ? (
+        <BacklitGlow
+          idBase={`${safeSvgIdPrefix}-slot-${slotId}`}
+          cx={slotEntry.cx}
+          cy={slotEntry.cy}
+          rOuter={ringOuter}
+          rInner={ringInner}
+          buttonDiameterPx={slotEntry.bezelD}
+          color={ringColor}
+          opacity={0.46}
+          transitionMs={190}
+        />
+      ) : null}
+
+      {/* Matte Insert */}
+      {matteSrc ? (
+        <image
+          href={matteSrc}
+          x={iconX}
+          y={iconY}
+          width={iconSize}
+          height={iconSize}
+          preserveAspectRatio="xMidYMid meet"
+          transform={visualRotationDeg ? `rotate(${-visualRotationDeg} ${slotEntry.cx} ${slotEntry.cy})` : undefined}
+          clipPath={`url(#${safeSvgIdPrefix}-insert-${slotId})`}
+          className={isPulsating ? 'animate-icon-pulse-blue' : ''}
+          style={{
+            filter: isWhiteGlow ? 'brightness(0.82)' : 'brightness(0.9)',
+            transition: 'filter 180ms ease-out',
+          }}
+        />
+      ) : (
+        <>
+          <circle
+            cx={slotEntry.cx}
+            cy={slotEntry.cy}
+            r={slotEntry.insertD / 2}
+            fill="rgba(255,255,255,0.04)"
+            stroke="rgba(255,255,255,0.2)"
+            strokeWidth={Math.max(1, slotEntry.insertD * 0.02)}
+          />
+          {!isPulsating && (
+            <text
+              x={slotEntry.cx}
+              y={slotEntry.cy + Math.max(6, slotEntry.insertD * 0.08)}
+              textAnchor="middle"
+              fontSize={Math.max(16, slotEntry.insertD * 0.34)}
+              fontWeight={200}
+              fill="rgba(255,0,0,0.5)"
+            >
+              +
+            </text>
+          )}
+          {isPulsating && (
+            <>
+              <circle
+                cx={slotEntry.cx}
+                cy={slotEntry.cy}
+                r={slotEntry.insertD / (modelCode === 'PKP-2200-SI' ? 2.35 : 1.8)}
+                fill="none"
+                stroke="rgba(2, 6, 23, 0.53)"
+                strokeWidth="1.5"
+                strokeDasharray="3 2"
+                className="animate-spin-slow"
+                style={{ transformOrigin: `${slotEntry.cx}px ${slotEntry.cy}px`, animationDuration: '10s' }}
+              />
+              <g className="animate-icon-pulse-blue" style={{ transformOrigin: `${slotEntry.cx}px ${slotEntry.cy}px` }}>
+                <circle
+                  cx={slotEntry.cx}
+                  cy={slotEntry.cy}
+                  r={slotEntry.insertD / (modelCode === 'PKP-2200-SI' ? 2.4 : 1.85)}
+                  fill="rgba(2, 6, 23, 0.64)"
+                />
+                <text
+                  x={slotEntry.cx}
+                  y={slotEntry.cy + Math.max(6, slotEntry.insertD * 0.08)}
+                  textAnchor="middle"
+                  fontSize={Math.max(16, slotEntry.insertD * 0.34)}
+                  fontWeight={200}
+                  fill="rgba(255,0,0,0.5)"
+                >
+                  +
+                </text>
+                <image
+                  href="/vct-logo.png"
+                  x={slotEntry.cx - (slotEntry.insertD * (modelCode === 'PKP-2200-SI' ? 0.65 : 0.85)) / 2}
+                  y={slotEntry.cy - (slotEntry.insertD * (modelCode === 'PKP-2200-SI' ? 0.65 : 0.85) * 0.32) / 2}
+                  width={slotEntry.insertD * (modelCode === 'PKP-2200-SI' ? 0.65 : 0.85)}
+                  height={slotEntry.insertD * (modelCode === 'PKP-2200-SI' ? 0.65 : 0.85) * 0.32}
+                  style={{
+                    filter: 'brightness(0) invert(1)',
+                    opacity: 0.95,
+                  }}
+                  transform={visualRotationDeg ? `rotate(${-visualRotationDeg} ${slotEntry.cx} ${slotEntry.cy})` : undefined}
+                />
+              </g>
+              {shouldShowTooltip && (() => {
+                const isMassiveTooltipModel = [
+                  'PKP-3500-SI',
+                  'PKP-2500-SI',
+                  'PKP-2400-SI',
+                  'PKP-2300-SI'
+                ].includes(modelCode || '');
+                const isMidLargeTooltipModel = [
+                  'PKP-2600-SI',
+                  'PKP-2200-SI'
+                ].includes(modelCode || '');
+
+                let width = 190;
+                let height = 70;
+                let dx = 95;
+                let dy = 55;
+                let style: React.CSSProperties | undefined = { fontSize: '13px', padding: '10px 20px' };
+
+                if (isMassiveTooltipModel) {
+                  width = 280;
+                  height = 100;
+                  dx = 140;
+                  dy = 85;
+                  style = { fontSize: '22px', padding: '18px 32px' };
+                } else if (isMidLargeTooltipModel) {
+                  width = 230;
+                  height = 86;
+                  dx = 115;
+                  dy = 75;
+                  style = { fontSize: '17px', padding: '15px 26px' };
+                }
+
+                return (
+                  <foreignObject
+                    x={slotEntry.cx - dx}
+                    y={slotEntry.cy - slotEntry.insertD / 1.4 - dy}
+                    width={width}
+                    height={height}
+                    className="overflow-visible"
+                    transform={visualRotationDeg ? `rotate(${-visualRotationDeg} ${slotEntry.cx} ${slotEntry.cy})` : undefined}
+                  >
+                    <div className="flex justify-center">
+                      <div
+                        className="tooltip-bubble"
+                        style={style}
+                      >
+                        Please select an icon
+                      </div>
+                    </div>
+                  </foreignObject>
+                );
+              })()}
+            </>
+          )}
+        </>
+      )}
+
+      {/* Selected Ring */}
+      {isSelected ? (
+        <circle
+          cx={slotEntry.cx}
+          cy={slotEntry.cy}
+          r={(slotEntry.bezelD / 2) + 6}
+          fill="none"
+          stroke="#22d3ee"
+          strokeWidth={Math.max(2, slotEntry.bezelD * 0.03)}
+          strokeDasharray="4 3"
+          vectorEffect="non-scaling-stroke"
+        />
+      ) : null}
+
+      {/* Calibration Guides */}
+      {showSlotGuides ? (
+        <>
+          <line
+            x1={slotEntry.cx - Math.max(8, slotEntry.insertD * 0.26)}
+            y1={slotEntry.cy}
+            x2={slotEntry.cx + Math.max(8, slotEntry.insertD * 0.26)}
+            y2={slotEntry.cy}
+            stroke="#ff3b30"
+            strokeWidth={1.4}
+            vectorEffect="non-scaling-stroke"
+          />
+          <line
+            x1={slotEntry.cx}
+            y1={slotEntry.cy - Math.max(8, slotEntry.insertD * 0.26)}
+            x2={slotEntry.cx}
+            y2={slotEntry.cy + Math.max(8, slotEntry.insertD * 0.26)}
+            stroke="#ff3b30"
+            strokeWidth={1.4}
+            vectorEffect="non-scaling-stroke"
+          />
+          <circle
+            cx={slotEntry.cx}
+            cy={slotEntry.cy}
+            r={slotEntry.insertD / 2}
+            fill="none"
+            stroke="#ffffff"
+            strokeWidth={1.2}
+            strokeDasharray="4 3"
+            vectorEffect="non-scaling-stroke"
+          />
+          <circle
+            cx={slotEntry.cx}
+            cy={slotEntry.cy}
+            r={slotEntry.bezelD / 2}
+            fill="none"
+            stroke="#22d3ee"
+            strokeWidth={1.2}
+            vectorEffect="non-scaling-stroke"
+          />
+          <text
+            x={slotEntry.cx + Math.max(10, slotEntry.insertD * 0.28)}
+            y={slotEntry.cy - Math.max(10, slotEntry.insertD * 0.2)}
+            fontSize={Math.max(10, slotEntry.insertD * 0.16)}
+            fontWeight={700}
+            fill="#fef08a"
+          >
+            {slotIndex + 1}
+          </text>
+        </>
+      ) : null}
+    </g>
+  );
+}, (prev, next) => {
+  return (
+    prev.slotId === next.slotId &&
+    prev.slotIndex === next.slotIndex &&
+    prev.isActive === next.isActive &&
+    prev.isSelected === next.isSelected &&
+    prev.isNextSlot === next.isNextSlot &&
+    prev.showSlotGuides === next.showSlotGuides &&
+    prev.iconScaleValue === next.iconScaleValue &&
+    prev.iconVisibleCompValue === next.iconVisibleCompValue &&
+    prev.editMode === next.editMode &&
+    prev.safeSvgIdPrefix === next.safeSvgIdPrefix &&
+    prev.modelCode === next.modelCode &&
+    prev.shouldShowTooltip === next.shouldShowTooltip &&
+    prev.visualRotationDeg === next.visualRotationDeg &&
+    prev.showGlows === next.showGlows &&
+    prev.slotEntry === next.slotEntry &&
+    prev.slotVisual === next.slotVisual
+  );
+});
 
 export default function KeypadPreview({
   modelCode = 'PKP-2200-SI',
@@ -721,320 +1077,67 @@ export default function KeypadPreview({
                   })}
                 </defs>
                 <image href={shellSrc} x={0} y={0} width={baseW} height={baseH} preserveAspectRatio="xMidYMid meet" />
-
                 {slotIds.map((slotId, slotIndex) => {
                   const slotEntry = renderLayout.slots.find((item) => item.id === slotId);
                   if (!slotEntry) return null;
 
                   const slotVisual = slots[slotId] ?? EMPTY_SLOT_VISUAL_STATE;
-                  const matteSrc = slotVisual.matteAssetPath ? assetUrl(slotVisual.matteAssetPath) : '';
-                  const ringColor = slotVisual.color;
-                  const ringLuminance = colorLuminance(ringColor);
-                  const isWhiteGlow = ringLuminance >= WHITE_GLOW_LUMINANCE_THRESHOLD;
-                  const hitRadius = Math.max(slotEntry.insertD, slotEntry.bezelD) / 2;
-                  const ringOuter = slotEntry.bezelD / 2;
-                  const ringBand = Math.max(3, slotEntry.bezelD * 0.075);
-                  const ringInner = Math.max(1, ringOuter - ringBand);
-                  const iconSize = slotEntry.insertD * iconScaleValue * iconVisibleCompValue;
-                  const iconX = slotEntry.cx - (iconSize / 2);
-                  const iconY = slotEntry.cy - (iconSize / 2);
                   const isActive = slotId === activeSlotId;
                   const isSelected = editMode && slotId === selectedSlotId;
                   const isNextSlot = slotId === nextSlotId;
-                  const isPulsating = isNextSlot && !isActive;
 
                   const showSlotGuides = showCalibrationGuides
                     && (!showSelectedGuidesOnly || !editMode || slotId === selectedSlotId);
 
+                  const shouldShowTooltip = showInitialTooltip || (isNextSlot && !slots[slotId]?.iconId);
+
                   return (
-                    <g
+                    <MemoizedKeypadSlot
                       key={slotId}
-                      role="button"
-                      tabIndex={0}
-                      style={{ cursor: 'pointer' }}
-                      aria-label={`Configure Slot ${slotIndex + 1}`}
-                      onMouseEnter={() => {
-                        setHoveredSlotId(slotId as SlotId);
+                      slotId={slotId}
+                      slotIndex={slotIndex}
+                      slotEntry={slotEntry}
+                      slotVisual={slotVisual}
+                      isActive={isActive}
+                      isSelected={isSelected}
+                      isNextSlot={isNextSlot}
+                      showSlotGuides={showSlotGuides}
+                      iconScaleValue={iconScaleValue}
+                      iconVisibleCompValue={iconVisibleCompValue}
+                      onSlotClick={onSlotClick}
+                      onMouseEnter={(id) => setHoveredSlotId(id)}
+                      onMouseLeave={(id) => {
+                        if (hoveredSlotId === id) setHoveredSlotId(null);
                       }}
-                      onMouseLeave={() => {
-                        if (hoveredSlotId === slotId) {
-                          setHoveredSlotId(null);
-                        }
+                      onFocus={(id) => setHoveredSlotId(id)}
+                      onBlur={(id) => {
+                        if (hoveredSlotId === id) setHoveredSlotId(null);
                       }}
-                      onFocus={() => {
-                        setHoveredSlotId(slotId as SlotId);
-                      }}
-                      onBlur={() => {
-                        if (hoveredSlotId === slotId) {
-                          setHoveredSlotId(null);
-                        }
-                      }}
-                      onClick={() => {
-                        setShowInitialTooltip(false);
-                        if (editMode) {
-                          setSelectedSlotId(slotId);
-                          return;
-                        }
-                        onSlotClick(slotId as SlotId);
-                      }}
-                      onKeyDown={(event) => {
-                        if (event.key === 'Enter' || event.key === ' ') {
-                          event.preventDefault();
-                          if (editMode) {
-                            setSelectedSlotId(slotId);
-                            return;
-                          }
-                          onSlotClick(slotId as SlotId);
-                        }
-                      }}
-                    >
-                      <circle cx={slotEntry.cx} cy={slotEntry.cy} r={hitRadius} fill="transparent" />
-
-                      {isActive ? (
-                        <circle
-                          cx={slotEntry.cx}
-                          cy={slotEntry.cy}
-                          r={Math.max(slotEntry.insertD / 2, ringInner)}
-                          fill="rgba(255,255,255,0.04)"
-                          stroke="rgba(170,189,216,0.45)"
-                          strokeWidth={Math.max(1, slotEntry.bezelD * 0.015)}
-                        />
-                      ) : null}
-
-                      {ringColor && showGlows ? (
-                        <BacklitGlow
-                          idBase={`${safeSvgIdPrefix}-slot-${slotId}`}
-                          cx={slotEntry.cx}
-                          cy={slotEntry.cy}
-                          rOuter={ringOuter}
-                          rInner={ringInner}
-                          buttonDiameterPx={slotEntry.bezelD}
-                          color={ringColor}
-                          opacity={0.46}
-                          transitionMs={190}
-                        />
-                      ) : null}
-
-                      {matteSrc ? (
-                        <image
-                          href={matteSrc}
-                          x={iconX}
-                          y={iconY}
-                          width={iconSize}
-                          height={iconSize}
-                          preserveAspectRatio="xMidYMid meet"
-                          transform={visualRotationDeg ? `rotate(${-visualRotationDeg} ${slotEntry.cx} ${slotEntry.cy})` : undefined}
-                          clipPath={`url(#${safeSvgIdPrefix}-insert-${slotId})`}
-                          className={isPulsating ? 'animate-icon-pulse-blue' : ''}
-                          style={{
-                            filter: isWhiteGlow ? 'brightness(0.82)' : 'brightness(0.9)',
-                            transition: 'filter 180ms ease-out',
-                          }}
-                        />
-                      ) : (
-                        <>
-                          <circle
-                            cx={slotEntry.cx}
-                            cy={slotEntry.cy}
-                            r={slotEntry.insertD / 2}
-                            fill="rgba(255,255,255,0.04)"
-                            stroke="rgba(255,255,255,0.2)"
-                            strokeWidth={Math.max(1, slotEntry.insertD * 0.02)}
-                          />
-                          {!isPulsating && (
-                            <text
-                              x={slotEntry.cx}
-                              y={slotEntry.cy + Math.max(6, slotEntry.insertD * 0.08)}
-                              textAnchor="middle"
-                              fontSize={Math.max(16, slotEntry.insertD * 0.34)}
-                              fontWeight={200}
-                              fill="rgba(255,0,0,0.5)"
-                            >
-                              +
-                            </text>
-                          )}
-                          {isPulsating && (
-                            <>
-                              <circle
-                                cx={slotEntry.cx}
-                                cy={slotEntry.cy}
-                                r={slotEntry.insertD / (modelCode === 'PKP-2200-SI' ? 2.35 : 1.8)}
-                                fill="none"
-                                stroke="rgba(2, 6, 23, 0.53)"
-                                strokeWidth="1.5"
-                                strokeDasharray="3 2"
-                                className="animate-spin-slow"
-                                style={{ transformOrigin: `${slotEntry.cx}px ${slotEntry.cy}px`, animationDuration: '10s' }}
-                              />
-                              <g className="animate-icon-pulse-blue" style={{ transformOrigin: `${slotEntry.cx}px ${slotEntry.cy}px` }}>
-                                <circle
-                                  cx={slotEntry.cx}
-                                  cy={slotEntry.cy}
-                                  r={slotEntry.insertD / (modelCode === 'PKP-2200-SI' ? 2.4 : 1.85)}
-                                  fill="rgba(2, 6, 23, 0.64)"
-                                />
-                                <text
-                                  x={slotEntry.cx}
-                                  y={slotEntry.cy + Math.max(6, slotEntry.insertD * 0.08)}
-                                  textAnchor="middle"
-                                  fontSize={Math.max(16, slotEntry.insertD * 0.34)}
-                                  fontWeight={200}
-                                  fill="rgba(255,0,0,0.5)"
-                                >
-                                  +
-                                </text>
-                                <image
-                                  href="/vct-logo.png"
-                                  x={slotEntry.cx - (slotEntry.insertD * (modelCode === 'PKP-2200-SI' ? 0.65 : 0.85)) / 2}
-                                  y={slotEntry.cy - (slotEntry.insertD * (modelCode === 'PKP-2200-SI' ? 0.65 : 0.85) * 0.32) / 2}
-                                  width={slotEntry.insertD * (modelCode === 'PKP-2200-SI' ? 0.65 : 0.85)}
-                                  height={slotEntry.insertD * (modelCode === 'PKP-2200-SI' ? 0.65 : 0.85) * 0.32}
-                                  style={{
-                                    filter: 'brightness(0) invert(1)',
-                                    opacity: 0.95,
-                                  }}
-                                  transform={visualRotationDeg ? `rotate(${-visualRotationDeg} ${slotEntry.cx} ${slotEntry.cy})` : undefined}
-                                />
-                              </g>
-                              {(showInitialTooltip || (slotId === nextSlotId && !slots[slotId]?.iconId)) && (() => {
-                                const isMassiveTooltipModel = [
-                                  'PKP-3500-SI',
-                                  'PKP-2500-SI',
-                                  'PKP-2400-SI',
-                                  'PKP-2300-SI'
-                                ].includes(modelCode || '');
-                                const isMidLargeTooltipModel = [
-                                  'PKP-2600-SI',
-                                  'PKP-2200-SI'
-                                ].includes(modelCode || '');
-
-                                // Default to "Large" (190px, 13px font) for any other potential models
-                                let width = 190;
-                                let height = 70;
-                                let dx = 95;
-                                let dy = 55;
-                                let style: React.CSSProperties | undefined = { fontSize: '13px', padding: '10px 20px' };
-
-                                if (isMassiveTooltipModel) {
-                                  width = 280;
-                                  height = 100;
-                                  dx = 140;
-                                  dy = 85;
-                                  style = { fontSize: '22px', padding: '18px 32px' };
-                                } else if (isMidLargeTooltipModel) {
-                                  width = 230;
-                                  height = 86;
-                                  dx = 115;
-                                  dy = 75;
-                                  style = { fontSize: '17px', padding: '15px 26px' };
-                                }
-
-                                return (
-                                  <foreignObject
-                                    x={slotEntry.cx - dx}
-                                    y={slotEntry.cy - slotEntry.insertD / 1.4 - dy}
-                                    width={width}
-                                    height={height}
-                                    className="overflow-visible"
-                                    transform={visualRotationDeg ? `rotate(${-visualRotationDeg} ${slotEntry.cx} ${slotEntry.cy})` : undefined}
-                                  >
-                                    <div className="flex justify-center">
-                                      <div
-                                        className="tooltip-bubble"
-                                        style={style}
-                                      >
-                                        Please select an icon
-                                      </div>
-                                    </div>
-                                  </foreignObject>
-                                );
-                              })()}
-                            </>
-                          )}
-
-                        </>
-                      )}
-
-                      {isSelected ? (
-                        <circle
-                          cx={slotEntry.cx}
-                          cy={slotEntry.cy}
-                          r={(slotEntry.bezelD / 2) + 6}
-                          fill="none"
-                          stroke="#22d3ee"
-                          strokeWidth={Math.max(2, slotEntry.bezelD * 0.03)}
-                          strokeDasharray="4 3"
-                          vectorEffect="non-scaling-stroke"
-                        />
-                      ) : null}
-
-                      {showSlotGuides ? (
-                        <>
-                          <line
-                            x1={slotEntry.cx - Math.max(8, slotEntry.insertD * 0.26)}
-                            y1={slotEntry.cy}
-                            x2={slotEntry.cx + Math.max(8, slotEntry.insertD * 0.26)}
-                            y2={slotEntry.cy}
-                            stroke="#ff3b30"
-                            strokeWidth={1.4}
-                            vectorEffect="non-scaling-stroke"
-                          />
-                          <line
-                            x1={slotEntry.cx}
-                            y1={slotEntry.cy - Math.max(8, slotEntry.insertD * 0.26)}
-                            x2={slotEntry.cx}
-                            y2={slotEntry.cy + Math.max(8, slotEntry.insertD * 0.26)}
-                            stroke="#ff3b30"
-                            strokeWidth={1.4}
-                            vectorEffect="non-scaling-stroke"
-                          />
-                          <circle
-                            cx={slotEntry.cx}
-                            cy={slotEntry.cy}
-                            r={slotEntry.insertD / 2}
-                            fill="none"
-                            stroke="#ffffff"
-                            strokeWidth={1.2}
-                            strokeDasharray="4 3"
-                            vectorEffect="non-scaling-stroke"
-                          />
-                          <circle
-                            cx={slotEntry.cx}
-                            cy={slotEntry.cy}
-                            r={slotEntry.bezelD / 2}
-                            fill="none"
-                            stroke="#22d3ee"
-                            strokeWidth={1.2}
-                            vectorEffect="non-scaling-stroke"
-                          />
-                          <text
-                            x={slotEntry.cx + Math.max(10, slotEntry.insertD * 0.28)}
-                            y={slotEntry.cy - Math.max(10, slotEntry.insertD * 0.2)}
-                            fontSize={Math.max(10, slotEntry.insertD * 0.16)}
-                            fontWeight={700}
-                            fill="#fef08a"
-                          >
-                            {slotIndex + 1}
-                          </text>
-                        </>
-                      ) : null}
-                    </g>
+                      editMode={editMode}
+                      setSelectedSlotId={setSelectedSlotId}
+                      safeSvgIdPrefix={safeSvgIdPrefix}
+                      modelCode={modelCode}
+                      shouldShowTooltip={Boolean(shouldShowTooltip)}
+                      visualRotationDeg={displayRotationDeg}
+                      showGlows={showGlows}
+                    />
                   );
                 })}
               </g>
-            </svg>
+            </svg >
           ) : (
             <div className="grid h-full w-full place-items-center text-sm font-semibold text-blue-100/80">
               Shell render pending
             </div>
-          )}
-        </div>
-      </div>
+          )
+          }
+        </div >
+      </div >
 
       <div className="mt-4 space-y-1 text-xs text-white/90">
         <h3 className="text-lg font-medium text-white mb-2 leading-relaxed">Select a button insert for each slot, then pick a ring glow color to preview your final keypad layout.</h3>
         {descriptionText ? <p className="text-[#d7e8ff]/90">{descriptionText}</p> : null}
       </div>
-    </div>
+    </div >
   );
 }

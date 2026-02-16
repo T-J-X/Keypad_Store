@@ -756,7 +756,7 @@ export default function KeypadProvider({
   const canDownloadPdf = Boolean(strictConfiguration);
   const hasVariant = Boolean(keypad.productVariantId) || Boolean(editLineId);
 
-  const contextValue: KeypadConfiguratorContextValue = {
+  const contextValue: KeypadConfiguratorContextValue = useMemo(() => ({
     state: {
       modelCode: resolvedModelCode,
       slotIds,
@@ -774,12 +774,11 @@ export default function KeypadProvider({
       canOpenSaveAction,
       canDownloadPdf,
       saveModalOpen: isSaveModalOpen,
-      savedDesignsModalOpen: isSavedDesignsModalOpen, // NEW state
+      savedDesignsModalOpen: isSavedDesignsModalOpen,
       saveName,
       icons,
       iconsError,
       savedConfigError,
-      // NEW state
       savedDesigns,
       savedDesignsLoading,
       savedDesignsError,
@@ -823,8 +822,8 @@ export default function KeypadProvider({
       closeSaveModal: () => {
         setIsSaveModalOpen(false);
       },
-      openSavedDesignsModal, // NEW action
-      closeSavedDesignsModal: () => { // NEW action
+      openSavedDesignsModal,
+      closeSavedDesignsModal: () => {
         setIsSavedDesignsModalOpen(false);
       },
       submitSave,
@@ -842,7 +841,16 @@ export default function KeypadProvider({
       editLineId,
       loadSavedId,
     },
-  };
+  }), [
+    resolvedModelCode, slotIds, slotLabelById, slots, popupSlotId, selectedIconIds, recommendationSeedIconId, isMobile,
+    isAuthenticated, editLineId, isComplete, hasVariant, loadedSavedConfig, canOpenSaveAction, canDownloadPdf,
+    isSaveModalOpen, isSavedDesignsModalOpen, saveName, icons, iconsError, savedConfigError, savedDesigns,
+    savedDesignsLoading, savedDesignsError, cartStatus, saveStatus, iconsLoading, loadingSavedConfig, addingToCart,
+    savingToAccount, downloadingPdf, previewRotationDeg, previewShowGlows, previewIconScale, modelRenderTuning,
+    debugMode, editMode, descriptionText, reset, openSlot, closeSlot, clearSlot, selectIconForSlot, setSlotGlowColor,
+    rotatePreview, togglePreviewGlows, addToCart, openSaveModal, openSavedDesignsModal, submitSave, setSaveName,
+    downloadPdf, keypad, modelGeometry, configurationDraft, slotCount, loadSavedId
+  ]);
 
   return (
     <KeypadContext value={contextValue}>

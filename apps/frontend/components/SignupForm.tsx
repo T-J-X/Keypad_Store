@@ -123,12 +123,15 @@ export default function SignupForm() {
                 )}
                 <div className="grid grid-cols-2 gap-3">
                     <div className="space-y-2">
-                        <label htmlFor="signup-first-name" className="text-xs font-semibold uppercase tracking-wide text-blue-100/70">First name</label>
+                        <label htmlFor="signup-first-name" className="text-xs font-semibold uppercase tracking-wide text-blue-100/70">
+                            First name <span className="text-rose-500 ml-0.5">*</span>
+                        </label>
                         <input
                             id="signup-first-name"
                             name="firstName"
                             className="input input-dark"
                             type="text"
+                            required
                             autoComplete="given-name"
                             placeholder="Jane"
                             value={firstName}
@@ -137,12 +140,15 @@ export default function SignupForm() {
                         />
                     </div>
                     <div className="space-y-2">
-                        <label htmlFor="signup-last-name" className="text-xs font-semibold uppercase tracking-wide text-blue-100/70">Last name</label>
+                        <label htmlFor="signup-last-name" className="text-xs font-semibold uppercase tracking-wide text-blue-100/70">
+                            Last name <span className="text-rose-500 ml-0.5">*</span>
+                        </label>
                         <input
                             id="signup-last-name"
                             name="lastName"
                             className="input input-dark"
                             type="text"
+                            required
                             autoComplete="family-name"
                             placeholder="Doe"
                             value={lastName}
@@ -152,12 +158,15 @@ export default function SignupForm() {
                     </div>
                 </div>
                 <div className="space-y-2">
-                    <label htmlFor="signup-email" className="text-xs font-semibold uppercase tracking-wide text-blue-100/70">Email</label>
+                    <label htmlFor="signup-email" className="text-xs font-semibold uppercase tracking-wide text-blue-100/70">
+                        Email <span className="text-rose-500 ml-0.5">*</span>
+                    </label>
                     <input
                         id="signup-email"
                         name="email"
                         className="input input-dark"
                         type="email"
+                        required
                         autoComplete="email"
                         spellCheck={false}
                         placeholder="you@company.com"
@@ -169,12 +178,15 @@ export default function SignupForm() {
 
                 {/* ── Password ───────────────────────────────────────── */}
                 <div className="space-y-2">
-                    <label htmlFor="signup-password" className="text-xs font-semibold uppercase tracking-wide text-blue-100/70">Password</label>
+                    <label htmlFor="signup-password" className="text-xs font-semibold uppercase tracking-wide text-blue-100/70">
+                        Password <span className="text-rose-500 ml-0.5">*</span>
+                    </label>
                     <input
                         id="signup-password"
                         name="password"
                         className="input input-dark"
                         type="password"
+                        required
                         autoComplete="new-password"
                         placeholder="Create a strong password…"
                         value={password}
@@ -208,7 +220,9 @@ export default function SignupForm() {
 
                 {/* ── Confirm password ──────────────────────────────── */}
                 <div className="space-y-2">
-                    <label htmlFor="signup-confirm-password" className="text-xs font-semibold uppercase tracking-wide text-blue-100/70">Confirm password</label>
+                    <label htmlFor="signup-confirm-password" className="text-xs font-semibold uppercase tracking-wide text-blue-100/70">
+                        Confirm password <span className="text-rose-500 ml-0.5">*</span>
+                    </label>
                     <input
                         id="signup-confirm-password"
                         name="confirmPassword"
@@ -217,6 +231,7 @@ export default function SignupForm() {
                             showMismatch ? 'ring-2 ring-rose-400/50' : '',
                         ].join(' ')}
                         type="password"
+                        required
                         autoComplete="new-password"
                         placeholder="Re-enter your password…"
                         value={confirmPassword}
@@ -229,7 +244,7 @@ export default function SignupForm() {
                 </div>
 
                 <button
-                    className="btn-primary w-full"
+                    className="btn-glow-white w-full"
                     type="submit"
                     disabled={loading || !allRulesPass || showMismatch}
                 >

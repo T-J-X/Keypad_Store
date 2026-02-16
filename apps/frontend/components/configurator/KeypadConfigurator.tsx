@@ -39,7 +39,7 @@ function KeypadConfiguratorShell() {
     : 'Select matte inserts for each slot, tune ring glow colors, save to account, and bridge directly to order PDF export.';
 
   return (
-    <div className="mx-auto w-full max-w-[130rem] px-4 pt-12 pb-8 lg:pt-20 lg:pb-12 sm:px-6 lg:px-8">
+    <div className="mx-auto w-full max-w-screen-2xl px-4 pt-12 pb-8 lg:pt-20 lg:pb-12 sm:px-6 lg:px-8">
       <div className="mb-12 flex flex-col gap-6 px-2">
         <Breadcrumbs
           items={[
@@ -95,7 +95,7 @@ function KeypadConfiguratorShell() {
 
       <div className="card-panel p-6 sm:p-8">
 
-        <div className="grid gap-6 lg:grid-cols-[minmax(500px,1.2fr)_minmax(500px,1fr)]">
+        <div className="grid gap-6 lg:grid-cols-[1.2fr_1fr]">
           <div className="lg:sticky lg:top-32">
             <Keypad.Preview
               modelCode={state.modelCode}

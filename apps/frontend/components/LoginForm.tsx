@@ -66,12 +66,15 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
                     </div>
                 )}
                 <div className="space-y-2">
-                    <label htmlFor="login-email" className="text-xs font-semibold uppercase tracking-wide text-blue-100/70">Email</label>
+                    <label htmlFor="login-email" className="text-xs font-semibold uppercase tracking-wide text-blue-100/70">
+                        Email <span className="text-rose-500 ml-0.5">*</span>
+                    </label>
                     <input
                         id="login-email"
                         name="email"
                         className="input input-dark"
                         type="email"
+                        required
                         autoComplete="email"
                         spellCheck={false}
                         placeholder="you@company.com"
@@ -81,12 +84,15 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
                     />
                 </div>
                 <div className="space-y-2">
-                    <label htmlFor="login-password" className="text-xs font-semibold uppercase tracking-wide text-blue-100/70">Password</label>
+                    <label htmlFor="login-password" className="text-xs font-semibold uppercase tracking-wide text-blue-100/70">
+                        Password <span className="text-rose-500 ml-0.5">*</span>
+                    </label>
                     <input
                         id="login-password"
                         name="password"
                         className="input input-dark"
                         type="password"
+                        required
                         autoComplete="current-password"
                         placeholder="Enter your password…"
                         value={password}
@@ -94,7 +100,7 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
                         disabled={loading}
                     />
                 </div>
-                <button className="btn-primary w-full" type="submit" disabled={loading}>
+                <button className="btn-glow-white w-full" type="submit" disabled={loading}>
                     {loading ? 'Signing in…' : 'Sign in'}
                 </button>
                 <div className="relative py-1">
