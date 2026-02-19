@@ -10,9 +10,14 @@ export default function CartPage() {
   );
 }
 
+import { fetchIconCatalog } from '../../lib/configurator.server';
+
 async function CartFetcher() {
-  const order = await fetchActiveOrder();
-  return <CartClient order={order} />;
+  const [order, icons] = await Promise.all([
+    fetchActiveOrder(),
+    fetchIconCatalog(),
+  ]);
+  return <CartClient order={order} iconCatalog={icons} />;
 }
 
 function CartLoading() {

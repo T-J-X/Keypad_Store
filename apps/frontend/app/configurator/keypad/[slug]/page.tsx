@@ -4,7 +4,8 @@ import { Suspense, cache } from 'react';
 import KeypadConfigurator from '../../../../components/configurator/KeypadConfigurator';
 import { resolveKeypadShellAssetPath } from '../../../../lib/keypadShellAsset';
 import { resolvePkpModelCode } from '../../../../lib/keypadUtils';
-import { fetchKeypadProducts, fetchProductBySlug } from '../../../../lib/vendure.server';
+import { fetchKeypadProducts, fetchProductBySlug, fetchSessionSummary } from '../../../../lib/vendure.server';
+import { fetchIconCatalog } from '../../../../lib/configurator.server';
 
 const fetchKeypadForSlug = cache(async (slug: string) => {
   const normalizedInput = slug.trim();
@@ -90,6 +91,11 @@ async function ConfiguratorModelContent({
   const product = await fetchKeypadForSlug(resolved.slug);
   if (!product) return notFound();
 
+  const [iconCatalog, sessionSummary] = await Promise.all([
+    fetchIconCatalog(),
+    fetchSessionSummary(),
+  ]);
+
   const modelCode = resolvePkpModelCode(product.slug, product.name) || product.name.toUpperCase();
 
   return (
@@ -103,6 +109,8 @@ async function ConfiguratorModelContent({
         shellAssetPath: resolveKeypadShellAssetPath(product.featuredAsset),
         productVariantId: product.variants?.[0]?.id ?? null,
       }}
+      iconCatalog={iconCatalog}
+      sessionSummary={sessionSummary}
     />
   );
 }

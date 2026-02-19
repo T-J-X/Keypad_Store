@@ -8,7 +8,8 @@ import { Info } from 'lucide-react';
 import ConfigurationSidebar from './ConfigurationSidebar';
 import KeypadPreview from './KeypadPreview';
 import KeypadProvider, { KeypadContext } from './KeypadProvider';
-import type { PilotKeypadProduct } from './types';
+import type { PilotKeypadProduct, SessionSummary } from './types';
+import type { IconCatalogItem } from '../../lib/configuratorCatalog';
 
 const ConfiguratorActions = dynamic(() => import('./ConfiguratorActions'));
 const IconSelectionPopup = dynamic(() => import('./IconSelectionPopup'));
@@ -28,11 +29,12 @@ const Keypad = {
 
 function KeypadConfiguratorShell() {
   const context = use(Keypad.Context);
+  const [showMobileDesc, setShowMobileDesc] = useState(false);
+
   if (!context) return null;
 
   const { state, actions, meta } = context;
   const isEditingLine = state.mode === 'edit-line' || Boolean(meta.editLineId);
-  const [showMobileDesc, setShowMobileDesc] = useState(false);
 
   const descriptionText = isEditingLine
     ? 'Update this cart line by editing icon IDs and ring glow colors, then save directly back to your active order.'
@@ -162,12 +164,16 @@ function KeypadConfiguratorShell() {
 
 export default function KeypadConfigurator({
   keypad,
+  iconCatalog,
+  sessionSummary,
 }: {
   keypad: PilotKeypadProduct;
+  iconCatalog: IconCatalogItem[];
+  sessionSummary: SessionSummary;
 }) {
   return (
     <Suspense fallback={<div className="h-96 animate-pulse rounded-3xl bg-surface-alt/50" />}>
-      <Keypad.Provider keypad={keypad}>
+      <Keypad.Provider keypad={keypad} iconCatalog={iconCatalog} sessionSummary={sessionSummary}>
         <KeypadConfiguratorShell />
       </Keypad.Provider>
     </Suspense>

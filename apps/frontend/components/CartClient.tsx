@@ -8,8 +8,9 @@ import { Button } from './ui/Button';
 import ConfiguredKeypadThumbnail from './configurator/ConfiguredKeypadThumbnail';
 import { notifyCartUpdated } from '../lib/cartEvents';
 import { RING_GLOW_OPTIONS } from '../lib/configuratorCatalog';
+import type { IconCatalogItem } from '../lib/configuratorCatalog';
 import {
-    buildConfiguredIconLookupFromPayload,
+    buildConfiguredIconLookup,
     countConfiguredSlots,
     emptyPreviewConfiguration,
     parseConfigurationForPreview,
@@ -20,16 +21,6 @@ import { resolvePkpModelCode } from '../lib/keypadUtils';
 import { assetUrl } from '../lib/vendure';
 import { getGeometryForModel } from '../config/layouts/geometry';
 import type { CartOrder } from '../lib/vendure.server';
-
-type IconCatalogPayload = {
-    icons?: Array<{
-        iconId: string;
-        name?: string;
-        matteAssetPath: string | null;
-        categories: string[];
-    }>;
-    error?: string;
-};
 
 const SWATCH_LABEL_BY_HEX = new Map(
     RING_GLOW_OPTIONS
@@ -72,42 +63,11 @@ function formatMinor(minor: number | null | undefined, currencyCode: string) {
     }
 }
 
-export default function CartClient({ order }: { order: CartOrder | null }) {
+export default function CartClient({ order, iconCatalog }: { order: CartOrder | null; iconCatalog: IconCatalogItem[] }) {
     const router = useRouter();
     const [activeLineId, setActiveLineId] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const [iconLookup, setIconLookup] = useState<ConfiguredIconLookup>(new Map());
-
-    // We no longer fetch cart on mount.
-    // We only fetch icon catalog purely for rendering previews.
-    useEffect(() => {
-        let cancelled = false;
-
-        const loadIconCatalog = async () => {
-            try {
-                const response = await fetch('/api/configurator/icon-catalog', {
-                    method: 'GET',
-                    cache: 'no-store',
-                });
-
-                const payload = (await response.json().catch(() => ({}))) as IconCatalogPayload;
-                if (!response.ok) return;
-
-                if (!cancelled) {
-                    const icons = payload.icons ?? [];
-                    setIconLookup(buildConfiguredIconLookupFromPayload(icons));
-                }
-            } catch {
-                // Keep empty map and fallback preview placeholders.
-            }
-        };
-
-        void loadIconCatalog();
-
-        return () => {
-            cancelled = true;
-        };
-    }, []);
+    const [iconLookup] = useState<ConfiguredIconLookup>(() => buildConfiguredIconLookup(iconCatalog));
 
     const hasLines = (order?.lines?.length ?? 0) > 0;
 

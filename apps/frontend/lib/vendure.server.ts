@@ -9,6 +9,9 @@ import type {
   KeypadProduct,
 } from './vendure';
 
+
+import type { CheckoutSessionData, CheckoutOrder } from './checkoutTypes';
+
 import { cookies } from 'next/headers';
 
 const SHOP_API = process.env.VENDURE_SHOP_API_URL || 'http://localhost:3000/shop-api';
@@ -228,6 +231,284 @@ export async function fetchActiveOrder(): Promise<CartOrder | null> {
     return null;
   }
 }
+
+const SESSION_SUMMARY_QUERY = `
+  query SessionSummary {
+    activeOrder {
+      id
+      totalQuantity
+      totalWithTax
+      currencyCode
+      lines {
+        id
+        quantity
+        linePriceWithTax
+        productVariant {
+          id
+          name
+          product {
+            id
+            name
+            slug
+            featuredAsset {
+              preview
+              source
+            }
+          }
+        }
+      }
+    }
+    activeCustomer {
+      id
+      firstName
+      lastName
+      emailAddress
+    }
+  }
+`;
+
+export type SessionSummary = {
+  authenticated: boolean;
+  activeCustomer: {
+    id: string;
+    firstName?: string | null;
+    lastName?: string | null;
+    emailAddress?: string | null;
+  } | null;
+  activeOrder: {
+    id: string;
+    totalQuantity: number;
+    totalWithTax: number;
+    currencyCode: string;
+  } | null;
+};
+
+export async function fetchSessionSummary(): Promise<SessionSummary> {
+  const cookieStore = await cookies();
+  const headers: Record<string, string> = { 'content-type': 'application/json' };
+  const cookieString = cookieStore.toString();
+  if (cookieString) headers.cookie = cookieString;
+
+  try {
+    const res = await fetch(SHOP_API, {
+      method: 'POST',
+      headers,
+      cache: 'no-store',
+      body: JSON.stringify({ query: SESSION_SUMMARY_QUERY }),
+    });
+
+    const json = (await res.json()) as GraphResponse<{
+      activeOrder?: {
+        id: string;
+        totalQuantity?: number | null;
+        totalWithTax?: number | null;
+        currencyCode?: string | null;
+      } | null;
+      activeCustomer?: {
+        id: string;
+        firstName?: string | null;
+        lastName?: string | null;
+        emailAddress?: string | null;
+      } | null;
+    }>;
+
+    if (!res.ok || json.errors?.length) {
+      return { authenticated: false, activeCustomer: null, activeOrder: null };
+    }
+
+    const customer = json.data?.activeCustomer;
+    const order = json.data?.activeOrder;
+
+    return {
+      authenticated: Boolean(customer?.id),
+      activeCustomer: customer
+        ? {
+          id: customer.id,
+          firstName: customer.firstName,
+          lastName: customer.lastName,
+          emailAddress: customer.emailAddress,
+        }
+        : null,
+      activeOrder: order
+        ? {
+          id: order.id,
+          totalQuantity: normalizeInt(order.totalQuantity),
+          totalWithTax: normalizeInt(order.totalWithTax),
+          currencyCode: order.currencyCode ?? 'USD',
+        }
+        : null,
+    };
+  } catch {
+    return { authenticated: false, activeCustomer: null, activeOrder: null };
+  }
+}
+
+const CHECKOUT_SESSION_QUERY = `
+  query CheckoutSession {
+    activeOrder {
+      id
+      code
+      state
+      totalQuantity
+      subTotalWithTax
+      shippingWithTax
+      totalWithTax
+      currencyCode
+      lines {
+        id
+        quantity
+        linePriceWithTax
+        customFields {
+          configuration
+        }
+        productVariant {
+          id
+          name
+          currencyCode
+          product {
+            id
+            slug
+            name
+            featuredAsset {
+              preview
+              source
+            }
+          }
+        }
+      }
+    }
+    eligibleShippingMethods {
+      id
+      code
+      name
+      description
+      priceWithTax
+    }
+    eligiblePaymentMethods {
+      id
+      code
+      name
+      description
+      isEligible
+      eligibilityMessage
+    }
+    activePaymentMethods {
+      code
+      name
+      description
+    }
+  }
+`;
+
+
+
+export async function fetchCheckoutSession(): Promise<CheckoutSessionData> {
+  const cookieStore = await cookies();
+  const headers: Record<string, string> = { 'content-type': 'application/json' };
+  const cookieString = cookieStore.toString();
+  if (cookieString) headers.cookie = cookieString;
+
+  try {
+    const res = await fetch(SHOP_API, {
+      method: 'POST',
+      headers,
+      cache: 'no-store',
+      body: JSON.stringify({ query: CHECKOUT_SESSION_QUERY }),
+    });
+
+    const json = (await res.json()) as GraphResponse<{
+      activeOrder?: any;
+      eligibleShippingMethods?: any[];
+      eligiblePaymentMethods?: any[];
+      activePaymentMethods?: any[];
+    }>;
+
+    if (!res.ok || json.errors?.length) {
+      return { order: null, shippingMethods: [], paymentMethods: [] };
+    }
+
+    const orderData = json.data?.activeOrder;
+    const order: CheckoutOrder | null = orderData
+      ? {
+        id: orderData.id,
+        code: orderData.code,
+        state: orderData.state ?? null,
+        currencyCode: orderData.currencyCode ?? 'USD',
+        totalQuantity: normalizeInt(orderData.totalQuantity),
+        subTotalWithTax: normalizeInt(orderData.subTotalWithTax),
+        shippingWithTax: normalizeInt(orderData.shippingWithTax),
+        totalWithTax: normalizeInt(orderData.totalWithTax),
+        lines: (orderData.lines ?? []).map((line: any) => ({
+          id: line.id,
+          quantity: normalizeInt(line.quantity),
+          linePriceWithTax: normalizeInt(line.linePriceWithTax),
+          customFields: line.customFields
+            ? { configuration: line.customFields.configuration ?? null }
+            : null,
+          productVariant: line.productVariant
+            ? {
+              id: line.productVariant.id,
+              name: line.productVariant.name ?? 'Product variant',
+              currencyCode: line.productVariant.currencyCode ?? orderData.currencyCode ?? 'USD',
+              product: line.productVariant.product
+                ? {
+                  id: line.productVariant.product.id,
+                  slug: line.productVariant.product.slug ?? null,
+                  name: line.productVariant.product.name ?? null,
+                  featuredAsset: line.productVariant.product.featuredAsset
+                    ? {
+                      preview: line.productVariant.product.featuredAsset.preview ?? null,
+                      source: line.productVariant.product.featuredAsset.source ?? null,
+                    }
+                    : null,
+                }
+                : null,
+            }
+            : null,
+        })),
+      }
+      : null;
+
+    const shippingMethods = (json.data?.eligibleShippingMethods ?? []).map((method: any) => ({
+      id: method.id,
+      code: method.code ?? '',
+      name: method.name ?? 'Shipping',
+      description: method.description ?? '',
+      priceWithTax: normalizeInt(method.priceWithTax),
+    }));
+
+    const eligiblePaymentMethods = (json.data?.eligiblePaymentMethods ?? [])
+      .filter((method: any) => method.isEligible !== false)
+      .map((method: any) => ({
+        id: method.id,
+        code: method.code ?? '',
+        name: method.name ?? method.code ?? 'Payment method',
+        description: method.description ?? method.eligibilityMessage ?? '',
+        isEligible: true,
+        eligibilityMessage: null,
+      }))
+      .filter((method: any) => method.code.trim().length > 0);
+
+    const paymentMethods = eligiblePaymentMethods.length > 0
+      ? eligiblePaymentMethods
+      : (json.data?.activePaymentMethods ?? [])
+        .map((method: any, index: number) => ({
+          id: `active-${index}`,
+          code: method.code ?? '',
+          name: method.name ?? method.code ?? 'Payment method',
+          description: method.description ?? '',
+          isEligible: true,
+          eligibilityMessage: null,
+        }))
+        .filter((method: any) => method.code.trim().length > 0);
+
+    return { order, shippingMethods, paymentMethods };
+  } catch {
+    return { order: null, shippingMethods: [], paymentMethods: [] };
+  }
+}
+
+
 
 export async function vendureFetch<T>(query: string, variables?: Record<string, unknown>) {
   const res = await fetch(SHOP_API, {

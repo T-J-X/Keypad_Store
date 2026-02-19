@@ -10,15 +10,7 @@ interface SearchModalProps {
     onClose: () => void;
 }
 
-type SearchResult = {
-    id: string;
-    name: string;
-    slug: string;
-    iconId?: string;
-    image?: string;
-    price?: number;
-    currency?: string;
-};
+import { searchProductsAction, type SearchResultItem } from '../../app/actions/search';
 
 function useDebouncedValue<T>(value: T, delayMs: number): T {
     const [debounced, setDebounced] = useState(value);
@@ -33,7 +25,7 @@ function useDebouncedValue<T>(value: T, delayMs: number): T {
 
 export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
     const [query, setQuery] = useState('');
-    const [results, setResults] = useState<SearchResult[]>([]);
+    const [results, setResults] = useState<SearchResultItem[]>([]);
     const [isLoading, setIsLoading] = useState(false);
     const inputRef = useRef<HTMLInputElement>(null);
     const router = useRouter();
@@ -65,27 +57,32 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
     }, [onClose]);
 
     useEffect(() => {
+        let active = true;
+
         const fetchResults = async () => {
             if (debouncedQuery.trim().length < 2) {
-                setResults([]);
+                if (active) setResults([]);
                 return;
             }
 
-            setIsLoading(true);
+            if (active) setIsLoading(true);
             try {
-                const response = await fetch(`/api/search?q=${encodeURIComponent(debouncedQuery)}`);
-                if (response.ok) {
-                    const data = await response.json();
-                    setResults(data.items || []);
+                const items = await searchProductsAction(debouncedQuery);
+                if (active) {
+                    setResults(items);
                 }
             } catch (error) {
                 console.error('Search error:', error);
             } finally {
-                setIsLoading(false);
+                if (active) setIsLoading(false);
             }
         };
 
         void fetchResults();
+
+        return () => {
+            active = false;
+        };
     }, [debouncedQuery]);
 
     const handleSubmit = (e: FormEvent) => {

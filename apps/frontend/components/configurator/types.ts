@@ -20,6 +20,22 @@ export type SavedConfigurationItem = {
   updatedAt: string;
 };
 
+export type SessionSummary = {
+  authenticated: boolean;
+  activeCustomer: {
+    id: string;
+    firstName?: string | null;
+    lastName?: string | null;
+    emailAddress?: string | null;
+  } | null;
+  activeOrder: {
+    id: string;
+    totalQuantity: number;
+    totalWithTax: number;
+    currencyCode: string;
+  } | null;
+};
+
 export type PilotKeypadProduct = {
   id: string;
   slug: string;

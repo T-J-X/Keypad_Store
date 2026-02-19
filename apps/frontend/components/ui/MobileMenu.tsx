@@ -3,9 +3,10 @@
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { X, Search, ChevronRight, ShoppingBag, User, Loader2 } from 'lucide-react';
-import { useEffect, useState, useRef, FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { createPortal } from 'react-dom';
 import Image from 'next/image';
+import { searchProductsAction, type SearchResultItem } from '../../app/actions/search';
 
 interface MobileMenuProps {
     isOpen: boolean;
@@ -15,16 +16,6 @@ interface MobileMenuProps {
     onLogout: () => void;
     onOpenSearch: () => void; // Kept for API compatibility, but unused
 }
-
-type SearchResult = {
-    id: string;
-    name: string;
-    slug: string;
-    iconId?: string;
-    image?: string;
-    price?: number;
-    currency?: string;
-};
 
 function useDebouncedValue<T>(value: T, delayMs: number): T {
     const [debounced, setDebounced] = useState(value);
@@ -52,7 +43,7 @@ export default function MobileMenu({
 
     // Search State
     const [query, setQuery] = useState('');
-    const [results, setResults] = useState<SearchResult[]>([]);
+    const [results, setResults] = useState<SearchResultItem[]>([]);
     const [isSearching, setIsSearching] = useState(false);
     const debouncedQuery = useDebouncedValue(query, 300);
 
@@ -69,7 +60,6 @@ export default function MobileMenu({
                 });
             });
             document.body.style.overflow = 'hidden';
-            // Focus search input on open? Maybe distracting.
         } else {
             setIsVisible(false);
             const timer = setTimeout(() => {
@@ -87,29 +77,34 @@ export default function MobileMenu({
         if (isOpen) onClose();
     }, [pathname]);
 
-    // Search Effect
+    // Search Effect - using Server Action
     useEffect(() => {
+        let active = true;
+
         const fetchResults = async () => {
             if (debouncedQuery.trim().length < 2) {
-                setResults([]);
+                if (active) setResults([]);
                 return;
             }
 
-            setIsSearching(true);
+            if (active) setIsSearching(true);
             try {
-                const response = await fetch(`/api/search?q=${encodeURIComponent(debouncedQuery)}`);
-                if (response.ok) {
-                    const data = await response.json();
-                    setResults(data.items || []);
+                const items = await searchProductsAction(debouncedQuery);
+                if (active) {
+                    setResults(items);
                 }
             } catch (error) {
                 console.error('Search error:', error);
             } finally {
-                setIsSearching(false);
+                if (active) setIsSearching(false);
             }
         };
 
         void fetchResults();
+
+        return () => {
+            active = false;
+        };
     }, [debouncedQuery]);
 
     const handleSearchSubmit = (e: FormEvent) => {

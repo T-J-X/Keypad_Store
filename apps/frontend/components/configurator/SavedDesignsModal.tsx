@@ -25,11 +25,10 @@ type AuthMode = 'login' | 'signup';
 
 export default function SavedDesignsModal() {
     const context = use(KeypadContext);
-    if (!context) return null;
 
-    const { state, actions } = context;
-    const { savedDesigns, savedDesignsModalOpen, savedDesignsLoading, savedDesignsError } = state;
-    const { closeSavedDesignsModal } = actions;
+    // Safe access for hooks
+    const savedDesignsModalOpen = context?.state.savedDesignsModalOpen ?? false;
+    const actions = context?.actions;
 
     const [activeTab, setActiveTab] = useState<'current' | 'all'>('current');
     const [searchQuery, setSearchQuery] = useState('');
@@ -87,6 +86,7 @@ export default function SavedDesignsModal() {
     }, [savedDesignsModalOpen]);
 
     const handleLogin = useCallback(async () => {
+        if (!actions) return;
         if (!loginEmail.trim() || !loginPassword.trim()) {
             setLoginError('Please enter your email and password.');
             return;
@@ -120,6 +120,7 @@ export default function SavedDesignsModal() {
     }, [loginEmail, loginPassword, actions]);
 
     const handleSignup = useCallback(async () => {
+        if (!actions) return;
         if (!signupFirstName.trim() || !signupLastName.trim()) {
             setSignupError('Please enter your first and last name.');
             return;
@@ -176,6 +177,11 @@ export default function SavedDesignsModal() {
             setSignupLoading(false);
         }
     }, [signupFirstName, signupLastName, signupEmail, signupPassword, actions]);
+
+    if (!context) return null;
+    const { state } = context;
+    const { savedDesigns, savedDesignsLoading, savedDesignsError } = state;
+    const { closeSavedDesignsModal } = actions!;
 
     const filteredDesigns = savedDesigns.filter((item) => {
         if (activeTab === 'current' && item.keypadModel !== state.modelCode) {
@@ -251,8 +257,8 @@ export default function SavedDesignsModal() {
                                 type="button"
                                 onClick={() => { setAuthMode('login'); setSignupError(''); }}
                                 className={`flex-1 rounded-xl py-2 text-[11px] font-semibold uppercase tracking-[0.12em] transition ${authMode === 'login'
-                                        ? 'bg-white/10 text-white'
-                                        : 'text-panel-muted hover:text-white/70'
+                                    ? 'bg-white/10 text-white'
+                                    : 'text-panel-muted hover:text-white/70'
                                     }`}
                             >
                                 Sign in
@@ -261,8 +267,8 @@ export default function SavedDesignsModal() {
                                 type="button"
                                 onClick={() => { setAuthMode('signup'); setLoginError(''); }}
                                 className={`flex-1 rounded-xl py-2 text-[11px] font-semibold uppercase tracking-[0.12em] transition ${authMode === 'signup'
-                                        ? 'bg-white/10 text-white'
-                                        : 'text-panel-muted hover:text-white/70'
+                                    ? 'bg-white/10 text-white'
+                                    : 'text-panel-muted hover:text-white/70'
                                     }`}
                             >
                                 Create account

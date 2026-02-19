@@ -504,10 +504,10 @@ function IconPickerSwatches() {
 
 function IconPickerModal() {
   const context = use(IconPickerContext);
-  if (!context) return null;
-
   const titleId = useId();
   const descriptionId = useId();
+
+  if (!context) return null;
 
   const overlayClass = context.props.isMobile
     ? 'fixed inset-0 z-[80] flex items-end bg-[#020a18]/74 px-0 py-0 backdrop-blur-[2px]'

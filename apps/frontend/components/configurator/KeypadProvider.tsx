@@ -26,6 +26,7 @@ import type {
   PilotKeypadProduct,
   SavedConfigurationItem,
   StatusMessage,
+  SessionSummary,
 } from './types';
 
 type IconCatalogPayload = {
@@ -93,9 +94,13 @@ export const KeypadContext = createContext<KeypadConfiguratorContextValue | null
 export default function KeypadProvider({
   keypad,
   children,
+  iconCatalog,
+  sessionSummary,
 }: {
   keypad: PilotKeypadProduct;
   children: React.ReactNode;
+  iconCatalog: IconCatalogItem[];
+  sessionSummary: SessionSummary;
 }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -120,15 +125,17 @@ export default function KeypadProvider({
   const hydrateFromSavedConfiguration = useConfiguratorStore((state) => state.hydrateFromSavedConfiguration);
 
   const [popupSlotId, setPopupSlotId] = useState<SlotId | null>(null);
-  const [icons, setIcons] = useState<IconCatalogItem[]>([]);
-  const [iconsLoading, setIconsLoading] = useState(true);
+  const [icons, setIcons] = useState<IconCatalogItem[]>(iconCatalog);
+  const [iconsLoading, setIconsLoading] = useState(false);
   const [iconsError, setIconsError] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
 
-  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(null);
+  // Initialize from session summary
+  const [isAuthenticated, setIsAuthenticated] = useState<boolean | null>(sessionSummary.authenticated);
 
   const [cartStatus, setCartStatus] = useState<StatusMessage | null>(null);
   const [addingToCart, setAddingToCart] = useState(false);
+  // We can't easily get the last order code from summary without more data, but that's for "View Cart" toast mainly.
   const [lastOrderCode, setLastOrderCode] = useState<string | null>(null);
 
   const [loadedSavedConfig, setLoadedSavedConfig] = useState<SavedConfigurationItem | null>(null);
@@ -235,13 +242,18 @@ export default function KeypadProvider({
   const [previewRotationDeg, setPreviewRotationDeg] = useState(previewRotationFromQuery);
   const [previewShowGlows, setPreviewShowGlows] = useState(showGlowsFromQuery);
 
-  useEffect(() => {
+  // Derived state synchronization (avoid effects)
+  const [prevRotationFromQuery, setPrevRotationFromQuery] = useState(previewRotationFromQuery);
+  if (previewRotationFromQuery !== prevRotationFromQuery) {
+    setPrevRotationFromQuery(previewRotationFromQuery);
     setPreviewRotationDeg(previewRotationFromQuery);
-  }, [previewRotationFromQuery]);
+  }
 
-  useEffect(() => {
+  const [prevShowGlowsFromQuery, setPrevShowGlowsFromQuery] = useState(showGlowsFromQuery);
+  if (showGlowsFromQuery !== prevShowGlowsFromQuery) {
+    setPrevShowGlowsFromQuery(showGlowsFromQuery);
     setPreviewShowGlows(showGlowsFromQuery);
-  }, [showGlowsFromQuery]);
+  }
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -270,75 +282,9 @@ export default function KeypadProvider({
     resetScopeRef.current = resetScope;
   }, [reset, resetScope, resolvedModelCode, slotIds]);
 
-  useEffect(() => {
-    let cancelled = false;
 
-    const loadSession = async () => {
-      try {
-        const response = await fetch('/api/session/summary', {
-          method: 'GET',
-          cache: 'no-store',
-        });
 
-        if (!response.ok) {
-          if (!cancelled) setIsAuthenticated(false);
-          return;
-        }
 
-        const payload = (await response.json().catch(() => ({}))) as SessionSummaryPayload;
-        if (!cancelled) {
-          setIsAuthenticated(payload.authenticated === true);
-        }
-      } catch {
-        if (!cancelled) setIsAuthenticated(false);
-      }
-    };
-
-    void loadSession();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
-
-  useEffect(() => {
-    let cancelled = false;
-
-    const loadIconCatalog = async () => {
-      setIconsLoading(true);
-      setIconsError(null);
-
-      try {
-        const response = await fetch('/api/configurator/icon-catalog', {
-          method: 'GET',
-          cache: 'no-store',
-        });
-        const payload = (await response.json().catch(() => ({}))) as IconCatalogPayload;
-
-        if (!response.ok) {
-          throw new Error(payload.error || 'Could not load icon catalog.');
-        }
-
-        if (!cancelled) {
-          setIcons(payload.icons ?? []);
-        }
-      } catch (error) {
-        if (cancelled) return;
-        const message = error instanceof Error ? error.message : 'Could not load icon catalog.';
-        setIconsError(message);
-      } finally {
-        if (!cancelled) {
-          setIconsLoading(false);
-        }
-      }
-    };
-
-    void loadIconCatalog();
-
-    return () => {
-      cancelled = true;
-    };
-  }, []);
 
   useEffect(() => {
     if (editLineId) {
