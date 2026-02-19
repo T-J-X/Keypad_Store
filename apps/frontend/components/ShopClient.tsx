@@ -191,55 +191,123 @@ export default function ShopClient({
   const normalizedInitialSection = normalizeSection(initialSection);
   const router = useRouter();
   const pathname = usePathname();
-  const [activeSection, setActiveSection] = useState<'landing' | 'all' | 'button-inserts' | 'keypads'>(
-    normalizedInitialSection,
-  );
+  // Derived state from props (URL search params)
+  const activeSection = normalizedInitialSection;
+  const activeCategorySlugs = normalizedInitialSection === 'button-inserts' ? initialCategories : [];
+  const page = Math.max(1, initialPage);
+  const take = initialTake;
+
+  // Local state for search input only - not synced back from URL to avoid loop
   const [query, setQuery] = useState(initialQuery);
-  const [activeCategorySlugs, setActiveCategorySlugs] = useState<string[]>(
-    normalizedInitialSection === 'button-inserts' ? initialCategories : [],
-  );
   const [iconsGroupOpen, setIconsGroupOpen] = useState(Boolean(initialCategories.length));
-  const [page, setPage] = useState(Math.max(1, initialPage));
-  const [take, setTake] = useState(initialTake);
-  const lastParams = useRef('');
-  const wasSpokeSectionRef = useRef(false);
+
+  // Debounce query for URL updates
   const debouncedQuery = useDebouncedValue(query, 300);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
 
+  // Sync query input when URL changes externally (e.g. back button)
   useEffect(() => {
-    setQuery(initialQuery ?? '');
+    if (initialQuery !== query) {
+      setQuery(initialQuery ?? '');
+    }
   }, [initialQuery]);
 
-  useEffect(() => {
-    if (normalizedInitialSection !== 'button-inserts') {
-      setActiveCategorySlugs([]);
-      return;
-    }
-    setActiveCategorySlugs(initialCategories ?? []);
-  }, [initialCategories, normalizedInitialSection]);
-
-  useEffect(() => {
-    setActiveSection(normalizedInitialSection);
-  }, [normalizedInitialSection]);
-
-  useEffect(() => {
-    setPage(Math.max(1, initialPage));
-  }, [initialPage]);
-
-  useEffect(() => {
-    setTake(initialTake);
-  }, [initialTake]);
-
+  // Expand categories if selected
   useEffect(() => {
     if (activeCategorySlugs.length > 0) setIconsGroupOpen(true);
-  }, [activeCategorySlugs]);
+  }, [activeCategorySlugs.length]);
+
+  const lastParams = useRef('');
+  const wasSpokeSectionRef = useRef(false);
+
+  // Effect to sync URL with search query and other derived changes
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (activeSection !== 'landing') params.set('section', activeSection);
+
+    // Only push query to URL if it differs from initial (prop) to avoid loops, 
+    // or if the user is typing (handled by debouncedQuery check)
+    const trimmed = debouncedQuery.trim();
+    if (trimmed) params.set('q', trimmed);
+
+    if (activeSection === 'button-inserts' && activeCategorySlugs.length > 0) {
+      params.set('cats', activeCategorySlugs.join(','));
+    }
+    const shouldIncludePaginationParams = activeSection === 'button-inserts' || activeSection === 'all';
+    if (shouldIncludePaginationParams) {
+      params.set('page', String(page));
+      params.set('take', String(take));
+    }
+
+    const next = params.toString();
+    if (next === lastParams.current) return;
+
+    // Only replace if the generated params are different from what we arguably "have"
+    // But since we drive from props, we need to be careful not to push what we just received.
+    // However, this effect triggers on variables that ARE props (mostly).
+    // The only non-prop trigger is `debouncedQuery`.
+
+    // We should only trigger a navigation if the desired URL state is different from current.
+    const currentParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+    // Normalize current params for comparison might be complex.
+    // Simpler strategy: only `debouncedQuery` drives this effect for search. 
+    // Navigation for category/section/page changes should be handled by handlers directly.
+
+    // Actually, following the plan: "For query (search text), keep local state... only push to URL on submit/debounce".
+    // "Update onSectionChange... to use router.push/replace directly".
+
+    // So we should REMOVE this big useEffect that listens to [activeCategorySlugs, activeSection, page, take].
+    // And ONLY keep one that listens to [debouncedQuery].
+  }, [debouncedQuery, activeCategorySlugs, activeSection, page, take]); // <-- This was the old logic.
+
+  // NEW LOGIC: Effect only for Search Query Debounce
+  useEffect(() => {
+    // If the input query (debounced) is different from the URL query (initialQuery), update URL.
+    if (debouncedQuery !== initialQuery) {
+      updateParams({ q: debouncedQuery, page: 1 });
+    }
+  }, [debouncedQuery, initialQuery]);
+
+  // Helper to update URL params
+  const updateParams = (updates: Record<string, string | number | string[] | null>) => {
+    const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
+
+    Object.entries(updates).forEach(([key, value]) => {
+      if (value === null || value === '' || (Array.isArray(value) && value.length === 0)) {
+        params.delete(key);
+      } else if (Array.isArray(value)) {
+        params.set(key, value.join(','));
+      } else {
+        params.set(key, String(value));
+      }
+    });
+
+    // Special verification for section/cats consistency
+    if (updates.section && updates.section !== 'button-inserts') {
+      params.delete('cats');
+      params.delete('cat');
+    }
+
+    const queryString = params.toString();
+    const target = `${pathname}${queryString ? `?${queryString}` : ''}`;
+    router.replace(target, { scroll: false });
+  };
 
   useEffect(() => {
-    if (activeSection !== 'button-inserts' && activeCategorySlugs.length > 0) {
-      setActiveCategorySlugs([]);
+    const isSpokeSection = activeSection === 'button-inserts' || activeSection === 'keypads';
+    if (isSpokeSection && !wasSpokeSectionRef.current) {
+      // In a real app we might want to wait for render, but this is a side effect.
+      // We can rely on the URL change mostly.
+      // Keeping this logic for now as it handles scrolling to a specific anchor.
+      const currentHref = `${pathname}${typeof window !== 'undefined' ? window.location.search : ''}${typeof window !== 'undefined' ? window.location.hash : ''}`;
+      ensureShopHubAnchor(currentHref);
     }
-  }, [activeSection, activeCategorySlugs]);
+    wasSpokeSectionRef.current = isSpokeSection;
+  }, [activeSection, pathname]);
 
+  const queryTerms = useMemo(() => tokenizeSearchText(debouncedQuery), [debouncedQuery]);
+
+  // ... (indexes remain the same) ...
   const categorySeedIcons = categorySourceIcons ?? icons;
   const totalIconCount = categorySeedIcons.length;
 
@@ -268,36 +336,6 @@ export default function ShopClient({
   const isCatalogWideSection = isLandingSection || isAllSection;
   const isIconsSection = activeSection === 'button-inserts';
   const isKeypadsSection = activeSection === 'keypads';
-
-  useEffect(() => {
-    const params = new URLSearchParams();
-    if (activeSection !== 'landing') params.set('section', activeSection);
-    const trimmed = debouncedQuery.trim();
-    if (trimmed) params.set('q', trimmed);
-    if (activeSection === 'button-inserts' && activeCategorySlugs.length > 0) {
-      params.set('cats', activeCategorySlugs.join(','));
-    }
-    const shouldIncludePaginationParams = activeSection === 'button-inserts' || activeSection === 'all';
-    if (shouldIncludePaginationParams) {
-      params.set('page', String(Math.max(1, page)));
-      params.set('take', String(take));
-    }
-    const next = params.toString();
-    if (next === lastParams.current) return;
-    lastParams.current = next;
-    router.replace(`${pathname}${next ? `?${next}` : ''}`, { scroll: false });
-  }, [debouncedQuery, activeCategorySlugs, activeSection, page, take, pathname, router]);
-
-  useEffect(() => {
-    const isSpokeSection = activeSection === 'button-inserts' || activeSection === 'keypads';
-    if (isSpokeSection && !wasSpokeSectionRef.current) {
-      const currentHref = `${pathname}${window.location.search}${window.location.hash}`;
-      ensureShopHubAnchor(currentHref);
-    }
-    wasSpokeSectionRef.current = isSpokeSection;
-  }, [activeSection, pathname]);
-
-  const queryTerms = useMemo(() => tokenizeSearchText(debouncedQuery), [debouncedQuery]);
 
   const iconSearchIndex = useMemo<IconSearchEntry[]>(() => {
     return icons.map((icon) => {
@@ -354,24 +392,18 @@ export default function ShopClient({
 
   const onSearch = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    const nextQuery = query.trim();
-    setQuery(nextQuery);
-    setPage(1);
-    if (activeSection === 'landing' && nextQuery) {
-      setActiveSection('all');
-    }
+    // Immediate update on submit
+    updateParams({ q: query, page: 1, section: activeSection === 'landing' && query ? 'all' : null });
   };
 
   const scrollToPageTop = () => {
-    window.scrollTo({ top: 0, behavior: 'smooth' });
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
   const onShopHome = () => {
-    setActiveSection('landing');
     setQuery('');
-    setActiveCategorySlugs([]);
-    setPage(1);
     setIconsGroupOpen(false);
+    updateParams({ section: 'landing', q: null, cats: null, page: 1 });
     scrollToPageTop();
   };
 
@@ -380,11 +412,13 @@ export default function ShopClient({
     options?: { scrollToTop?: boolean },
   ) => {
     if (section === activeSection) return;
-    setActiveSection(section);
-    setPage(1);
-    if (section !== 'button-inserts') {
-      setActiveCategorySlugs([]);
-    }
+
+    updateParams({
+      section,
+      page: 1,
+      cats: section !== 'button-inserts' ? null : null
+    });
+
     if (options?.scrollToTop) {
       scrollToPageTop();
     }
@@ -399,16 +433,14 @@ export default function ShopClient({
       return;
     }
 
-    window.location.assign(safeHref);
+    if (typeof window !== 'undefined') window.location.assign(safeHref);
   };
 
   const onDisciplineTileSelect = (tile: { slug: string }) => {
     if (!tile.slug) return;
 
-    if (tile.slug && categoriesBySlug.has(tile.slug)) {
-      setActiveSection('button-inserts');
-      setActiveCategorySlugs([tile.slug]);
-      setPage(1);
+    if (categoriesBySlug.has(tile.slug)) {
+      updateParams({ section: 'button-inserts', cats: [tile.slug], page: 1 });
       scrollToPageTop();
       return;
     }
@@ -417,15 +449,13 @@ export default function ShopClient({
   };
 
   const clearFilters = () => {
-    setQuery('');
-    setActiveCategorySlugs([]);
-    setPage(1);
+    setQuery(''); // Clear local input
+    updateParams({ q: null, cats: null, page: 1 });
   };
 
   const onTakeChange = (nextTake: number) => {
     if (nextTake === take) return;
-    setTake(nextTake);
-    setPage(1);
+    updateParams({ take: nextTake, page: 1 });
   };
 
   const toProductHref = (
@@ -537,12 +567,17 @@ export default function ShopClient({
         ? filteredKeypads.length
         : (isIconsPaginationMode ? paginationTotalItems : filteredIcons.length) + catalogWideKeypads.length;
   const activeChips = [
-    ...(query.trim() ? [{ label: `Search: ${query.trim()}`, onClear: () => setQuery('') }] : []),
+    ...(query.trim() ? [{
+      label: `Search: ${query.trim()}`, onClear: () => {
+        setQuery('');
+        updateParams({ q: null, page: 1 });
+      }
+    }] : []),
     ...activeCategorySlugs.map((slug, index) => ({
       label: `Category: ${activeCategoryLabels[index]}`,
       onClear: () => {
-        setActiveCategorySlugs((current) => current.filter((value) => value !== slug));
-        setPage(1);
+        const nextSlugs = activeCategorySlugs.filter((value) => value !== slug);
+        updateParams({ cats: nextSlugs.length > 0 ? nextSlugs : null, page: 1 });
       },
     })),
   ];
@@ -550,7 +585,7 @@ export default function ShopClient({
   useEffect(() => {
     if (!(isIconsSection || isAllSection)) return;
     if (page > totalPages) {
-      setPage(totalPages);
+      updateParams({ page: totalPages });
     }
   }, [isIconsSection, isAllSection, page, totalPages]);
 
@@ -587,7 +622,7 @@ export default function ShopClient({
           </select>
           <button
             type="button"
-            onClick={() => setPage((current) => Math.max(1, current - 1))}
+            onClick={() => updateParams({ page: Math.max(1, page - 1) })}
             disabled={page <= 1}
             className="rounded-full border border-ink/15 px-3 py-1 font-semibold text-ink transition hover:border-ink/30 disabled:cursor-not-allowed disabled:opacity-50"
           >
@@ -595,7 +630,7 @@ export default function ShopClient({
           </button>
           <button
             type="button"
-            onClick={() => setPage((current) => Math.min(totalPages, current + 1))}
+            onClick={() => updateParams({ page: Math.min(totalPages, page + 1) })}
             disabled={page >= totalPages}
             className="rounded-full border border-ink/15 px-3 py-1 font-semibold text-ink transition hover:border-ink/30 disabled:cursor-not-allowed disabled:opacity-50"
           >
@@ -714,7 +749,6 @@ export default function ShopClient({
             value={query}
             onChange={(event) => {
               setQuery(event.target.value);
-              setPage(1);
             }}
             placeholder={searchPlaceholder}
             className="input flex-1"
@@ -979,9 +1013,7 @@ export default function ShopClient({
                           className="h-4 w-4 rounded border-surface-border text-ink focus:ring-ink/25"
                           checked={activeCategorySlugs.length === 0}
                           onChange={() => {
-                            setActiveSection('button-inserts');
-                            setActiveCategorySlugs([]);
-                            setPage(1);
+                            updateParams({ section: 'button-inserts', cats: null, page: 1 });
                             scrollToPageTop();
                           }}
                         />
@@ -1002,11 +1034,14 @@ export default function ShopClient({
                             checked={activeCategorySlugs.includes(category.slug)}
                             onChange={(event) => {
                               const { checked } = event.target;
-                              setActiveSection('button-inserts');
-                              setPage(1);
-                              setActiveCategorySlugs((current) => {
-                                if (checked) return Array.from(new Set([...current, category.slug]));
-                                return current.filter((slug) => slug !== category.slug);
+                              let nextSlugs = checked ? [...activeCategorySlugs, category.slug] : activeCategorySlugs.filter((slug) => slug !== category.slug);
+                              // Ensure uniqueness
+                              nextSlugs = Array.from(new Set(nextSlugs));
+
+                              updateParams({
+                                section: 'button-inserts',
+                                cats: nextSlugs.length > 0 ? nextSlugs : null,
+                                page: 1
                               });
                             }}
                           />

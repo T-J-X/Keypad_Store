@@ -9,6 +9,8 @@ import type {
   KeypadProduct,
 } from './vendure';
 
+import { cookies } from 'next/headers';
+
 const SHOP_API = process.env.VENDURE_SHOP_API_URL || 'http://localhost:3000/shop-api';
 const MAX_LIST_TAKE = 100;
 
@@ -16,6 +18,216 @@ type GraphResponse<T> = {
   data?: T;
   errors?: Array<{ message?: string }>;
 };
+
+// --- Active Order Types & Query ---
+
+const ACTIVE_ORDER_QUERY = `
+  query ActiveOrder {
+    activeOrder {
+      id
+      code
+      currencyCode
+      totalQuantity
+      subTotalWithTax
+      shippingWithTax
+      totalWithTax
+      lines {
+        id
+        quantity
+        linePriceWithTax
+        customFields {
+          configuration
+        }
+        productVariant {
+          id
+          sku
+          name
+          currencyCode
+          product {
+            id
+            slug
+            name
+            featuredAsset {
+              preview
+              source
+            }
+            facetValues {
+              id
+              name
+              code
+              facet {
+                id
+                name
+                code
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+`;
+
+export type CartOrderLine = {
+  id: string;
+  quantity: number;
+  linePriceWithTax: number;
+  customFields?: {
+    configuration?: string | null;
+  } | null;
+  productVariant: {
+    id: string;
+    sku?: string | null;
+    name: string;
+    currencyCode: string;
+    product: {
+      id: string;
+      slug: string | null;
+      name: string | null;
+      featuredAsset: {
+        preview: string | null;
+        source: string | null;
+      } | null;
+      category?: string | null;
+    } | null;
+  } | null;
+};
+
+export type CartOrder = {
+  id: string;
+  code: string;
+  currencyCode: string;
+  totalQuantity: number;
+  subTotalWithTax: number;
+  shippingWithTax: number;
+  totalWithTax: number;
+  lines: CartOrderLine[];
+};
+
+type ActiveOrderResponse = {
+  activeOrder?: {
+    id: string;
+    code: string;
+    currencyCode?: string | null;
+    totalQuantity?: number | null;
+    subTotalWithTax?: number | null;
+    shippingWithTax?: number | null;
+    totalWithTax?: number | null;
+    lines?: Array<{
+      id: string;
+      quantity?: number | null;
+      linePriceWithTax?: number | null;
+      customFields?: {
+        configuration?: string | null;
+      } | null;
+      productVariant?: {
+        id: string;
+        sku?: string | null;
+        name?: string | null;
+        currencyCode?: string | null;
+        product?: {
+          id: string;
+          slug?: string | null;
+          name?: string | null;
+          featuredAsset?: {
+            preview?: string | null;
+            source?: string | null;
+          } | null;
+          facetValues?: Array<{
+            id: string;
+            name: string;
+            code: string;
+            facet: {
+              id: string;
+              name: string;
+              code: string;
+            };
+          }> | null;
+        } | null;
+      } | null;
+    }> | null;
+  } | null;
+};
+
+function normalizeInt(value: any): number {
+  const parsed = parseInt(value, 10);
+  return isNaN(parsed) ? 0 : parsed;
+}
+
+export async function fetchActiveOrder(): Promise<CartOrder | null> {
+  const cookieStore = await cookies();
+  const headers: Record<string, string> = { 'content-type': 'application/json' };
+
+  // Forward cookies to maintain session
+  const cookieString = cookieStore.toString();
+  if (cookieString) {
+    headers.cookie = cookieString;
+  }
+
+  try {
+    const res = await fetch(SHOP_API, {
+      method: 'POST',
+      headers,
+      cache: 'no-store', // Always fetch fresh cart
+      body: JSON.stringify({ query: ACTIVE_ORDER_QUERY }),
+    });
+
+    const json = (await res.json()) as GraphResponse<ActiveOrderResponse>;
+
+    if (!res.ok || json.errors?.length) {
+      console.error('Fetch active order error:', json.errors);
+      return null;
+    }
+
+    const order = json.data?.activeOrder;
+    if (!order) return null;
+
+    return {
+      id: order.id,
+      code: order.code,
+      currencyCode: order.currencyCode ?? 'USD',
+      totalQuantity: normalizeInt(order.totalQuantity),
+      subTotalWithTax: normalizeInt(order.subTotalWithTax),
+      shippingWithTax: normalizeInt(order.shippingWithTax),
+      totalWithTax: normalizeInt(order.totalWithTax),
+      lines: (order.lines ?? []).map((line) => ({
+        id: line.id,
+        quantity: normalizeInt(line.quantity),
+        linePriceWithTax: normalizeInt(line.linePriceWithTax),
+        customFields: line.customFields
+          ? {
+            configuration: line.customFields.configuration ?? null,
+          }
+          : null,
+        productVariant: line.productVariant
+          ? {
+            id: line.productVariant.id,
+            sku: line.productVariant.sku ?? null,
+            name: line.productVariant.name ?? 'Product variant',
+            currencyCode: line.productVariant.currencyCode ?? order.currencyCode ?? 'USD',
+            product: line.productVariant.product
+              ? {
+                id: line.productVariant.product.id,
+                slug: line.productVariant.product.slug ?? null,
+                name: line.productVariant.product.name ?? null,
+                featuredAsset: line.productVariant.product.featuredAsset
+                  ? {
+                    preview: line.productVariant.product.featuredAsset.preview ?? null,
+                    source: line.productVariant.product.featuredAsset.source ?? null,
+                  }
+                  : null,
+                category: line.productVariant.product.facetValues?.find(fv => fv.facet.code === 'category')?.name || null,
+              }
+              : null,
+          }
+          : null,
+      })),
+    };
+  } catch (error) {
+    console.error('Failed to fetch active order:', error);
+    return null;
+  }
+}
 
 export async function vendureFetch<T>(query: string, variables?: Record<string, unknown>) {
   const res = await fetch(SHOP_API, {
