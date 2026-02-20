@@ -6,7 +6,7 @@ import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
 import './globals.css';
 import Navbar from '../components/Navbar';
-import Footer from '../components/Footer';
+import AnimatedFooterLayout from '../components/AnimatedFooterLayout';
 import GlobalToastViewport from '../components/GlobalToastViewport';
 import SiteJsonLd from '../components/SiteJsonLd';
 import CookieBanner from '../components/CookieBanner';
@@ -48,7 +48,7 @@ export const metadata: Metadata = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en" className={`${GeistSans.variable} ${GeistMono.variable}`} data-scroll-behavior="smooth">
-      <body className="antialiased">
+      <body className="antialiased bg-transparent">
         <a
           href="#main-content"
           className="sr-only focus:not-sr-only focus:absolute focus:left-4 focus:top-4 focus:z-[100] focus:rounded-md focus:bg-white focus:px-3 focus:py-2 focus:text-sm focus:font-semibold focus:text-ink focus:shadow-lg"
@@ -56,17 +56,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           Skip to main content
         </a>
         <SiteJsonLd />
-        <div className="page-shell">
+        <AnimatedFooterLayout>
           <Suspense fallback={<div className="h-16 w-full border-b border-white/10" />}>
             <Navbar />
           </Suspense>
-          <main id="main-content" className="flex-1 pt-24 lg:pt-28 pb-12 lg:pb-20">{children}</main>
-          <Footer />
-          <GlobalToastViewport />
-          <CookieBanner />
-          <Analytics />
-          <SpeedInsights />
-        </div>
+          <div id="main-content" className="flex-1 pt-24 lg:pt-28 pb-12 lg:pb-20">{children}</div>
+        </AnimatedFooterLayout>
+        <GlobalToastViewport />
+        <CookieBanner />
+        <Analytics />
+        <SpeedInsights />
       </body>
     </html>
   );

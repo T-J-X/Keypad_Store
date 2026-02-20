@@ -39,7 +39,7 @@ const footerGroups = [
 
 export default function Footer() {
   return (
-    <footer className="relative mt-20 border-t border-white/10 text-white overflow-hidden">
+    <footer className="relative border-t border-white/10 text-white overflow-hidden">
       <div className="absolute inset-0 bg-gradient-to-b from-[#040e21] via-[#06152e] to-[#020a18] pointer-events-none" />
       <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_center,rgba(30,100,180,0.12),transparent_60%)] pointer-events-none" />
 
