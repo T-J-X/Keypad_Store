@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState, ReactNode } from 'react';
-import { motion, useInView, Variants } from 'framer-motion';
+import { useRef, ReactNode } from 'react';
+import { motion, useScroll, useTransform, Variants } from 'framer-motion';
 import Link from 'next/link';
 import Image from 'next/image';
 import CopyrightYear from './CopyrightYear';
@@ -58,50 +58,39 @@ const itemVariants: Variants = {
 };
 
 export default function AnimatedFooterLayout({ children }: { children: ReactNode }) {
-    const [footerHeight, setFooterHeight] = useState(0);
-    const footerRef = useRef<HTMLElement>(null);
+    const footerWrapperRef = useRef<HTMLElement>(null);
 
-    // For framer motion
-    const inViewRef = useRef<HTMLDivElement>(null);
-    const isInView = useInView(inViewRef, { once: false, amount: 0.1 });
-
-    useEffect(() => {
-        if (!footerRef.current) return;
-        const observer = new ResizeObserver((entries) => {
-            if (entries[0] && entries[0].borderBoxSize && entries[0].borderBoxSize[0]) {
-                setFooterHeight(entries[0].borderBoxSize[0].blockSize);
-            } else {
-                setFooterHeight(entries[0].contentRect.height);
-            }
-        });
-
-        observer.observe(footerRef.current);
-        return () => observer.disconnect();
-    }, []);
+    // Continuous parallax transform for the background/footer
+    const { scrollYProgress } = useScroll({
+        target: footerWrapperRef,
+        offset: ["start end", "end end"]
+    });
+    const parallaxY = useTransform(scrollYProgress, [0, 1], ["-25%", "0%"]);
 
     return (
-        <main className="bg-transparent flex flex-col min-h-screen">
+        <div className="bg-[#020a18] min-h-screen">
             {/* Main Content */}
-            <div
-                className="relative z-10 bg-white flex flex-col min-h-screen rounded-b-3xl shadow-[0_35px_60px_-15px_rgba(0,0,0,0.8)] pb-8 mb-[var(--footer-height)]"
-                style={{ '--footer-height': `${footerHeight}px` } as React.CSSProperties}
+            <main
+                className="relative z-10 bg-white flex flex-col min-h-screen rounded-b-2xl shadow-[0_15px_30px_-10px_rgba(0,0,0,0.15)] pb-8"
             >
                 {children}
-            </div>
+            </main>
 
-            {/* Footer Wrapper - Fixed to bottom, revealed as main scrolls up */}
-            <div className="fixed bottom-0 left-0 w-full z-0 overflow-hidden bg-[#040e21]" style={{ height: footerHeight }}>
-                <footer
-                    ref={footerRef}
-                    className="absolute bottom-0 w-full pt-20 pb-12 px-6 lg:px-8 text-white bg-gradient-to-b from-[#040e21] via-[#06152e] to-[#020a18]"
+            {/* True Parallax Footer - In document flow, no fixed positioning bugs */}
+            <footer ref={footerWrapperRef} className="relative z-0 overflow-hidden w-full bg-[#020a18]">
+                {/* This inner div moves physically upward as the user scrolls, creating the parallax */}
+                <motion.div
+                    style={{ y: parallaxY }}
+                    className="w-full pt-20 pb-12 px-6 lg:px-8 text-white bg-gradient-to-b from-[#040e21] via-[#06152e] to-[#020a18]"
                 >
                     <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_center,rgba(30,100,180,0.12),transparent_60%)] pointer-events-none" />
 
-                    <div className="relative z-10 mx-auto w-full max-w-7xl" ref={inViewRef}>
+                    <div className="relative z-10 mx-auto w-full max-w-7xl">
                         <motion.div
                             variants={containerVariants}
                             initial="hidden"
-                            animate={isInView ? "show" : "hidden"}
+                            whileInView="show"
+                            viewport={{ once: true, amount: 0.2 }}
                             className="flex flex-col gap-12"
                         >
                             {/* Top Section: Newsletter & Intro */}
@@ -167,7 +156,13 @@ export default function AnimatedFooterLayout({ children }: { children: ReactNode
 
                             {/* Bottom Section */}
                             <motion.div variants={itemVariants} className="relative mt-8 pt-8">
-                                <div className="absolute top-0 left-0 h-[2px] w-full bg-gradient-to-r from-transparent via-blue-400 to-transparent shadow-[0_0_20px_2px_rgba(96,165,250,0.6)]" />
+                                <div
+                                    className="absolute top-0 left-0 h-[1px] w-full shadow-[0_0_15px_1px_rgba(96,165,250,0.6)]"
+                                    style={{
+                                        background: 'linear-gradient(90deg, transparent 0%, rgba(96,165,250,0.1) 10%, rgba(96,165,250,0.8) 35%, rgba(96,165,250,1) 50%, rgba(96,165,250,0.8) 65%, rgba(96,165,250,0.1) 90%, transparent 100%)'
+                                    }}
+                                />
+                                <div className="absolute top-[-1px] left-1/2 -translate-x-1/2 h-[2px] w-1/3 bg-transparent shadow-[0_0_20px_3px_rgba(96,165,250,0.8)] rounded-full blur-[1px]" />
                                 <div className="flex flex-col-reverse gap-6 md:flex-row md:items-center md:justify-between">
                                     <p className="text-xs text-panel-muted">
                                         &copy; <CopyrightYear /> Vehicle Control Technologies
@@ -182,8 +177,8 @@ export default function AnimatedFooterLayout({ children }: { children: ReactNode
                             </motion.div>
                         </motion.div>
                     </div>
-                </footer>
-            </div>
-        </main>
+                </motion.div>
+            </footer>
+        </div>
     );
 }
