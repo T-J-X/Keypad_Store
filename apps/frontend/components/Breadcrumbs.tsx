@@ -19,9 +19,10 @@ export function Breadcrumbs({ items, className = '' }: BreadcrumbsProps) {
             <ol className="flex items-center space-x-2">
                 {items.map((item, index) => {
                     const isLast = index === items.length - 1;
+                    const safeKey = item.href ? item.href : `${item.label}-${index}`;
 
                     return (
-                        <li key={`${item.label}-${index}`} className="flex items-center">
+                        <li key={safeKey} className="flex items-center">
                             {index > 0 && (
                                 <ChevronRight className="mx-2 h-4 w-4 text-ink-subtle" />
                             )}

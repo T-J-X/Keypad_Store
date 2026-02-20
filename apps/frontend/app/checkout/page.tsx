@@ -1,10 +1,23 @@
+import { Suspense } from 'react';
+import type { Metadata } from 'next';
 import { fetchCheckoutSession } from '../../lib/vendure.server';
 import { fetchIconCatalog } from '../../lib/configurator.server';
 import CheckoutClient from './CheckoutClient';
 
-export const dynamic = 'force-dynamic';
+export const metadata: Metadata = {
+  title: 'Checkout | Vehicle Control Technologies',
+  description: 'Complete your secure checkout process.',
+};
 
-export default async function CheckoutPage() {
+export default function CheckoutPage() {
+  return (
+    <Suspense fallback={<CheckoutLoading />}>
+      <CheckoutFetcher />
+    </Suspense>
+  );
+}
+
+async function CheckoutFetcher() {
   const [session, iconCatalog] = await Promise.all([
     fetchCheckoutSession(),
     fetchIconCatalog(),
@@ -17,5 +30,13 @@ export default async function CheckoutPage() {
       initialPaymentMethods={session.paymentMethods}
       iconCatalog={iconCatalog}
     />
+  );
+}
+
+function CheckoutLoading() {
+  return (
+    <div className="flex min-h-[50vh] items-center justify-center">
+      <div className="text-panel-muted text-sm">Loading checkout...</div>
+    </div>
   );
 }

@@ -1,0 +1,548 @@
+{
+  "rule": "prefer-useReducer",
+  "file": null
+}
+{
+  "rule": "no-prevent-default",
+  "file": null
+}
+{
+  "rule": "prefer-useReducer",
+  "file": null
+}
+{
+  "rule": "no-giant-component",
+  "file": null
+}
+{
+  "rule": "no-cascading-set-state",
+  "file": null
+}
+{
+  "rule": "prefer-useReducer",
+  "file": null
+}
+{
+  "rule": "no-giant-component",
+  "file": null
+}
+{
+  "rule": "nextjs-no-use-search-params-without-suspense",
+  "file": null
+}
+{
+  "rule": "no-derived-useState",
+  "file": null
+}
+{
+  "rule": "no-usememo-simple-expression",
+  "file": null
+}
+{
+  "rule": "no-cascading-set-state",
+  "file": null
+}
+{
+  "rule": "no-cascading-set-state",
+  "file": null
+}
+{
+  "rule": "no-cascading-set-state",
+  "file": null
+}
+{
+  "rule": "no-giant-component",
+  "file": null
+}
+{
+  "rule": "rerender-memo-with-default-value",
+  "file": null
+}
+{
+  "rule": "no-derived-useState",
+  "file": null
+}
+{
+  "rule": "no-render-in-render",
+  "file": null
+}
+{
+  "rule": "no-render-in-render",
+  "file": null
+}
+{
+  "rule": "no-render-in-render",
+  "file": null
+}
+{
+  "rule": "no-cascading-set-state",
+  "file": null
+}
+{
+  "rule": "prefer-useReducer",
+  "file": null
+}
+{
+  "rule": "no-giant-component",
+  "file": null
+}
+{
+  "rule": "no-derived-useState",
+  "file": null
+}
+{
+  "rule": "rerender-lazy-state-init",
+  "file": null
+}
+{
+  "rule": "no-cascading-set-state",
+  "file": null
+}
+{
+  "rule": "no-cascading-set-state",
+  "file": null
+}
+{
+  "rule": "no-cascading-set-state",
+  "file": null
+}
+{
+  "rule": "no-cascading-set-state",
+  "file": null
+}
+{
+  "rule": "no-inline-prop-on-memo-component",
+  "file": null
+}
+{
+  "rule": "no-inline-prop-on-memo-component",
+  "file": null
+}
+{
+  "rule": "no-inline-prop-on-memo-component",
+  "file": null
+}
+{
+  "rule": "no-inline-prop-on-memo-component",
+  "file": null
+}
+{
+  "rule": "no-cascading-set-state",
+  "file": null
+}
+{
+  "rule": "nextjs-no-use-search-params-without-suspense",
+  "file": null
+}
+{
+  "rule": "no-autofocus",
+  "file": null
+}
+{
+  "rule": "no-cascading-set-state",
+  "file": null
+}
+{
+  "rule": "no-cascading-set-state",
+  "file": null
+}
+{
+  "rule": "prefer-useReducer",
+  "file": null
+}
+{
+  "rule": "no-giant-component",
+  "file": null
+}
+{
+  "rule": "prefer-useReducer",
+  "file": null
+}
+{
+  "rule": "no-usememo-simple-expression",
+  "file": null
+}
+{
+  "rule": "prefer-useReducer",
+  "file": null
+}
+{
+  "rule": "no-giant-component",
+  "file": null
+}
+{
+  "rule": "no-cascading-set-state",
+  "file": null
+}
+{
+  "rule": "no-cascading-set-state",
+  "file": null
+}
+{
+  "rule": "client-passive-event-listeners",
+  "file": null
+}
+{
+  "rule": "nextjs-no-native-script",
+  "file": null
+}
+{
+  "rule": "nextjs-no-native-script",
+  "file": null
+}
+{
+  "rule": "no-static-element-interactions",
+  "file": null
+}
+{
+  "rule": "label-has-associated-control",
+  "file": null
+}
+{
+  "rule": "label-has-associated-control",
+  "file": null
+}
+{
+  "rule": "prefer-useReducer",
+  "file": null
+}
+{
+  "rule": "no-giant-component",
+  "file": null
+}
+{
+  "rule": "click-events-have-key-events",
+  "file": null
+}
+{
+  "rule": "no-static-element-interactions",
+  "file": null
+}
+{
+  "rule": "prefer-useReducer",
+  "file": null
+}
+{
+  "rule": "rendering-hydration-no-flicker",
+  "file": null
+}
+{
+  "rule": "no-cascading-set-state",
+  "file": null
+}
+{
+  "rule": "no-effect-event-handler",
+  "file": null
+}
+{
+  "rule": "no-cascading-set-state",
+  "file": null
+}
+{
+  "rule": "prefer-useReducer",
+  "file": null
+}
+{
+  "rule": "no-prevent-default",
+  "file": null
+}
+{
+  "rule": "anchor-is-valid",
+  "file": null
+}
+{
+  "rule": "rendering-hydration-no-flicker",
+  "file": null
+}
+{
+  "rule": "label-has-associated-control",
+  "file": null
+}
+{
+  "rule": "label-has-associated-control",
+  "file": null
+}
+{
+  "rule": "prefer-useReducer",
+  "file": null
+}
+{
+  "rule": "no-giant-component",
+  "file": null
+}
+{
+  "rule": "nextjs-no-use-search-params-without-suspense",
+  "file": null
+}
+{
+  "rule": "no-fetch-in-effect",
+  "file": null
+}
+{
+  "rule": "files",
+  "file": null
+}
+{
+  "rule": "files",
+  "file": null
+}
+{
+  "rule": "files",
+  "file": null
+}
+{
+  "rule": "files",
+  "file": null
+}
+{
+  "rule": "files",
+  "file": null
+}
+{
+  "rule": "files",
+  "file": null
+}
+{
+  "rule": "files",
+  "file": null
+}
+{
+  "rule": "files",
+  "file": null
+}
+{
+  "rule": "files",
+  "file": null
+}
+{
+  "rule": "exports",
+  "file": null
+}
+{
+  "rule": "exports",
+  "file": null
+}
+{
+  "rule": "exports",
+  "file": null
+}
+{
+  "rule": "exports",
+  "file": null
+}
+{
+  "rule": "exports",
+  "file": null
+}
+{
+  "rule": "exports",
+  "file": null
+}
+{
+  "rule": "exports",
+  "file": null
+}
+{
+  "rule": "exports",
+  "file": null
+}
+{
+  "rule": "exports",
+  "file": null
+}
+{
+  "rule": "exports",
+  "file": null
+}
+{
+  "rule": "exports",
+  "file": null
+}
+{
+  "rule": "exports",
+  "file": null
+}
+{
+  "rule": "exports",
+  "file": null
+}
+{
+  "rule": "exports",
+  "file": null
+}
+{
+  "rule": "exports",
+  "file": null
+}
+{
+  "rule": "exports",
+  "file": null
+}
+{
+  "rule": "exports",
+  "file": null
+}
+{
+  "rule": "exports",
+  "file": null
+}
+{
+  "rule": "exports",
+  "file": null
+}
+{
+  "rule": "exports",
+  "file": null
+}
+{
+  "rule": "exports",
+  "file": null
+}
+{
+  "rule": "exports",
+  "file": null
+}
+{
+  "rule": "exports",
+  "file": null
+}
+{
+  "rule": "exports",
+  "file": null
+}
+{
+  "rule": "exports",
+  "file": null
+}
+{
+  "rule": "exports",
+  "file": null
+}
+{
+  "rule": "exports",
+  "file": null
+}
+{
+  "rule": "exports",
+  "file": null
+}
+{
+  "rule": "exports",
+  "file": null
+}
+{
+  "rule": "exports",
+  "file": null
+}
+{
+  "rule": "exports",
+  "file": null
+}
+{
+  "rule": "exports",
+  "file": null
+}
+{
+  "rule": "types",
+  "file": null
+}
+{
+  "rule": "types",
+  "file": null
+}
+{
+  "rule": "types",
+  "file": null
+}
+{
+  "rule": "types",
+  "file": null
+}
+{
+  "rule": "types",
+  "file": null
+}
+{
+  "rule": "types",
+  "file": null
+}
+{
+  "rule": "types",
+  "file": null
+}
+{
+  "rule": "types",
+  "file": null
+}
+{
+  "rule": "types",
+  "file": null
+}
+{
+  "rule": "types",
+  "file": null
+}
+{
+  "rule": "types",
+  "file": null
+}
+{
+  "rule": "types",
+  "file": null
+}
+{
+  "rule": "types",
+  "file": null
+}
+{
+  "rule": "types",
+  "file": null
+}
+{
+  "rule": "types",
+  "file": null
+}
+{
+  "rule": "types",
+  "file": null
+}
+{
+  "rule": "types",
+  "file": null
+}
+{
+  "rule": "types",
+  "file": null
+}
+{
+  "rule": "types",
+  "file": null
+}
+{
+  "rule": "types",
+  "file": null
+}
+{
+  "rule": "types",
+  "file": null
+}
+{
+  "rule": "types",
+  "file": null
+}
+{
+  "rule": "types",
+  "file": null
+}
+{
+  "rule": "types",
+  "file": null
+}
+{
+  "rule": "types",
+  "file": null
+}
+{
+  "rule": "types",
+  "file": null
+}

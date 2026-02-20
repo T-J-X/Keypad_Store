@@ -1,0 +1,57 @@
+react-doctor v0.0.28
+
+Scanning uncommitted changes
+
+Scanning /Users/terry/keypad-store/apps/frontend...
+
+
+  ⚠ Use next/script <Script> instead of <script> — provides loading strategy optimization and deferred loading (2)
+    `import Script from "next/script"` — use `strategy="afterInteractive"` for analytics or `"lazyOnload"` for widgets
+    components/SiteJsonLd.tsx: 31
+    components/ProductPdp/ProductJsonLd.tsx: 72
+
+  ⚠ Component "SavedDesignsModal" has 15 useState calls — consider useReducer for related state (2)
+    Group related state: `const [state, dispatch] = useReducer(reducer, { field1, field2, ... })`
+    components/configurator/SavedDesignsModal.tsx: 30
+    components/configurator/KeypadProvider.tsx: 107
+
+  ⚠ Component "SavedDesignsModal" is 531 lines — consider breaking it into smaller focused components (2)
+    Extract logical sections into focused components: `<UserHeader />`, `<UserActions />`, etc.
+    components/configurator/SavedDesignsModal.tsx: 30
+    components/configurator/KeypadProvider.tsx: 97
+
+  ⚠ 14 setState calls in a single useEffect — consider using useReducer or deriving state (4)
+    Combine into useReducer: `const [state, dispatch] = useReducer(reducer, initialState)`
+    components/configurator/SavedDesignsModal.tsx: 60
+    components/configurator/KeypadProvider.tsx: 273, 304, 394
+
+  ⚠ useSearchParams() requires a <Suspense> boundary — without one, the entire page bails out to client-side rendering
+    Wrap the component using useSearchParams: `<Suspense fallback={<Skeleton />}><SearchComponent /></Suspense>`
+    components/configurator/KeypadProvider.tsx: 109
+
+  ⚠ useState initialized from prop "iconCatalog" — if this value should stay in sync with the prop, derive it during render instead
+    Remove useState and compute the value inline: `const value = transform(propName)`
+    components/configurator/KeypadProvider.tsx: 131
+
+  ⚠ useMemo wrapping a trivially cheap expression — memo overhead exceeds the computation
+    Remove useMemo — property access, math, and ternaries are already cheap without memoization
+    components/configurator/KeypadProvider.tsx: 214
+
+  ┌────────────────────────────────────────────────────┐
+  │ ┌─────┐                                            │
+  │ │ ◠ ◠ │                                            │
+  │ │  ▽  │                                            │
+  │ └─────┘                                            │
+  │ React Doctor (www.react.doctor)                    │
+  │                                                    │
+  │ 95 / 100  Great                                    │
+  │                                                    │
+  │ ████████████████████████████████████████████████░░ │
+  │                                                    │
+  │ ⚠ 13 warnings  across 4/7 files  in 131ms          │
+  └────────────────────────────────────────────────────┘
+
+  Full diagnostics written to /var/folders/7x/k93t0vgj6tz75gt2l1kmn0sm0000gn/T/react-doctor-8942850d-cf09-434b-a33d-66999bcea460
+
+  Share your results: https://www.react.doctor/share?p=frontend&s=95&w=13&f=4
+

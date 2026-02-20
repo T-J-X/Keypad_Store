@@ -2,7 +2,10 @@
 
 import { usePathname, useSearchParams } from 'next/navigation';
 import { createContext, useEffect, useMemo, useRef, useState } from 'react';
+import useSWR from 'swr';
 import { notifyCartUpdated } from '../../lib/cartEvents';
+
+const jsonFetcher = (url: string) => fetch(url).then((res) => res.json());
 import type { IconCatalogItem } from '../../lib/configuratorCatalog';
 import {
   buildConfigurationDraftFromSlots,
@@ -286,169 +289,199 @@ export default function KeypadProvider({
 
 
 
+  const {
+    data: savedConfigPayload,
+    error: savedConfigSwrError,
+    isLoading: loadingSavedConfigSwr,
+  } = useSWR<SavedConfigurationPayload>(
+    !editLineId && loadSavedId && icons.length > 0 && hydratedLoadIdRef.current !== loadSavedId
+      ? `/api/account/saved-configurations/${encodeURIComponent(loadSavedId)}`
+      : null,
+    jsonFetcher,
+    { revalidateOnFocus: false }
+  );
+
   useEffect(() => {
     if (editLineId) {
       hydratedLoadIdRef.current = null;
       return;
     }
-
     if (!loadSavedId) {
       hydratedLoadIdRef.current = null;
       setSavedConfigError(null);
       return;
     }
-
     if (icons.length === 0) return;
     if (hydratedLoadIdRef.current === loadSavedId) return;
 
-    let cancelled = false;
-
-    const loadSavedConfiguration = async () => {
+    if (loadingSavedConfigSwr) {
       setLoadingSavedConfig(true);
       setSavedConfigError(null);
+      return;
+    }
 
-      try {
-        const response = await fetch(`/api/account/saved-configurations/${encodeURIComponent(loadSavedId)}`, {
-          method: 'GET',
-          cache: 'no-store',
-        });
+    if (savedConfigSwrError) {
+      setSavedConfigError(
+        savedConfigSwrError instanceof Error ? savedConfigSwrError.message : 'Could not load saved configuration.'
+      );
+      setLoadingSavedConfig(false);
+      return;
+    }
 
-        const payload = (await response.json().catch(() => ({}))) as SavedConfigurationPayload;
-
-        if (!response.ok || !payload.item) {
-          throw new Error(payload.error || 'Could not load saved configuration.');
-        }
-
-        if (payload.item.keypadModel !== resolvedModelCode) {
-          throw new Error(
-            `Saved configuration belongs to ${payload.item.keypadModel}, not ${resolvedModelCode}.`,
-          );
-        }
-
-        const parsed = validateAndNormalizeConfigurationInput(payload.item.configuration, {
-          requireComplete: false,
-          slotIds,
-        });
-        if (!parsed.ok) {
-          throw new Error(parsed.error);
-        }
-
-        if (!cancelled) {
-          hydrateFromSavedConfiguration(parsed.value, icons, slotIds);
-          setLoadedSavedConfig(payload.item);
-          setSaveName(payload.item.name);
-          const lastConfiguredIconId = slotIds
-            .map((slotId) => parsed.value[slotId]?.iconId ?? '')
-            .filter(Boolean)
-            .at(-1) ?? null;
-          setRecommendationSeedIconId(lastConfiguredIconId);
-          hydratedLoadIdRef.current = loadSavedId;
-          resetScopeRef.current = resetScope;
-          setSaveStatus({ type: 'success', message: `Loaded saved design "${payload.item.name}".` });
-        }
-      } catch (error) {
-        if (cancelled) return;
-        const message = error instanceof Error ? error.message : 'Could not load saved configuration.';
-        setSavedConfigError(message);
-      } finally {
-        if (!cancelled) {
-          setLoadingSavedConfig(false);
-        }
+    if (savedConfigPayload) {
+      if (savedConfigPayload.error || !savedConfigPayload.item) {
+        setSavedConfigError(savedConfigPayload.error || 'Could not load saved configuration.');
+        setLoadingSavedConfig(false);
+        return;
       }
-    };
+      const item = savedConfigPayload.item;
+      if (item.keypadModel !== resolvedModelCode) {
+        setSavedConfigError(
+          `Saved configuration belongs to ${item.keypadModel}, not ${resolvedModelCode}.`
+        );
+        setLoadingSavedConfig(false);
+        return;
+      }
 
-    void loadSavedConfiguration();
+      const parsed = validateAndNormalizeConfigurationInput(item.configuration, {
+        requireComplete: false,
+        slotIds,
+      });
+      if (!parsed.ok) {
+        setSavedConfigError(parsed.error);
+        setLoadingSavedConfig(false);
+        return;
+      }
 
-    return () => {
-      cancelled = true;
-    };
-  }, [editLineId, hydrateFromSavedConfiguration, icons, loadSavedId, resetScope, resolvedModelCode, slotIds]);
+      hydrateFromSavedConfiguration(parsed.value, icons, slotIds);
+      setLoadedSavedConfig(item);
+      setSaveName(item.name);
+      const lastConfiguredIconId = slotIds
+        .map((slotId) => parsed.value[slotId]?.iconId ?? '')
+        .filter(Boolean)
+        .at(-1) ?? null;
+      setRecommendationSeedIconId(lastConfiguredIconId);
+      hydratedLoadIdRef.current = loadSavedId;
+      resetScopeRef.current = resetScope;
+      setSaveStatus({ type: 'success', message: `Loaded saved design "${item.name}".` });
+      setLoadingSavedConfig(false);
+    }
+  }, [
+    editLineId,
+    hydrateFromSavedConfiguration,
+    icons,
+    loadSavedId,
+    loadingSavedConfigSwr,
+    resetScope,
+    resolvedModelCode,
+    savedConfigPayload,
+    savedConfigSwrError,
+    slotIds,
+  ]);
+
+  const {
+    data: cartActivePayload,
+    error: cartActiveSwrError,
+    isLoading: loadingCartActiveSwr,
+  } = useSWR<ActiveCartPayload>(
+    editLineId && icons.length > 0 && hydratedLineIdRef.current !== editLineId
+      ? '/api/cart/active'
+      : null,
+    jsonFetcher,
+    { revalidateOnFocus: false }
+  );
 
   useEffect(() => {
     if (!editLineId) {
       hydratedLineIdRef.current = null;
       return;
     }
-
     if (icons.length === 0) return;
     if (hydratedLineIdRef.current === editLineId) return;
 
-    let cancelled = false;
-
-    const loadConfigurationFromCartLine = async () => {
+    if (loadingCartActiveSwr) {
       setLoadingSavedConfig(true);
       setSavedConfigError(null);
+      return;
+    }
 
-      try {
-        const response = await fetch('/api/cart/active', {
-          method: 'GET',
-          cache: 'no-store',
-        });
-        const payload = (await response.json().catch(() => ({}))) as ActiveCartPayload;
-        if (!response.ok) {
-          throw new Error(payload.error || 'Could not load your active cart.');
-        }
+    if (cartActiveSwrError) {
+      setSavedConfigError(
+        cartActiveSwrError instanceof Error
+          ? cartActiveSwrError.message
+          : 'Could not load this cart line configuration.'
+      );
+      setLoadingSavedConfig(false);
+      return;
+    }
 
-        const line = payload.order?.lines?.find((candidate) => candidate.id === editLineId);
-        if (!line) {
-          throw new Error(`Cart line "${editLineId}" was not found in your active order.`);
-        }
-
-        const resolvedLineModelCode = resolvePkpModelCode(
-          line.productVariant?.product?.slug ?? '',
-          line.productVariant?.product?.name ?? line.productVariant?.name ?? '',
-        );
-        if (resolvedLineModelCode && resolvedLineModelCode !== resolvedModelCode) {
-          throw new Error(
-            `Cart line belongs to ${resolvedLineModelCode}, not ${resolvedModelCode}.`,
-          );
-        }
-
-        const configurationRaw = line.customFields?.configuration ?? null;
-        if (typeof configurationRaw !== 'string' || configurationRaw.trim().length === 0) {
-          throw new Error('Selected cart line has no saved configuration.');
-        }
-
-        const parsed = validateAndNormalizeConfigurationInput(configurationRaw, {
-          requireComplete: false,
-          slotIds,
-        });
-        if (!parsed.ok) {
-          throw new Error(parsed.error);
-        }
-
-        if (!cancelled) {
-          hydrateFromSavedConfiguration(parsed.value, icons, slotIds);
-          if (parsed.value._meta?.rotation != null) {
-            setPreviewRotationDeg(parsed.value._meta.rotation);
-          }
-          setEditLineQuantity(Math.max(1, Math.floor(line.quantity ?? 1)));
-          const lastConfiguredIconId = slotIds
-            .map((slotId) => parsed.value[slotId]?.iconId ?? '')
-            .filter(Boolean)
-            .at(-1) ?? null;
-          setRecommendationSeedIconId(lastConfiguredIconId);
-          setSaveStatus({ type: 'success', message: 'Loaded cart line configuration for editing.' });
-          hydratedLineIdRef.current = editLineId;
-          resetScopeRef.current = resetScope;
-        }
-      } catch (error) {
-        if (cancelled) return;
-        const message = error instanceof Error ? error.message : 'Could not load this cart line configuration.';
-        setSavedConfigError(message);
-      } finally {
-        if (!cancelled) {
-          setLoadingSavedConfig(false);
-        }
+    if (cartActivePayload) {
+      if (cartActivePayload.error) {
+        setSavedConfigError(cartActivePayload.error);
+        setLoadingSavedConfig(false);
+        return;
       }
-    };
 
-    void loadConfigurationFromCartLine();
+      const line = cartActivePayload.order?.lines?.find((candidate) => candidate.id === editLineId);
+      if (!line) {
+        setSavedConfigError(`Cart line "${editLineId}" was not found in your active order.`);
+        setLoadingSavedConfig(false);
+        return;
+      }
 
-    return () => {
-      cancelled = true;
-    };
-  }, [editLineId, hydrateFromSavedConfiguration, icons, loadSavedId, resetScope, resolvedModelCode, slotIds]);
+      const resolvedLineModelCode = resolvePkpModelCode(
+        line.productVariant?.product?.slug ?? '',
+        line.productVariant?.product?.name ?? line.productVariant?.name ?? ''
+      );
+      if (resolvedLineModelCode && resolvedLineModelCode !== resolvedModelCode) {
+        setSavedConfigError(`Cart line belongs to ${resolvedLineModelCode}, not ${resolvedModelCode}.`);
+        setLoadingSavedConfig(false);
+        return;
+      }
+
+      const configurationRaw = line.customFields?.configuration ?? null;
+      if (typeof configurationRaw !== 'string' || configurationRaw.trim().length === 0) {
+        setSavedConfigError('Selected cart line has no saved configuration.');
+        setLoadingSavedConfig(false);
+        return;
+      }
+
+      const parsed = validateAndNormalizeConfigurationInput(configurationRaw, {
+        requireComplete: false,
+        slotIds,
+      });
+      if (!parsed.ok) {
+        setSavedConfigError(parsed.error);
+        setLoadingSavedConfig(false);
+        return;
+      }
+
+      hydrateFromSavedConfiguration(parsed.value, icons, slotIds);
+      if (parsed.value._meta?.rotation != null) {
+        setPreviewRotationDeg(parsed.value._meta.rotation);
+      }
+      setEditLineQuantity(Math.max(1, Math.floor(line.quantity ?? 1)));
+      const lastConfiguredIconId = slotIds
+        .map((slotId) => parsed.value[slotId]?.iconId ?? '')
+        .filter(Boolean)
+        .at(-1) ?? null;
+      setRecommendationSeedIconId(lastConfiguredIconId);
+      setSaveStatus({ type: 'success', message: 'Loaded cart line configuration for editing.' });
+      hydratedLineIdRef.current = editLineId;
+      resetScopeRef.current = resetScope;
+      setLoadingSavedConfig(false);
+    }
+  }, [
+    cartActivePayload,
+    cartActiveSwrError,
+    editLineId,
+    hydrateFromSavedConfiguration,
+    icons,
+    loadingCartActiveSwr,
+    resetScope,
+    resolvedModelCode,
+    slotIds,
+  ]);
 
   const configurationDraft = useMemo(
     () => buildConfigurationDraftFromSlots(slots, slotIds),

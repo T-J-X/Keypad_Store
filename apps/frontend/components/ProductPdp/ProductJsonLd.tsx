@@ -69,11 +69,8 @@ export default function ProductJsonLd({
   }
 
   return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{
-        __html: serializeJsonLd(schema),
-      }}
-    />
+    <script type="application/ld+json">
+      {serializeJsonLd(schema)}
+    </script>
   );
 }

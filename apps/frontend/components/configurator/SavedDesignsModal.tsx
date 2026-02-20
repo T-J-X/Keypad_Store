@@ -1,7 +1,11 @@
 'use client';
 
 import { use, useCallback, useEffect, useState } from 'react';
+import useSWR from 'swr';
 import { X, Search } from 'lucide-react';
+
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
+
 import AccessibleModal from '../ui/AccessibleModal';
 import Toast from '../ui/Toast';
 import GoogleLoginButton from '../GoogleLoginButton';
@@ -71,19 +75,26 @@ export default function SavedDesignsModal() {
         setSignupLoading(false);
         setAuthState('checking');
 
-        fetch('/api/session/summary')
-            .then((res) => res.json())
-            .then((data) => {
-                if (data.authenticated) {
-                    setAuthState('logged-in');
-                } else {
-                    setAuthState('logged-out');
-                }
-            })
-            .catch(() => {
-                setAuthState('logged-out');
-            });
     }, [savedDesignsModalOpen]);
+
+    const { data: sessionData, error: sessionFetchError } = useSWR(
+        savedDesignsModalOpen && authState === 'checking' ? '/api/session/summary' : null,
+        fetcher,
+        {
+            revalidateOnFocus: false,
+            shouldRetryOnError: false,
+        }
+    );
+
+    useEffect(() => {
+        if (savedDesignsModalOpen && authState === 'checking') {
+            if (sessionData) {
+                setAuthState(sessionData.authenticated ? 'logged-in' : 'logged-out');
+            } else if (sessionFetchError) {
+                setAuthState('logged-out');
+            }
+        }
+    }, [sessionData, sessionFetchError, savedDesignsModalOpen, authState]);
 
     const handleLogin = useCallback(async () => {
         if (!actions) return;

@@ -1,6 +1,12 @@
 import { Suspense } from 'react';
+import type { Metadata } from 'next';
 import CartClient from '../../components/CartClient';
 import { fetchActiveOrder } from '../../lib/vendure.server';
+
+export const metadata: Metadata = {
+  title: 'Your Cart | Vehicle Control Technologies',
+  description: 'Review and edit your keypad configurations before checkout.',
+};
 
 export default function CartPage() {
   return (

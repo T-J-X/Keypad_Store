@@ -28,11 +28,8 @@ export default function SiteJsonLd() {
   };
 
   return (
-    <script
-      type="application/ld+json"
-      dangerouslySetInnerHTML={{
-        __html: serializeJsonLd(payload),
-      }}
-    />
+    <script type="application/ld+json">
+      {serializeJsonLd(payload)}
+    </script>
   );
 }
