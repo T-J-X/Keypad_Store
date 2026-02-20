@@ -1,0 +1,137 @@
+components/SignupForm.tsx:20:38 - prefer-useReducer - Component "SignupForm" has 8 useState calls — consider useReducer for related state
+components/SignupForm.tsx:112:13 - no-prevent-default - preventDefault() on <form> onSubmit — form won't work without JavaScript. Consider using a server action for progressive enhancement
+components/configurator/SavedDesignsModal.tsx:30:45 - prefer-useReducer - Component "SavedDesignsModal" has 15 useState calls — consider useReducer for related state
+components/configurator/SavedDesignsModal.tsx:30:25 - no-giant-component - Component "SavedDesignsModal" is 531 lines — consider breaking it into smaller focused components
+components/configurator/SavedDesignsModal.tsx:60:5 - no-cascading-set-state - 14 setState calls in a single useEffect — consider using useReducer or deriving state
+components/configurator/KeypadProvider.tsx:107:4 - prefer-useReducer - Component "KeypadProvider" has 27 useState calls — consider useReducer for related state
+components/configurator/KeypadProvider.tsx:97:25 - no-giant-component - Component "KeypadProvider" is 743 lines — consider breaking it into smaller focused components
+components/configurator/KeypadProvider.tsx:109:24 - nextjs-no-use-search-params-without-suspense - useSearchParams() requires a <Suspense> boundary — without one, the entire page bails out to client-side rendering
+components/configurator/KeypadProvider.tsx:131:29 - no-derived-useState - useState initialized from prop "iconCatalog" — if this value should stay in sync with the prop, derive it during render instead
+components/configurator/KeypadProvider.tsx:214:22 - no-usememo-simple-expression - useMemo wrapping a trivially cheap expression — memo overhead exceeds the computation
+components/configurator/KeypadProvider.tsx:273:3 - no-cascading-set-state - 6 setState calls in a single useEffect — consider using useReducer or deriving state
+components/configurator/KeypadProvider.tsx:304:3 - no-cascading-set-state - 16 setState calls in a single useEffect — consider using useReducer or deriving state
+components/configurator/KeypadProvider.tsx:394:3 - no-cascading-set-state - 19 setState calls in a single useEffect — consider using useReducer or deriving state
+components/ShopClient.tsx:166:25 - no-giant-component - Component "ShopClient" is 963 lines — consider breaking it into smaller focused components
+components/ShopClient.tsx:172:23 - rerender-memo-with-default-value - Default prop value [] creates a new array reference every render — extract to a module-level constant
+components/ShopClient.tsx:201:29 - no-derived-useState - useState initialized from prop "initialQuery" — if this value should stay in sync with the prop, derive it during render instead
+components/ShopClient.tsx:744:14 - no-render-in-render - Inline render function "renderViewToggle()" — extract to a separate component for proper reconciliation
+components/ShopClient.tsx:1094:14 - no-render-in-render - Inline render function "renderIconPaginationControls()" — extract to a separate component for proper reconciliation
+components/ShopClient.tsx:1122:14 - no-render-in-render - Inline render function "renderIconPaginationControls()" — extract to a separate component for proper reconciliation
+components/configurator/IconSelectionPopup.tsx:150:3 - no-cascading-set-state - 3 setState calls in a single useEffect — consider using useReducer or deriving state
+components/configurator/KeypadPreview.tsx:572:4 - prefer-useReducer - Component "KeypadPreview" has 11 useState calls — consider useReducer for related state
+components/configurator/KeypadPreview.tsx:536:25 - no-giant-component - Component "KeypadPreview" is 608 lines — consider breaking it into smaller focused components
+components/configurator/KeypadPreview.tsx:584:55 - no-derived-useState - useState initialized from prop "rotationDeg" — if this value should stay in sync with the prop, derive it during render instead
+components/configurator/KeypadPreview.tsx:589:46 - rerender-lazy-state-init - useState(getInitialZoom()) calls initializer on every render — use useState(() => getInitialZoom()) for lazy initialization
+components/configurator/KeypadPreview.tsx:626:3 - no-cascading-set-state - 3 setState calls in a single useEffect — consider using useReducer or deriving state
+components/configurator/KeypadPreview.tsx:650:3 - no-cascading-set-state - 3 setState calls in a single useEffect — consider using useReducer or deriving state
+components/configurator/KeypadPreview.tsx:696:3 - no-cascading-set-state - 3 setState calls in a single useEffect — consider using useReducer or deriving state
+components/configurator/KeypadPreview.tsx:882:3 - no-cascading-set-state - 4 setState calls in a single useEffect — consider using useReducer or deriving state
+components/configurator/KeypadPreview.tsx:1108:37 - no-inline-prop-on-memo-component - JSX attribute values should not contain functions created in the same scope — MemoizedKeypadSlot is wrapped in memo(), so new references cause unnecessary re-renders
+components/configurator/KeypadPreview.tsx:1109:37 - no-inline-prop-on-memo-component - JSX attribute values should not contain functions created in the same scope — MemoizedKeypadSlot is wrapped in memo(), so new references cause unnecessary re-renders
+components/configurator/KeypadPreview.tsx:1112:32 - no-inline-prop-on-memo-component - JSX attribute values should not contain functions created in the same scope — MemoizedKeypadSlot is wrapped in memo(), so new references cause unnecessary re-renders
+components/configurator/KeypadPreview.tsx:1113:31 - no-inline-prop-on-memo-component - JSX attribute values should not contain functions created in the same scope — MemoizedKeypadSlot is wrapped in memo(), so new references cause unnecessary re-renders
+components/configurator/ConfiguredKeypadThumbnail.tsx:98:3 - no-cascading-set-state - 4 setState calls in a single useEffect — consider using useReducer or deriving state
+components/configurator/ConfiguratorRingDebugSearchClient.tsx:7:24 - nextjs-no-use-search-params-without-suspense - useSearchParams() requires a <Suspense> boundary — without one, the entire page bails out to client-side rendering
+components/configurator/SaveDesignModal.tsx:56:9 - no-autofocus - The `autoFocus` attribute is found here, which can cause usability issues for sighted and non-sighted users.
+components/ui/SearchModal.tsx:34:5 - no-cascading-set-state - 3 setState calls in a single useEffect — consider using useReducer or deriving state
+components/ui/SearchModal.tsx:59:5 - no-cascading-set-state - 4 setState calls in a single useEffect — consider using useReducer or deriving state
+components/ProductPdp/PurchasePanel.tsx:44:4 - prefer-useReducer - Component "PurchasePanel" has 7 useState calls — consider useReducer for related state
+components/ProductPdp/PurchasePanel.tsx:20:25 - no-giant-component - Component "PurchasePanel" is 334 lines — consider breaking it into smaller focused components
+components/order/OrderTechnicalSpecification.tsx:54:4 - prefer-useReducer - Component "OrderTechnicalSpecification" has 8 useState calls — consider useReducer for related state
+components/GoogleLoginButton.tsx:13:16 - no-usememo-simple-expression - useMemo wrapping a trivially cheap expression — memo overhead exceeds the computation
+components/Navbar.tsx:143:34 - prefer-useReducer - Component "Navbar" has 9 useState calls — consider useReducer for related state
+components/Navbar.tsx:143:25 - no-giant-component - Component "Navbar" is 494 lines — consider breaking it into smaller focused components
+components/Navbar.tsx:233:3 - no-cascading-set-state - 4 setState calls in a single useEffect — consider using useReducer or deriving state
+components/Navbar.tsx:294:3 - no-cascading-set-state - 6 setState calls in a single useEffect — consider using useReducer or deriving state
+components/Navbar.tsx:329:5 - client-passive-event-listeners - "touchstart" listener without { passive: true } — blocks scrolling performance
+components/SiteJsonLd.tsx:31:5 - nextjs-no-native-script - Use next/script <Script> instead of <script> — provides loading strategy optimization and deferred loading
+components/ProductPdp/ProductJsonLd.tsx:72:5 - nextjs-no-native-script - Use next/script <Script> instead of <script> — provides loading strategy optimization and deferred loading
+components/ui/AccessibleModal.tsx:110:6 - no-static-element-interactions - Static HTML elements with event handlers require a role.
+app/checkout/CheckoutClient.tsx:629:45 - label-has-associated-control - A form label must have accessible text.
+app/checkout/CheckoutClient.tsx:664:45 - label-has-associated-control - A form label must have accessible text.
+app/checkout/CheckoutClient.tsx:55:25 - prefer-useReducer - Component "CheckoutClient" has 19 useState calls — consider useReducer for related state
+app/checkout/CheckoutClient.tsx:50:25 - no-giant-component - Component "CheckoutClient" is 698 lines — consider breaking it into smaller focused components
+components/ui/MobileMenu.tsx:122:13 - click-events-have-key-events - Enforce a clickable non-interactive element has at least one keyboard event listener.
+components/ui/MobileMenu.tsx:122:14 - no-static-element-interactions - Static HTML elements with event handlers require a role.
+components/ui/MobileMenu.tsx:37:21 - prefer-useReducer - Component "MobileMenu" has 6 useState calls — consider useReducer for related state
+components/ui/MobileMenu.tsx:50:5 - rendering-hydration-no-flicker - useEffect(setState, []) on mount causes a flash — consider useSyncExternalStore or suppressHydrationWarning
+components/ui/MobileMenu.tsx:54:5 - no-cascading-set-state - 7 setState calls in a single useEffect — consider using useReducer or deriving state
+components/ui/MobileMenu.tsx:54:5 - no-effect-event-handler - useEffect simulating an event handler — move logic to an actual event handler instead
+components/ui/MobileMenu.tsx:81:5 - no-cascading-set-state - 4 setState calls in a single useEffect — consider using useReducer or deriving state
+components/LoginForm.tsx:8:75 - prefer-useReducer - Component "LoginForm" has 5 useState calls — consider useReducer for related state
+components/LoginForm.tsx:56:13 - no-prevent-default - preventDefault() on <form> onSubmit — form won't work without JavaScript. Consider using a server action for progressive enhancement
+components/ProductPdp/ButtonInsertPdp.tsx:240:20 - anchor-is-valid - Use of incorrect `href` for the 'a' element.
+components/CopyrightYear.tsx:8:5 - rendering-hydration-no-flicker - useEffect(setState, []) on mount causes a flash — consider useSyncExternalStore or suppressHydrationWarning
+components/AccountTabs.tsx:636:7 - label-has-associated-control - A form label must be associated with a control.
+components/AccountTabs.tsx:646:7 - label-has-associated-control - A form label must be associated with a control.
+components/AccountTabs.tsx:66:39 - prefer-useReducer - Component "AccountTabs" has 11 useState calls — consider useReducer for related state
+components/AccountTabs.tsx:66:25 - no-giant-component - Component "AccountTabs" is 309 lines — consider breaking it into smaller focused components
+components/AccountTabs.tsx:67:24 - nextjs-no-use-search-params-without-suspense - useSearchParams() requires a <Suspense> boundary — without one, the entire page bails out to client-side rendering
+components/AccountTabs.tsx:134:3 - no-fetch-in-effect - fetch() inside useEffect — use a data fetching library (react-query, SWR) or server component
+reproduce_issue.ts:0:0 - files - Unused file
+components/configurator/ConfiguratorRingDebugSearchClient.tsx:0:0 - files - Unused file
+components/configurator/Keypad.tsx:0:0 - files - Unused file
+config/layouts/models/pkp2200.ts:0:0 - files - Unused file
+config/layouts/models/pkp2300.ts:0:0 - files - Unused file
+config/layouts/models/pkp2400.ts:0:0 - files - Unused file
+config/layouts/models/pkp2500.ts:0:0 - files - Unused file
+config/layouts/models/pkp2600.ts:0:0 - files - Unused file
+config/layouts/models/pkp3500.ts:0:0 - files - Unused file
+lib/vendure.server.ts:0:0 - exports - Unused export: fetchBaseShopConfigPublic
+lib/googleAuth.ts:0:0 - exports - Unused export: GOOGLE_AUTH_CALLBACK_PATH
+config/layouts/geometry.ts:0:0 - exports - Unused export: buildGridModelGeometry
+config/layouts/geometry.ts:0:0 - exports - Unused export: buildSlotsFromCenterPercents
+config/layouts/geometry.ts:0:0 - exports - Unused export: buildSlotsFromPsdBounds
+config/layouts/geometry.ts:0:0 - exports - Unused export: DEFAULT_BUTTON_VISUAL
+config/layouts/geometry.ts:0:0 - exports - Unused export: DEFAULT_SLOT_SAFE_ZONE
+config/layouts/geometry.ts:0:0 - exports - Unused export: slotGeometryToPercentBox
+config/layouts/geometry.ts:0:0 - exports - Unused export: sortSlotIds
+config/layouts/geometry.ts:0:0 - exports - Unused export: PKP_2200_SI_GEOMETRY
+config/layouts/geometry.ts:0:0 - exports - Unused export: PKP_2300_SI_GEOMETRY
+config/layouts/geometry.ts:0:0 - exports - Unused export: PKP_2400_SI_GEOMETRY
+config/layouts/geometry.ts:0:0 - exports - Unused export: PKP_2500_SI_GEOMETRY
+config/layouts/geometry.ts:0:0 - exports - Unused export: PKP_2600_SI_GEOMETRY
+config/layouts/geometry.ts:0:0 - exports - Unused export: PKP_3500_SI_GEOMETRY
+lib/keypadConfiguration.ts:0:0 - exports - Unused export: isSlotId
+lib/keypadConfiguration.ts:0:0 - exports - Unused export: isValidIconId
+components/cardTypography.ts:0:0 - exports - Unused export: cardIdentifierTextClass
+lib/keypad-layouts.ts:0:0 - exports - Unused export: KEYPAD_LAYOUTS
+lib/keypad-layouts.ts:0:0 - exports - Unused export: hasLayoutForModel
+lib/keypad-layouts.ts:0:0 - exports - Unused export: getSlotIdsForLayoutModel
+lib/keypad-render-tuning.ts:0:0 - exports - Unused export: DEFAULT_RENDER_TUNING
+lib/keypad-render-tuning.ts:0:0 - exports - Unused export: KEYPAD_RENDER_TUNING
+hooks/configurator/useFuzzySearch.ts:0:0 - exports - Unused export: normalizeSearchText
+hooks/configurator/useFuzzySearch.ts:0:0 - exports - Unused export: tokenizeSearchText
+config/configurator/recommendations.ts:0:0 - exports - Unused export: ICON_RECOMMENDATIONS
+config/layouts/shared.ts:0:0 - exports - Unused export: DEFAULT_BUTTON_VISUAL
+config/layouts/shared.ts:0:0 - exports - Unused export: slotGeometryToPercentBox
+config/layouts/shared.ts:0:0 - exports - Unused export: buildSlotsFromCenterPercents
+config/layouts/shared.ts:0:0 - exports - Unused export: buildSlotsFromPsdBounds
+config/layouts/shared.ts:0:0 - exports - Unused export: buildGridModelGeometry
+config/layouts/shared.ts:0:0 - exports - Unused export: applySlotMicroTweaks
+components/ui/Button.tsx:0:0 - types - Unused type: ButtonProps
+lib/vendure.server.ts:0:0 - types - Unused type: SessionSummary
+lib/vendure.server.ts:0:0 - types - Unused type: IconPageResult
+config/layouts/geometry.ts:0:0 - types - Unused type: SlotCoordMode
+config/layouts/geometry.ts:0:0 - types - Unused type: SlotGeometry
+config/layouts/geometry.ts:0:0 - types - Unused type: SlotId
+config/layouts/geometry.ts:0:0 - types - Unused type: SlotSafeZone
+lib/api/shopApi.ts:0:0 - types - Unused type: ShopApiResult
+lib/keypadConfiguration.ts:0:0 - types - Unused type: SlotConfiguration
+lib/keypadConfiguration.ts:0:0 - types - Unused type: KeypadConfiguration
+lib/configuratorCatalog.ts:0:0 - types - Unused type: RingGlowOption
+lib/api/resolveInsertAsset.ts:0:0 - types - Unused type: ProductAssetLike
+lib/configuredKeypadPreview.ts:0:0 - types - Unused type: ConfiguredIconPayloadItem
+components/configurator/PremiumToast.tsx:0:0 - types - Unused type: ToastPayload
+lib/uiStore.ts:0:0 - types - Unused type: GlobalToastState
+lib/useShopLandingSubcategoryIcons.ts:0:0 - types - Unused type: ShopLandingSubcategoryTile
+lib/keypad-render-tuning.ts:0:0 - types - Unused type: ModelRenderTuning
+components/faq/Accordion.tsx:0:0 - types - Unused type: AccordionItem
+components/ProductPdp/productFieldData.ts:0:0 - types - Unused type: ProductSpecItem
+config/configurator/theme.ts:0:0 - types - Unused type: ConfiguratorGlowTheme
+config/configurator/theme.ts:0:0 - types - Unused type: ConfiguratorTheme
+components/configurator/types.ts:0:0 - types - Unused type: KeypadConfiguratorMode
+components/configurator/types.ts:0:0 - types - Unused type: KeypadConfiguratorBusyState
+components/configurator/types.ts:0:0 - types - Unused type: KeypadPreviewState
+hooks/configurator/useFuzzySearch.ts:0:0 - types - Unused type: FuzzyIndexEntry
+config/layouts/shared.ts:0:0 - types - Unused type: SlotMicroTweak
