@@ -287,7 +287,8 @@ type SessionSummary = {
 export async function fetchSessionSummary(): Promise<SessionSummary> {
   const cookieStore = await cookies();
   const headers: Record<string, string> = { 'content-type': 'application/json' };
-  const cookieString = cookieStore.toString();
+  const activeCookies = cookieStore.getAll();
+  const cookieString = activeCookies.map((c) => `${c.name}=${c.value}`).join('; ');
   if (cookieString) headers.cookie = cookieString;
 
   try {
