@@ -112,6 +112,11 @@ type KeypadProviderState = {
   savedDesigns: SavedConfigurationItem[];
   savedDesignsLoading: boolean;
   savedDesignsError: string | null;
+  downloadingPdf: boolean;
+  editLineQuantity: number;
+  recommendationSeedIconId: string | null;
+  previewRotationDeg: number;
+  previewShowGlows: boolean;
 };
 
 export const KeypadContext = createContext<KeypadConfiguratorContextValue | null>(null);
@@ -142,7 +147,7 @@ function KeypadProviderInner({
 }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const resolvedModelCode = useMemo(() => resolveConfiguratorModelCode(keypad), [keypad]);
+  const resolvedModelCode = resolveConfiguratorModelCode(keypad);
   const modelGeometry = useMemo(() => getGeometryForModel(resolvedModelCode), [resolvedModelCode]);
   const slotIds = useMemo(() => getSlotIdsForGeometry(modelGeometry), [modelGeometry]);
   const slotLabelById = useMemo(
@@ -184,6 +189,11 @@ function KeypadProviderInner({
       savedDesigns: [],
       savedDesignsLoading: false,
       savedDesignsError: null,
+      downloadingPdf: false,
+      editLineQuantity: 1,
+      recommendationSeedIconId: null,
+      previewRotationDeg: 0, // Gets overridden by query in useEffect
+      previewShowGlows: true, // Gets overridden by query in useEffect
     } as KeypadProviderState
   );
 
@@ -192,6 +202,8 @@ function KeypadProviderInner({
     cartStatus, addingToCart, lastOrderCode, loadedSavedConfig, loadingSavedConfig,
     savedConfigError, isSaveModalOpen, saveName, saveStatus, savingToAccount,
     isSavedDesignsModalOpen, savedDesigns, savedDesignsLoading, savedDesignsError,
+    downloadingPdf, editLineQuantity, recommendationSeedIconId, previewRotationDeg,
+    previewShowGlows,
   } = state;
 
   const fetchSavedDesigns = async () => {
@@ -226,13 +238,10 @@ function KeypadProviderInner({
     void fetchSavedDesigns();
   };
 
-  const [downloadingPdf, setDownloadingPdf] = useState(false);
   const hydratedLoadIdRef = useRef<string | null>(null);
   const hydratedLineIdRef = useRef<string | null>(null);
   const resetScopeRef = useRef<string | null>(null);
   const showToast = useUIStore((state) => state.showToast);
-  const [editLineQuantity, setEditLineQuantity] = useState(1);
-  const [recommendationSeedIconId, setRecommendationSeedIconId] = useState<string | null>(null);
   const selectedIconIds = useMemo(
     () => slotIds.map((slotId) => slots[slotId]?.iconId ?? '').filter(Boolean) as string[],
     [slotIds, slots],
@@ -254,7 +263,7 @@ function KeypadProviderInner({
   );
 
   const debugMode = searchParams.get('debug') === '1' || searchParams.get('debugSlots') === '1';
-  const editMode = useMemo(() => searchParams.get('edit') === '1', [searchParams]);
+  const editMode = searchParams.get('edit') === '1';
   const modelRenderTuning = useMemo(
     () => getRenderTuningForModel(resolvedModelCode),
     [resolvedModelCode],
@@ -270,27 +279,20 @@ function KeypadProviderInner({
     () => previewIconScaleFromQuery ?? modelRenderTuning.iconScale,
     [modelRenderTuning.iconScale, previewIconScaleFromQuery],
   );
-  const previewRotationFromQuery = useMemo(() => {
+  const previewRotationFromQuery = (() => {
     const value = Number.parseFloat(searchParams.get('rotationDeg') || '0');
     if (!Number.isFinite(value)) return 0;
     return Math.max(-180, Math.min(180, value));
-  }, [searchParams]);
-  const showGlowsFromQuery = useMemo(() => searchParams.get('showGlows') !== '0', [searchParams]);
-  const [previewRotationDeg, setPreviewRotationDeg] = useState(previewRotationFromQuery);
-  const [previewShowGlows, setPreviewShowGlows] = useState(showGlowsFromQuery);
+  })();
+  const showGlowsFromQuery = searchParams.get('showGlows') !== '0';
+  // Derived state synchronization (avoid effects during render)
+  useEffect(() => {
+    updateState({ previewRotationDeg: previewRotationFromQuery });
+  }, [previewRotationFromQuery]);
 
-  // Derived state synchronization (avoid effects)
-  const [prevRotationFromQuery, setPrevRotationFromQuery] = useState(previewRotationFromQuery);
-  if (previewRotationFromQuery !== prevRotationFromQuery) {
-    setPrevRotationFromQuery(previewRotationFromQuery);
-    setPreviewRotationDeg(previewRotationFromQuery);
-  }
-
-  const [prevShowGlowsFromQuery, setPrevShowGlowsFromQuery] = useState(showGlowsFromQuery);
-  if (showGlowsFromQuery !== prevShowGlowsFromQuery) {
-    setPrevShowGlowsFromQuery(showGlowsFromQuery);
-    setPreviewShowGlows(showGlowsFromQuery);
-  }
+  useEffect(() => {
+    updateState({ previewShowGlows: showGlowsFromQuery });
+  }, [showGlowsFromQuery]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -308,16 +310,13 @@ function KeypadProviderInner({
     if (resetScopeRef.current === resetScope) return;
 
     reset(resolvedModelCode, slotIds);
-    setEditLineQuantity(1);
-    setRecommendationSeedIconId(null);
-    hydratedLoadIdRef.current = null;
-    hydratedLineIdRef.current = null;
-    resetScopeRef.current = resetScope;
     updateState({
       loadedSavedConfig: null,
       savedConfigError: null,
       saveStatus: null,
       cartStatus: null,
+      editLineQuantity: 1,
+      recommendationSeedIconId: null,
     });
   }, [reset, resetScope, resolvedModelCode, slotIds]);
 
@@ -393,14 +392,12 @@ function KeypadProviderInner({
         .map((slotId) => parsed.value[slotId]?.iconId ?? '')
         .filter(Boolean)
         .at(-1) ?? null;
-      setRecommendationSeedIconId(lastConfiguredIconId);
-      hydratedLoadIdRef.current = loadSavedId;
-      resetScopeRef.current = resetScope;
       updateState({
         loadedSavedConfig: item,
         saveName: item.name,
         saveStatus: { type: 'success', message: `Loaded saved design "${item.name}".` },
-        loadingSavedConfig: false
+        loadingSavedConfig: false,
+        recommendationSeedIconId: lastConfiguredIconId,
       });
     }
   }, [
@@ -490,14 +487,14 @@ function KeypadProviderInner({
 
       hydrateFromSavedConfiguration(parsed.value, iconCatalog, slotIds);
       if (parsed.value._meta?.rotation != null) {
-        setPreviewRotationDeg(parsed.value._meta.rotation);
+        updateState({ previewRotationDeg: parsed.value._meta.rotation });
       }
-      setEditLineQuantity(Math.max(1, Math.floor(line.quantity ?? 1)));
+      updateState({ editLineQuantity: Math.max(1, Math.floor(line.quantity ?? 1)) });
       const lastConfiguredIconId = slotIds
         .map((slotId) => parsed.value[slotId]?.iconId ?? '')
         .filter(Boolean)
         .at(-1) ?? null;
-      setRecommendationSeedIconId(lastConfiguredIconId);
+      updateState({ recommendationSeedIconId: lastConfiguredIconId });
       updateState({ saveStatus: { type: 'success', message: 'Loaded cart line configuration for editing.' } });
       hydratedLineIdRef.current = editLineId;
       resetScopeRef.current = resetScope;
@@ -523,10 +520,7 @@ function KeypadProviderInner({
     () => asStrictConfiguration(configurationDraft, slotIds),
     [configurationDraft, slotIds],
   );
-  const isComplete = useMemo(
-    () => isConfigurationComplete(configurationDraft, slotIds),
-    [configurationDraft, slotIds],
-  );
+  const isComplete = slotIds.every((id) => slots[id]?.iconId);
 
   const openSlot = (slotId: SlotId) => {
     setActiveSlotId(slotId);
@@ -539,11 +533,11 @@ function KeypadProviderInner({
   };
 
   const rotatePreview = () => {
-    setPreviewRotationDeg((current) => (Math.abs(current) === 90 ? 0 : 90));
+    updateState({ previewRotationDeg: Math.abs(state.previewRotationDeg) === 90 ? 0 : 90 });
   };
 
   const togglePreviewGlows = () => {
-    setPreviewShowGlows((current) => !current);
+    updateState({ previewShowGlows: !state.previewShowGlows });
   };
 
   const addToCart = async () => {
@@ -573,10 +567,10 @@ function KeypadProviderInner({
           headers: { 'content-type': 'application/json' },
           body: JSON.stringify({
             orderLineId: editLineId,
-            quantity: editLineQuantity,
+            quantity: state.editLineQuantity,
             configuration: {
               ...strictConfiguration,
-              _meta: { rotation: previewRotationDeg },
+              _meta: { rotation: state.previewRotationDeg },
             },
           }),
         })
@@ -589,7 +583,7 @@ function KeypadProviderInner({
             customFields: {
               configuration: {
                 ...strictConfiguration,
-                _meta: { rotation: previewRotationDeg },
+                _meta: { rotation: state.previewRotationDeg },
               },
             },
           }),
@@ -724,7 +718,7 @@ function KeypadProviderInner({
       return;
     }
 
-    setDownloadingPdf(true);
+    updateState({ downloadingPdf: true });
     updateState({ saveStatus: null });
 
     try {
@@ -762,113 +756,105 @@ function KeypadProviderInner({
       const message = error instanceof Error ? error.message : 'Could not generate PDF export.';
       updateState({ saveStatus: { type: 'error', message } });
     } finally {
-      setDownloadingPdf(false);
+      updateState({ downloadingPdf: false });
     }
   };
 
-  const descriptionText = useMemo(() => toPlainText(keypad.description), [keypad.description]);
+  const descriptionText = toPlainText(keypad.description);
   const canOpenSaveAction = isAuthenticated !== null;
   const canDownloadPdf = Boolean(strictConfiguration);
   const hasVariant = Boolean(keypad.productVariantId) || Boolean(editLineId);
 
-  const contextValue: KeypadConfiguratorContextValue = useMemo(() => ({
+  const contextValue: KeypadConfiguratorContextValue = {
     state: {
-      const contextValue: KeypadConfiguratorContextValue = {
-        ui: {
-          isMobile,
-          isAuthenticated,
-          isSaveModalOpen,
-          isSavedDesignsModalOpen,
-          saveName,
-        },
-        flags: {
-          hasVariant,
-          isComplete,
-          canOpenSaveAction,
-          canDownloadPdf,
-          hasLoadedSavedConfig: Boolean(loadedSavedConfig),
-          editMode: editLineId ? 'edit-line' : 'new',
-        },
-        slots: {
-          all: slots,
-          activeSlotId: popupSlotId,
-          orderedIds: slotIds,
-          labels: slotLabelById,
-          selectedIconIds,
-        },
-        data: {
-          iconCatalog,
-          iconsError,
-          savedConfigError,
-          savedDesigns,
-          savedDesignsLoading,
-          savedDesignsError,
-          loadedSavedConfig,
-          recommendationSeedIconId,
-          cartStatus,
-          saveStatus,
-          busy: {
-            iconsLoading,
-            loadingSavedConfig,
-            addingToCart,
-            savingToAccount,
-            downloadingPdf,
-          },
-          preview: {
-            rotationDeg: previewRotationDeg,
-            showGlows: previewShowGlows,
-            iconScale: previewIconScale,
-            iconVisibleComp: modelRenderTuning.iconVisibleComp,
-            debugMode,
-            descriptionText,
-          },
-        },
-        actions: {
-          resetSlots: () => {
-            reset(resolvedModelCode, slotIds);
-          },
-          openSlot,
-          closeSlot,
-          clearSlot,
-          selectIconForSlot: (slotId, icon) => {
-            selectIconForSlot(slotId, icon);
-            setRecommendationSeedIconId(icon.iconId);
-          },
-          setSlotGlowForSlot: (slotId, color) => {
-            setSlotGlowColor(slotId, color);
-          },
-          rotatePreview,
-          togglePreviewGlows,
-          addToCart,
-          openSaveModal,
-          closeSaveModal: () => {
-            updateState({ isSaveModalOpen: false });
-          },
-          openSavedDesignsModal,
-          closeSavedDesignsModal: () => {
-            updateState({ isSavedDesignsModalOpen: false });
-          },
-          submitSave,
-          setSaveName: (name: string) => updateState({ saveName: name }),
-          downloadPdf,
-        },
-        meta: {
-          keypad: {
-            ...keypad,
-            modelCode: resolvedModelCode,
-          },
-          geometry: modelGeometry,
-          configurationDraft,
-          slotCount,
-          editLineId,
-          loadSavedId,
-          modelCode: resolvedModelCode,
-        },
-      };
+      modelCode: resolvedModelCode,
+      slotIds,
+      slotLabels: slotLabelById,
+      slots,
+      popupSlotId,
+      selectedIconIds,
+      recommendationSeedIconId: state.recommendationSeedIconId,
+      isMobile,
+      isAuthenticated,
+      mode: editLineId ? 'edit-line' : 'new',
+      isComplete,
+      hasVariant,
+      hasLoadedSavedConfig: Boolean(loadedSavedConfig),
+      canOpenSaveAction,
+      canDownloadPdf,
+      saveModalOpen: isSaveModalOpen,
+      savedDesignsModalOpen: isSavedDesignsModalOpen,
+      saveName,
+      icons: iconCatalog,
+      iconsError,
+      savedConfigError,
+      savedDesigns,
+      savedDesignsLoading,
+      savedDesignsError,
+      cartStatus,
+      saveStatus,
+      busy: {
+        iconsLoading,
+        loadingSavedConfig,
+        addingToCart,
+        savingToAccount,
+        downloadingPdf: state.downloadingPdf,
+      },
+      preview: {
+        rotationDeg: state.previewRotationDeg,
+        showGlows: state.previewShowGlows,
+        iconScale: previewIconScale,
+        iconVisibleComp: modelRenderTuning.iconVisibleComp,
+        debugMode,
+        editMode,
+        descriptionText,
+      },
+    },
+    actions: {
+      resetSlots: () => {
+        reset(resolvedModelCode, slotIds);
+      },
+      openSlot,
+      closeSlot,
+      clearSlot,
+      selectIconForSlot: (slotId, icon) => {
+        selectIconForSlot(slotId, icon);
+        updateState({ recommendationSeedIconId: icon.iconId });
+      },
+      setSlotGlowForSlot: (slotId, color) => {
+        setSlotGlowColor(slotId, color);
+      },
+      rotatePreview,
+      togglePreviewGlows,
+      addToCart,
+      openSaveModal,
+      closeSaveModal: () => {
+        updateState({ isSaveModalOpen: false });
+      },
+      openSavedDesignsModal,
+      closeSavedDesignsModal: () => {
+        updateState({ isSavedDesignsModalOpen: false });
+      },
+      submitSave,
+      setSaveName: (name: string) => updateState({ saveName: name }),
+      downloadPdf,
+    },
+    meta: {
+      keypad: {
+        ...keypad,
+        modelCode: resolvedModelCode,
+      },
+      geometry: modelGeometry,
+      configurationDraft,
+      slotCount,
+      editLineId,
+      loadSavedId,
+    },
+  };
 
-      return(
-    <KeypadContext value = { contextValue } >
-          { children }
-    </KeypadContext >
+  return (
+    <KeypadContext value={contextValue}>
+      {children}
+    </KeypadContext>
   );
 }

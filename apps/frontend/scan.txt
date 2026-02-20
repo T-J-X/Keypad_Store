@@ -5,7 +5,7 @@ Scanning uncommitted changes
 Scanning /Users/terry/keypad-store/apps/frontend...
 
 
-  ⚠ Component "KeypadProviderInner" is 727 lines — consider breaking it into smaller focused components
+  ⚠ Component "KeypadProviderInner" is 724 lines — consider breaking it into smaller focused components
     Extract logical sections into focused components: `<UserHeader />`, `<UserActions />`, etc.
 
   ⚠ useSearchParams() requires a <Suspense> boundary — without one, the entire page bails out to client-side rendering
@@ -25,10 +25,10 @@ Scanning /Users/terry/keypad-store/apps/frontend...
   │                                                    │
   │ █████████████████████████████████████████████████░ │
   │                                                    │
-  │ ⚠ 3 warnings  across 1/1 files  in 143ms           │
+  │ ⚠ 3 warnings  across 1/1 files  in 163ms           │
   └────────────────────────────────────────────────────┘
 
-  Full diagnostics written to /var/folders/7x/k93t0vgj6tz75gt2l1kmn0sm0000gn/T/react-doctor-4fac59ce-ff8a-4a47-8f53-9469032cb2b2
+  Full diagnostics written to /var/folders/7x/k93t0vgj6tz75gt2l1kmn0sm0000gn/T/react-doctor-1a5fa3c9-71a9-4edd-a2d8-682d634f4d89
 
   Share your results: https://www.react.doctor/share?p=frontend&s=98&w=3&f=1
 
