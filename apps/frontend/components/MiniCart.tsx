@@ -106,6 +106,7 @@ export default function MiniCart({ lines, currencyCode, totalWithTax, onClose }:
                 </div>
                 <Link
                     href="/checkout"
+                    prefetch={false}
                     onClick={onClose}
                     className="flex w-full items-center justify-center rounded-xl bg-white px-4 py-2.5 text-sm font-semibold text-black transition-transform hover:scale-[1.02] active:scale-[0.98]"
                 >
@@ -113,6 +114,7 @@ export default function MiniCart({ lines, currencyCode, totalWithTax, onClose }:
                 </Link>
                 <Link
                     href="/cart"
+                    prefetch={false}
                     onClick={onClose}
                     className="mt-2 flex w-full items-center justify-center rounded-xl px-4 py-2 text-sm font-medium text-white/60 hover:text-white"
                 >

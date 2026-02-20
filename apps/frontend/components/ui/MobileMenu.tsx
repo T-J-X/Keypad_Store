@@ -219,6 +219,7 @@ export default function MobileMenu({
                                     href="/cart"
                                     label={`Cart (${cartQuantity})`}
                                     icon={<ShoppingBag className="h-4 w-4" />}
+                                    prefetch={false}
                                 />
                             </div>
 
@@ -264,10 +265,11 @@ export default function MobileMenu({
     );
 }
 
-function MobileLink({ href, label, icon, highlight }: { href: string; label: string; icon?: React.ReactNode; highlight?: boolean }) {
+function MobileLink({ href, label, icon, highlight, prefetch }: { href: string; label: string; icon?: React.ReactNode; highlight?: boolean; prefetch?: boolean }) {
     return (
         <Link
             href={href}
+            prefetch={prefetch}
             className={`group flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-colors ${highlight
                 ? 'bg-sky-500/10 text-sky-400 hover:bg-sky-500/20'
                 : 'text-white/80 hover:bg-white/5 hover:text-white'

@@ -346,7 +346,7 @@ export default function CartClient({ order, iconCatalog }: { order: CartOrder | 
                                 <span>{orderTotals.total}</span>
                             </div>
                             <Button asChild variant="premium" className="mt-5 w-full">
-                                <Link href="/checkout">Proceed to Checkout</Link>
+                                <Link href="/checkout" prefetch={false}>Proceed to Checkout</Link>
                             </Button>
                         </aside>
                     </div>

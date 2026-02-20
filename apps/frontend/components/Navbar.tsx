@@ -73,6 +73,7 @@ function NavPill({
   active = false,
   showLabel = false, // If true, label is always visible (not just on hover)
   expandOnHover = true,
+  prefetch,
 }: {
   href?: string;
   label: string;
@@ -85,6 +86,7 @@ function NavPill({
   active?: boolean;
   showLabel?: boolean;
   expandOnHover?: boolean;
+  prefetch?: boolean;
 }) {
   const isActiveStyle = active
     ? 'bg-[rgb(24,65,121)] text-white shadow-md shadow-[rgb(24,65,121)]/20 ring-1 ring-white/10'
@@ -130,7 +132,7 @@ function NavPill({
   }
 
   return (
-    <Link href={href || '#'} onClick={onClick} className={baseClasses}>
+    <Link href={href || '#'} prefetch={prefetch} onClick={onClick} className={baseClasses}>
       {content}
     </Link>
   );
@@ -610,6 +612,7 @@ export default function Navbar() {
                 inverse={isScrolled}
                 active={pathname === '/cart' || isCartMenuOpen}
                 as="button"
+                prefetch={false}
                 onClick={() => setIsCartMenuOpen((prev) => !prev)}
               />
 
