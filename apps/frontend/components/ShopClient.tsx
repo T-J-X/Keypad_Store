@@ -667,17 +667,6 @@ export default function ShopClient({
 
 
 
-  button>
-      <button
-        type="button"
-        onClick={() => setViewMode('list')}
-        className={`rounded-md p-1.5 transition-colors ${viewMode === 'list' ? 'bg-ink/5 text-ink' : 'text-ink/40 hover:bg-ink/5 hover:text-ink/60'}`}
-        aria-label="List view"
-      >
-        <ListIcon className="h-4 w-4" />
-      </button>
-    </div>
-  );
 
   const renderIconsGrid = (iconItems: IconProduct[]) => {
     const gridClasses = viewMode === 'grid'
