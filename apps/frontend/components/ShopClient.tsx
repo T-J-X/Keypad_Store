@@ -163,6 +163,30 @@ type IconSearchEntry = {
   categorySlugs: string[];
 };
 
+
+function ViewToggle({ viewMode, onChange }: { viewMode: 'grid' | 'list', onChange: (mode: 'grid' | 'list') => void }) {
+  return (
+    <div className="flex items-center rounded-lg border border-ink/10 bg-white p-1">
+      <button
+        type="button"
+        onClick={() => onChange('grid')}
+        className={`rounded-md p-1.5 transition-colors ${viewMode === 'grid' ? 'bg-ink/5 text-ink' : 'text-ink/40 hover:bg-ink/5 hover:text-ink/60'}`}
+        aria-label="Grid view"
+      >
+        <LayoutGrid className="h-4 w-4" />
+      </button>
+      <button
+        type="button"
+        onClick={() => onChange('list')}
+        className={`rounded-md p-1.5 transition-colors ${viewMode === 'list' ? 'bg-ink/5 text-ink' : 'text-ink/40 hover:bg-ink/5 hover:text-ink/60'}`}
+        aria-label="List view"
+      >
+        <ListIcon className="h-4 w-4" />
+      </button>
+    </div>
+  );
+}
+
 export default function ShopClient({
   icons,
   keypads,
@@ -643,16 +667,7 @@ export default function ShopClient({
 
 
 
-  const renderViewToggle = () => (
-    <div className="flex items-center rounded-lg border border-ink/10 bg-white p-1">
-      <button
-        type="button"
-        onClick={() => setViewMode('grid')}
-        className={`rounded-md p-1.5 transition-colors ${viewMode === 'grid' ? 'bg-ink/5 text-ink' : 'text-ink/40 hover:bg-ink/5 hover:text-ink/60'}`}
-        aria-label="Grid view"
-      >
-        <LayoutGrid className="h-4 w-4" />
-      </button>
+  button>
       <button
         type="button"
         onClick={() => setViewMode('list')}
@@ -741,7 +756,7 @@ export default function ShopClient({
           )}
           <div className={`flex items-center gap-4 text-sm text-ink/60 ${isCatalogWideSection ? 'ml-auto' : ''}`}>
             {availableResultCount} {visibleResultLabel} available
-            {renderViewToggle()}
+            <ViewToggle viewMode={viewMode} onChange={setViewMode} />
           </div>
         </div>
         <form onSubmit={onSearch} className="flex flex-col gap-3 md:flex-row md:flex-nowrap md:items-center">
