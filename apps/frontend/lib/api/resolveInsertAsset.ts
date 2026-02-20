@@ -1,6 +1,6 @@
 /** Shared asset-resolution helpers used by export-pdf and icon-catalog routes. */
 
-export type ProductAssetLike = {
+type ProductAssetLike = {
     id?: string | null;
     source?: string | null;
     preview?: string | null;

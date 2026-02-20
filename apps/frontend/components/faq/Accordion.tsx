@@ -3,7 +3,7 @@
 import type { ReactNode } from 'react';
 import { useState } from 'react';
 
-export type AccordionItem = {
+type AccordionItem = {
   id: string;
   question: string;
   answer: ReactNode;

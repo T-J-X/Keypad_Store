@@ -267,7 +267,7 @@ const SESSION_SUMMARY_QUERY = `
   }
 `;
 
-export type SessionSummary = {
+type SessionSummary = {
   authenticated: boolean;
   activeCustomer: {
     id: string;
@@ -648,7 +648,7 @@ type BaseShopConfigPublicResponse = {
   } | null;
 };
 
-export type IconPageResult = {
+type IconPageResult = {
   items: IconProduct[];
   totalItems: number;
 };
@@ -712,7 +712,7 @@ export async function fetchShopLandingContent(): Promise<BaseShopPublicConfig> {
   }
 }
 
-export async function fetchBaseShopConfigPublic(): Promise<BaseShopPublicConfig> {
+async function fetchBaseShopConfigPublic(): Promise<BaseShopPublicConfig> {
   try {
     return await fetchShopLandingContent();
   } catch {

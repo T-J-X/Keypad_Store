@@ -1,18 +1,18 @@
 import { useMemo } from 'react';
 
-export type FuzzyIndexEntry<T> = {
+type FuzzyIndexEntry<T> = {
   item: T;
   tokens: string[];
 };
 
-export function normalizeSearchText(value: string) {
+function normalizeSearchText(value: string) {
   return value
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, ' ')
     .trim();
 }
 
-export function tokenizeSearchText(value: string) {
+function tokenizeSearchText(value: string) {
   const normalized = normalizeSearchText(value);
   return normalized ? normalized.split(/\s+/g).filter(Boolean) : [];
 }

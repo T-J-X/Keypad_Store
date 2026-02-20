@@ -25,7 +25,7 @@ function slot(id: string, cx: number, cy: number, insertD: number, bezelD: numbe
   };
 }
 
-export const KEYPAD_LAYOUTS: Record<string, ModelLayout> = {
+const KEYPAD_LAYOUTS: Record<string, ModelLayout> = {
   'PKP-2200-SI': {
     model: 'PKP-2200-SI',
     baseW: 1000,
@@ -137,7 +137,7 @@ function sortSlots(slots: Slot[]) {
   return [...slots].sort((left, right) => slotIdToIndex(left.id) - slotIdToIndex(right.id));
 }
 
-export function hasLayoutForModel(modelCode: string | null | undefined): boolean {
+function hasLayoutForModel(modelCode: string | null | undefined): boolean {
   const normalized = (modelCode ?? '').trim().toUpperCase();
   return Boolean(normalized && KEYPAD_LAYOUTS[normalized]);
 }
@@ -165,7 +165,7 @@ export function getSlotIdsForLayout(layout: ModelLayout): string[] {
   return sortSlots(layout.slots).map((slotEntry) => slotEntry.id);
 }
 
-export function getSlotIdsForLayoutModel(modelCode: string | null | undefined): string[] {
+function getSlotIdsForLayoutModel(modelCode: string | null | undefined): string[] {
   return getSlotIdsForLayout(getLayoutForModel(modelCode));
 }
 

@@ -49,7 +49,7 @@ export type KeypadModelGeometry = {
   };
 };
 
-export type SlotMicroTweak = {
+type SlotMicroTweak = {
   centerOffsetXPct?: number;
   centerOffsetYPct?: number;
   sizeScale?: number;
@@ -65,12 +65,12 @@ export const DEFAULT_SLOT_SAFE_ZONE: SlotSafeZone = {
   iconDiameterPctOfSlot: CONFIGURATOR_THEME.iconFitPercent,
 };
 
-export const DEFAULT_BUTTON_VISUAL: KeypadModelGeometry['buttonVisual'] = {
+const DEFAULT_BUTTON_VISUAL: KeypadModelGeometry['buttonVisual'] = {
   ringDiameterPctOfSlot: 136.3,
   iconDiameterPctOfSlot: CONFIGURATOR_THEME.iconFitPercent,
 };
 
-export function slotGeometryToPercentBox(slot: SlotGeometry) {
+function slotGeometryToPercentBox(slot: SlotGeometry) {
   return {
     leftPct: (slot.cx - slot.r) * 100,
     topPct: (slot.cy - slot.r) * 100,
@@ -178,7 +178,7 @@ function buildGridSlots({
   return slots;
 }
 
-export function buildSlotsFromCenterPercents(
+function buildSlotsFromCenterPercents(
   centerPoints: Array<{ xPct: number; yPct: number }>,
   sizePct: number,
 ): Record<string, SlotGeometry> {
@@ -203,7 +203,7 @@ export function buildSlotsFromCenterPercents(
   return slots;
 }
 
-export function buildSlotsFromPsdBounds(
+function buildSlotsFromPsdBounds(
   canvasSize: { width: number; height: number },
   bounds: Array<{ left: number; top: number; right: number; bottom: number }>,
   options?: {
@@ -246,7 +246,7 @@ export function buildSlotsFromPsdBounds(
   return slots;
 }
 
-export function buildGridModelGeometry({
+function buildGridModelGeometry({
   modelCode,
   layoutLabel,
   columns,
@@ -301,7 +301,7 @@ export function buildGridModelGeometry({
   };
 }
 
-export function applySlotMicroTweaks(
+function applySlotMicroTweaks(
   slots: Record<string, SlotGeometry>,
   tweaks: Partial<Record<SlotId, SlotMicroTweak>>,
 ): Record<string, SlotGeometry> {

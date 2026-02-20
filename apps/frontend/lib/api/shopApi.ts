@@ -9,7 +9,7 @@ export type GraphResponse<T> = {
   errors?: Array<{ message?: string }>;
 };
 
-export type ShopApiResult<T> =
+type ShopApiResult<T> =
   | {
     ok: true;
     data: T;

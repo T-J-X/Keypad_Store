@@ -237,9 +237,9 @@ export default function ButtonInsertPdp({
               answer: (
                 <p>
                   No, but the VCT insert tool makes fitting and replacing inserts simple and safe.{' '}
-                  <a href="#" className="underline underline-offset-4">
+                  <span className="underline underline-offset-4 cursor-not-allowed text-ink/50">
                     Tool details coming soon
-                  </a>
+                  </span>
                   .
                 </p>
               ),

@@ -13,15 +13,7 @@ import type {
   SlotId,
 } from './shared';
 
-export {
-  buildGridModelGeometry,
-  buildSlotsFromCenterPercents,
-  buildSlotsFromPsdBounds,
-  DEFAULT_BUTTON_VISUAL,
-  DEFAULT_SLOT_SAFE_ZONE,
-  slotGeometryToPercentBox,
-  sortSlotIds,
-} from './shared';
+export { sortSlotIds } from './shared';
 export type {
   KeypadModelGeometry,
   SlotCoordMode,
@@ -29,6 +21,7 @@ export type {
   SlotId,
   SlotSafeZone,
 } from './shared';
+
 
 const MODEL_GRID_META: Record<string, { layoutLabel: string; columns: number; rows: number }> = {
   'PKP-2200-SI': { layoutLabel: '2x2', columns: 2, rows: 2 },
@@ -123,12 +116,12 @@ function buildGeometryFromLayout(modelCode: string): KeypadModelGeometry {
   };
 }
 
-export const PKP_2200_SI_GEOMETRY = buildGeometryFromLayout('PKP-2200-SI');
-export const PKP_2300_SI_GEOMETRY = buildGeometryFromLayout('PKP-2300-SI');
-export const PKP_2400_SI_GEOMETRY = buildGeometryFromLayout('PKP-2400-SI');
-export const PKP_2500_SI_GEOMETRY = buildGeometryFromLayout('PKP-2500-SI');
-export const PKP_2600_SI_GEOMETRY = buildGeometryFromLayout('PKP-2600-SI');
-export const PKP_3500_SI_GEOMETRY = buildGeometryFromLayout('PKP-3500-SI');
+const PKP_2200_SI_GEOMETRY = buildGeometryFromLayout('PKP-2200-SI');
+const PKP_2300_SI_GEOMETRY = buildGeometryFromLayout('PKP-2300-SI');
+const PKP_2400_SI_GEOMETRY = buildGeometryFromLayout('PKP-2400-SI');
+const PKP_2500_SI_GEOMETRY = buildGeometryFromLayout('PKP-2500-SI');
+const PKP_2600_SI_GEOMETRY = buildGeometryFromLayout('PKP-2600-SI');
+const PKP_3500_SI_GEOMETRY = buildGeometryFromLayout('PKP-3500-SI');
 
 export const KEYPAD_MODEL_GEOMETRIES: Record<string, KeypadModelGeometry> = {
   [PKP_2200_SI_GEOMETRY.modelCode]: PKP_2200_SI_GEOMETRY,

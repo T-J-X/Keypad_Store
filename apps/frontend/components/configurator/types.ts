@@ -46,9 +46,9 @@ export type PilotKeypadProduct = {
   productVariantId: string | null;
 };
 
-export type KeypadConfiguratorMode = 'new' | 'edit-line';
+type KeypadConfiguratorMode = 'new' | 'edit-line';
 
-export type KeypadConfiguratorBusyState = {
+type KeypadConfiguratorBusyState = {
   iconsLoading: boolean;
   loadingSavedConfig: boolean;
   addingToCart: boolean;
@@ -56,7 +56,7 @@ export type KeypadConfiguratorBusyState = {
   downloadingPdf: boolean;
 };
 
-export type KeypadPreviewState = {
+type KeypadPreviewState = {
   rotationDeg: number;
   showGlows: boolean;
   iconScale: number;

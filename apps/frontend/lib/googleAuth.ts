@@ -1,6 +1,6 @@
 export const GOOGLE_AUTH_STATE_COOKIE = 'kp_google_oauth_state';
 export const GOOGLE_AUTH_NEXT_COOKIE = 'kp_google_oauth_next';
-export const GOOGLE_AUTH_CALLBACK_PATH = '/api/auth/google/callback';
+const GOOGLE_AUTH_CALLBACK_PATH = '/api/auth/google/callback';
 
 export function getSafeRelativePath(input: string | null | undefined, fallback = '/account') {
   if (!input) return fallback;

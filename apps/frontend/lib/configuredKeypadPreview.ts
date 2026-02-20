@@ -19,7 +19,7 @@ export type ConfiguredIconLookupEntry = {
 };
 
 export type ConfiguredIconLookup = Map<string, ConfiguredIconLookupEntry>;
-export type ConfiguredIconPayloadItem = {
+type ConfiguredIconPayloadItem = {
   iconId: string;
   name?: string;
   matteAssetPath: string | null;

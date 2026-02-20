@@ -53,7 +53,6 @@ export default function SaveDesignModal({
         maxLength={160}
         className="mt-5 w-full rounded-full border border-white/10 bg-white/5 px-4 py-3 text-sm text-white outline-none focus:border-panel-accent focus:bg-white/10 transition-colors placeholder:text-white/30"
         placeholder="My Racing Setup"
-        autoFocus
       />
 
       <div className="mt-6 flex justify-end gap-3">

@@ -2,7 +2,7 @@
  * Recommendation logic for the configurator.
  * Maps a selected icon ID to logically related icon IDs.
  */
-export const ICON_RECOMMENDATIONS: Record<string, string[]> = {
+const ICON_RECOMMENDATIONS: Record<string, string[]> = {
   // Engine and power
   '001': ['002', 'A01', 'A05'],
   '002': ['001', 'A01'],

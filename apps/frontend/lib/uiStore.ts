@@ -2,7 +2,7 @@
 
 import { create } from 'zustand';
 
-export type GlobalToastState = {
+type GlobalToastState = {
   message: string;
   ctaLabel: string;
   ctaHref: string;

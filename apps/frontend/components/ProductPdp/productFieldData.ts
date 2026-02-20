@@ -7,7 +7,7 @@ export type ProductDownload = {
   source: 'customField' | 'asset';
 };
 
-export type ProductSpecItem = {
+type ProductSpecItem = {
   label: string;
   value: string;
 };

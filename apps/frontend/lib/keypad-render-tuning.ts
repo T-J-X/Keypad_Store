@@ -1,16 +1,16 @@
-export type ModelRenderTuning = {
+type ModelRenderTuning = {
   model: string;
   iconScale: number;
   iconVisibleComp: number;
 };
 
-export const DEFAULT_RENDER_TUNING: ModelRenderTuning = {
+const DEFAULT_RENDER_TUNING: ModelRenderTuning = {
   model: 'DEFAULT',
   iconScale: 0.94,
   iconVisibleComp: 1,
 };
 
-export const KEYPAD_RENDER_TUNING: Record<string, ModelRenderTuning> = {
+const KEYPAD_RENDER_TUNING: Record<string, ModelRenderTuning> = {
   'PKP-2200-SI': {
     model: 'PKP-2200-SI',
     iconScale: 1,

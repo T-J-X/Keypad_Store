@@ -111,10 +111,7 @@ export default function SignupForm() {
         <>
             <form
                 className="space-y-4"
-                onSubmit={(e) => {
-                    e.preventDefault();
-                    void handleSubmit();
-                }}
+                action={handleSubmit}
             >
                 {error && (
                     <div className="rounded-xl border border-rose-500/30 bg-rose-500/10 px-4 py-3 text-sm text-rose-600">

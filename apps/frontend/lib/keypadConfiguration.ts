@@ -11,12 +11,12 @@ export type KeypadConfigurationDraft = Record<string, SlotConfigurationDraft> & 
   _meta?: { rotation?: number };
 };
 
-export type SlotConfiguration = {
+type SlotConfiguration = {
   iconId: string;
   color: string | null;
 };
 
-export type KeypadConfiguration = Record<string, SlotConfiguration> & {
+type KeypadConfiguration = Record<string, SlotConfiguration> & {
   _meta?: { rotation?: number };
 };
 
@@ -32,7 +32,7 @@ function slotIdToIndex(slotId: string) {
   return parsed;
 }
 
-export function isSlotId(value: string): value is SlotId {
+function isSlotId(value: string): value is SlotId {
   if (value === '_meta') return false;
   return SLOT_ID_PATTERN.test(value);
 }
@@ -67,7 +67,7 @@ export function createEmptyConfigurationDraft(slotIds: readonly string[] = SLOT_
   return draft;
 }
 
-export function isValidIconId(value: string) {
+function isValidIconId(value: string) {
   return ICON_ID_PATTERN.test(value);
 }
 
@@ -96,7 +96,7 @@ export function asStrictConfiguration(
   slotIds?: readonly string[],
 ): KeypadConfiguration | null {
   const keys = resolveSlotIds(slotIds, getOrderedSlotIdsFromConfiguration(configuration));
-  const strictConfiguration: KeypadConfiguration = {};
+  const strictConfiguration: Record<string, any> = {};
 
   for (const slotId of keys) {
     const slot = configuration[slotId];
@@ -119,7 +119,7 @@ export function serializeConfiguration(
   slotIds?: readonly string[],
 ): string {
   const keys = resolveSlotIds(slotIds, getOrderedSlotIdsFromConfiguration(configuration));
-  const orderedConfiguration: KeypadConfigurationDraft | KeypadConfiguration = {};
+  const orderedConfiguration: Record<string, any> = {};
   if (configuration._meta) {
     orderedConfiguration._meta = configuration._meta;
   }

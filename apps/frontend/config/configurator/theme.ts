@@ -1,4 +1,4 @@
-export type ConfiguratorGlowTheme = {
+type ConfiguratorGlowTheme = {
   defaultAlpha: number;
   thumbnailAlpha: number;
   haloStdDeviation: number;
@@ -11,7 +11,7 @@ export type ConfiguratorGlowTheme = {
   blendMode: 'screen' | 'lighten';
 };
 
-export type ConfiguratorTheme = {
+type ConfiguratorTheme = {
   glow: ConfiguratorGlowTheme;
   iconFitPercent: number;
 };

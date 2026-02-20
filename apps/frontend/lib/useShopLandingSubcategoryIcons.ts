@@ -5,7 +5,7 @@ import {
   type IconCategory,
 } from './vendure';
 
-export type ShopLandingSubcategoryTile = {
+type ShopLandingSubcategoryTile = {
   id: string;
   label: string;
   slug: string;

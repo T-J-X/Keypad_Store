@@ -11,7 +11,7 @@ export type IconCatalogItem = {
   matteAssetPath: string | null;
 };
 
-export type RingGlowOption = {
+type RingGlowOption = {
   label: string;
   value: string | null;
 };

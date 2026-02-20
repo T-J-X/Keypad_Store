@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { CheckCircle2, X } from 'lucide-react';
 
-export type ToastPayload = {
+type ToastPayload = {
   message: string;
   ctaHref: string;
   ctaLabel: string;
