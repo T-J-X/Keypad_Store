@@ -5,14 +5,11 @@ Scanning uncommitted changes
 Scanning /Users/terry/keypad-store/apps/frontend...
 
 
-  ⚠ Component "KeypadProviderInner" is 724 lines — consider breaking it into smaller focused components
+  ⚠ Component "KeypadProviderInner" is 718 lines — consider breaking it into smaller focused components
     Extract logical sections into focused components: `<UserHeader />`, `<UserActions />`, etc.
 
   ⚠ useSearchParams() requires a <Suspense> boundary — without one, the entire page bails out to client-side rendering
     Wrap the component using useSearchParams: `<Suspense fallback={<Skeleton />}><SearchComponent /></Suspense>`
-
-  ⚠ useMemo wrapping a trivially cheap expression — memo overhead exceeds the computation
-    Remove useMemo — property access, math, and ternaries are already cheap without memoization
 
   ┌────────────────────────────────────────────────────┐
   │ ┌─────┐                                            │
@@ -21,14 +18,14 @@ Scanning /Users/terry/keypad-store/apps/frontend...
   │ └─────┘                                            │
   │ React Doctor (www.react.doctor)                    │
   │                                                    │
-  │ 98 / 100  Great                                    │
+  │ 99 / 100  Great                                    │
   │                                                    │
-  │ █████████████████████████████████████████████████░ │
+  │ ██████████████████████████████████████████████████ │
   │                                                    │
-  │ ⚠ 3 warnings  across 1/1 files  in 163ms           │
+  │ ⚠ 2 warnings  across 1/1 files  in 141ms           │
   └────────────────────────────────────────────────────┘
 
-  Full diagnostics written to /var/folders/7x/k93t0vgj6tz75gt2l1kmn0sm0000gn/T/react-doctor-1a5fa3c9-71a9-4edd-a2d8-682d634f4d89
+  Full diagnostics written to /var/folders/7x/k93t0vgj6tz75gt2l1kmn0sm0000gn/T/react-doctor-2287d956-4797-4add-b9ac-5a24f3026f29
 
-  Share your results: https://www.react.doctor/share?p=frontend&s=98&w=3&f=1
+  Share your results: https://www.react.doctor/share?p=frontend&s=99&w=2&f=1
 

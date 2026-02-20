@@ -247,20 +247,17 @@ function KeypadProviderInner({
     [slotIds, slots],
   );
 
-  const loadSavedId = useMemo(() => {
+  const loadSavedId = (() => {
     const value = searchParams.get('load');
     const normalized = value?.trim() || '';
     return normalized || null;
-  }, [searchParams]);
-  const editLineId = useMemo(() => {
+  })();
+  const editLineId = (() => {
     const value = searchParams.get('lineId');
     const normalized = value?.trim() || '';
     return normalized || null;
-  }, [searchParams]);
-  const resetScope = useMemo(
-    () => `${pathname ?? ''}::${keypad.slug}::${resolvedModelCode}::${loadSavedId ?? ''}::${editLineId ?? ''}`,
-    [editLineId, keypad.slug, loadSavedId, pathname, resolvedModelCode],
-  );
+  })();
+  const resetScope = `${pathname ?? ''}::${keypad.slug}::${resolvedModelCode}::${loadSavedId ?? ''}::${editLineId ?? ''}`;
 
   const debugMode = searchParams.get('debug') === '1' || searchParams.get('debugSlots') === '1';
   const editMode = searchParams.get('edit') === '1';
@@ -268,17 +265,14 @@ function KeypadProviderInner({
     () => getRenderTuningForModel(resolvedModelCode),
     [resolvedModelCode],
   );
-  const previewIconScaleFromQuery = useMemo(() => {
+  const previewIconScaleFromQuery = (() => {
     const raw = searchParams.get('iconScale');
     if (!raw) return undefined;
     const value = Number.parseFloat(raw);
     if (!Number.isFinite(value) || value <= 0) return undefined;
     return Math.max(0.4, Math.min(1.68, value));
-  }, [searchParams]);
-  const previewIconScale = useMemo(
-    () => previewIconScaleFromQuery ?? modelRenderTuning.iconScale,
-    [modelRenderTuning.iconScale, previewIconScaleFromQuery],
-  );
+  })();
+  const previewIconScale = previewIconScaleFromQuery ?? modelRenderTuning.iconScale;
   const previewRotationFromQuery = (() => {
     const value = Number.parseFloat(searchParams.get('rotationDeg') || '0');
     if (!Number.isFinite(value)) return 0;
