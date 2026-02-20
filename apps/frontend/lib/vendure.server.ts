@@ -406,7 +406,8 @@ const CHECKOUT_SESSION_QUERY = `
 export async function fetchCheckoutSession(): Promise<CheckoutSessionData> {
   const cookieStore = await cookies();
   const headers: Record<string, string> = { 'content-type': 'application/json' };
-  const cookieString = cookieStore.toString();
+  const activeCookies = cookieStore.getAll();
+  const cookieString = activeCookies.map((c) => `${c.name}=${c.value}`).join('; ');
   if (cookieString) headers.cookie = cookieString;
 
   try {
@@ -425,6 +426,9 @@ export async function fetchCheckoutSession(): Promise<CheckoutSessionData> {
     }>;
 
     if (!res.ok || json.errors?.length) {
+      if (json.errors?.length) {
+        console.error('[fetchCheckoutSession] GraphQL Errors:', JSON.stringify(json.errors, null, 2));
+      }
       return { order: null, shippingMethods: [], paymentMethods: [] };
     }
 

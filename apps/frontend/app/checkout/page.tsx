@@ -23,6 +23,8 @@ async function CheckoutFetcher() {
     fetchIconCatalog(),
   ]);
 
+  console.log('[CheckoutFetcher] Rendered with order ID:', session.order?.id ?? 'null', 'quantity:', session.order?.totalQuantity ?? 'null');
+
   return (
     <CheckoutClient
       initialOrder={session.order}
