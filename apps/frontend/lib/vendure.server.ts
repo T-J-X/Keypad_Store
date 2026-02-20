@@ -162,7 +162,8 @@ export async function fetchActiveOrder(): Promise<CartOrder | null> {
   const headers: Record<string, string> = { 'content-type': 'application/json' };
 
   // Forward cookies to maintain session
-  const cookieString = cookieStore.toString();
+  const activeCookies = cookieStore.getAll();
+  const cookieString = activeCookies.map((c) => `${c.name}=${c.value}`).join('; ');
   if (cookieString) {
     headers.cookie = cookieString;
   }
@@ -235,35 +236,35 @@ export async function fetchActiveOrder(): Promise<CartOrder | null> {
 const SESSION_SUMMARY_QUERY = `
   query SessionSummary {
     activeOrder {
-      id
+    id
       totalQuantity
       totalWithTax
       currencyCode
       lines {
-        id
+    id
         quantity
         linePriceWithTax
         productVariant {
-          id
+    id
           name
           product {
-            id
+    id
             name
             slug
             featuredAsset {
-              preview
+    preview
               source
-            }
+  }
           }
         }
       }
     }
     activeCustomer {
-      id
-      firstName
-      lastName
-      emailAddress
-    }
+  id
+  firstName
+  lastName
+  emailAddress
+}
   }
 `;
 
@@ -346,58 +347,58 @@ export async function fetchSessionSummary(): Promise<SessionSummary> {
 const CHECKOUT_SESSION_QUERY = `
   query CheckoutSession {
     activeOrder {
-      id
-      code
-      state
-      totalQuantity
-      subTotalWithTax
-      shippingWithTax
-      totalWithTax
-      currencyCode
+    id
+    code
+    state
+    totalQuantity
+    subTotalWithTax
+    shippingWithTax
+    totalWithTax
+    currencyCode
       lines {
-        id
-        quantity
-        linePriceWithTax
+      id
+      quantity
+      linePriceWithTax
         customFields {
-          configuration
-        }
+        configuration
+      }
         productVariant {
-          id
-          name
-          currencyCode
+        id
+        name
+        currencyCode
           product {
-            id
-            slug
-            name
+          id
+          slug
+          name
             featuredAsset {
-              preview
-              source
-            }
+            preview
+            source
           }
         }
       }
     }
-    eligibleShippingMethods {
-      id
-      code
-      name
-      description
-      priceWithTax
-    }
-    eligiblePaymentMethods {
-      id
-      code
-      name
-      description
-      isEligible
-      eligibilityMessage
-    }
-    activePaymentMethods {
-      code
-      name
-      description
-    }
   }
+    eligibleShippingMethods {
+    id
+    code
+    name
+    description
+    priceWithTax
+  }
+    eligiblePaymentMethods {
+    id
+    code
+    name
+    description
+    isEligible
+    eligibilityMessage
+  }
+    activePaymentMethods {
+    code
+    name
+    description
+  }
+}
 `;
 
 
@@ -493,7 +494,7 @@ export async function fetchCheckoutSession(): Promise<CheckoutSessionData> {
       ? eligiblePaymentMethods
       : (json.data?.activePaymentMethods ?? [])
         .map((method: any, index: number) => ({
-          id: `active-${index}`,
+          id: `active - ${index} `,
           code: method.code ?? '',
           name: method.name ?? method.code ?? 'Payment method',
           description: method.description ?? '',
@@ -520,7 +521,7 @@ export async function vendureFetch<T>(query: string, variables?: Record<string, 
 
   const json = (await res.json()) as GraphResponse<T>;
   if (!res.ok || json.errors?.length) {
-    const message = json.errors?.[0]?.message ?? `Vendure error (${res.status})`;
+    const message = json.errors?.[0]?.message ?? `Vendure error(${res.status})`;
     throw new Error(message);
   }
   if (!json.data) throw new Error('Vendure response missing data');
@@ -528,110 +529,110 @@ export async function vendureFetch<T>(query: string, variables?: Record<string, 
 }
 
 const PRODUCT_VARIANT_FIELDS = `
-  id
-  name
-  sku
-  priceWithTax
-  currencyCode
-  stockLevel
+id
+name
+sku
+priceWithTax
+currencyCode
+stockLevel
   customFields {
-    iconId
-    insertAssetId
-    sizeMm
-    iconType
-    keypadModelCode
-    slotMapKey
-  }
+  iconId
+  insertAssetId
+  sizeMm
+  iconType
+  keypadModelCode
+  slotMapKey
+}
 `;
 
 const PRODUCT_VARIANT_FIELDS_WITH_NUMERIC_STOCK = `
   ${PRODUCT_VARIANT_FIELDS}
-  stockOnHand
-  stockAllocated
-`;
+stockOnHand
+stockAllocated
+  `;
 
 const PRODUCT_FIELDS = `
-  id
-  name
-  slug
-  description
+id
+name
+slug
+description
   featuredAsset { id preview source name }
   assets { id preview source name }
   variants { ${PRODUCT_VARIANT_FIELDS} }
   customFields {
-    isIconProduct
-    iconId
-    iconCategories
-    insertAssetId
-    isKeypadProduct
-    application
-    colour
-    size
+  isIconProduct
+  iconId
+  iconCategories
+  insertAssetId
+  isKeypadProduct
+  application
+  colour
+  size
     additionalSpecs {
-      label
-      value
-    }
-    whatsInTheBox
-    downloads {
-      id
-      name
-      source
-      preview
-    }
-    seoTitle
-    seoDescription
-    seoNoIndex
-    seoCanonicalUrl
-    seoKeywords
+    label
+    value
   }
+  whatsInTheBox
+    downloads {
+    id
+    name
+    source
+    preview
+  }
+  seoTitle
+  seoDescription
+  seoNoIndex
+  seoCanonicalUrl
+  seoKeywords
+}
 `;
 
 const PRODUCT_FIELDS_WITH_NUMERIC_STOCK = `
-  id
-  name
-  slug
-  description
+id
+name
+slug
+description
   featuredAsset { id preview source name }
   assets { id preview source name }
   variants { ${PRODUCT_VARIANT_FIELDS_WITH_NUMERIC_STOCK} }
   customFields {
-    isIconProduct
-    iconId
-    iconCategories
-    insertAssetId
-    isKeypadProduct
-    application
-    colour
-    size
+  isIconProduct
+  iconId
+  iconCategories
+  insertAssetId
+  isKeypadProduct
+  application
+  colour
+  size
     additionalSpecs {
-      label
-      value
-    }
-    whatsInTheBox
-    downloads {
-      id
-      name
-      source
-      preview
-    }
-    seoTitle
-    seoDescription
-    seoNoIndex
-    seoCanonicalUrl
-    seoKeywords
+    label
+    value
   }
+  whatsInTheBox
+    downloads {
+    id
+    name
+    source
+    preview
+  }
+  seoTitle
+  seoDescription
+  seoNoIndex
+  seoCanonicalUrl
+  seoKeywords
+}
 `;
 
 const PRODUCT_LIST_QUERY = `
     query PagedProducts($options: ProductListOptions) {
-      products(options: $options) {
-        totalItems
+  products(options: $options) {
+    totalItems
         items {
           ${PRODUCT_FIELDS}
-        }
-      }
     }
-  `;
+  }
+}
+`;
 
 type ProductListResponse = {
   products: {
@@ -654,40 +655,40 @@ type IconPageResult = {
 };
 
 const SHOP_LANDING_TOP_TILE_FIELDS = `
-  id
-  label
-  subtitle
-  href
-  hoverStyle
-  kind
-  isEnabled
-  imagePreview
-  imageSource
-  imageAssetId
-`;
+id
+label
+subtitle
+href
+hoverStyle
+kind
+isEnabled
+imagePreview
+imageSource
+imageAssetId
+  `;
 
 const SHOP_LANDING_SUBCATEGORY_ICON_FIELDS = `
-  id
-  labelOverride
-  order
-  isEnabled
-  imagePreview
-  imageSource
-  imageAssetId
-`;
+id
+labelOverride
+order
+isEnabled
+imagePreview
+imageSource
+imageAssetId
+  `;
 
 const SHOP_LANDING_CONTENT_QUERY = `
   query ShopLandingContent {
     baseShopConfigPublic {
-      featuredProductSlugs
+    featuredProductSlugs
       topTiles {
         ${SHOP_LANDING_TOP_TILE_FIELDS}
-      }
+    }
       disciplineTiles {
         ${SHOP_LANDING_SUBCATEGORY_ICON_FIELDS}
-      }
     }
   }
+}
 `;
 
 export async function fetchShopLandingContent(): Promise<BaseShopPublicConfig> {
@@ -830,11 +831,11 @@ export async function fetchKeypadProducts(): Promise<KeypadProduct[]> {
 const fetchProductBySlugUncached = async (slug: string): Promise<CatalogProduct | null> => {
   const queryWithNumericStock = `
     query ProductBySlug($slug: String!) {
-      product(slug: $slug) {
+  product(slug: $slug) {
         ${PRODUCT_FIELDS_WITH_NUMERIC_STOCK}
-      }
-    }
-  `;
+  }
+}
+`;
 
   try {
     const data = await vendureFetch<{ product: CatalogProduct | null }>(queryWithNumericStock, { slug });
@@ -851,11 +852,11 @@ const fetchProductBySlugUncached = async (slug: string): Promise<CatalogProduct 
 
     const fallbackQuery = `
       query ProductBySlug($slug: String!) {
-        product(slug: $slug) {
+  product(slug: $slug) {
           ${PRODUCT_FIELDS}
-        }
-      }
-    `;
+  }
+}
+`;
 
     const fallbackData = await vendureFetch<{ product: CatalogProduct | null }>(fallbackQuery, { slug });
     if (!fallbackData.product) return null;

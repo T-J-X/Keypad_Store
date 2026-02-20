@@ -1,6 +1,6 @@
 'use client';
 
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { Suspense, createContext, useEffect, useMemo, useRef, useState, useReducer } from 'react';
 import useSWR from 'swr';
 import { notifyCartUpdated } from '../../lib/cartEvents';
@@ -147,6 +147,7 @@ function KeypadProviderInner({
 }) {
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const resolvedModelCode = resolveConfiguratorModelCode(keypad);
   const modelGeometry = useMemo(() => getGeometryForModel(resolvedModelCode), [resolvedModelCode]);
   const slotIds = useMemo(() => getSlotIdsForGeometry(modelGeometry), [modelGeometry]);
@@ -595,11 +596,12 @@ function KeypadProviderInner({
       }
 
       notifyCartUpdated();
+      router.refresh();
       updateState({ lastOrderCode: payload.orderCode ?? null });
       updateState({
         cartStatus: {
           type: 'success',
-          message: editLineId ? 'Cart line updated successfully.' : 'Configured keypad added to cart.',
+          message: editLineId ? 'Configured cart line updated.' : 'Added configured keypad to cart.',
         },
       });
       showToast({

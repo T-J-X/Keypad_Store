@@ -101,6 +101,7 @@ export default function PurchasePanel({
       throw new Error(payload.error || 'Could not add this item to cart.');
     }
     notifyCartUpdated();
+    router.refresh();
   };
 
   const onAddToCart = async () => {
