@@ -2,8 +2,14 @@
 
 import { Search, X, ChevronRight, Loader2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
-import { useEffect, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useRef, useReducer, type FormEvent } from 'react';
 import Image from 'next/image';
+
+interface SearchState {
+    query: string;
+    results: SearchResultItem[];
+    isLoading: boolean;
+}
 
 interface SearchModalProps {
     isOpen: boolean;
@@ -13,7 +19,7 @@ interface SearchModalProps {
 import { searchProductsAction, type SearchResultItem } from '../../app/actions/search';
 
 function useDebouncedValue<T>(value: T, delayMs: number): T {
-    const [debounced, setDebounced] = useState(value);
+    const [debounced, setDebounced] = useReducer((_: T, next: T) => next, value);
     useEffect(() => {
         const handler = setTimeout(() => {
             setDebounced(value);
@@ -24,9 +30,11 @@ function useDebouncedValue<T>(value: T, delayMs: number): T {
 }
 
 export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
-    const [query, setQuery] = useState('');
-    const [results, setResults] = useState<SearchResultItem[]>([]);
-    const [isLoading, setIsLoading] = useState(false);
+    const [state, updateState] = useReducer(
+        (prev: SearchState, next: Partial<SearchState>) => ({ ...prev, ...next }),
+        { query: '', results: [], isLoading: false }
+    );
+    const { query, results, isLoading } = state;
     const inputRef = useRef<HTMLInputElement>(null);
     const router = useRouter();
     const debouncedQuery = useDebouncedValue(query, 300);
@@ -39,8 +47,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
             document.body.style.overflow = 'hidden';
         } else {
             document.body.style.overflow = '';
-            setQuery('');
-            setResults([]);
+            updateState({ query: '', results: [] });
         }
         return () => {
             document.body.style.overflow = '';
@@ -61,20 +68,21 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
 
         const fetchResults = async () => {
             if (debouncedQuery.trim().length < 2) {
-                if (active) setResults([]);
+                if (active) updateState({ results: [] });
                 return;
             }
 
-            if (active) setIsLoading(true);
+            if (active) updateState({ isLoading: true });
             try {
                 const items = await searchProductsAction(debouncedQuery);
                 if (active) {
-                    setResults(items);
+                    updateState({ results: items, isLoading: false });
                 }
             } catch (error) {
                 console.error('Search error:', error);
-            } finally {
-                if (active) setIsLoading(false);
+                if (active) {
+                    updateState({ isLoading: false });
+                }
             }
         };
 
@@ -123,7 +131,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                         className="flex-1 bg-transparent px-4 py-2 text-lg text-ink placeholder:text-ink-muted focus:outline-none"
                         placeholder="Search products, IDs, or categories..."
                         value={query}
-                        onChange={(e) => setQuery(e.target.value)}
+                        onChange={(e) => updateState({ query: e.target.value })}
                     />
                     <button
                         type="button"

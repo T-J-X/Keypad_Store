@@ -41,7 +41,7 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
             if (data.success) {
                 const name = [data.firstName, data.lastName].filter(Boolean).join(' ');
                 if (name) {
-                    setToast(`Welcome back, ${name}`);
+                    updateState({ toast: `Welcome back, ${name}` });
                     // Wait for toast to be visible before redirecting
                     setTimeout(() => {
                         window.location.assign(redirectTo);
@@ -50,12 +50,12 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
                     window.location.assign(redirectTo);
                 }
             } else {
-                setError(data.error || 'Login failed. Please try again.');
+                updateState({ error: data.error || 'Login failed. Please try again.' });
             }
         } catch {
-            setError('Unable to connect. Please try again.');
+            updateState({ error: 'Unable to connect. Please try again.' });
         } finally {
-            setLoading(false);
+            updateState({ loading: false });
         }
     };
 
@@ -84,7 +84,7 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
                         spellCheck={false}
                         placeholder="you@company.com"
                         value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        onChange={(e) => updateState({ email: e.target.value })}
                         disabled={loading}
                     />
                 </div>
@@ -101,7 +101,7 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
                         autoComplete="current-password"
                         placeholder="Enter your password…"
                         value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        onChange={(e) => updateState({ password: e.target.value })}
                         disabled={loading}
                     />
                 </div>
@@ -121,7 +121,7 @@ export default function LoginForm({ redirectTo }: { redirectTo: string }) {
                 </div>
             </form>
 
-            {toast && <Toast message={toast} onDismiss={() => setToast(null)} />}
+            {toast && <Toast message={toast} onDismiss={() => updateState({ toast: null })} />}
         </>
     );
 }

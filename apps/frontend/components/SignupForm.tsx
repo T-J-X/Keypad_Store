@@ -1,7 +1,7 @@
 /* eslint-disable jsx-a11y/label-has-associated-control */
 'use client';
 
-import { useState, useMemo } from 'react';
+import React, { useMemo } from 'react';
 import Link from 'next/link';
 import Toast from './ui/Toast';
 
@@ -18,15 +18,23 @@ const PASSWORD_RULES = [
     },
 ] as const;
 
+type SignupState = {
+    firstName: string;
+    lastName: string;
+    email: string;
+    password: string;
+    confirmPassword: string;
+    error: string;
+    loading: boolean;
+    toast: string | null;
+};
+
 export default function SignupForm() {
-    const [firstName, setFirstName] = useState('');
-    const [lastName, setLastName] = useState('');
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [confirmPassword, setConfirmPassword] = useState('');
-    const [error, setError] = useState('');
-    const [loading, setLoading] = useState(false);
-    const [toast, setToast] = useState<string | null>(null);
+    const [state, updateState] = React.useReducer(
+        (prev: SignupState, next: Partial<SignupState>) => ({ ...prev, ...next }),
+        { firstName: '', lastName: '', email: '', password: '', confirmPassword: '', error: '', loading: false, toast: null }
+    );
+    const { firstName, lastName, email, password, confirmPassword, error, loading, toast } = state;
 
     /* Derive rule pass/fail and overall validity */
     const ruleResults = useMemo(
@@ -39,24 +47,23 @@ export default function SignupForm() {
 
     const handleSubmit = async () => {
         if (!firstName.trim() || !lastName.trim()) {
-            setError('Please enter your first and last name.');
+            updateState({ error: 'Please enter your first and last name.' });
             return;
         }
         if (!email.trim() || !password) {
-            setError('Please enter your email and password.');
+            updateState({ error: 'Please enter your email and password.' });
             return;
         }
         if (!allRulesPass) {
-            setError('Password does not meet all strength requirements.');
+            updateState({ error: 'Password does not meet all strength requirements.' });
             return;
         }
         if (!passwordsMatch) {
-            setError('Passwords do not match.');
+            updateState({ error: 'Passwords do not match.' });
             return;
         }
 
-        setLoading(true);
-        setError('');
+        updateState({ loading: true, error: '' });
 
         try {
             // Step 1: Register
@@ -74,8 +81,7 @@ export default function SignupForm() {
             const registerData = await registerRes.json();
 
             if (!registerData.success) {
-                setError(registerData.error || 'Registration failed. Please try again.');
-                setLoading(false);
+                updateState({ error: registerData.error || 'Registration failed. Please try again.', loading: false });
                 return;
             }
 
@@ -90,21 +96,21 @@ export default function SignupForm() {
 
             if (loginData.success) {
                 const name = [loginData.firstName, loginData.lastName].filter(Boolean).join(' ');
-                setToast(name ? `Welcome, ${name}!` : 'Account created!');
+                updateState({ toast: name ? `Welcome, ${name}!` : 'Account created!' });
                 setTimeout(() => {
                     window.location.assign('/account');
                 }, 1500);
             } else {
                 // Registration succeeded but auto-login failed (e.g. verification required)
-                setToast('Account created! Please sign in.');
+                updateState({ toast: 'Account created! Please sign in.' });
                 setTimeout(() => {
                     window.location.assign('/login');
                 }, 1500);
             }
         } catch {
-            setError('Unable to connect. Please try again.');
+            updateState({ error: 'Unable to connect. Please try again.' });
         } finally {
-            setLoading(false);
+            updateState({ loading: false });
         }
     };
 
@@ -133,7 +139,7 @@ export default function SignupForm() {
                             autoComplete="given-name"
                             placeholder="Jane"
                             value={firstName}
-                            onChange={(e) => setFirstName(e.target.value)}
+                            onChange={(e) => updateState({ firstName: e.target.value })}
                             disabled={loading}
                         />
                     </div>
@@ -150,7 +156,7 @@ export default function SignupForm() {
                             autoComplete="family-name"
                             placeholder="Doe"
                             value={lastName}
-                            onChange={(e) => setLastName(e.target.value)}
+                            onChange={(e) => updateState({ lastName: e.target.value })}
                             disabled={loading}
                         />
                     </div>
@@ -169,7 +175,7 @@ export default function SignupForm() {
                         spellCheck={false}
                         placeholder="you@company.com"
                         value={email}
-                        onChange={(e) => setEmail(e.target.value)}
+                        onChange={(e) => updateState({ email: e.target.value })}
                         disabled={loading}
                     />
                 </div>
@@ -188,7 +194,7 @@ export default function SignupForm() {
                         autoComplete="new-password"
                         placeholder="Create a strong password…"
                         value={password}
-                        onChange={(e) => setPassword(e.target.value)}
+                        onChange={(e) => updateState({ password: e.target.value })}
                         disabled={loading}
                     />
                 </div>
@@ -233,7 +239,7 @@ export default function SignupForm() {
                         autoComplete="new-password"
                         placeholder="Re-enter your password…"
                         value={confirmPassword}
-                        onChange={(e) => setConfirmPassword(e.target.value)}
+                        onChange={(e) => updateState({ confirmPassword: e.target.value })}
                         disabled={loading}
                     />
                     {showMismatch && (
@@ -255,7 +261,7 @@ export default function SignupForm() {
                 </div>
             </form>
 
-            {toast && <Toast message={toast} onDismiss={() => setToast(null)} />}
+            {toast && <Toast message={toast} onDismiss={() => updateState({ toast: null })} />}
         </>
     );
 }
