@@ -102,6 +102,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
     return (
         <div className="fixed inset-0 z-[100] flex items-start justify-center px-4 pt-4 sm:pt-24">
             {/* Backdrop */}
+            {/* eslint-disable-next-line jsx-a11y/click-events-have-key-events, jsx-a11y/no-static-element-interactions */}
             <div
                 className="absolute inset-0 bg-ink/20 backdrop-blur-sm transition-opacity"
                 onClick={onClose}

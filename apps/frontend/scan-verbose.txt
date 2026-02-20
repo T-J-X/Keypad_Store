@@ -1,0 +1,71 @@
+react-doctor v0.0.28
+
+Scanning uncommitted changes
+
+Scanning /Users/terry/keypad-store/apps/frontend...
+
+- Detecting framework. Found Next.js.
+[32m✔[39m Detecting framework. Found Next.js.
+- Detecting React version. Found React 19.2.4.
+[32m✔[39m Detecting React version. Found React 19.2.4.
+- Detecting language. Found TypeScript.
+[32m✔[39m Detecting language. Found TypeScript.
+- Detecting React Compiler. Not found.
+[32m✔[39m Detecting React Compiler. Not found.
+- Scanning 5 changed source files.
+[32m✔[39m Scanning 5 changed source files.
+
+- Running lint checks...
+[32m✔[39m Running lint checks.
+  ⚠ Component "LoginForm" has 5 useState calls — consider useReducer for related state (4)
+    Group related state: `const [state, dispatch] = useReducer(reducer, { field1, field2, ... })`
+    components/LoginForm.tsx: 9
+    components/SignupForm.tsx: 21
+    components/configurator/KeypadProvider.tsx: 120
+    components/AccountTabs.tsx: 76
+
+  ⚠ 3 setState calls in a single useEffect — consider using useReducer or deriving state (5)
+    Combine into useReducer: `const [state, dispatch] = useReducer(reducer, initialState)`
+    components/ui/SearchModal.tsx: 34, 59
+    components/configurator/KeypadProvider.tsx: 286, 317, 407
+
+  ⚠ Component "KeypadProviderInner" is 743 lines — consider breaking it into smaller focused components (2)
+    Extract logical sections into focused components: `<UserHeader />`, `<UserActions />`, etc.
+    components/configurator/KeypadProvider.tsx: 110
+    components/AccountTabs.tsx: 76
+
+  ⚠ useSearchParams() requires a <Suspense> boundary — without one, the entire page bails out to client-side rendering (2)
+    Wrap the component using useSearchParams: `<Suspense fallback={<Skeleton />}><SearchComponent /></Suspense>`
+    components/configurator/KeypadProvider.tsx: 122
+    components/AccountTabs.tsx: 77
+
+  ⚠ useState initialized from prop "iconCatalog" — if this value should stay in sync with the prop, derive it during render instead
+    Remove useState and compute the value inline: `const value = transform(propName)`
+    components/configurator/KeypadProvider.tsx: 144
+
+  ⚠ useMemo wrapping a trivially cheap expression — memo overhead exceeds the computation
+    Remove useMemo — property access, math, and ternaries are already cheap without memoization
+    components/configurator/KeypadProvider.tsx: 227
+
+  ⚠ A form label must be associated with a control. (2)
+    Either give the label a `htmlFor` attribute with the id of the associated control, or wrap the label around the control.
+    components/AccountTabs.tsx: 643, 653
+
+  ┌────────────────────────────────────────────────────┐
+  │ ┌─────┐                                            │
+  │ │ ◠ ◠ │                                            │
+  │ │  ▽  │                                            │
+  │ └─────┘                                            │
+  │ React Doctor (www.react.doctor)                    │
+  │                                                    │
+  │ 95 / 100  Great                                    │
+  │                                                    │
+  │ ████████████████████████████████████████████████░░ │
+  │                                                    │
+  │ ⚠ 17 warnings  across 5/5 files  in 144ms          │
+  └────────────────────────────────────────────────────┘
+
+  Full diagnostics written to /var/folders/7x/k93t0vgj6tz75gt2l1kmn0sm0000gn/T/react-doctor-1172e12e-2a8a-448e-ba77-d32f881223a8
+
+  Share your results: https://www.react.doctor/share?p=frontend&s=95&w=17&f=5
+

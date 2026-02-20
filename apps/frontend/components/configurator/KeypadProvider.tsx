@@ -1,7 +1,7 @@
 'use client';
 
 import { usePathname, useSearchParams } from 'next/navigation';
-import { createContext, useEffect, useMemo, useRef, useState } from 'react';
+import { Suspense, createContext, useEffect, useMemo, useRef, useState } from 'react';
 import useSWR from 'swr';
 import { notifyCartUpdated } from '../../lib/cartEvents';
 
@@ -94,7 +94,20 @@ function resolveConfiguratorModelCode(keypad: PilotKeypadProduct) {
 
 export const KeypadContext = createContext<KeypadConfiguratorContextValue | null>(null);
 
-export default function KeypadProvider({
+export default function KeypadProvider(props: {
+  keypad: PilotKeypadProduct;
+  children: React.ReactNode;
+  iconCatalog: IconCatalogItem[];
+  sessionSummary: SessionSummary;
+}) {
+  return (
+    <Suspense fallback={props.children}>
+      <KeypadProviderInner {...props} />
+    </Suspense>
+  );
+}
+
+function KeypadProviderInner({
   keypad,
   children,
   iconCatalog,
@@ -128,7 +141,7 @@ export default function KeypadProvider({
   const hydrateFromSavedConfiguration = useConfiguratorStore((state) => state.hydrateFromSavedConfiguration);
 
   const [popupSlotId, setPopupSlotId] = useState<SlotId | null>(null);
-  const [icons, setIcons] = useState<IconCatalogItem[]>(iconCatalog);
+  const icons = iconCatalog;
   const [iconsLoading, setIconsLoading] = useState(false);
   const [iconsError, setIconsError] = useState<string | null>(null);
   const [isMobile, setIsMobile] = useState(false);
@@ -216,10 +229,7 @@ export default function KeypadProvider({
     [editLineId, keypad.slug, loadSavedId, pathname, resolvedModelCode],
   );
 
-  const debugMode = useMemo(
-    () => searchParams.get('debug') === '1' || searchParams.get('debugSlots') === '1',
-    [searchParams],
-  );
+  const debugMode = searchParams.get('debug') === '1' || searchParams.get('debugSlots') === '1';
   const editMode = useMemo(() => searchParams.get('edit') === '1', [searchParams]);
   const modelRenderTuning = useMemo(
     () => getRenderTuningForModel(resolvedModelCode),

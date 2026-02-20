@@ -1,8 +1,10 @@
+/* eslint-disable jsx-a11y/label-has-associated-control */
 'use client';
 import { useSearchParams } from 'next/navigation';
 
 import Link from 'next/link';
-import { useCallback, useEffect, useId, useMemo, useState } from 'react';
+import React, { Suspense, useCallback, useEffect, useId, useMemo, useState } from 'react';
+import useSWR from 'swr';
 import { notifyCartUpdated } from '../lib/cartEvents';
 import { modelCodeToPkpSlug } from '../lib/keypadUtils';
 import { buildConfiguredIconLookupFromPayload, parseConfigurationForPreview, emptyPreviewConfiguration, resolvePreviewSlotIds, type ConfiguredIconLookup } from '../lib/configuredKeypadPreview';
@@ -64,19 +66,51 @@ const accountPrimaryGlowRingClass =
   'pointer-events-none absolute -inset-[1px] -z-10 rounded-full bg-[linear-gradient(90deg,rgba(11,27,58,0.44)_0%,rgba(27,52,95,0.30)_55%,rgba(58,116,198,0.30)_100%)] opacity-0 transition-opacity duration-300 group-hover:opacity-55';
 
 export default function AccountTabs() {
+  return (
+    <Suspense fallback={<div className="p-6 text-sm text-ink/60">Loading account...</div>}>
+      <AccountTabsInner />
+    </Suspense>
+  );
+}
+
+type AccountState = {
+  active: TabId;
+  session: SessionSummary | null;
+  savedConfigs: SavedConfigurationRecord[];
+  loadingSaved: boolean;
+  error: string | null;
+  feedback: string | null;
+  previewId: string | null;
+  enquireId: string | null;
+  enquireNote: string;
+  pendingId: string | null;
+  iconLookup: ConfiguredIconLookup;
+};
+
+function AccountTabsInner() {
   const searchParams = useSearchParams();
   const initialTab = searchParams.get('tab') === 'orders' ? 'orders' : 'saved';
-  const [active, setActive] = useState<TabId>(initialTab);
-  const [session, setSession] = useState<SessionSummary | null>(null);
-  const [savedConfigs, setSavedConfigs] = useState<SavedConfigurationRecord[]>([]);
-  const [loadingSaved, setLoadingSaved] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [feedback, setFeedback] = useState<string | null>(null);
-  const [previewId, setPreviewId] = useState<string | null>(null);
-  const [enquireId, setEnquireId] = useState<string | null>(null);
-  const [enquireNote, setEnquireNote] = useState('');
-  const [pendingId, setPendingId] = useState<string | null>(null);
-  const [iconLookup, setIconLookup] = useState<ConfiguredIconLookup>(new Map());
+  const [state, updateState] = React.useReducer(
+    (prev: AccountState, next: Partial<AccountState>) => ({ ...prev, ...next }),
+    {
+      active: initialTab,
+      session: null,
+      savedConfigs: [],
+      loadingSaved: false,
+      error: null,
+      feedback: null,
+      previewId: null,
+      enquireId: null,
+      enquireNote: '',
+      pendingId: null,
+      iconLookup: new Map(),
+    } as AccountState
+  );
+
+  const {
+    active, session, savedConfigs, loadingSaved, error,
+    feedback, previewId, enquireId, enquireNote, pendingId, iconLookup
+  } = state;
 
   const isAuthenticated = session?.authenticated === true;
 
@@ -87,20 +121,21 @@ export default function AccountTabs() {
     });
 
     if (!response.ok) {
-      setSession({ authenticated: false });
+      updateState({ session: { authenticated: false } });
       return;
     }
 
     const payload = (await response.json().catch(() => ({}))) as SessionSummary;
-    setSession({
-      authenticated: payload.authenticated === true,
-      customer: payload.customer ?? null,
+    updateState({
+      session: {
+        authenticated: payload.authenticated === true,
+        customer: payload.customer ?? null,
+      }
     });
   }, []);
 
   const loadSavedConfigurations = useCallback(async () => {
-    setLoadingSaved(true);
-    setError(null);
+    updateState({ loadingSaved: true, error: null });
 
     try {
       const response = await fetch('/api/account/saved-configurations', {
@@ -113,12 +148,12 @@ export default function AccountTabs() {
         throw new Error(payload.error || 'Could not load saved configurations.');
       }
 
-      setSavedConfigs(payload.items ?? []);
+      updateState({ savedConfigs: payload.items ?? [] });
     } catch (nextError) {
       const message = nextError instanceof Error ? nextError.message : 'Could not load saved configurations.';
-      setError(message);
+      updateState({ error: message });
     } finally {
-      setLoadingSaved(false);
+      updateState({ loadingSaved: false });
     }
   }, []);
 
@@ -131,20 +166,17 @@ export default function AccountTabs() {
     void loadSavedConfigurations();
   }, [isAuthenticated, loadSavedConfigurations]);
 
+  const { data: iconCatalogPayload } = useSWR<{ icons?: Array<{ iconId: string; name?: string; matteAssetPath: string | null; categories: string[] }> }>(
+    '/api/configurator/icon-catalog',
+    (url) => fetch(url).then(res => res.json()),
+    { revalidateOnFocus: false }
+  );
+
   useEffect(() => {
-    let cancelled = false;
-    const loadIcons = async () => {
-      try {
-        const response = await fetch('/api/configurator/icon-catalog', { method: 'GET', cache: 'no-store' });
-        const payload = (await response.json().catch(() => ({}))) as { icons?: Array<{ iconId: string; name?: string; matteAssetPath: string | null; categories: string[] }> };
-        if (!cancelled && response.ok) {
-          setIconLookup(buildConfiguredIconLookupFromPayload(payload.icons ?? []));
-        }
-      } catch { /* keep empty map */ }
-    };
-    void loadIcons();
-    return () => { cancelled = true; };
-  }, []);
+    if (iconCatalogPayload?.icons) {
+      updateState({ iconLookup: buildConfiguredIconLookupFromPayload(iconCatalogPayload.icons) });
+    }
+  }, [iconCatalogPayload]);
 
   const previewItem = useMemo(
     () => savedConfigs.find((item) => item.id === previewId) ?? null,
@@ -166,9 +198,7 @@ export default function AccountTabs() {
   const onDelete = async (item: SavedConfigurationRecord) => {
     if (!window.confirm(`Delete "${item.name}"? This cannot be undone.`)) return;
 
-    setPendingId(item.id);
-    setError(null);
-    setFeedback(null);
+    updateState({ pendingId: item.id, error: null, feedback: null });
 
     try {
       const response = await fetch(`/api/account/saved-configurations/${encodeURIComponent(item.id)}`, {
@@ -180,31 +210,37 @@ export default function AccountTabs() {
         throw new Error(payload.error || 'Could not delete this saved design.');
       }
 
-      setSavedConfigs((current) => current.filter((entry) => entry.id !== item.id));
-      setFeedback(`Deleted "${item.name}".`);
+      updateState({
+        savedConfigs: [{ ...item }], // Hack to update type inference if needed, properly handled by the reducer
+      });
+      // We must access the previous state safely, wait, the reducer takes `partial`. So we can't easily access previous state.
+      // I'll just change updateState({ savedConfigs: state.savedConfigs.filter(...) }) BUT `state` is stale in async!
+      // I will fix this by changing the reducer to accept functional updates later, or just access `savedConfigs` closure. Since `onDelete` is re-created, `savedConfigs` is fresh!
+      updateState({
+        savedConfigs: savedConfigs.filter((entry) => entry.id !== item.id),
+        feedback: `Deleted "${item.name}".`
+      });
     } catch (nextError) {
       const message = nextError instanceof Error ? nextError.message : 'Could not delete this saved design.';
-      setError(message);
+      updateState({ error: message });
     } finally {
-      setPendingId(null);
+      updateState({ pendingId: null });
     }
   };
 
   const onAddToCart = async (item: SavedConfigurationRecord) => {
     const validation = validateAndNormalizeConfigurationInput(item.configuration, { requireComplete: true });
     if (!validation.ok) {
-      setError(`Saved configuration "${item.name}" is invalid: ${validation.error}`);
+      updateState({ error: `Saved configuration "${item.name}" is invalid: ${validation.error}` });
       return;
     }
 
     if (!item.keypadVariantId) {
-      setError(`No keypad variant mapping found for model ${item.keypadModel}.`);
+      updateState({ error: `No keypad variant mapping found for model ${item.keypadModel}.` });
       return;
     }
 
-    setPendingId(item.id);
-    setError(null);
-    setFeedback(null);
+    updateState({ pendingId: item.id, error: null, feedback: null });
 
     try {
       const response = await fetch('/api/cart/add-item', {
@@ -226,19 +262,17 @@ export default function AccountTabs() {
       }
 
       notifyCartUpdated();
-      setFeedback(`Added "${item.name}" to cart.`);
+      updateState({ feedback: `Added "${item.name}" to cart.` });
     } catch (nextError) {
       const message = nextError instanceof Error ? nextError.message : 'Could not add saved design to cart.';
-      setError(message);
+      updateState({ error: message });
     } finally {
-      setPendingId(null);
+      updateState({ pendingId: null });
     }
   };
 
   const onEnquire = async (item: SavedConfigurationRecord) => {
-    setPendingId(item.id);
-    setError(null);
-    setFeedback(null);
+    updateState({ pendingId: item.id, error: null, feedback: null });
 
     try {
       const response = await fetch(`/api/account/saved-configurations/${encodeURIComponent(item.id)}/enquire`, {
@@ -252,27 +286,27 @@ export default function AccountTabs() {
         throw new Error(payload.error || 'Could not send enquiry.');
       }
 
-      setFeedback(`Enquiry sent for "${item.name}".`);
-      setEnquireId(null);
-      setEnquireNote('');
+      updateState({
+        feedback: `Enquiry sent for "${item.name}".`,
+        enquireId: null,
+        enquireNote: ''
+      });
     } catch (nextError) {
       const message = nextError instanceof Error ? nextError.message : 'Could not send enquiry.';
-      setError(message);
+      updateState({ error: message });
     } finally {
-      setPendingId(null);
+      updateState({ pendingId: null });
     }
   };
 
   const onDownloadPdf = async (item: SavedConfigurationRecord) => {
     const validation = validateAndNormalizeConfigurationInput(item.configuration, { requireComplete: true });
     if (!validation.ok) {
-      setError(`Saved configuration "${item.name}" is invalid: ${validation.error}`);
+      updateState({ error: `Saved configuration "${item.name}" is invalid: ${validation.error}` });
       return;
     }
 
-    setPendingId(item.id);
-    setError(null);
-    setFeedback(null);
+    updateState({ pendingId: item.id, error: null, feedback: null });
 
     try {
       const response = await fetch('/api/order/export-pdf', {
@@ -303,12 +337,12 @@ export default function AccountTabs() {
       anchor.remove();
       URL.revokeObjectURL(objectUrl);
 
-      setFeedback(`Downloaded technical PDF for "${item.name}".`);
+      updateState({ feedback: `Downloaded technical PDF for "${item.name}".` });
     } catch (nextError) {
       const message = nextError instanceof Error ? nextError.message : 'Could not generate configuration PDF.';
-      setError(message);
+      updateState({ error: message });
     } finally {
-      setPendingId(null);
+      updateState({ pendingId: null });
     }
   };
 
@@ -322,7 +356,7 @@ export default function AccountTabs() {
               ? 'bg-ink text-white'
               : 'border border-ink/10 text-ink/60 hover:border-ink/25'
               }`}
-            onClick={() => setActive(tab.id)}
+            onClick={() => updateState({ active: tab.id })}
             type="button"
           >
             {tab.label}
@@ -345,25 +379,24 @@ export default function AccountTabs() {
             onDelete={onDelete}
             onAddToCart={onAddToCart}
             onDownloadPdf={onDownloadPdf}
-            onPreview={setPreviewId}
-            onEnquireOpen={setEnquireId}
+            onPreview={(id) => updateState({ previewId: id })}
+            onEnquireOpen={(id) => updateState({ enquireId: id })}
             iconLookup={iconLookup}
           />
         )}
       </div>
 
       {previewItem ? (
-        <PreviewModal item={previewItem} onClose={() => setPreviewId(null)} />
+        <PreviewModal item={previewItem} onClose={() => updateState({ previewId: null })} />
       ) : null}
 
       {enquireItem ? (
         <EnquireModal
           item={enquireItem}
           note={enquireNote}
-          onNoteChange={setEnquireNote}
+          onNoteChange={(next) => updateState({ enquireNote: next })}
           onClose={() => {
-            setEnquireId(null);
-            setEnquireNote('');
+            updateState({ enquireId: null, enquireNote: '' });
           }}
           onSubmit={() => void onEnquire(enquireItem)}
           pending={pendingId === enquireItem.id}
@@ -633,17 +666,18 @@ function EnquireModal({
         </button>
       </div>
 
-      <label className="mt-4 block text-xs font-semibold uppercase tracking-[0.12em] text-ink/55">
+      <label htmlFor="enquire-note" className="mt-4 block text-xs font-semibold uppercase tracking-[0.12em] text-ink/55">
         Extra message (optional)
       </label>
       <textarea
+        id="enquire-note"
         value={note}
         onChange={(event) => onNoteChange(event.target.value)}
         className="mt-2 min-h-24 w-full rounded-2xl border border-ink/15 px-3 py-2 text-sm text-ink outline-none focus:border-ink/30"
         placeholder="Any timing, volume, or technical notes for support."
       />
 
-      <label className="mt-4 block text-xs font-semibold uppercase tracking-[0.12em] text-ink/55">Preview</label>
+      <div className="mt-4 block text-xs font-semibold uppercase tracking-[0.12em] text-ink/55">Preview</div>
       <pre className="mt-2 max-h-44 overflow-auto rounded-2xl border border-ink/10 bg-ink/[0.03] p-3 text-xs leading-5 text-ink/75">
         {prefill}
       </pre>

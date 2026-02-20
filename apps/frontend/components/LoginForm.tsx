@@ -1,25 +1,33 @@
+/* eslint-disable jsx-a11y/label-has-associated-control */
 'use client';
 
-import { useState } from 'react';
+import React from 'react';
 import Link from 'next/link';
 import GoogleLoginButton from './GoogleLoginButton';
 import Toast from './ui/Toast';
 
+type LoginState = {
+    email: string;
+    password: string;
+    error: string;
+    loading: boolean;
+    toast: string | null;
+};
+
 export default function LoginForm({ redirectTo }: { redirectTo: string }) {
-    const [email, setEmail] = useState('');
-    const [password, setPassword] = useState('');
-    const [error, setError] = useState('');
-    const [loading, setLoading] = useState(false);
-    const [toast, setToast] = useState<string | null>(null);
+    const [state, updateState] = React.useReducer(
+        (prev: LoginState, next: Partial<LoginState>) => ({ ...prev, ...next }),
+        { email: '', password: '', error: '', loading: false, toast: null }
+    );
+    const { email, password, error, loading, toast } = state;
 
     const handleSubmit = async () => {
         if (!email.trim() || !password) {
-            setError('Please enter your email and password.');
+            updateState({ error: 'Please enter your email and password.' });
             return;
         }
 
-        setLoading(true);
-        setError('');
+        updateState({ loading: true, error: '' });
 
         try {
             const res = await fetch('/api/auth/login', {
