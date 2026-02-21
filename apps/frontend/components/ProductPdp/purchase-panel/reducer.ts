@@ -1,4 +1,4 @@
-export type PurchasePanelState = {
+type PurchasePanelState = {
   quantity: number;
   adding: boolean;
   pulse: boolean;

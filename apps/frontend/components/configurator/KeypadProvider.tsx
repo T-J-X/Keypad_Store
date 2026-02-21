@@ -5,7 +5,6 @@ import { KeypadContext } from './keypad-provider/context';
 import {
   useKeypadProviderController,
   type KeypadProviderProps,
-  type SearchParamsInput,
 } from './keypad-provider/useKeypadProviderController';
 
 function KeypadProviderInner(props: KeypadProviderProps) {
@@ -21,5 +20,4 @@ export default function KeypadProvider(props: KeypadProviderProps) {
   );
 }
 
-export type { SearchParamsInput };
 export { KeypadContext };

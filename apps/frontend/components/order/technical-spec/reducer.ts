@@ -1,7 +1,7 @@
 import type { ConfiguredIconLookup } from '../../../lib/configuredKeypadPreview';
 import type { TechnicalSpecPayload } from './types';
 
-export type TechnicalSpecState = {
+type TechnicalSpecState = {
   isOpen: boolean;
   isLoading: boolean;
   error: string | null;
