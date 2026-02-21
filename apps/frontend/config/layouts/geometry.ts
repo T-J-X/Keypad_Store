@@ -15,7 +15,6 @@ import type {
 
 export type {
   KeypadModelGeometry,
-  SlotGeometry,
   SlotId,
   SlotSafeZone,
 } from './shared';
