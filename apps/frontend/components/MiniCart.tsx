@@ -57,7 +57,7 @@ export default function MiniCart({ lines, currencyCode, totalWithTax, onClose }:
 
     return (
         <div className="flex flex-col">
-            <div className="max-h-[320px] overflow-y-auto px-1 py-1 custom-scrollbar">
+            <div className="max-h-[320px] space-y-2 overflow-y-auto px-1 py-1 custom-scrollbar">
                 {lines.map((line) => {
                     const product = line.productVariant?.product;
                     const imagePath = product?.featuredAsset?.preview || product?.featuredAsset?.source;
@@ -68,9 +68,9 @@ export default function MiniCart({ lines, currencyCode, totalWithTax, onClose }:
                             key={line.id}
                             href={product?.slug ? `/shop/product/${product.slug}` : '#'}
                             onClick={onClose}
-                            className="group flex gap-3 rounded-xl p-3 transition-colors hover:bg-white/5"
+                            className="group flex gap-3 rounded-xl border border-white/60 bg-white/85 p-3 backdrop-blur-sm shadow-[0_10px_24px_rgba(7,21,44,0.16)] transition-[transform,box-shadow,color] duration-200 hover:-translate-y-0.5 hover:bg-white/92 hover:shadow-[0_14px_28px_rgba(7,21,44,0.22)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky/35"
                         >
-                            <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-lg border border-white/10 bg-white/5">
+                            <div className="relative h-12 w-12 shrink-0 overflow-hidden rounded-md border border-slate-200 bg-slate-50">
                                 {imageUrl ? (
                                     <Image
                                         src={imageUrl}
@@ -82,15 +82,15 @@ export default function MiniCart({ lines, currencyCode, totalWithTax, onClose }:
                                 ) : null}
                             </div>
                             <div className="flex min-w-0 flex-1 flex-col justify-center">
-                                <div className="truncate text-sm font-medium text-white group-hover:text-blue-200">
+                                <div className="truncate text-sm font-semibold text-slate-900 transition-colors group-hover:text-sky-700">
                                     {product?.name || line.productVariant?.name}
                                 </div>
-                                <div className="text-xs text-white/50">
+                                <div className="text-xs text-slate-500">
                                     Qty: {line.quantity} × {formatPrice(line.linePriceWithTax / line.quantity, currencyCode)}
                                 </div>
                             </div>
                             <div className="flex flex-col justify-center text-right">
-                                <div className="text-sm font-medium text-white">
+                                <div className="text-sm font-semibold text-slate-900">
                                     {formatPrice(line.linePriceWithTax, currencyCode)}
                                 </div>
                             </div>
