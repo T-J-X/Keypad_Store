@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import Image from 'next/image';
 import { Suspense } from 'react';
+import { toStringParam } from '@keypad-store/shared-utils/search-params';
 import LoginForm from '../../components/LoginForm';
 import { getSafeRelativePath } from '../../lib/googleAuth';
 
@@ -21,12 +22,6 @@ type LoginSearchParams = {
   redirectTo?: string | string[];
   next?: string | string[];
 };
-
-function toStringParam(value?: string | string[]) {
-  if (typeof value === 'string') return value;
-  if (Array.isArray(value) && typeof value[0] === 'string') return value[0];
-  return '';
-}
 
 export default async function LoginPage({
   searchParams,

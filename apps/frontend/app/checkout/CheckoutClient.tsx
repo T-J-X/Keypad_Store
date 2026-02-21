@@ -18,7 +18,6 @@ import {
 import { resolvePkpModelCode } from '../../lib/keypadUtils';
 import { assetUrl } from '../../lib/vendure';
 import type { CheckoutOrder, ShippingMethodQuote, PaymentMethodQuote } from '../../lib/checkoutTypes';
-import type { IconCatalogItem } from '../../lib/configuratorCatalog';
 
 type CheckoutField = 'email' | 'firstName' | 'lastName' | 'streetLine1' | 'city' | 'postalCode' | 'countryCode';
 
@@ -44,7 +43,12 @@ interface CheckoutClientProps {
     initialOrder: CheckoutOrder | null;
     initialShippingMethods: ShippingMethodQuote[];
     initialPaymentMethods: PaymentMethodQuote[];
-    iconCatalog: IconCatalogItem[];
+    iconCatalog: Array<{
+        iconId: string;
+        name?: string;
+        matteAssetPath: string | null;
+        categories: string[];
+    }>;
 }
 
 export default function CheckoutClient({

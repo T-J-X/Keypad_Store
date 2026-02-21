@@ -188,12 +188,10 @@ function AccountTabsInner() {
     [enquireId, savedConfigs],
   );
 
-  const customerName = useMemo(() => {
-    const first = session?.customer?.firstName?.trim() || '';
-    const last = session?.customer?.lastName?.trim() || '';
-    const full = `${first} ${last}`.trim();
-    return full || session?.customer?.emailAddress || 'your account';
-  }, [session?.customer]);
+  const firstName = session?.customer?.firstName?.trim() || '';
+  const lastName = session?.customer?.lastName?.trim() || '';
+  const fullName = `${firstName} ${lastName}`.trim();
+  const customerName = fullName || session?.customer?.emailAddress || 'your account';
 
   const onDelete = async (item: SavedConfigurationRecord) => {
     if (!window.confirm(`Delete "${item.name}"? This cannot be undone.`)) return;
@@ -210,12 +208,6 @@ function AccountTabsInner() {
         throw new Error(payload.error || 'Could not delete this saved design.');
       }
 
-      updateState({
-        savedConfigs: [{ ...item }], // Hack to update type inference if needed, properly handled by the reducer
-      });
-      // We must access the previous state safely, wait, the reducer takes `partial`. So we can't easily access previous state.
-      // I'll just change updateState({ savedConfigs: state.savedConfigs.filter(...) }) BUT `state` is stale in async!
-      // I will fix this by changing the reducer to accept functional updates later, or just access `savedConfigs` closure. Since `onDelete` is re-created, `savedConfigs` is fresh!
       updateState({
         savedConfigs: savedConfigs.filter((entry) => entry.id !== item.id),
         feedback: `Deleted "${item.name}".`

@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition, type FormEvent } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   assetUrl,
@@ -191,7 +191,8 @@ export default function ShopClient({
   icons,
   keypads,
   baseShopConfig,
-  categorySourceIcons,
+  categoryCounts,
+  catalogIconTotal,
   initialQuery = '',
   initialCategories = [],
   initialSection = 'landing',
@@ -203,7 +204,8 @@ export default function ShopClient({
   icons: IconProduct[];
   keypads: KeypadProduct[];
   baseShopConfig?: BaseShopPublicConfig | null;
-  categorySourceIcons?: IconProduct[];
+  categoryCounts?: IconCategory[];
+  catalogIconTotal?: number;
   initialQuery?: string;
   initialCategories?: string[];
   initialSection?: 'landing' | 'all' | 'button-inserts' | 'keypads' | 'icons' | 'inserts';
@@ -228,6 +230,7 @@ export default function ShopClient({
   // Debounce query for URL updates
   const debouncedQuery = useDebouncedValue(query, 300);
   const [viewMode, setViewMode] = useState<'grid' | 'list'>('grid');
+  const [isPending, startTransition] = useTransition();
 
   // Sync query input when URL changes externally (e.g. back button)
   useEffect(() => {
@@ -241,59 +244,9 @@ export default function ShopClient({
     if (activeCategorySlugs.length > 0) setIconsGroupOpen(true);
   }, [activeCategorySlugs.length]);
 
-  const lastParams = useRef('');
   const wasSpokeSectionRef = useRef(false);
 
-  // Effect to sync URL with search query and other derived changes
-  useEffect(() => {
-    const params = new URLSearchParams();
-    if (activeSection !== 'landing') params.set('section', activeSection);
-
-    // Only push query to URL if it differs from initial (prop) to avoid loops, 
-    // or if the user is typing (handled by debouncedQuery check)
-    const trimmed = debouncedQuery.trim();
-    if (trimmed) params.set('q', trimmed);
-
-    if (activeSection === 'button-inserts' && activeCategorySlugs.length > 0) {
-      params.set('cats', activeCategorySlugs.join(','));
-    }
-    const shouldIncludePaginationParams = activeSection === 'button-inserts' || activeSection === 'all';
-    if (shouldIncludePaginationParams) {
-      params.set('page', String(page));
-      params.set('take', String(take));
-    }
-
-    const next = params.toString();
-    if (next === lastParams.current) return;
-
-    // Only replace if the generated params are different from what we arguably "have"
-    // But since we drive from props, we need to be careful not to push what we just received.
-    // However, this effect triggers on variables that ARE props (mostly).
-    // The only non-prop trigger is `debouncedQuery`.
-
-    // We should only trigger a navigation if the desired URL state is different from current.
-    const currentParams = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
-    // Normalize current params for comparison might be complex.
-    // Simpler strategy: only `debouncedQuery` drives this effect for search. 
-    // Navigation for category/section/page changes should be handled by handlers directly.
-
-    // Actually, following the plan: "For query (search text), keep local state... only push to URL on submit/debounce".
-    // "Update onSectionChange... to use router.push/replace directly".
-
-    // So we should REMOVE this big useEffect that listens to [activeCategorySlugs, activeSection, page, take].
-    // And ONLY keep one that listens to [debouncedQuery].
-  }, [debouncedQuery, activeCategorySlugs, activeSection, page, take]); // <-- This was the old logic.
-
-  // NEW LOGIC: Effect only for Search Query Debounce
-  useEffect(() => {
-    // If the input query (debounced) is different from the URL query (initialQuery), update URL.
-    if (debouncedQuery !== initialQuery) {
-      updateParams({ q: debouncedQuery, page: 1 });
-    }
-  }, [debouncedQuery, initialQuery]);
-
-  // Helper to update URL params
-  const updateParams = (updates: Record<string, string | number | string[] | null>) => {
+  const updateParams = useCallback((updates: Record<string, string | number | string[] | null>) => {
     const params = new URLSearchParams(typeof window !== 'undefined' ? window.location.search : '');
 
     Object.entries(updates).forEach(([key, value]) => {
@@ -306,7 +259,6 @@ export default function ShopClient({
       }
     });
 
-    // Special verification for section/cats consistency
     if (updates.section && updates.section !== 'button-inserts') {
       params.delete('cats');
       params.delete('cat');
@@ -314,8 +266,16 @@ export default function ShopClient({
 
     const queryString = params.toString();
     const target = `${pathname}${queryString ? `?${queryString}` : ''}`;
-    router.replace(target, { scroll: false });
-  };
+    startTransition(() => {
+      router.replace(target, { scroll: false });
+    });
+  }, [pathname, router, startTransition]);
+
+  useEffect(() => {
+    if (debouncedQuery !== initialQuery) {
+      updateParams({ q: debouncedQuery, page: 1 });
+    }
+  }, [debouncedQuery, initialQuery, updateParams]);
 
   useEffect(() => {
     const isSpokeSection = activeSection === 'button-inserts' || activeSection === 'keypads';
@@ -331,13 +291,15 @@ export default function ShopClient({
 
   const queryTerms = useMemo(() => tokenizeSearchText(debouncedQuery), [debouncedQuery]);
 
-  // ... (indexes remain the same) ...
-  const categorySeedIcons = categorySourceIcons ?? icons;
-  const totalIconCount = categorySeedIcons.length;
+  const totalIconCount = Math.max(catalogIconTotal ?? icons.length, 0);
 
   const categories = useMemo<IconCategory[]>(() => {
+    if (categoryCounts && categoryCounts.length > 0) {
+      return [...categoryCounts].sort((a, b) => a.name.localeCompare(b.name));
+    }
+
     const bySlug = new Map<string, IconCategory>();
-    for (const icon of categorySeedIcons) {
+    for (const icon of icons) {
       for (const categoryName of iconCategoriesFromProduct(icon)) {
         const slug = categorySlug(categoryName);
         const existing = bySlug.get(slug);
@@ -349,7 +311,7 @@ export default function ShopClient({
       }
     }
     return Array.from(bySlug.values()).sort((a, b) => a.name.localeCompare(b.name));
-  }, [categorySeedIcons]);
+  }, [categoryCounts, icons]);
 
   const categoriesBySlug = useMemo(() => {
     return new Map(categories.map((category) => [category.slug, category]));
@@ -397,7 +359,7 @@ export default function ShopClient({
     const shouldApplyCategoryFilter = isIconsSection;
 
     return iconSearchIndex
-      .filter(({ icon, tokens, categorySlugs }) => {
+      .filter(({ tokens, categorySlugs }) => {
         if (shouldApplyCategoryFilter) {
           const matchesCategory =
             targetCategories.size === 0 || categorySlugs.some((slug) => targetCategories.has(slug));
@@ -453,7 +415,9 @@ export default function ShopClient({
     const safeHref = getSafeUrl(forcedHref);
 
     if (safeHref.startsWith('/')) {
-      router.push(safeHref);
+      startTransition(() => {
+        router.push(safeHref);
+      });
       return;
     }
 
@@ -611,7 +575,7 @@ export default function ShopClient({
     if (page > totalPages) {
       updateParams({ page: totalPages });
     }
-  }, [isIconsSection, isAllSection, page, totalPages]);
+  }, [isIconsSection, isAllSection, page, totalPages, updateParams]);
 
   const renderIconPaginationControls = (location: 'top' | 'bottom') => {
     if (!(isIconsSection || isAllSection) || !isAnyIconsPaginationMode) return null;
@@ -674,7 +638,7 @@ export default function ShopClient({
       : 'flex flex-col gap-3';
 
     return (
-      <div className={gridClasses}>
+      <div className={gridClasses} style={{ contentVisibility: 'auto' }}>
         {iconItems.map((icon) => {
           const iconCategoryNames = categoryNamesByIconId.get(icon.id) ?? [];
           const primaryCategoryName = iconCategoryNames[0] ?? '';
@@ -707,7 +671,7 @@ export default function ShopClient({
     keypadItems: KeypadProduct[],
     options?: { hubReady?: boolean; replaceDetailNavigation?: boolean },
   ) => (
-    <div className="staggered grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3">
+    <div className="staggered grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3" style={{ contentVisibility: 'auto' }}>
       {keypadItems.map((keypad) => (
         <KeypadCard
           key={keypad.id}
@@ -721,7 +685,7 @@ export default function ShopClient({
   );
 
   return (
-    <div className="mx-auto w-full max-w-[88rem] bg-white px-6 pb-20 pt-10">
+    <div className="mx-auto w-full max-w-[88rem] bg-white px-6 pb-20 pt-10" aria-busy={isPending}>
       <BaseShopHero showTiles={false} />
 
       <div className="mb-8 flex flex-col gap-4">

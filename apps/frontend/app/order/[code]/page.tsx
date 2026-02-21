@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { Suspense, use } from 'react';
+import { toStringParam } from '@keypad-store/shared-utils/search-params';
 
 const OrderTechnicalSpecification = dynamic(() => import('../../../components/order/OrderTechnicalSpecification'), {
   loading: () => (
@@ -14,12 +15,6 @@ const OrderTechnicalSpecification = dynamic(() => import('../../../components/or
 type OrderSearchParams = {
   payment?: string | string[];
 };
-
-function toStringParam(value?: string | string[]) {
-  if (typeof value === 'string') return value;
-  if (Array.isArray(value) && typeof value[0] === 'string') return value[0];
-  return '';
-}
 
 export async function generateMetadata({
   params,

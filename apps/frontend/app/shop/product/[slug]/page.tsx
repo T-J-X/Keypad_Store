@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { Suspense, cache } from 'react';
+import { parseUniqueCsvSlugs, toAllowedPageSize, toPositiveInteger, toStringParam } from '@keypad-store/shared-utils/search-params';
 import ButtonInsertPdp from '../../../../components/ProductPdp/ButtonInsertPdp';
 import KeypadPdp from '../../../../components/ProductPdp/KeypadPdp';
 import ProductJsonLd from '../../../../components/ProductPdp/ProductJsonLd';
@@ -32,37 +33,12 @@ type ShopSection = 'button-inserts' | 'keypads';
 const PAGE_SIZE_OPTIONS = [24, 48, 96] as const;
 const DEFAULT_PAGE_SIZE = 24;
 
-function toStringParam(value?: string | string[]) {
-  if (typeof value === 'string') return value;
-  if (Array.isArray(value) && typeof value[0] === 'string') return value[0];
-  return '';
-}
-
 function toTrimmedString(value: unknown) {
   return typeof value === 'string' ? value.trim() : '';
 }
 
-function toPositiveInteger(value: string, fallback: number) {
-  const parsed = Number.parseInt(value, 10);
-  if (!Number.isFinite(parsed) || parsed < 1) return fallback;
-  return parsed;
-}
-
-function toPageSize(value: string) {
-  const parsed = Number.parseInt(value, 10);
-  if (!Number.isFinite(parsed)) return DEFAULT_PAGE_SIZE;
-  return PAGE_SIZE_OPTIONS.includes(parsed as (typeof PAGE_SIZE_OPTIONS)[number]) ? parsed : DEFAULT_PAGE_SIZE;
-}
-
 function parseCategorySlugs(value: string) {
-  return Array.from(
-    new Set(
-      value
-        .split(',')
-        .map((item) => item.trim())
-        .filter(Boolean),
-    ),
-  );
+  return parseUniqueCsvSlugs(value);
 }
 
 function normalizeSection(value: string): ShopSection | undefined {
@@ -295,7 +271,7 @@ async function ProductDetailContent({
     : (categoryParam ? [categoryParam] : []);
   const query = toStringParam(searchParams?.q);
   const page = toPositiveInteger(toStringParam(searchParams?.page), 1);
-  const take = toPageSize(toStringParam(searchParams?.take));
+  const take = toAllowedPageSize(toStringParam(searchParams?.take), PAGE_SIZE_OPTIONS, DEFAULT_PAGE_SIZE);
 
   const sectionHref = section
     ? buildShopHref({

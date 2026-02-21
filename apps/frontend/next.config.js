@@ -34,6 +34,7 @@ const nextConfig = {
   reactStrictMode: true,
   cacheComponents: true,
   poweredByHeader: false,
+  transpilePackages: ['@keypad-store/shared-utils'],
   images: {
     dangerouslyAllowLocalIP: process.env.NODE_ENV !== 'production',
     remotePatterns,

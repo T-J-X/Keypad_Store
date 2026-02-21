@@ -13,11 +13,11 @@
     "verify:alignment-guards": "pnpm exec tsx scripts/verify-alignment-guards.ts"
   },
   "dependencies": {
+    "@keypad-store/shared-utils": "workspace:*",
     "@vercel/analytics": "^1.6.1",
     "@vercel/speed-insights": "^1.3.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
-    "framer-motion": "^12.34.3",
     "lucide-react": "^0.563.0",
     "next": "16.1.6",
     "puppeteer": "^24.37.2",

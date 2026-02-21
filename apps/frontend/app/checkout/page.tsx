@@ -22,13 +22,19 @@ async function CheckoutFetcher() {
     fetchCheckoutSession(),
     fetchIconCatalog(),
   ]);
+  const iconLookupPayload = iconCatalog.map((icon) => ({
+    iconId: icon.iconId,
+    name: icon.name,
+    matteAssetPath: icon.matteAssetPath,
+    categories: icon.categories,
+  }));
 
   return (
     <CheckoutClient
       initialOrder={session.order}
       initialShippingMethods={session.shippingMethods}
       initialPaymentMethods={session.paymentMethods}
-      iconCatalog={iconCatalog}
+      iconCatalog={iconLookupPayload}
     />
   );
 }

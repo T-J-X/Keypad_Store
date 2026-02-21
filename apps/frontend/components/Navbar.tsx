@@ -1,14 +1,23 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ChevronDown, Menu, Search, ShoppingBag, UserRound, X, Settings2, Store } from 'lucide-react';
 import { useCallback, useEffect, useMemo, useRef, useState, type FormEvent, type ReactNode, type RefObject } from 'react';
-import { usePathname, useSearchParams } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { CART_UPDATED_EVENT, notifyCartUpdated } from '../lib/cartEvents';
-import SearchModal from './ui/SearchModal';
-import MobileMenu from './ui/MobileMenu';
-import MiniCart from './MiniCart';
+
+const SearchModal = dynamic(() => import('./ui/SearchModal'), { ssr: false });
+const MobileMenu = dynamic(() => import('./ui/MobileMenu'), { ssr: false });
+const MiniCart = dynamic(() => import('./MiniCart'), {
+  ssr: false,
+  loading: () => (
+    <div className="rounded-2xl border border-white/10 bg-[#0b1221] p-4 text-xs text-white/65">
+      Loading cart...
+    </div>
+  ),
+});
 
 const primaryLinks = [{ href: '/configurator', label: 'Configurator' }] as const;
 
@@ -159,7 +168,6 @@ export default function Navbar() {
   const shopMenuRef = useRef<HTMLDivElement | null>(null);
   const shopMenuCloseTimerRef = useRef<number | null>(null);
   const cartMenuRef = useRef<HTMLDivElement | null>(null);
-  const cartMenuCloseTimerRef = useRef<number | null>(null);
 
   const openShopMenu = useCallback(() => {
     if (shopMenuCloseTimerRef.current != null) {
@@ -176,24 +184,6 @@ export default function Navbar() {
     shopMenuCloseTimerRef.current = window.setTimeout(() => {
       setIsShopMenuOpen(false);
       shopMenuCloseTimerRef.current = null;
-    }, 120);
-  }, []);
-
-  const openCartMenu = useCallback(() => {
-    if (cartMenuCloseTimerRef.current != null) {
-      window.clearTimeout(cartMenuCloseTimerRef.current);
-      cartMenuCloseTimerRef.current = null;
-    }
-    setIsCartMenuOpen(true);
-  }, []);
-
-  const scheduleCloseCartMenu = useCallback(() => {
-    if (cartMenuCloseTimerRef.current != null) {
-      window.clearTimeout(cartMenuCloseTimerRef.current);
-    }
-    cartMenuCloseTimerRef.current = window.setTimeout(() => {
-      setIsCartMenuOpen(false);
-      cartMenuCloseTimerRef.current = null;
     }, 120);
   }, []);
 
@@ -366,7 +356,6 @@ export default function Navbar() {
 
   const isAuthenticated = sessionSummary.authenticated;
   const cartQuantity = sessionSummary.totalQuantity;
-  const showCartBadge = cartQuantity > 0;
 
   const customerLabel = useMemo(() => {
     const firstName = sessionSummary.customer?.firstName?.trim() || '';

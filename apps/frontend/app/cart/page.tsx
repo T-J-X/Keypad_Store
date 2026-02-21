@@ -23,7 +23,13 @@ async function CartFetcher() {
     fetchActiveOrder(),
     fetchIconCatalog(),
   ]);
-  return <CartClient order={order} iconCatalog={icons} />;
+  const iconLookupPayload = icons.map((icon) => ({
+    iconId: icon.iconId,
+    name: icon.name,
+    matteAssetPath: icon.matteAssetPath,
+    categories: icon.categories,
+  }));
+  return <CartClient order={order} iconCatalog={iconLookupPayload} />;
 }
 
 function CartLoading() {

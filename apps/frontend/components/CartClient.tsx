@@ -3,14 +3,13 @@
 import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import { Button } from './ui/Button';
 import ConfiguredKeypadThumbnail from './configurator/ConfiguredKeypadThumbnail';
 import { notifyCartUpdated } from '../lib/cartEvents';
 import { RING_GLOW_OPTIONS } from '../lib/configuratorCatalog';
-import type { IconCatalogItem } from '../lib/configuratorCatalog';
 import {
-    buildConfiguredIconLookup,
+    buildConfiguredIconLookupFromPayload,
     countConfiguredSlots,
     emptyPreviewConfiguration,
     parseConfigurationForPreview,
@@ -63,11 +62,18 @@ function formatMinor(minor: number | null | undefined, currencyCode: string) {
     }
 }
 
-export default function CartClient({ order, iconCatalog }: { order: CartOrder | null; iconCatalog: IconCatalogItem[] }) {
+type IconLookupPayloadItem = {
+    iconId: string;
+    name?: string;
+    matteAssetPath: string | null;
+    categories: string[];
+};
+
+export default function CartClient({ order, iconCatalog }: { order: CartOrder | null; iconCatalog: IconLookupPayloadItem[] }) {
     const router = useRouter();
     const [activeLineId, setActiveLineId] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
-    const [iconLookup] = useState<ConfiguredIconLookup>(() => buildConfiguredIconLookup(iconCatalog));
+    const [iconLookup] = useState<ConfiguredIconLookup>(() => buildConfiguredIconLookupFromPayload(iconCatalog));
 
     const hasLines = (order?.lines?.length ?? 0) > 0;
 

@@ -22,6 +22,16 @@ type GraphResponse<T> = {
   errors?: Array<{ message?: string }>;
 };
 
+async function createVendureHeadersWithSessionCookies() {
+  const cookieStore = await cookies();
+  const headers: Record<string, string> = { 'content-type': 'application/json' };
+  const cookieString = cookieStore.getAll().map((cookie) => `${cookie.name}=${cookie.value}`).join('; ');
+  if (cookieString) {
+    headers.cookie = cookieString;
+  }
+  return headers;
+}
+
 // --- Active Order Types & Query ---
 
 const ACTIVE_ORDER_QUERY = `
@@ -158,15 +168,7 @@ function normalizeInt(value: any): number {
 }
 
 export async function fetchActiveOrder(): Promise<CartOrder | null> {
-  const cookieStore = await cookies();
-  const headers: Record<string, string> = { 'content-type': 'application/json' };
-
-  // Forward cookies to maintain session
-  const activeCookies = cookieStore.getAll();
-  const cookieString = activeCookies.map((c) => `${c.name}=${c.value}`).join('; ');
-  if (cookieString) {
-    headers.cookie = cookieString;
-  }
+  const headers = await createVendureHeadersWithSessionCookies();
 
   try {
     const res = await fetch(SHOP_API, {
@@ -285,11 +287,7 @@ type SessionSummary = {
 };
 
 export async function fetchSessionSummary(): Promise<SessionSummary> {
-  const cookieStore = await cookies();
-  const headers: Record<string, string> = { 'content-type': 'application/json' };
-  const activeCookies = cookieStore.getAll();
-  const cookieString = activeCookies.map((c) => `${c.name}=${c.value}`).join('; ');
-  if (cookieString) headers.cookie = cookieString;
+  const headers = await createVendureHeadersWithSessionCookies();
 
   try {
     const res = await fetch(SHOP_API, {
@@ -405,11 +403,7 @@ const CHECKOUT_SESSION_QUERY = `
 
 
 export async function fetchCheckoutSession(): Promise<CheckoutSessionData> {
-  const cookieStore = await cookies();
-  const headers: Record<string, string> = { 'content-type': 'application/json' };
-  const activeCookies = cookieStore.getAll();
-  const cookieString = activeCookies.map((c) => `${c.name}=${c.value}`).join('; ');
-  if (cookieString) headers.cookie = cookieString;
+  const headers = await createVendureHeadersWithSessionCookies();
 
   try {
     const res = await fetch(SHOP_API, {
@@ -550,6 +544,35 @@ stockLevel
 }
 `;
 
+const PRODUCT_VARIANT_CARD_FIELDS = `
+id
+priceWithTax
+currencyCode
+customFields {
+  iconId
+  keypadModelCode
+}
+`;
+
+const PRODUCT_CARD_FIELDS = `
+id
+name
+slug
+featuredAsset { id preview source name }
+variants { ${PRODUCT_VARIANT_CARD_FIELDS} }
+customFields {
+  isIconProduct
+  isKeypadProduct
+  iconId
+  iconCategories
+}
+`;
+
+const PRODUCT_SEARCH_FIELDS = `
+${PRODUCT_CARD_FIELDS}
+description
+`;
+
 const PRODUCT_VARIANT_FIELDS_WITH_NUMERIC_STOCK = `
   ${PRODUCT_VARIANT_FIELDS}
 stockOnHand
@@ -633,7 +656,18 @@ const PRODUCT_LIST_QUERY = `
   products(options: $options) {
     totalItems
         items {
-          ${PRODUCT_FIELDS}
+          ${PRODUCT_CARD_FIELDS}
+    }
+  }
+}
+`;
+
+const PRODUCT_LIST_QUERY_FOR_SEARCH = `
+    query PagedProductsForSearch($options: ProductListOptions) {
+  products(options: $options) {
+    totalItems
+        items {
+          ${PRODUCT_SEARCH_FIELDS}
     }
   }
 }
@@ -696,7 +730,7 @@ const SHOP_LANDING_CONTENT_QUERY = `
 }
 `;
 
-export async function fetchShopLandingContent(): Promise<BaseShopPublicConfig> {
+export const fetchShopLandingContent = cache(async (): Promise<BaseShopPublicConfig> => {
   // This stays non-sticky so icon swaps in Vendure content reflect immediately.
   // vendureFetch() already uses fetch(cache: 'no-store').
   try {
@@ -716,26 +750,14 @@ export async function fetchShopLandingContent(): Promise<BaseShopPublicConfig> {
       disciplineTiles: [],
     };
   }
-}
+});
 
-async function fetchBaseShopConfigPublic(): Promise<BaseShopPublicConfig> {
-  try {
-    return await fetchShopLandingContent();
-  } catch {
-    return {
-      featuredProductSlugs: [],
-      topTiles: [],
-      disciplineTiles: [],
-    };
-  }
-}
-
-const fetchAllProducts = cache(async (): Promise<CatalogProduct[]> => {
+async function fetchAllProductsByQuery(listQuery: string): Promise<CatalogProduct[]> {
   let skip = 0;
   const allProducts: CatalogProduct[] = [];
 
   while (true) {
-    const data = await vendureFetch<ProductListResponse>(PRODUCT_LIST_QUERY, {
+    const data = await vendureFetch<ProductListResponse>(listQuery, {
       options: { take: MAX_LIST_TAKE, skip }
     });
     const items = (data.products.items ?? []).map((item) => ({
@@ -755,10 +777,18 @@ const fetchAllProducts = cache(async (): Promise<CatalogProduct[]> => {
   }
 
   return allProducts;
+}
+
+const fetchAllCatalogProducts = cache(async (): Promise<CatalogProduct[]> => {
+  return fetchAllProductsByQuery(PRODUCT_LIST_QUERY);
+});
+
+const fetchAllSearchProducts = cache(async (): Promise<CatalogProduct[]> => {
+  return fetchAllProductsByQuery(PRODUCT_LIST_QUERY_FOR_SEARCH);
 });
 
 export async function fetchIconProducts(): Promise<IconProduct[]> {
-  const products = await fetchAllProducts();
+  const products = await fetchAllCatalogProducts();
 
   return products
     .filter((item) => item?.customFields?.isIconProduct)
@@ -812,7 +842,7 @@ export async function fetchIconProductsPage({
 }
 
 export async function fetchKeypadProducts(): Promise<KeypadProduct[]> {
-  const products = await fetchAllProducts();
+  const products = await fetchAllCatalogProducts();
 
   const keypads = products
     .filter((item) => item?.customFields?.isKeypadProduct)
@@ -987,7 +1017,7 @@ function scoreProduct(product: CatalogProduct, normalizedQuery: string): number 
 }
 
 export async function searchGlobalProducts(query: string): Promise<CatalogProduct[]> {
-  const allProducts = await fetchAllProducts();
+  const allProducts = await fetchAllSearchProducts();
   const normalizedQuery = normalizeForSearch(query);
 
   if (!normalizedQuery) return [];

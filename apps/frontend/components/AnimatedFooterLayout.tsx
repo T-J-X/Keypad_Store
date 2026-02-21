@@ -1,7 +1,4 @@
-'use client';
-
-import { useRef, ReactNode } from 'react';
-import { motion, useScroll, useTransform, Variants } from 'framer-motion';
+import type { ReactNode } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import CopyrightYear from './CopyrightYear';
@@ -41,61 +38,23 @@ const footerGroups = [
     },
 ];
 
-const containerVariants: Variants = {
-    hidden: { opacity: 0 },
-    show: {
-        opacity: 1,
-        transition: {
-            staggerChildren: 0.1,
-            delayChildren: 0.1,
-        }
-    }
-};
-
-const itemVariants: Variants = {
-    hidden: { opacity: 0, y: 30 },
-    show: { opacity: 1, y: 0, transition: { type: 'spring', stiffness: 300, damping: 24 } }
-};
-
 export default function AnimatedFooterLayout({ children }: { children: ReactNode }) {
-    const footerWrapperRef = useRef<HTMLElement>(null);
-
-    // Continuous parallax transform for the background/footer
-    const { scrollYProgress } = useScroll({
-        target: footerWrapperRef,
-        offset: ["start end", "end end"]
-    });
-    const parallaxY = useTransform(scrollYProgress, [0, 1], ["-25%", "0%"]);
-
     return (
         <div className="bg-[#020a18] min-h-screen">
-            {/* Main Content */}
             <main
                 className="relative z-10 bg-white flex flex-col min-h-screen rounded-b-2xl shadow-[0_15px_30px_-10px_rgba(0,0,0,0.15)] pb-8"
             >
                 {children}
             </main>
 
-            {/* True Parallax Footer - In document flow, no fixed positioning bugs */}
-            <footer ref={footerWrapperRef} className="relative z-0 overflow-hidden w-full bg-[#020a18]">
-                {/* This inner div moves physically upward as the user scrolls, creating the parallax */}
-                <motion.div
-                    style={{ y: parallaxY }}
-                    className="w-full pt-20 pb-12 px-6 lg:px-8 text-white bg-gradient-to-b from-[#040e21] via-[#06152e] to-[#020a18]"
-                >
+            <footer className="relative z-0 overflow-hidden w-full bg-[#020a18]">
+                <div className="w-full pt-20 pb-12 px-6 lg:px-8 text-white bg-gradient-to-b from-[#040e21] via-[#06152e] to-[#020a18]">
                     <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_center,rgba(30,100,180,0.12),transparent_60%)] pointer-events-none" />
 
                     <div className="relative z-10 mx-auto w-full max-w-7xl">
-                        <motion.div
-                            variants={containerVariants}
-                            initial="hidden"
-                            whileInView="show"
-                            viewport={{ once: true, amount: 0.2 }}
-                            className="flex flex-col gap-12"
-                        >
-                            {/* Top Section: Newsletter & Intro */}
+                        <div className="flex flex-col gap-12">
                             <div className="grid gap-12 lg:grid-cols-[1fr_400px]">
-                                <motion.div variants={itemVariants} className="max-w-md space-y-4">
+                                <div className="max-w-md space-y-4">
                                     <Image
                                         src="/vct-logo.png"
                                         alt="Vehicle Control Technologies"
@@ -107,9 +66,9 @@ export default function AnimatedFooterLayout({ children }: { children: ReactNode
                                         Engineering-grade vehicle control interfaces for demanding environments.
                                         Configure, customize, and order technical keypads with ease.
                                     </p>
-                                </motion.div>
+                                </div>
 
-                                <motion.div variants={itemVariants} className="space-y-4">
+                                <div className="space-y-4">
                                     <h3 className="text-sm font-semibold">Stay updated</h3>
                                     <form className="relative flex gap-2">
                                         <input
@@ -128,11 +87,10 @@ export default function AnimatedFooterLayout({ children }: { children: ReactNode
                                     <p className="text-xs text-panel-muted">
                                         Updates on new hardware families and software features.
                                     </p>
-                                </motion.div>
+                                </div>
                             </div>
 
-                            {/* Links Grid */}
-                            <motion.div variants={itemVariants} className="grid grid-cols-2 gap-8 gap-y-10 md:grid-cols-4 lg:gap-8 mt-4">
+                            <div className="grid grid-cols-2 gap-8 gap-y-10 md:grid-cols-4 lg:gap-8 mt-4">
                                 {footerGroups.map((group) => (
                                     <div key={group.title} className="space-y-4">
                                         <div className="font-mono text-xs font-bold uppercase tracking-widest text-white/90">
@@ -152,10 +110,9 @@ export default function AnimatedFooterLayout({ children }: { children: ReactNode
                                         </ul>
                                     </div>
                                 ))}
-                            </motion.div>
+                            </div>
 
-                            {/* Bottom Section */}
-                            <motion.div variants={itemVariants} className="relative mt-8 pt-8">
+                            <div className="relative mt-8 pt-8">
                                 <div
                                     className="absolute top-0 left-0 h-[1px] w-full shadow-[0_0_15px_1px_rgba(96,165,250,0.6)]"
                                     style={{
@@ -174,10 +131,10 @@ export default function AnimatedFooterLayout({ children }: { children: ReactNode
                                         <Link href="/cookies" className="hover:text-white transition-colors">Cookie Settings</Link>
                                     </div>
                                 </div>
-                            </motion.div>
-                        </motion.div>
+                            </div>
+                        </div>
                     </div>
-                </motion.div>
+                </div>
             </footer>
         </div>
     );

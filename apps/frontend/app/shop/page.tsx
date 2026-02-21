@@ -1,7 +1,9 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
+import { parseUniqueCsvSlugs, toAllowedPageSize, toPositiveInteger, toStringParam } from '@keypad-store/shared-utils/search-params';
 import ShopClient from '../../components/ShopClient';
-import type { IconProduct, KeypadProduct, VendureAsset, VendureProductVariant } from '../../lib/vendure';
+import type { IconCategory, IconProduct, KeypadProduct, VendureAsset, VendureProductVariant } from '../../lib/vendure';
+import { categorySlug, normalizeCategoryName } from '../../lib/vendure';
 import { fetchIconProducts, fetchIconProductsPage, fetchKeypadProducts, fetchShopLandingContent, searchGlobalProducts } from '../../lib/vendure.server';
 
 type SearchParams = {
@@ -15,24 +17,6 @@ type SearchParams = {
 
 const PAGE_SIZE_OPTIONS = [24, 48, 96] as const;
 const DEFAULT_PAGE_SIZE = 24;
-
-function toStringParam(value?: string | string[]) {
-  if (typeof value === 'string') return value;
-  if (Array.isArray(value)) return typeof value[0] === 'string' ? value[0] : '';
-  return '';
-}
-
-function toPositiveInteger(value: string, fallback: number) {
-  const parsed = Number.parseInt(value, 10);
-  if (!Number.isFinite(parsed) || parsed < 1) return fallback;
-  return parsed;
-}
-
-function toPageSize(value: string) {
-  const parsed = Number.parseInt(value, 10);
-  if (!Number.isFinite(parsed)) return DEFAULT_PAGE_SIZE;
-  return PAGE_SIZE_OPTIONS.includes(parsed as (typeof PAGE_SIZE_OPTIONS)[number]) ? parsed : DEFAULT_PAGE_SIZE;
-}
 
 function normalizeSection(value: string): 'landing' | 'all' | 'button-inserts' | 'keypads' {
   if (value === 'all') return 'all';
@@ -71,10 +55,7 @@ function parseCanonicalCatsList(
   catValue?: string | string[],
 ) {
   const catsParam = toStringParam(catsValue);
-  const catsList = catsParam
-    .split(',')
-    .map((slug) => slug.trim())
-    .filter(Boolean);
+  const catsList = parseUniqueCsvSlugs(catsParam);
 
   if (catsList.length > 0) {
     return catsList;
@@ -148,18 +129,33 @@ function parseCategorySlugs(
 ) {
   const catsParam = toStringParam(catsValue);
   if (catsParam) {
-    return Array.from(
-      new Set(
-        catsParam
-          .split(',')
-          .map((slug) => slug.trim())
-          .filter(Boolean),
-      ),
-    );
+    return parseUniqueCsvSlugs(catsParam);
   }
 
   const catParam = toStringParam(catValue).trim();
   return catParam ? [catParam] : [];
+}
+
+function buildCategoryCounts(icons: IconProduct[]): IconCategory[] {
+  const bySlug = new Map<string, IconCategory>();
+
+  for (const icon of icons) {
+    const categories = icon.customFields?.iconCategories ?? [];
+    const categoryNames = categories.length > 0 ? categories : ['Uncategorised'];
+
+    for (const rawName of categoryNames) {
+      const name = normalizeCategoryName(rawName);
+      const slug = categorySlug(name);
+      const existing = bySlug.get(slug);
+      if (existing) {
+        existing.count += 1;
+      } else {
+        bySlug.set(slug, { name, slug, count: 1 });
+      }
+    }
+  }
+
+  return Array.from(bySlug.values()).sort((a, b) => a.name.localeCompare(b.name));
 }
 
 function pickAssetFields(asset: VendureAsset | null | undefined): VendureAsset | null {
@@ -192,17 +188,6 @@ function pickIconCardFields(icon: IconProduct): IconProduct {
     variants: pickIconVariantFields(icon.variants?.[0]),
     customFields: {
       iconId: icon.customFields?.iconId,
-      iconCategories: icon.customFields?.iconCategories ?? [],
-    },
-  };
-}
-
-function pickCategorySourceIconFields(icon: IconProduct): IconProduct {
-  return {
-    id: icon.id,
-    name: icon.name,
-    slug: icon.slug,
-    customFields: {
       iconCategories: icon.customFields?.iconCategories ?? [],
     },
   };
@@ -261,17 +246,25 @@ async function ShopPageContent({
       ? parseCategorySlugs(resolvedSearchParams?.cats, resolvedSearchParams?.cat)
       : [];
   const requestedPage = toPositiveInteger(toStringParam(resolvedSearchParams?.page), 1);
-  const requestedTake = toPageSize(toStringParam(resolvedSearchParams?.take));
+  const requestedTake = toAllowedPageSize(
+    toStringParam(resolvedSearchParams?.take),
+    PAGE_SIZE_OPTIONS,
+    DEFAULT_PAGE_SIZE,
+  );
 
   // --- Search Logic ---
   if (query.trim().length > 0) {
-    const allResults = await searchGlobalProducts(query);
+    const allResultsPromise = searchGlobalProducts(query);
+    const allIconsPromise = fetchIconProducts();
+    const baseShopConfigPromise = fetchShopLandingContent();
+    const allResults = await allResultsPromise;
+    const matchedIconResults = allResults.filter((product) => !product.customFields?.isKeypadProduct);
 
-    const totalItems = allResults.length;
+    const totalItems = matchedIconResults.length;
     const totalPages = Math.max(1, Math.ceil(totalItems / requestedTake));
     const safePage = Math.min(requestedPage, totalPages);
     const start = (safePage - 1) * requestedTake;
-    const paginatedResults = allResults.slice(start, start + requestedTake);
+    const paginatedResults = matchedIconResults.slice(start, start + requestedTake);
 
     const icons = paginatedResults
       .filter(p => !p.customFields?.isKeypadProduct) // Treat anything not strictly keypad as icon/other for now
@@ -297,12 +290,11 @@ async function ShopPageContent({
     // If we are in "all" section, we show keypads + icons.
     // Let's populate `icons` with the paginated non-keypad results.
 
-    // We also need `categorySourceIcons` for the sidebar to work, purely for facets.
-    // We can fetch all icons for that, or just use the search results?
-    // Fetching all icons is safer for facet generation.
-    const allIcons = await fetchIconProducts();
-    const categorySourceIcons = allIcons.map(pickCategorySourceIconFields);
-    const baseShopConfig = await fetchShopLandingContent();
+    const [allIcons, baseShopConfig] = await Promise.all([
+      allIconsPromise,
+      baseShopConfigPromise,
+    ]);
+    const categoryCounts = buildCategoryCounts(allIcons);
 
     return (
       <div className="mx-auto w-full max-w-[88rem] bg-white px-4 sm:px-6">
@@ -310,14 +302,14 @@ async function ShopPageContent({
           icons={icons}
           keypads={matchedKeypads}
           baseShopConfig={baseShopConfig}
-          categorySourceIcons={categorySourceIcons}
+          categoryCounts={categoryCounts}
+          catalogIconTotal={allIcons.length}
           initialQuery={query}
           initialCategories={selectedCategories}
           initialSection={section}
           initialPage={safePage}
           initialTake={requestedTake}
-          pagedTotalItems={totalItems - matchedKeypads.length} // Subtract keypads from total count? Or just use totalItems?
-          // Actually, if we split them, we should probably output total count of ICONS.
+          pagedTotalItems={totalItems}
           isIconsPaginationActive={true}
         />
       </div>
@@ -330,7 +322,8 @@ async function ShopPageContent({
     (section === 'button-inserts' && selectedCategories.length === 0) || section === 'all';
 
   let icons: IconProduct[] = [];
-  let categorySourceIcons: IconProduct[] = [];
+  let categoryCounts: IconCategory[] = [];
+  let catalogIconTotal = 0;
   let pagination: { page: number; take: number; totalItems: number } | null = null;
   const allIconsPromise = fetchIconProducts();
   const keypadsPromise = fetchKeypadProducts();
@@ -356,9 +349,8 @@ async function ShopPageContent({
 
     const allIcons = await allIconsPromise;
     icons = pagedIcons.items.map(pickIconCardFields);
-    // categorySourceIcons = allIcons.map(pickCategorySourceIconFields);
-    // Optimization: we only need this for facets.
-    categorySourceIcons = allIcons.map(pickCategorySourceIconFields);
+    categoryCounts = buildCategoryCounts(allIcons);
+    catalogIconTotal = allIcons.length;
 
     pagination = {
       page: safePage,
@@ -368,7 +360,8 @@ async function ShopPageContent({
   } else {
     const allIcons = await allIconsPromise;
     icons = allIcons.map(pickIconCardFields);
-    categorySourceIcons = allIcons.map(pickCategorySourceIconFields);
+    categoryCounts = buildCategoryCounts(allIcons);
+    catalogIconTotal = allIcons.length;
   }
 
   const [keypads, baseShopConfig] = await Promise.all([keypadsPromise, shopLandingContentPromise]);
@@ -380,7 +373,8 @@ async function ShopPageContent({
         icons={icons}
         keypads={trimmedKeypads}
         baseShopConfig={baseShopConfig}
-        categorySourceIcons={categorySourceIcons}
+        categoryCounts={categoryCounts}
+        catalogIconTotal={catalogIconTotal}
         initialQuery={query}
         initialCategories={selectedCategories}
         initialSection={section}

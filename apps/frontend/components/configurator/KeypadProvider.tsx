@@ -167,6 +167,12 @@ function KeypadProviderInner({
   const clearSlot = useConfiguratorStore((state) => state.clearSlot);
   const reset = useConfiguratorStore((state) => state.reset);
   const hydrateFromSavedConfiguration = useConfiguratorStore((state) => state.hydrateFromSavedConfiguration);
+  const initialPreviewRotationDeg = (() => {
+    const value = Number.parseFloat(searchParams.get('rotationDeg') || '0');
+    if (!Number.isFinite(value)) return 0;
+    return Math.max(-180, Math.min(180, value));
+  })();
+  const initialPreviewShowGlows = searchParams.get('showGlows') !== '0';
 
   const [state, updateState] = useReducer(
     (prev: KeypadProviderState, next: Partial<KeypadProviderState>) => ({ ...prev, ...next }),
@@ -193,8 +199,8 @@ function KeypadProviderInner({
       downloadingPdf: false,
       editLineQuantity: 1,
       recommendationSeedIconId: null,
-      previewRotationDeg: 0, // Gets overridden by query in useEffect
-      previewShowGlows: true, // Gets overridden by query in useEffect
+      previewRotationDeg: initialPreviewRotationDeg,
+      previewShowGlows: initialPreviewShowGlows,
     } as KeypadProviderState
   );
 
@@ -274,20 +280,6 @@ function KeypadProviderInner({
     return Math.max(0.4, Math.min(1.68, value));
   })();
   const previewIconScale = previewIconScaleFromQuery ?? modelRenderTuning.iconScale;
-  const previewRotationFromQuery = (() => {
-    const value = Number.parseFloat(searchParams.get('rotationDeg') || '0');
-    if (!Number.isFinite(value)) return 0;
-    return Math.max(-180, Math.min(180, value));
-  })();
-  const showGlowsFromQuery = searchParams.get('showGlows') !== '0';
-  // Derived state synchronization (avoid effects during render)
-  useEffect(() => {
-    updateState({ previewRotationDeg: previewRotationFromQuery });
-  }, [previewRotationFromQuery]);
-
-  useEffect(() => {
-    updateState({ previewShowGlows: showGlowsFromQuery });
-  }, [showGlowsFromQuery]);
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
@@ -312,8 +304,17 @@ function KeypadProviderInner({
       cartStatus: null,
       editLineQuantity: 1,
       recommendationSeedIconId: null,
+      previewRotationDeg: initialPreviewRotationDeg,
+      previewShowGlows: initialPreviewShowGlows,
     });
-  }, [reset, resetScope, resolvedModelCode, slotIds]);
+  }, [
+    initialPreviewRotationDeg,
+    initialPreviewShowGlows,
+    reset,
+    resetScope,
+    resolvedModelCode,
+    slotIds,
+  ]);
 
 
   const {
