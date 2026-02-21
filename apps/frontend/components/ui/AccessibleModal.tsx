@@ -109,6 +109,7 @@ export default function AccessibleModal({
   return (
     <div
       className={backdropClassName}
+      role="presentation"
       onMouseDown={(event) => {
         if (!closeOnBackdropClick) return;
         if (event.target === event.currentTarget) {

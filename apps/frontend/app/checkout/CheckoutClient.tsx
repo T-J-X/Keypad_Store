@@ -4,7 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { Button } from '../../components/ui/Button';
 import { useRouter } from 'next/navigation';
-import { FormEvent, useMemo, useRef, useState } from 'react';
+import { FormEvent, useMemo, useReducer, useRef, useState } from 'react';
 import ConfiguredKeypadThumbnail from '../../components/configurator/ConfiguredKeypadThumbnail';
 import { notifyCartUpdated } from '../../lib/cartEvents';
 import {
@@ -29,6 +29,46 @@ type CheckoutSelectionErrors = {
     termsAccepted?: string;
 };
 
+type CheckoutInputField =
+    | 'email'
+    | 'firstName'
+    | 'lastName'
+    | 'phoneNumber'
+    | 'streetLine1'
+    | 'streetLine2'
+    | 'city'
+    | 'province'
+    | 'postalCode'
+    | 'countryCode'
+    | 'shippingMethodId'
+    | 'paymentMethodCode';
+
+type CheckoutFormState = {
+    email: string;
+    firstName: string;
+    lastName: string;
+    phoneNumber: string;
+    streetLine1: string;
+    streetLine2: string;
+    city: string;
+    province: string;
+    postalCode: string;
+    countryCode: string;
+    shippingMethodId: string;
+    paymentMethodCode: string;
+    termsAccepted: boolean;
+    fieldErrors: CheckoutFieldErrors;
+    selectionErrors: CheckoutSelectionErrors;
+};
+
+type CheckoutFormAction =
+    | { type: 'setValue'; field: CheckoutInputField; value: string }
+    | { type: 'setTermsAccepted'; value: boolean }
+    | { type: 'clearFieldError'; field: CheckoutField }
+    | { type: 'clearSelectionError'; field: keyof CheckoutSelectionErrors }
+    | { type: 'setValidationErrors'; fieldErrors: CheckoutFieldErrors; selectionErrors: CheckoutSelectionErrors }
+    | { type: 'clearAllErrors' };
+
 const REQUIRED_FIELD_ORDER: CheckoutField[] = [
     'email',
     'firstName',
@@ -38,6 +78,70 @@ const REQUIRED_FIELD_ORDER: CheckoutField[] = [
     'postalCode',
     'countryCode',
 ];
+
+function createInitialCheckoutFormState({
+    initialShippingMethods,
+    initialPaymentMethods,
+}: {
+    initialShippingMethods: ShippingMethodQuote[];
+    initialPaymentMethods: PaymentMethodQuote[];
+}): CheckoutFormState {
+    return {
+        email: '',
+        firstName: '',
+        lastName: '',
+        phoneNumber: '',
+        streetLine1: '',
+        streetLine2: '',
+        city: '',
+        province: '',
+        postalCode: '',
+        countryCode: 'US',
+        shippingMethodId: initialShippingMethods[0]?.id ?? '',
+        paymentMethodCode: initialPaymentMethods[0]?.code ?? '',
+        termsAccepted: false,
+        fieldErrors: {},
+        selectionErrors: {},
+    };
+}
+
+function checkoutFormReducer(state: CheckoutFormState, action: CheckoutFormAction): CheckoutFormState {
+    switch (action.type) {
+        case 'setValue':
+            return state[action.field] === action.value
+                ? state
+                : { ...state, [action.field]: action.value };
+        case 'setTermsAccepted':
+            return state.termsAccepted === action.value
+                ? state
+                : { ...state, termsAccepted: action.value };
+        case 'clearFieldError': {
+            if (!state.fieldErrors[action.field]) return state;
+            const nextFieldErrors = { ...state.fieldErrors };
+            delete nextFieldErrors[action.field];
+            return { ...state, fieldErrors: nextFieldErrors };
+        }
+        case 'clearSelectionError': {
+            if (!state.selectionErrors[action.field]) return state;
+            const nextSelectionErrors = { ...state.selectionErrors };
+            delete nextSelectionErrors[action.field];
+            return { ...state, selectionErrors: nextSelectionErrors };
+        }
+        case 'setValidationErrors':
+            return {
+                ...state,
+                fieldErrors: action.fieldErrors,
+                selectionErrors: action.selectionErrors,
+            };
+        case 'clearAllErrors':
+            if (Object.keys(state.fieldErrors).length === 0 && Object.keys(state.selectionErrors).length === 0) {
+                return state;
+            }
+            return { ...state, fieldErrors: {}, selectionErrors: {} };
+        default:
+            return state;
+    }
+}
 
 interface CheckoutClientProps {
     initialOrder: CheckoutOrder | null;
@@ -63,37 +167,34 @@ export default function CheckoutClient({
     const shippingMethods = initialShippingMethods;
     const paymentMethods = initialPaymentMethods;
 
-    const [isLoading, setIsLoading] = useState(false);
+    const isLoading = false;
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [error, setError] = useState<string | null>(null);
-
-    // Initialize icon lookup from prop
-    const [iconLookup] = useState<ConfiguredIconLookup>(() => {
+    const iconLookup = useMemo<ConfiguredIconLookup>(() => {
         return buildConfiguredIconLookupFromPayload(iconCatalog);
-    });
-
-    const [email, setEmail] = useState('');
-    const [firstName, setFirstName] = useState('');
-    const [lastName, setLastName] = useState('');
-    const [phoneNumber, setPhoneNumber] = useState('');
-    const [streetLine1, setStreetLine1] = useState('');
-    const [streetLine2, setStreetLine2] = useState('');
-    const [city, setCity] = useState('');
-    const [province, setProvince] = useState('');
-    const [postalCode, setPostalCode] = useState('');
-    const [countryCode, setCountryCode] = useState('US');
-
-    // Initialize selection with first available option if not already set
-    const [shippingMethodId, setShippingMethodId] = useState<string>(() => {
-        return initialShippingMethods.length > 0 ? initialShippingMethods[0].id : '';
-    });
-    const [paymentMethodCode, setPaymentMethodCode] = useState<string>(() => {
-        return initialPaymentMethods.length > 0 ? initialPaymentMethods[0].code : '';
-    });
-
-    const [termsAccepted, setTermsAccepted] = useState(false);
-    const [fieldErrors, setFieldErrors] = useState<CheckoutFieldErrors>({});
-    const [selectionErrors, setSelectionErrors] = useState<CheckoutSelectionErrors & { termsAccepted?: string }>({});
+    }, [iconCatalog]);
+    const [formState, dispatchForm] = useReducer(
+        checkoutFormReducer,
+        { initialShippingMethods, initialPaymentMethods },
+        createInitialCheckoutFormState,
+    );
+    const {
+        email,
+        firstName,
+        lastName,
+        phoneNumber,
+        streetLine1,
+        streetLine2,
+        city,
+        province,
+        postalCode,
+        countryCode,
+        shippingMethodId,
+        paymentMethodCode,
+        termsAccepted,
+        fieldErrors,
+        selectionErrors,
+    } = formState;
 
     const emailRef = useRef<HTMLInputElement | null>(null);
     const firstNameRef = useRef<HTMLInputElement | null>(null);
@@ -104,21 +205,20 @@ export default function CheckoutClient({
     const countryCodeRef = useRef<HTMLSelectElement | null>(null);
 
     const clearFieldError = (field: CheckoutField) => {
-        setFieldErrors((current) => {
-            if (!current[field]) return current;
-            const next = { ...current };
-            delete next[field];
-            return next;
-        });
+        dispatchForm({ type: 'clearFieldError', field });
     };
 
     const clearSelectionError = (field: keyof CheckoutSelectionErrors) => {
-        setSelectionErrors((current) => {
-            if (!current[field]) return current;
-            const next = { ...current };
-            delete next[field];
-            return next;
-        });
+        dispatchForm({ type: 'clearSelectionError', field });
+    };
+
+    const setInputValue = (field: CheckoutInputField, value: string) => {
+        dispatchForm({ type: 'setValue', field, value });
+    };
+
+    const updateRequiredField = (field: CheckoutField, value: string) => {
+        setInputValue(field, value);
+        clearFieldError(field);
     };
 
     const validateFields = () => {
@@ -201,8 +301,11 @@ export default function CheckoutClient({
         if (!termsAccepted) nextSelectionErrors.termsAccepted = 'You must agree to the terms to proceed.';
 
         if (Object.keys(nextFieldErrors).length > 0 || Object.keys(nextSelectionErrors).length > 0) {
-            setFieldErrors(nextFieldErrors);
-            setSelectionErrors(nextSelectionErrors);
+            dispatchForm({
+                type: 'setValidationErrors',
+                fieldErrors: nextFieldErrors,
+                selectionErrors: nextSelectionErrors,
+            });
             setError('Please correct the highlighted fields and try again.');
 
             const firstFieldError = REQUIRED_FIELD_ORDER.find((field) => Boolean(nextFieldErrors[field]));
@@ -216,8 +319,7 @@ export default function CheckoutClient({
             return;
         }
 
-        setFieldErrors({});
-        setSelectionErrors({});
+        dispatchForm({ type: 'clearAllErrors' });
         setIsSubmitting(true);
         setError(null);
 
@@ -415,8 +517,7 @@ export default function CheckoutClient({
                                             type="email"
                                             value={email}
                                             onChange={(event) => {
-                                                setEmail(event.target.value);
-                                                clearFieldError('email');
+                                                updateRequiredField('email', event.target.value);
                                             }}
                                             required
                                             className="input input-dark"
@@ -441,8 +542,7 @@ export default function CheckoutClient({
                                             type="text"
                                             value={firstName}
                                             onChange={(event) => {
-                                                setFirstName(event.target.value);
-                                                clearFieldError('firstName');
+                                                updateRequiredField('firstName', event.target.value);
                                             }}
                                             required
                                             className="input input-dark"
@@ -465,8 +565,7 @@ export default function CheckoutClient({
                                             type="text"
                                             value={lastName}
                                             onChange={(event) => {
-                                                setLastName(event.target.value);
-                                                clearFieldError('lastName');
+                                                updateRequiredField('lastName', event.target.value);
                                             }}
                                             required
                                             className="input input-dark"
@@ -487,7 +586,7 @@ export default function CheckoutClient({
                                             name="phoneNumber"
                                             type="tel"
                                             value={phoneNumber}
-                                            onChange={(event) => setPhoneNumber(event.target.value)}
+                                            onChange={(event) => setInputValue('phoneNumber', event.target.value)}
                                             className="input input-dark"
                                             autoComplete="tel"
                                         />
@@ -507,8 +606,7 @@ export default function CheckoutClient({
                                             type="text"
                                             value={streetLine1}
                                             onChange={(event) => {
-                                                setStreetLine1(event.target.value);
-                                                clearFieldError('streetLine1');
+                                                updateRequiredField('streetLine1', event.target.value);
                                             }}
                                             required
                                             className="input input-dark"
@@ -529,7 +627,7 @@ export default function CheckoutClient({
                                             name="streetLine2"
                                             type="text"
                                             value={streetLine2}
-                                            onChange={(event) => setStreetLine2(event.target.value)}
+                                            onChange={(event) => setInputValue('streetLine2', event.target.value)}
                                             className="input input-dark"
                                             autoComplete="address-line2"
                                         />
@@ -543,8 +641,7 @@ export default function CheckoutClient({
                                             type="text"
                                             value={city}
                                             onChange={(event) => {
-                                                setCity(event.target.value);
-                                                clearFieldError('city');
+                                                updateRequiredField('city', event.target.value);
                                             }}
                                             required
                                             className="input input-dark"
@@ -565,7 +662,7 @@ export default function CheckoutClient({
                                             name="province"
                                             type="text"
                                             value={province}
-                                            onChange={(event) => setProvince(event.target.value)}
+                                            onChange={(event) => setInputValue('province', event.target.value)}
                                             className="input input-dark"
                                             autoComplete="address-level1"
                                         />
@@ -579,8 +676,7 @@ export default function CheckoutClient({
                                             type="text"
                                             value={postalCode}
                                             onChange={(event) => {
-                                                setPostalCode(event.target.value);
-                                                clearFieldError('postalCode');
+                                                updateRequiredField('postalCode', event.target.value);
                                             }}
                                             required
                                             className="input input-dark"
@@ -602,8 +698,7 @@ export default function CheckoutClient({
                                             name="countryCode"
                                             value={countryCode}
                                             onChange={(event) => {
-                                                setCountryCode(event.target.value);
-                                                clearFieldError('countryCode');
+                                                updateRequiredField('countryCode', event.target.value);
                                             }}
                                             className="input input-dark"
                                             autoComplete="country"
@@ -630,14 +725,18 @@ export default function CheckoutClient({
                                 <div className="mt-3 grid gap-2">
                                     {shippingMethods.length > 0 ? (
                                         shippingMethods.map((method) => (
-                                            <label key={method.id} className="inline-flex items-start gap-2 rounded-xl border border-white/14 bg-[#081831]/55 px-3 py-2 text-sm">
+                                            <label
+                                                key={method.id}
+                                                className="inline-flex items-start gap-2 rounded-xl border border-white/14 bg-[#081831]/55 px-3 py-2 text-sm"
+                                                aria-label={`Shipping method ${method.name}`}
+                                            >
                                                 <input
                                                     type="radio"
                                                     name="shippingMethod"
                                                     value={method.id}
                                                     checked={shippingMethodId === method.id}
                                                     onChange={() => {
-                                                        setShippingMethodId(method.id);
+                                                        setInputValue('shippingMethodId', method.id);
                                                         clearSelectionError('shippingMethodId');
                                                     }}
                                                     required
@@ -665,14 +764,18 @@ export default function CheckoutClient({
                                 <div className="mt-3 grid gap-2">
                                     {paymentMethods.length > 0 ? (
                                         paymentMethods.map((method) => (
-                                            <label key={method.code} className="inline-flex items-start gap-2 rounded-xl border border-white/14 bg-[#081831]/55 px-3 py-2 text-sm">
+                                            <label
+                                                key={method.code}
+                                                className="inline-flex items-start gap-2 rounded-xl border border-white/14 bg-[#081831]/55 px-3 py-2 text-sm"
+                                                aria-label={`Payment method ${method.name}`}
+                                            >
                                                 <input
                                                     type="radio"
                                                     name="paymentMethod"
                                                     value={method.code}
                                                     checked={paymentMethodCode === method.code}
                                                     onChange={() => {
-                                                        setPaymentMethodCode(method.code);
+                                                        setInputValue('paymentMethodCode', method.code);
                                                         clearSelectionError('paymentMethodCode');
                                                     }}
                                                     required
@@ -720,7 +823,7 @@ export default function CheckoutClient({
                                         type="checkbox"
                                         checked={termsAccepted}
                                         onChange={(e) => {
-                                            setTermsAccepted(e.target.checked);
+                                            dispatchForm({ type: 'setTermsAccepted', value: e.target.checked });
                                             if (e.target.checked) clearSelectionError('termsAccepted' as keyof CheckoutSelectionErrors);
                                         }}
                                         className="mt-1 h-4 w-4 rounded border-white/20 bg-white/10 text-blue-500 focus:ring-blue-500 focus:ring-offset-gray-900"

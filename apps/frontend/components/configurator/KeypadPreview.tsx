@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useMemo, useRef, useState, memo } from 'react';
+import { useCallback, useEffect, useId, useMemo, useReducer, useRef, useState, memo } from 'react';
 import type { SlotVisualState } from '../../lib/configuratorStore';
 import type { SlotId } from '../../lib/keypadConfiguration';
 import {
@@ -79,6 +79,28 @@ type IntrinsicSize = {
   width: number;
   height: number;
 };
+
+type CopyStatus = 'idle' | 'copied' | 'error';
+
+type PreviewUiState = {
+  selectedSlotId: string | null;
+  showSelectedGuidesOnly: boolean;
+  hoveredSlotId: SlotId | null;
+  layoutCopyStatus: CopyStatus;
+  tuningCopyStatus: CopyStatus;
+  editableIconScale: number;
+};
+
+type PreviewUiAction =
+  | { type: 'setSelectedSlot'; slotId: string | null }
+  | { type: 'toggleShowSelectedGuidesOnly' }
+  | { type: 'setHoveredSlot'; slotId: SlotId | null }
+  | { type: 'clearHoveredSlotIfMatch'; slotId: SlotId }
+  | { type: 'setLayoutCopyStatus'; status: CopyStatus }
+  | { type: 'setTuningCopyStatus'; status: CopyStatus }
+  | { type: 'setEditableIconScale'; value: number }
+  | { type: 'nudgeEditableIconScale'; delta: number }
+  | { type: 'syncEditMode'; editMode: boolean; slotIds: string[] };
 
 const EMPTY_SLOT_VISUAL_STATE: SlotVisualState = {
   iconId: null,
@@ -175,6 +197,46 @@ function buildSlotBindings(layout: ModelLayout): SlotBinding[] {
       slotLabel: `Slot ${numeric}`,
     };
   });
+}
+
+function previewUiReducer(state: PreviewUiState, action: PreviewUiAction): PreviewUiState {
+  switch (action.type) {
+    case 'setSelectedSlot':
+      return { ...state, selectedSlotId: action.slotId };
+    case 'toggleShowSelectedGuidesOnly':
+      return { ...state, showSelectedGuidesOnly: !state.showSelectedGuidesOnly };
+    case 'setHoveredSlot':
+      return state.hoveredSlotId === action.slotId ? state : { ...state, hoveredSlotId: action.slotId };
+    case 'clearHoveredSlotIfMatch':
+      return state.hoveredSlotId === action.slotId
+        ? { ...state, hoveredSlotId: null }
+        : state;
+    case 'setLayoutCopyStatus':
+      return state.layoutCopyStatus === action.status ? state : { ...state, layoutCopyStatus: action.status };
+    case 'setTuningCopyStatus':
+      return state.tuningCopyStatus === action.status ? state : { ...state, tuningCopyStatus: action.status };
+    case 'setEditableIconScale':
+      return state.editableIconScale === action.value
+        ? state
+        : { ...state, editableIconScale: action.value };
+    case 'nudgeEditableIconScale': {
+      const next = round2(clamp(state.editableIconScale + action.delta, MIN_ICON_SCALE, MAX_ICON_SCALE));
+      return next === state.editableIconScale ? state : { ...state, editableIconScale: next };
+    }
+    case 'syncEditMode': {
+      if (!action.editMode) {
+        if (state.selectedSlotId === null && !state.showSelectedGuidesOnly) return state;
+        return { ...state, selectedSlotId: null, showSelectedGuidesOnly: false };
+      }
+      const hasValidSelection = Boolean(state.selectedSlotId && action.slotIds.includes(state.selectedSlotId));
+      const nextSelectedSlotId = hasValidSelection ? state.selectedSlotId : (action.slotIds[0] ?? null);
+      return nextSelectedSlotId === state.selectedSlotId
+        ? state
+        : { ...state, selectedSlotId: nextSelectedSlotId };
+    }
+    default:
+      return state;
+  }
 }
 
 // --- Extracted Slot Component for Performance ---
@@ -578,17 +640,28 @@ export default function KeypadPreview({
   };
 
   const [editableLayout, setEditableLayout] = useState<ModelLayout>(() => cloneModelLayout(baseLayout));
-  const [selectedSlotId, setSelectedSlotId] = useState<string | null>(null);
-  const [showSelectedGuidesOnly, setShowSelectedGuidesOnly] = useState(false);
-  const [hoveredSlotId, setHoveredSlotId] = useState<SlotId | null>(null);
-  const [displayRotationDeg, setDisplayRotationDeg] = useState(rotationDeg);
-  const [editableIconScale, setEditableIconScale] = useState(() => normalizeIconScale(iconScale));
-  const [layoutCopyStatus, setLayoutCopyStatus] = useState<'idle' | 'copied' | 'error'>('idle');
-  const [tuningCopyStatus, setTuningCopyStatus] = useState<'idle' | 'copied' | 'error'>('idle');
+  const [uiState, dispatchUi] = useReducer(previewUiReducer, {
+    selectedSlotId: null,
+    showSelectedGuidesOnly: false,
+    hoveredSlotId: null,
+    layoutCopyStatus: 'idle',
+    tuningCopyStatus: 'idle',
+    editableIconScale: normalizeIconScale(iconScale),
+  } as PreviewUiState);
+  const {
+    selectedSlotId,
+    showSelectedGuidesOnly,
+    hoveredSlotId,
+    layoutCopyStatus,
+    tuningCopyStatus,
+    editableIconScale,
+  } = uiState;
+  const initialRotationRef = useRef(rotationDeg);
+  const [displayRotationDeg, setDisplayRotationDeg] = useState(() => initialRotationRef.current);
   const [shellNaturalSize, setShellNaturalSize] = useState<IntrinsicSize | null>(null);
-  const [zoomLevel, setZoomLevel] = useState(getInitialZoom(modelCode));
-  const [showInitialTooltip, setShowInitialTooltip] = useState(true);
-  const displayRotationRef = useRef(rotationDeg);
+  const [zoomLevel, setZoomLevel] = useState(() => getInitialZoom(modelCode));
+  const showInitialTooltip = true;
+  const displayRotationRef = useRef(initialRotationRef.current);
   const rotationFrameRef = useRef<number | null>(null);
 
   useEffect(() => {
@@ -597,7 +670,7 @@ export default function KeypadPreview({
   }, [baseLayout]);
 
   useEffect(() => {
-    setEditableIconScale(normalizeIconScale(iconScale));
+    dispatchUi({ type: 'setEditableIconScale', value: normalizeIconScale(iconScale) });
   }, [baseLayout.model, iconScale]);
 
   const renderLayout = editMode ? editableLayout : baseLayout;
@@ -624,16 +697,7 @@ export default function KeypadPreview({
   );
 
   useEffect(() => {
-    if (!editMode) {
-      setSelectedSlotId(null);
-      setShowSelectedGuidesOnly(false);
-      return;
-    }
-
-    setSelectedSlotId((previous) => {
-      if (previous && slotIds.includes(previous)) return previous;
-      return slotIds[0] ?? null;
-    });
+    dispatchUi({ type: 'syncEditMode', editMode, slotIds });
   }, [editMode, slotIds]);
 
   const selectedSlot = useMemo(
@@ -643,16 +707,25 @@ export default function KeypadPreview({
     [renderLayout.slots, selectedSlotId],
   );
 
+  const handleSlotHover = useCallback((id: SlotId) => {
+    dispatchUi({ type: 'setHoveredSlot', slotId: id });
+  }, []);
+
+  const clearSlotHover = useCallback((id: SlotId) => {
+    dispatchUi({ type: 'clearHoveredSlotIfMatch', slotId: id });
+  }, []);
+
+  const selectSlot = useCallback((slotId: string | null) => {
+    dispatchUi({ type: 'setSelectedSlot', slotId });
+  }, []);
+  const isAnySlotHovered = hoveredSlotId !== null;
+
   useEffect(() => {
     displayRotationRef.current = displayRotationDeg;
   }, [displayRotationDeg]);
 
   useEffect(() => {
     if (Math.abs(displayRotationRef.current - rotationDeg) < 0.001) return;
-    if (typeof window === 'undefined') {
-      setDisplayRotationDeg(rotationDeg);
-      return;
-    }
 
     if (rotationFrameRef.current != null) {
       window.cancelAnimationFrame(rotationFrameRef.current);
@@ -678,7 +751,6 @@ export default function KeypadPreview({
       if (progress < 1) {
         rotationFrameRef.current = window.requestAnimationFrame(tick);
       } else {
-        setDisplayRotationDeg(rotationDeg);
         rotationFrameRef.current = null;
       }
     };
@@ -693,100 +765,99 @@ export default function KeypadPreview({
     };
   }, [rotationDeg]);
 
-  useEffect(() => {
-    if (!editMode || typeof window === 'undefined') return;
+  const onEditorKeyDown = useCallback((event: KeyboardEvent) => {
+    if (!editMode) return;
+    if (isEditableTarget(event.target)) return;
 
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (isEditableTarget(event.target)) return;
-
-      const lowerKey = event.key.toLowerCase();
-      const mappedSlotId = slotIdByKey[lowerKey];
-      if (mappedSlotId) {
-        event.preventDefault();
-        setSelectedSlotId(mappedSlotId);
-        return;
-      }
-
-      const positionStep = event.shiftKey ? FAST_POSITION_NUDGE_PX : DEFAULT_POSITION_NUDGE_PX;
-      const diameterStep = event.shiftKey ? FAST_DIAMETER_NUDGE_PX : DEFAULT_DIAMETER_NUDGE_PX;
-      const iconScaleStep = event.shiftKey ? FAST_ICON_SCALE_NUDGE : DEFAULT_ICON_SCALE_NUDGE;
-
-      let dx = 0;
-      let dy = 0;
-      let dInsert = 0;
-      let dBezel = 0;
-      let dIconScale = 0;
-
-      switch (event.key) {
-        case 'ArrowLeft':
-          dx = -positionStep;
-          break;
-        case 'ArrowRight':
-          dx = positionStep;
-          break;
-        case 'ArrowUp':
-          dy = -positionStep;
-          break;
-        case 'ArrowDown':
-          dy = positionStep;
-          break;
-        case '[':
-        case '{':
-          dInsert = -diameterStep;
-          break;
-        case ']':
-        case '}':
-          dInsert = diameterStep;
-          break;
-        case '-':
-        case '_':
-          dBezel = -diameterStep;
-          break;
-        case '=':
-        case '+':
-          dBezel = diameterStep;
-          break;
-        case ',':
-        case '<':
-          dIconScale = -iconScaleStep;
-          break;
-        case '.':
-        case '>':
-          dIconScale = iconScaleStep;
-          break;
-        default:
-          return;
-      }
-
+    const lowerKey = event.key.toLowerCase();
+    const mappedSlotId = slotIdByKey[lowerKey];
+    if (mappedSlotId) {
       event.preventDefault();
-      if (dIconScale !== 0) {
-        setEditableIconScale((previous) => round2(clamp(previous + dIconScale, MIN_ICON_SCALE, MAX_ICON_SCALE)));
+      dispatchUi({ type: 'setSelectedSlot', slotId: mappedSlotId });
+      return;
+    }
+
+    const positionStep = event.shiftKey ? FAST_POSITION_NUDGE_PX : DEFAULT_POSITION_NUDGE_PX;
+    const diameterStep = event.shiftKey ? FAST_DIAMETER_NUDGE_PX : DEFAULT_DIAMETER_NUDGE_PX;
+    const iconScaleStep = event.shiftKey ? FAST_ICON_SCALE_NUDGE : DEFAULT_ICON_SCALE_NUDGE;
+
+    let dx = 0;
+    let dy = 0;
+    let dInsert = 0;
+    let dBezel = 0;
+    let dIconScale = 0;
+
+    switch (event.key) {
+      case 'ArrowLeft':
+        dx = -positionStep;
+        break;
+      case 'ArrowRight':
+        dx = positionStep;
+        break;
+      case 'ArrowUp':
+        dy = -positionStep;
+        break;
+      case 'ArrowDown':
+        dy = positionStep;
+        break;
+      case '[':
+      case '{':
+        dInsert = -diameterStep;
+        break;
+      case ']':
+      case '}':
+        dInsert = diameterStep;
+        break;
+      case '-':
+      case '_':
+        dBezel = -diameterStep;
+        break;
+      case '=':
+      case '+':
+        dBezel = diameterStep;
+        break;
+      case ',':
+      case '<':
+        dIconScale = -iconScaleStep;
+        break;
+      case '.':
+      case '>':
+        dIconScale = iconScaleStep;
+        break;
+      default:
         return;
-      }
+    }
 
-      if (!selectedSlotId) return;
+    event.preventDefault();
+    if (dIconScale !== 0) {
+      dispatchUi({ type: 'nudgeEditableIconScale', delta: dIconScale });
+      return;
+    }
 
-      setEditableLayout((previous) => withUpdatedSlot(previous, selectedSlotId, (slotEntry) => ({
-        ...slotEntry,
-        cx: round2(slotEntry.cx + dx),
-        cy: round2(slotEntry.cy + dy),
-        insertD: round2(Math.max(MIN_SLOT_DIAMETER_PX, slotEntry.insertD + dInsert)),
-        bezelD: round2(Math.max(MIN_SLOT_DIAMETER_PX, slotEntry.bezelD + dBezel)),
-      })));
-    };
+    if (!selectedSlotId) return;
 
-    window.addEventListener('keydown', onKeyDown);
-    return () => {
-      window.removeEventListener('keydown', onKeyDown);
-    };
+    setEditableLayout((previous) => withUpdatedSlot(previous, selectedSlotId, (slotEntry) => ({
+      ...slotEntry,
+      cx: round2(slotEntry.cx + dx),
+      cy: round2(slotEntry.cy + dy),
+      insertD: round2(Math.max(MIN_SLOT_DIAMETER_PX, slotEntry.insertD + dInsert)),
+      bezelD: round2(Math.max(MIN_SLOT_DIAMETER_PX, slotEntry.bezelD + dBezel)),
+    })));
   }, [editMode, selectedSlotId, slotIdByKey]);
+
+  useEffect(() => {
+    window.addEventListener('keydown', onEditorKeyDown);
+    return () => {
+      window.removeEventListener('keydown', onEditorKeyDown);
+    };
+  }, [onEditorKeyDown]);
 
   useEffect(() => {
     if (layoutCopyStatus === 'idle') return;
     if (typeof window === 'undefined') return;
 
     const timeoutId = window.setTimeout(() => {
-      setLayoutCopyStatus('idle');
+      dispatchUi({ type: 'setLayoutCopyStatus', status: 'idle' });
     }, 1800);
 
     return () => {
@@ -799,7 +870,7 @@ export default function KeypadPreview({
     if (typeof window === 'undefined') return;
 
     const timeoutId = window.setTimeout(() => {
-      setTuningCopyStatus('idle');
+      dispatchUi({ type: 'setTuningCopyStatus', status: 'idle' });
     }, 1800);
 
     return () => {
@@ -809,7 +880,7 @@ export default function KeypadPreview({
 
   const onCopyJson = async () => {
     if (!editMode || typeof navigator === 'undefined' || !navigator.clipboard) {
-      setLayoutCopyStatus('error');
+      dispatchUi({ type: 'setLayoutCopyStatus', status: 'error' });
       return;
     }
 
@@ -828,15 +899,15 @@ export default function KeypadPreview({
       };
 
       await navigator.clipboard.writeText(JSON.stringify(normalized, null, 2));
-      setLayoutCopyStatus('copied');
+      dispatchUi({ type: 'setLayoutCopyStatus', status: 'copied' });
     } catch {
-      setLayoutCopyStatus('error');
+      dispatchUi({ type: 'setLayoutCopyStatus', status: 'error' });
     }
   };
 
   const onCopyTuningJson = async () => {
     if (!editMode || typeof navigator === 'undefined' || !navigator.clipboard) {
-      setTuningCopyStatus('error');
+      dispatchUi({ type: 'setTuningCopyStatus', status: 'error' });
       return;
     }
 
@@ -847,9 +918,9 @@ export default function KeypadPreview({
         iconVisibleComp: round2(iconVisibleCompValue),
       };
       await navigator.clipboard.writeText(JSON.stringify(tuning, null, 2));
-      setTuningCopyStatus('copied');
+      dispatchUi({ type: 'setTuningCopyStatus', status: 'copied' });
     } catch {
-      setTuningCopyStatus('error');
+      dispatchUi({ type: 'setTuningCopyStatus', status: 'error' });
     }
   };
 
@@ -879,10 +950,17 @@ export default function KeypadPreview({
   ].filter(Boolean).join(' ');
   const layoutLabel = MODEL_LAYOUT_LABELS[renderLayout.model] ?? `${renderLayout.slots.length} slots`;
 
+  const updateShellNaturalSize = useCallback((nextSize: IntrinsicSize | null) => {
+    setShellNaturalSize((previous) => {
+      if (!nextSize) return previous === null ? previous : null;
+      if (previous?.width === nextSize.width && previous?.height === nextSize.height) return previous;
+      return nextSize;
+    });
+  }, []);
+
   useEffect(() => {
-    if (typeof window === 'undefined') return;
     if (!shellSrc) {
-      setShellNaturalSize(null);
+      updateShellNaturalSize(null);
       return;
     }
 
@@ -894,24 +972,21 @@ export default function KeypadPreview({
       const width = image.naturalWidth;
       const height = image.naturalHeight;
       if (!width || !height) {
-        setShellNaturalSize(null);
+        updateShellNaturalSize(null);
         return;
       }
-      setShellNaturalSize((previous) => {
-        if (previous?.width === width && previous?.height === height) return previous;
-        return { width, height };
-      });
+      updateShellNaturalSize({ width, height });
     };
     image.onerror = () => {
       if (cancelled) return;
-      setShellNaturalSize(null);
+      updateShellNaturalSize(null);
     };
     image.src = shellSrc;
 
     return () => {
       cancelled = true;
     };
-  }, [shellSrc]);
+  }, [shellSrc, updateShellNaturalSize]);
 
   useEffect(() => {
     if (!debugMode || !hasNaturalSizeMismatch || !shellNaturalSize) return;
@@ -921,7 +996,10 @@ export default function KeypadPreview({
   }, [baseH, baseW, debugMode, hasNaturalSizeMismatch, renderLayout.model, shellNaturalSize]);
 
   return (
-    <div className="card glow-isolate relative flex h-full flex-col overflow-hidden border border-white/10 bg-deep-navy py-[50px] px-6 shadow-2xl">
+    <div
+      className="card glow-isolate relative flex h-full flex-col overflow-hidden border border-white/10 bg-deep-navy py-[50px] px-6 shadow-2xl"
+      data-slot-hovered={isAnySlotHovered ? 'true' : 'false'}
+    >
 
       {editMode ? (
         <div className="mb-4 flex-shrink-0 rounded-2xl border border-white/20 bg-[#071634]/70 px-4 py-3 text-xs text-blue-100/95">
@@ -930,7 +1008,7 @@ export default function KeypadPreview({
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={() => setShowSelectedGuidesOnly((previous) => !previous)}
+                onClick={() => dispatchUi({ type: 'toggleShowSelectedGuidesOnly' })}
                 className="inline-flex min-h-8 items-center rounded-lg border border-white/15 bg-white/5 px-3 text-[11px] font-semibold uppercase tracking-[0.12em] text-blue-100 transition hover:border-white/30 hover:bg-white/10"
               >
                 {showSelectedGuidesOnly ? 'Guides: selected' : 'Guides: all'}
@@ -1105,16 +1183,12 @@ export default function KeypadPreview({
                       iconScaleValue={iconScaleValue}
                       iconVisibleCompValue={iconVisibleCompValue}
                       onSlotClick={onSlotClick}
-                      onMouseEnter={(id) => setHoveredSlotId(id)}
-                      onMouseLeave={(id) => {
-                        if (hoveredSlotId === id) setHoveredSlotId(null);
-                      }}
-                      onFocus={(id) => setHoveredSlotId(id)}
-                      onBlur={(id) => {
-                        if (hoveredSlotId === id) setHoveredSlotId(null);
-                      }}
+                      onMouseEnter={handleSlotHover}
+                      onMouseLeave={clearSlotHover}
+                      onFocus={handleSlotHover}
+                      onBlur={clearSlotHover}
                       editMode={editMode}
-                      setSelectedSlotId={setSelectedSlotId}
+                      setSelectedSlotId={selectSlot}
                       safeSvgIdPrefix={safeSvgIdPrefix}
                       modelCode={modelCode}
                       shouldShowTooltip={Boolean(shouldShowTooltip)}

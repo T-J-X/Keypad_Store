@@ -23,6 +23,7 @@ import { Button, buttonVariants } from './ui/Button';
 import { LayoutGrid, List as ListIcon } from 'lucide-react';
 
 const PAGE_SIZE_OPTIONS = [24, 48, 96] as const;
+const EMPTY_CATEGORIES: string[] = [];
 const ringBlueHoverClass =
   'border-2 border-transparent bg-[linear-gradient(#ffffff,#ffffff),linear-gradient(#d7dde7,#d7dde7)] [background-origin:border-box] [background-clip:padding-box,border-box] hover:bg-[linear-gradient(#ffffff,#ffffff),linear-gradient(90deg,#4e84d8_0%,#6da5f5_55%,#8ab8ff_100%)] hover:shadow-[0_10px_24px_rgba(4,15,46,0.16)]';
 const DEFAULT_EXPLORE_MORE_IMAGE_URL =
@@ -187,6 +188,167 @@ function ViewToggle({ viewMode, onChange }: { viewMode: 'grid' | 'list', onChang
   );
 }
 
+function IconPaginationControls({
+  location,
+  page,
+  totalPages,
+  take,
+  summaryTotal,
+  summaryLabel,
+  onTakeChange,
+  onPrev,
+  onNext,
+}: {
+  location: 'top' | 'bottom';
+  page: number;
+  totalPages: number;
+  take: number;
+  summaryTotal: number;
+  summaryLabel: string;
+  onTakeChange: (nextTake: number) => void;
+  onPrev: () => void;
+  onNext: () => void;
+}) {
+  const selectId = `shop-page-size-${location}`;
+  const wrapperClass =
+    location === 'top'
+      ? 'mt-6 mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-ink/10 px-4 py-3 text-xs text-ink/60'
+      : 'mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-ink/10 px-4 py-3 text-xs text-ink/60';
+
+  return (
+    <div className={wrapperClass}>
+      <span>
+        Page <span className="font-semibold text-ink">{page}</span> of{' '}
+        <span className="font-semibold text-ink">{totalPages}</span> ({summaryTotal} total {summaryLabel})
+      </span>
+      <div className="flex flex-wrap items-center gap-2">
+        <label htmlFor={selectId} className="text-ink/60">Per page</label>
+        <select
+          id={selectId}
+          value={take}
+          onChange={(event) => onTakeChange(Number(event.target.value))}
+          className="rounded-full border border-ink/15 bg-white px-3 py-1 text-xs font-semibold text-ink"
+        >
+          {PAGE_SIZE_OPTIONS.map((option) => (
+            <option key={option} value={option}>
+              {option}
+            </option>
+          ))}
+        </select>
+        <button
+          type="button"
+          onClick={onPrev}
+          disabled={page <= 1}
+          className="rounded-full border border-ink/15 px-3 py-1 font-semibold text-ink transition hover:border-ink/30 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Prev
+        </button>
+        <button
+          type="button"
+          onClick={onNext}
+          disabled={page >= totalPages}
+          className="rounded-full border border-ink/15 px-3 py-1 font-semibold text-ink transition hover:border-ink/30 disabled:cursor-not-allowed disabled:opacity-50"
+        >
+          Next
+        </button>
+      </div>
+    </div>
+  );
+}
+
+function IconResultsGrid({
+  iconItems,
+  viewMode,
+  categoryNamesByIconId,
+  activeCategorySlugs,
+  isIconsSection,
+  isAllSection,
+  toCategoryHref,
+  toProductHref,
+  resolveProductCategoryForBreadcrumb,
+}: {
+  iconItems: IconProduct[];
+  viewMode: 'grid' | 'list';
+  categoryNamesByIconId: Map<string, string[]>;
+  activeCategorySlugs: string[];
+  isIconsSection: boolean;
+  isAllSection: boolean;
+  toCategoryHref: (categorySlugValue: string) => string;
+  toProductHref: (
+    slug: string,
+    section: 'button-inserts' | 'keypads',
+    categorySlugValues?: string[],
+    preferredCategorySlug?: string,
+    options?: { hubReady?: boolean },
+  ) => string;
+  resolveProductCategoryForBreadcrumb: (icon: IconProduct) => string;
+}) {
+  const gridClasses = viewMode === 'grid'
+    ? 'staggered grid grid-cols-2 gap-3 min-[480px]:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-6'
+    : 'flex flex-col gap-3';
+
+  return (
+    <div className={gridClasses} style={{ contentVisibility: 'auto' }}>
+      {iconItems.map((icon) => {
+        const iconCategoryNames = categoryNamesByIconId.get(icon.id) ?? [];
+        const primaryCategoryName = iconCategoryNames[0] ?? '';
+        const primaryCategorySlug = primaryCategoryName ? categorySlug(primaryCategoryName) : '';
+        const breadcrumbCategorySlug = resolveProductCategoryForBreadcrumb(icon);
+
+        return (
+          <ProductCard
+            key={icon.id}
+            product={icon}
+            categoryLabel={toCardCategoryLabel(iconCategoryNames)}
+            categoryHref={primaryCategorySlug ? toCategoryHref(primaryCategorySlug) : undefined}
+            productHref={toProductHref(
+              icon.slug,
+              'button-inserts',
+              activeCategorySlugs,
+              breadcrumbCategorySlug,
+              { hubReady: isIconsSection || isAllSection },
+            )}
+            replaceProductNavigation={isIconsSection}
+            layout={viewMode}
+          />
+        );
+      })}
+    </div>
+  );
+}
+
+function KeypadResultsGrid({
+  keypadItems,
+  hubReady,
+  replaceDetailNavigation,
+  toProductHref,
+}: {
+  keypadItems: KeypadProduct[];
+  hubReady?: boolean;
+  replaceDetailNavigation?: boolean;
+  toProductHref: (
+    slug: string,
+    section: 'button-inserts' | 'keypads',
+    categorySlugValues?: string[],
+    preferredCategorySlug?: string,
+    options?: { hubReady?: boolean },
+  ) => string;
+}) {
+  return (
+    <div className="staggered grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3" style={{ contentVisibility: 'auto' }}>
+      {keypadItems.map((keypad) => (
+        <KeypadCard
+          key={keypad.id}
+          product={keypad}
+          mode="shop"
+          learnMoreHref={toProductHref(keypad.slug, 'keypads', [], '', { hubReady })}
+          replaceDetailNavigation={replaceDetailNavigation === true}
+        />
+      ))}
+    </div>
+  );
+}
+
 export default function ShopClient({
   icons,
   keypads,
@@ -194,7 +356,7 @@ export default function ShopClient({
   categoryCounts,
   catalogIconTotal,
   initialQuery = '',
-  initialCategories = [],
+  initialCategories = EMPTY_CATEGORIES,
   initialSection = 'landing',
   initialPage = 1,
   initialTake = 24,
@@ -224,7 +386,7 @@ export default function ShopClient({
   const take = initialTake;
 
   // Local state for search input only - not synced back from URL to avoid loop
-  const [query, setQuery] = useState(initialQuery);
+  const [query, setQuery] = useState('');
   const [iconsGroupOpen, setIconsGroupOpen] = useState(Boolean(initialCategories.length));
 
   // Debounce query for URL updates
@@ -234,9 +396,7 @@ export default function ShopClient({
 
   // Sync query input when URL changes externally (e.g. back button)
   useEffect(() => {
-    if (initialQuery !== query) {
-      setQuery(initialQuery ?? '');
-    }
+    setQuery((previous) => (previous === initialQuery ? previous : initialQuery ?? ''));
   }, [initialQuery]);
 
   // Expand categories if selected
@@ -577,112 +737,12 @@ export default function ShopClient({
     }
   }, [isIconsSection, isAllSection, page, totalPages, updateParams]);
 
-  const renderIconPaginationControls = (location: 'top' | 'bottom') => {
-    if (!(isIconsSection || isAllSection) || !isAnyIconsPaginationMode) return null;
-
-    const selectId = `shop-page-size-${location}`;
-    const paginationSummaryTotal = isAllSection ? availableResultCount : paginationTotalItems;
-    const paginationSummaryLabel = isAllSection ? 'products' : 'button inserts';
-    const wrapperClass =
-      location === 'top'
-        ? 'mt-6 mb-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-ink/10 px-4 py-3 text-xs text-ink/60'
-        : 'mt-6 flex flex-wrap items-center justify-between gap-3 rounded-2xl border border-ink/10 px-4 py-3 text-xs text-ink/60';
-
-    return (
-      <div className={wrapperClass}>
-        <span>
-          Page <span className="font-semibold text-ink">{page}</span> of{' '}
-          <span className="font-semibold text-ink">{totalPages}</span> ({paginationSummaryTotal} total {paginationSummaryLabel})
-        </span>
-        <div className="flex flex-wrap items-center gap-2">
-          <label htmlFor={selectId} className="text-ink/60">Per page</label>
-          <select
-            id={selectId}
-            value={take}
-            onChange={(event) => onTakeChange(Number(event.target.value))}
-            className="rounded-full border border-ink/15 bg-white px-3 py-1 text-xs font-semibold text-ink"
-          >
-            {PAGE_SIZE_OPTIONS.map((option) => (
-              <option key={option} value={option}>
-                {option}
-              </option>
-            ))}
-          </select>
-          <button
-            type="button"
-            onClick={() => updateParams({ page: Math.max(1, page - 1) })}
-            disabled={page <= 1}
-            className="rounded-full border border-ink/15 px-3 py-1 font-semibold text-ink transition hover:border-ink/30 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Prev
-          </button>
-          <button
-            type="button"
-            onClick={() => updateParams({ page: Math.min(totalPages, page + 1) })}
-            disabled={page >= totalPages}
-            className="rounded-full border border-ink/15 px-3 py-1 font-semibold text-ink transition hover:border-ink/30 disabled:cursor-not-allowed disabled:opacity-50"
-          >
-            Next
-          </button>
-        </div>
-      </div>
-    );
-  };
+  const shouldShowIconPaginationControls = (isIconsSection || isAllSection) && isAnyIconsPaginationMode;
+  const paginationSummaryTotal = isAllSection ? availableResultCount : paginationTotalItems;
+  const paginationSummaryLabel = isAllSection ? 'products' : 'button inserts';
 
 
 
-
-  const renderIconsGrid = (iconItems: IconProduct[]) => {
-    const gridClasses = viewMode === 'grid'
-      ? 'staggered grid grid-cols-2 gap-3 min-[480px]:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-6'
-      : 'flex flex-col gap-3';
-
-    return (
-      <div className={gridClasses} style={{ contentVisibility: 'auto' }}>
-        {iconItems.map((icon) => {
-          const iconCategoryNames = categoryNamesByIconId.get(icon.id) ?? [];
-          const primaryCategoryName = iconCategoryNames[0] ?? '';
-          const primaryCategorySlug = primaryCategoryName ? categorySlug(primaryCategoryName) : '';
-          const breadcrumbCategorySlug = resolveProductCategoryForBreadcrumb(icon);
-
-          return (
-            <ProductCard
-              key={icon.id}
-              product={icon}
-              categoryLabel={toCardCategoryLabel(iconCategoryNames)}
-              categoryHref={primaryCategorySlug ? toCategoryHref(primaryCategorySlug) : undefined}
-              productHref={toProductHref(
-                icon.slug,
-                'button-inserts',
-                activeCategorySlugs,
-                breadcrumbCategorySlug,
-                { hubReady: isIconsSection || isAllSection },
-              )}
-              replaceProductNavigation={isIconsSection}
-              layout={viewMode}
-            />
-          );
-        })}
-      </div>
-    );
-  };
-
-  const renderKeypadsGrid = (
-    keypadItems: KeypadProduct[],
-    options?: { hubReady?: boolean; replaceDetailNavigation?: boolean },
-  ) => (
-    <div className="staggered grid gap-6 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-3" style={{ contentVisibility: 'auto' }}>
-      {keypadItems.map((keypad) => (
-        <KeypadCard
-          key={keypad.id}
-          product={keypad}
-          mode="shop"
-          learnMoreHref={toProductHref(keypad.slug, 'keypads', [], '', { hubReady: options?.hubReady })}
-          replaceDetailNavigation={options?.replaceDetailNavigation === true}
-        />
-      ))}
-    </div>
-  );
 
   return (
     <div className="mx-auto w-full max-w-[88rem] bg-white px-6 pb-20 pt-10" aria-busy={isPending}>
@@ -1059,7 +1119,19 @@ export default function ShopClient({
                 </span>
               )}
             </div>
-            {renderIconPaginationControls('top')}
+            {shouldShowIconPaginationControls ? (
+              <IconPaginationControls
+                location="top"
+                page={page}
+                totalPages={totalPages}
+                take={take}
+                summaryTotal={paginationSummaryTotal}
+                summaryLabel={paginationSummaryLabel}
+                onTakeChange={onTakeChange}
+                onPrev={() => updateParams({ page: Math.max(1, page - 1) })}
+                onNext={() => updateParams({ page: Math.min(totalPages, page + 1) })}
+              />
+            ) : null}
 
             {visibleResultCount === 0 ? (
               <div className="card-soft p-8 text-sm text-ink/60">
@@ -1070,24 +1142,64 @@ export default function ShopClient({
                     : 'No products match that search. Try a different query.'}
               </div>
             ) : isIconsSection ? (
-              renderIconsGrid(displayedIcons)
+              <IconResultsGrid
+                iconItems={displayedIcons}
+                viewMode={viewMode}
+                categoryNamesByIconId={categoryNamesByIconId}
+                activeCategorySlugs={activeCategorySlugs}
+                isIconsSection={isIconsSection}
+                isAllSection={isAllSection}
+                toCategoryHref={toCategoryHref}
+                toProductHref={toProductHref}
+                resolveProductCategoryForBreadcrumb={resolveProductCategoryForBreadcrumb}
+              />
             ) : isKeypadsSection ? (
-              renderKeypadsGrid(filteredKeypads, {
-                hubReady: true,
-                replaceDetailNavigation: true,
-              })
+              <KeypadResultsGrid
+                keypadItems={filteredKeypads}
+                hubReady
+                replaceDetailNavigation
+                toProductHref={toProductHref}
+              />
             ) : (
               <div className="space-y-6">
-                {displayedIcons.length > 0 && renderIconsGrid(displayedIcons)}
+                {displayedIcons.length > 0 && (
+                  <IconResultsGrid
+                    iconItems={displayedIcons}
+                    viewMode={viewMode}
+                    categoryNamesByIconId={categoryNamesByIconId}
+                    activeCategorySlugs={activeCategorySlugs}
+                    isIconsSection={isIconsSection}
+                    isAllSection={isAllSection}
+                    toCategoryHref={toCategoryHref}
+                    toProductHref={toProductHref}
+                    resolveProductCategoryForBreadcrumb={resolveProductCategoryForBreadcrumb}
+                  />
+                )}
                 {catalogWideKeypads.length > 0 &&
-                  renderKeypadsGrid(catalogWideKeypads, {
-                    hubReady: true,
-                    replaceDetailNavigation: false,
-                  })}
+                  (
+                    <KeypadResultsGrid
+                      keypadItems={catalogWideKeypads}
+                      hubReady
+                      replaceDetailNavigation={false}
+                      toProductHref={toProductHref}
+                    />
+                  )}
               </div>
             )}
 
-            {renderIconPaginationControls('bottom')}
+            {shouldShowIconPaginationControls ? (
+              <IconPaginationControls
+                location="bottom"
+                page={page}
+                totalPages={totalPages}
+                take={take}
+                summaryTotal={paginationSummaryTotal}
+                summaryLabel={paginationSummaryLabel}
+                onTakeChange={onTakeChange}
+                onPrev={() => updateParams({ page: Math.max(1, page - 1) })}
+                onNext={() => updateParams({ page: Math.min(totalPages, page + 1) })}
+              />
+            ) : null}
           </section>
         </div>
       )}

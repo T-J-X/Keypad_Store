@@ -1,6 +1,5 @@
 /* eslint-disable jsx-a11y/label-has-associated-control */
 'use client';
-import { useSearchParams } from 'next/navigation';
 
 import Link from 'next/link';
 import React, { Suspense, useCallback, useEffect, useId, useMemo, useState } from 'react';
@@ -65,6 +64,12 @@ const accountPrimaryGlowLayerClass =
 const accountPrimaryGlowRingClass =
   'pointer-events-none absolute -inset-[1px] -z-10 rounded-full bg-[linear-gradient(90deg,rgba(11,27,58,0.44)_0%,rgba(27,52,95,0.30)_55%,rgba(58,116,198,0.30)_100%)] opacity-0 transition-opacity duration-300 group-hover:opacity-55';
 
+function resolveInitialAccountTab(): TabId {
+  if (typeof window === 'undefined') return 'saved';
+  const tab = new URLSearchParams(window.location.search).get('tab');
+  return tab === 'orders' ? 'orders' : 'saved';
+}
+
 export default function AccountTabs() {
   return (
     <Suspense fallback={<div className="p-6 text-sm text-ink/60">Loading account...</div>}>
@@ -87,13 +92,173 @@ type AccountState = {
   iconLookup: ConfiguredIconLookup;
 };
 
+function useSavedConfigurationActions({
+  updateState,
+  savedConfigs,
+  enquireNote,
+}: {
+  updateState: React.Dispatch<Partial<AccountState>>;
+  savedConfigs: SavedConfigurationRecord[];
+  enquireNote: string;
+}) {
+  const onDelete = useCallback(async (item: SavedConfigurationRecord) => {
+    if (!window.confirm(`Delete "${item.name}"? This cannot be undone.`)) return;
+
+    updateState({ pendingId: item.id, error: null, feedback: null });
+
+    try {
+      const response = await fetch(`/api/account/saved-configurations/${encodeURIComponent(item.id)}`, {
+        method: 'DELETE',
+      });
+      const payload = (await response.json().catch(() => ({}))) as { error?: string };
+
+      if (!response.ok) {
+        throw new Error(payload.error || 'Could not delete this saved design.');
+      }
+
+      updateState({
+        savedConfigs: savedConfigs.filter((entry) => entry.id !== item.id),
+        feedback: `Deleted "${item.name}".`
+      });
+    } catch (nextError) {
+      const message = nextError instanceof Error ? nextError.message : 'Could not delete this saved design.';
+      updateState({ error: message });
+    } finally {
+      updateState({ pendingId: null });
+    }
+  }, [savedConfigs, updateState]);
+
+  const onAddToCart = useCallback(async (item: SavedConfigurationRecord) => {
+    const validation = validateAndNormalizeConfigurationInput(item.configuration, { requireComplete: true });
+    if (!validation.ok) {
+      updateState({ error: `Saved configuration "${item.name}" is invalid: ${validation.error}` });
+      return;
+    }
+
+    if (!item.keypadVariantId) {
+      updateState({ error: `No keypad variant mapping found for model ${item.keypadModel}.` });
+      return;
+    }
+
+    updateState({ pendingId: item.id, error: null, feedback: null });
+
+    try {
+      const response = await fetch('/api/cart/add-item', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          productVariantId: item.keypadVariantId,
+          quantity: 1,
+          customFields: {
+            configuration: validation.value,
+          },
+        }),
+      });
+
+      const payload = (await response.json().catch(() => ({}))) as { error?: string };
+
+      if (!response.ok) {
+        throw new Error(payload.error || 'Could not add saved design to cart.');
+      }
+
+      notifyCartUpdated();
+      updateState({ feedback: `Added "${item.name}" to cart.` });
+    } catch (nextError) {
+      const message = nextError instanceof Error ? nextError.message : 'Could not add saved design to cart.';
+      updateState({ error: message });
+    } finally {
+      updateState({ pendingId: null });
+    }
+  }, [updateState]);
+
+  const onEnquire = useCallback(async (item: SavedConfigurationRecord) => {
+    updateState({ pendingId: item.id, error: null, feedback: null });
+
+    try {
+      const response = await fetch(`/api/account/saved-configurations/${encodeURIComponent(item.id)}/enquire`, {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({ note: enquireNote.trim() || undefined }),
+      });
+
+      const payload = (await response.json().catch(() => ({}))) as { error?: string };
+      if (!response.ok) {
+        throw new Error(payload.error || 'Could not send enquiry.');
+      }
+
+      updateState({
+        feedback: `Enquiry sent for "${item.name}".`,
+        enquireId: null,
+        enquireNote: ''
+      });
+    } catch (nextError) {
+      const message = nextError instanceof Error ? nextError.message : 'Could not send enquiry.';
+      updateState({ error: message });
+    } finally {
+      updateState({ pendingId: null });
+    }
+  }, [enquireNote, updateState]);
+
+  const onDownloadPdf = useCallback(async (item: SavedConfigurationRecord) => {
+    const validation = validateAndNormalizeConfigurationInput(item.configuration, { requireComplete: true });
+    if (!validation.ok) {
+      updateState({ error: `Saved configuration "${item.name}" is invalid: ${validation.error}` });
+      return;
+    }
+
+    updateState({ pendingId: item.id, error: null, feedback: null });
+
+    try {
+      const response = await fetch('/api/order/export-pdf', {
+        method: 'POST',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify({
+          designName: item.name,
+          modelCode: item.keypadModel,
+          configuration: validation.value,
+        }),
+      });
+
+      if (!response.ok) {
+        const payload = (await response.json().catch(() => ({}))) as { error?: string };
+        throw new Error(payload.error || 'Could not generate configuration PDF.');
+      }
+
+      const blob = await response.blob();
+      const objectUrl = URL.createObjectURL(blob);
+      const anchor = document.createElement('a');
+      anchor.href = objectUrl;
+
+      const headerFilename = response.headers.get('content-disposition') || '';
+      const filenameMatch = headerFilename.match(/filename="?([^";]+)"?/i);
+      anchor.download = filenameMatch?.[1] || `Keypad-Config-${item.name}.pdf`;
+      document.body.appendChild(anchor);
+      anchor.click();
+      anchor.remove();
+      URL.revokeObjectURL(objectUrl);
+
+      updateState({ feedback: `Downloaded technical PDF for "${item.name}".` });
+    } catch (nextError) {
+      const message = nextError instanceof Error ? nextError.message : 'Could not generate configuration PDF.';
+      updateState({ error: message });
+    } finally {
+      updateState({ pendingId: null });
+    }
+  }, [updateState]);
+
+  return {
+    onDelete,
+    onAddToCart,
+    onEnquire,
+    onDownloadPdf,
+  };
+}
+
 function AccountTabsInner() {
-  const searchParams = useSearchParams();
-  const initialTab = searchParams.get('tab') === 'orders' ? 'orders' : 'saved';
   const [state, updateState] = React.useReducer(
     (prev: AccountState, next: Partial<AccountState>) => ({ ...prev, ...next }),
     {
-      active: initialTab,
+      active: resolveInitialAccountTab(),
       session: null,
       savedConfigs: [],
       loadingSaved: false,
@@ -192,151 +357,11 @@ function AccountTabsInner() {
   const lastName = session?.customer?.lastName?.trim() || '';
   const fullName = `${firstName} ${lastName}`.trim();
   const customerName = fullName || session?.customer?.emailAddress || 'your account';
-
-  const onDelete = async (item: SavedConfigurationRecord) => {
-    if (!window.confirm(`Delete "${item.name}"? This cannot be undone.`)) return;
-
-    updateState({ pendingId: item.id, error: null, feedback: null });
-
-    try {
-      const response = await fetch(`/api/account/saved-configurations/${encodeURIComponent(item.id)}`, {
-        method: 'DELETE',
-      });
-      const payload = (await response.json().catch(() => ({}))) as { error?: string };
-
-      if (!response.ok) {
-        throw new Error(payload.error || 'Could not delete this saved design.');
-      }
-
-      updateState({
-        savedConfigs: savedConfigs.filter((entry) => entry.id !== item.id),
-        feedback: `Deleted "${item.name}".`
-      });
-    } catch (nextError) {
-      const message = nextError instanceof Error ? nextError.message : 'Could not delete this saved design.';
-      updateState({ error: message });
-    } finally {
-      updateState({ pendingId: null });
-    }
-  };
-
-  const onAddToCart = async (item: SavedConfigurationRecord) => {
-    const validation = validateAndNormalizeConfigurationInput(item.configuration, { requireComplete: true });
-    if (!validation.ok) {
-      updateState({ error: `Saved configuration "${item.name}" is invalid: ${validation.error}` });
-      return;
-    }
-
-    if (!item.keypadVariantId) {
-      updateState({ error: `No keypad variant mapping found for model ${item.keypadModel}.` });
-      return;
-    }
-
-    updateState({ pendingId: item.id, error: null, feedback: null });
-
-    try {
-      const response = await fetch('/api/cart/add-item', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          productVariantId: item.keypadVariantId,
-          quantity: 1,
-          customFields: {
-            configuration: validation.value,
-          },
-        }),
-      });
-
-      const payload = (await response.json().catch(() => ({}))) as { error?: string };
-
-      if (!response.ok) {
-        throw new Error(payload.error || 'Could not add saved design to cart.');
-      }
-
-      notifyCartUpdated();
-      updateState({ feedback: `Added "${item.name}" to cart.` });
-    } catch (nextError) {
-      const message = nextError instanceof Error ? nextError.message : 'Could not add saved design to cart.';
-      updateState({ error: message });
-    } finally {
-      updateState({ pendingId: null });
-    }
-  };
-
-  const onEnquire = async (item: SavedConfigurationRecord) => {
-    updateState({ pendingId: item.id, error: null, feedback: null });
-
-    try {
-      const response = await fetch(`/api/account/saved-configurations/${encodeURIComponent(item.id)}/enquire`, {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ note: enquireNote.trim() || undefined }),
-      });
-
-      const payload = (await response.json().catch(() => ({}))) as { error?: string };
-      if (!response.ok) {
-        throw new Error(payload.error || 'Could not send enquiry.');
-      }
-
-      updateState({
-        feedback: `Enquiry sent for "${item.name}".`,
-        enquireId: null,
-        enquireNote: ''
-      });
-    } catch (nextError) {
-      const message = nextError instanceof Error ? nextError.message : 'Could not send enquiry.';
-      updateState({ error: message });
-    } finally {
-      updateState({ pendingId: null });
-    }
-  };
-
-  const onDownloadPdf = async (item: SavedConfigurationRecord) => {
-    const validation = validateAndNormalizeConfigurationInput(item.configuration, { requireComplete: true });
-    if (!validation.ok) {
-      updateState({ error: `Saved configuration "${item.name}" is invalid: ${validation.error}` });
-      return;
-    }
-
-    updateState({ pendingId: item.id, error: null, feedback: null });
-
-    try {
-      const response = await fetch('/api/order/export-pdf', {
-        method: 'POST',
-        headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({
-          designName: item.name,
-          modelCode: item.keypadModel,
-          configuration: validation.value,
-        }),
-      });
-
-      if (!response.ok) {
-        const payload = (await response.json().catch(() => ({}))) as { error?: string };
-        throw new Error(payload.error || 'Could not generate configuration PDF.');
-      }
-
-      const blob = await response.blob();
-      const objectUrl = URL.createObjectURL(blob);
-      const anchor = document.createElement('a');
-      anchor.href = objectUrl;
-
-      const headerFilename = response.headers.get('content-disposition') || '';
-      const filenameMatch = headerFilename.match(/filename="?([^";]+)"?/i);
-      anchor.download = filenameMatch?.[1] || `Keypad-Config-${item.name}.pdf`;
-      document.body.appendChild(anchor);
-      anchor.click();
-      anchor.remove();
-      URL.revokeObjectURL(objectUrl);
-
-      updateState({ feedback: `Downloaded technical PDF for "${item.name}".` });
-    } catch (nextError) {
-      const message = nextError instanceof Error ? nextError.message : 'Could not generate configuration PDF.';
-      updateState({ error: message });
-    } finally {
-      updateState({ pendingId: null });
-    }
-  };
+  const { onDelete, onAddToCart, onEnquire, onDownloadPdf } = useSavedConfigurationActions({
+    updateState,
+    savedConfigs,
+    enquireNote,
+  });
 
   return (
     <div className="card-soft overflow-hidden p-6">

@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useState } from 'react';
 
 export default function GoogleLoginButton({
   redirectTo = '/account',
@@ -10,7 +10,7 @@ export default function GoogleLoginButton({
   className?: string;
 }) {
   const [isRedirecting, setIsRedirecting] = useState(false);
-  const href = useMemo(() => `/api/auth/google?next=${encodeURIComponent(redirectTo)}`, [redirectTo]);
+  const href = `/api/auth/google?next=${encodeURIComponent(redirectTo)}`;
 
   const onClick = () => {
     if (isRedirecting) return;
