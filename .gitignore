@@ -16,6 +16,7 @@ coverage/
 .env.*
 !apps/backend/.env.example
 !apps/storefront/.env.local.example
+apps/frontend/cookies.txt
 infra/.env
 infra/.env.*
 **/.env.local
