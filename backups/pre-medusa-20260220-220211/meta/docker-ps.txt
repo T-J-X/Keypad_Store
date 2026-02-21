@@ -1,0 +1,6 @@
+NAMES              IMAGE                                      PORTS                                                STATUS
+vendure_postgres   postgres:16                                127.0.0.1:5432->5432/tcp                             Up 3 days (healthy)
+vendure_redis      redis:7                                    127.0.0.1:6379->6379/tcp                             Up 3 days (healthy)
+vendure_minio      minio/minio:RELEASE.2025-07-23T15-54-02Z   127.0.0.1:9000-9001->9000-9001/tcp                   Up 3 days (healthy)
+vendure_mailpit    axllent/mailpit:latest                     127.0.0.1:1025->1025/tcp, 127.0.0.1:8025->8025/tcp   Up 3 days (healthy)
+vendure_ntfy       binwiederhier/ntfy:latest                  127.0.0.1:8088->80/tcp                               Up 3 days (healthy)
