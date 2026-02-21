@@ -1206,20 +1206,7 @@ function useShopActions({
   };
 }
 
-export default function ShopClient({
-  icons,
-  keypads,
-  baseShopConfig,
-  categoryCounts,
-  catalogIconTotal,
-  initialQuery = '',
-  initialCategories = EMPTY_CATEGORIES,
-  initialSection = 'landing',
-  initialPage = 1,
-  initialTake = 24,
-  pagedTotalItems = 0,
-  isIconsPaginationActive = false,
-}: {
+type ShopClientProps = {
   icons: IconProduct[];
   keypads: KeypadProduct[];
   baseShopConfig?: BaseShopPublicConfig | null;
@@ -1232,7 +1219,22 @@ export default function ShopClient({
   initialTake?: number;
   pagedTotalItems?: number;
   isIconsPaginationActive?: boolean;
-}) {
+};
+
+function useShopClientData({
+  icons,
+  keypads,
+  baseShopConfig,
+  categoryCounts,
+  catalogIconTotal,
+  initialQuery = '',
+  initialCategories = EMPTY_CATEGORIES,
+  initialSection = 'landing',
+  initialPage = 1,
+  initialTake = 24,
+  pagedTotalItems = 0,
+  isIconsPaginationActive = false,
+}: ShopClientProps) {
   const normalizedInitialSection = normalizeSection(initialSection);
   const router = useRouter();
   const pathname = usePathname();
@@ -1466,6 +1468,113 @@ export default function ShopClient({
   const paginationSummaryLabel = isAllSection ? 'products' : 'button inserts';
   const onPrevPage = () => updateParams({ page: Math.max(1, page - 1) });
   const onNextPage = () => updateParams({ page: Math.min(totalPages, page + 1) });
+
+  return {
+    isPending,
+    isLandingSection,
+    isAllSection,
+    isCatalogWideSection,
+    isIconsSection,
+    isKeypadsSection,
+    availableResultCount,
+    visibleResultLabel,
+    viewMode,
+    setViewMode,
+    onSearch,
+    query,
+    setQuery,
+    searchPlaceholder,
+    landingTopTiles,
+    onTopTileSelect,
+    landingDisciplineTiles,
+    onDisciplineTileSelect,
+    onSectionChange,
+    featuredLandingKeypads,
+    toProductHref,
+    onShopHome,
+    totalIconCount,
+    keypadsCount: keypads.length,
+    iconsGroupOpen,
+    setIconsGroupOpen,
+    activeCategorySlugs,
+    onSelectAllCategory,
+    categories,
+    onToggleCategory,
+    visibleResultCount,
+    activeChips,
+    hasActiveFilters,
+    clearFilters,
+    shouldShowIconPaginationControls,
+    page,
+    totalPages,
+    take,
+    paginationSummaryTotal,
+    paginationSummaryLabel,
+    onTakeChange,
+    onPrevPage,
+    onNextPage,
+    displayedIcons,
+    categoryNamesByIconId,
+    toCategoryHref,
+    resolveProductCategoryForBreadcrumb,
+    filteredKeypads,
+    catalogWideKeypads,
+  };
+}
+
+export default function ShopClient(props: ShopClientProps) {
+  const {
+    isPending,
+    isLandingSection,
+    isAllSection,
+    isCatalogWideSection,
+    isIconsSection,
+    isKeypadsSection,
+    availableResultCount,
+    visibleResultLabel,
+    viewMode,
+    setViewMode,
+    onSearch,
+    query,
+    setQuery,
+    searchPlaceholder,
+    landingTopTiles,
+    onTopTileSelect,
+    landingDisciplineTiles,
+    onDisciplineTileSelect,
+    onSectionChange,
+    featuredLandingKeypads,
+    toProductHref,
+    onShopHome,
+    totalIconCount,
+    keypadsCount,
+    iconsGroupOpen,
+    setIconsGroupOpen,
+    activeCategorySlugs,
+    onSelectAllCategory,
+    categories,
+    onToggleCategory,
+    visibleResultCount,
+    activeChips,
+    hasActiveFilters,
+    clearFilters,
+    shouldShowIconPaginationControls,
+    page,
+    totalPages,
+    take,
+    paginationSummaryTotal,
+    paginationSummaryLabel,
+    onTakeChange,
+    onPrevPage,
+    onNextPage,
+    displayedIcons,
+    categoryNamesByIconId,
+    toCategoryHref,
+    resolveProductCategoryForBreadcrumb,
+    filteredKeypads,
+    catalogWideKeypads,
+  } = useShopClientData(props);
+
   return (
     <div className="mx-auto w-full max-w-[88rem] bg-white px-6 pb-20 pt-10" aria-busy={isPending}>
       <BaseShopHero showTiles={false} />
@@ -1504,7 +1613,7 @@ export default function ShopClient({
             isIconsSection={isIconsSection}
             isKeypadsSection={isKeypadsSection}
             totalIconCount={totalIconCount}
-            keypadsCount={keypads.length}
+            keypadsCount={keypadsCount}
             iconsGroupOpen={iconsGroupOpen}
             onToggleIconsGroup={() => setIconsGroupOpen((previous) => !previous)}
             activeCategorySlugs={activeCategorySlugs}
