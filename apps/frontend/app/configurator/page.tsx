@@ -14,7 +14,7 @@ export const metadata: Metadata = {
 
 function KeypadGridFallback() {
   return (
-    <div className="staggered grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="staggered grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {Array.from({ length: 6 }).map((_, index) => (
         <div key={index} className="card-soft h-[360px] animate-pulse rounded-3xl bg-gray-200" />
       ))}
@@ -30,7 +30,7 @@ async function KeypadGrid() {
   }
 
   return (
-    <div className="staggered grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="staggered grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {keypads.map((keypad) => (
         <KeypadCard key={keypad.id} product={keypad} />
       ))}
