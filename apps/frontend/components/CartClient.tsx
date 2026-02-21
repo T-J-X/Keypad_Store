@@ -125,8 +125,8 @@ export default function CartClient({ order, iconCatalog }: { order: CartOrder | 
     }, [router]);
 
     return (
-        <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8">
-            <div className="card-panel p-5 sm:p-6">
+        <div className="mx-auto w-full max-w-6xl px-4 sm:px-6 lg:px-8 lg:flex lg:min-h-[calc(100dvh-17rem)] lg:flex-col">
+            <div className="card-panel p-5 sm:p-6 lg:my-auto">
                 <div className="mb-8 flex items-center justify-between gap-4">
                     <div>
                         <h1 className="text-3xl font-semibold tracking-tight text-white md:text-4xl">Cart</h1>

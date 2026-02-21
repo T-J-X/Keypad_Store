@@ -49,8 +49,8 @@ async function LoginPageContent({
     ?? getSafeRelativePath(requestedRedirect, '/account');
 
   return (
-    <div className="flex w-full items-center justify-center px-4 sm:px-6 lg:px-8">
-      <div className="relative w-full max-w-5xl rounded-[32px] p-[1px] shadow-[0_20px_60px_-15px_rgba(30,64,175,0.6)]">
+    <div className="w-full px-4 sm:px-6 lg:px-8 lg:flex lg:min-h-[calc(100dvh-17rem)] lg:flex-col lg:items-center">
+      <div className="relative w-full max-w-5xl rounded-[32px] p-[1px] shadow-[0_20px_60px_-15px_rgba(30,64,175,0.6)] lg:my-auto">
         {/* Gradient Border Background */}
         <div className="absolute inset-0 rounded-[32px] bg-gradient-to-br from-blue-500/20 via-purple-500/10 to-blue-500/20" />
 
