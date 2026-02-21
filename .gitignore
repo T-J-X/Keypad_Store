@@ -40,3 +40,6 @@ apps/backend/.angular/
 apps/backend/.cache/
 apps/backend/dist/
 apps/backend/imports/
+
+# Agent Skills
+.agents/

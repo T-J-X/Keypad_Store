@@ -1,7 +1,0 @@
-react-doctor v0.0.29
-
-✔ Select projects to scan › frontend
-Scanning uncommitted changes
-
-No changed source files in /Users/terry/keypad-store/apps/frontend, skipping.
-
