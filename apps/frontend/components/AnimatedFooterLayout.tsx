@@ -1,4 +1,6 @@
-import type { ReactNode } from 'react';
+'use client';
+
+import { useEffect, useRef, type ReactNode } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import CopyrightYear from './CopyrightYear';
@@ -38,7 +40,53 @@ const footerGroups = [
     },
 ];
 
+function clamp(value: number, min: number, max: number) {
+    return Math.max(min, Math.min(max, value));
+}
+
 export default function AnimatedFooterLayout({ children }: { children: ReactNode }) {
+    const footerWrapperRef = useRef<HTMLElement | null>(null);
+    const footerParallaxRef = useRef<HTMLDivElement | null>(null);
+
+    useEffect(() => {
+        let frameId: number | null = null;
+
+        const updateParallax = () => {
+            frameId = null;
+            const footerElement = footerWrapperRef.current;
+            const parallaxElement = footerParallaxRef.current;
+            if (!footerElement || !parallaxElement) return;
+
+            const rect = footerElement.getBoundingClientRect();
+            const footerHeight = Math.max(rect.height, 1);
+            const viewportHeight = window.innerHeight || 1;
+
+            // Match the old "start end -> end end" offset behavior.
+            const progress = clamp((viewportHeight - rect.top) / footerHeight, 0, 1);
+            const startOffsetPx = footerHeight * 0.25;
+            const y = -startOffsetPx * (1 - progress);
+
+            parallaxElement.style.transform = `translate3d(0, ${y}px, 0)`;
+        };
+
+        const requestTick = () => {
+            if (frameId !== null) return;
+            frameId = window.requestAnimationFrame(updateParallax);
+        };
+
+        requestTick();
+        window.addEventListener('scroll', requestTick, { passive: true });
+        window.addEventListener('resize', requestTick);
+
+        return () => {
+            window.removeEventListener('scroll', requestTick);
+            window.removeEventListener('resize', requestTick);
+            if (frameId !== null) {
+                window.cancelAnimationFrame(frameId);
+            }
+        };
+    }, []);
+
     return (
         <div className="bg-[#020a18] min-h-screen">
             <main
@@ -47,8 +95,12 @@ export default function AnimatedFooterLayout({ children }: { children: ReactNode
                 {children}
             </main>
 
-            <footer className="relative z-0 overflow-hidden w-full bg-[#020a18]">
-                <div className="w-full pt-20 pb-12 px-6 lg:px-8 text-white bg-gradient-to-b from-[#040e21] via-[#06152e] to-[#020a18]">
+            <footer ref={footerWrapperRef} className="relative z-0 overflow-hidden w-full bg-[#020a18]">
+                <div
+                    ref={footerParallaxRef}
+                    className="w-full pt-20 pb-12 px-6 lg:px-8 text-white bg-gradient-to-b from-[#040e21] via-[#06152e] to-[#020a18] will-change-transform"
+                    style={{ transform: 'translate3d(0, 0, 0)' }}
+                >
                     <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_center,rgba(30,100,180,0.12),transparent_60%)] pointer-events-none" />
 
                     <div className="relative z-10 mx-auto w-full max-w-7xl">
