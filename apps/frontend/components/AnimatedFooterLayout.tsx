@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, type ReactNode } from 'react';
+import { Suspense, useEffect, useRef, type ReactNode } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import CopyrightYear from './CopyrightYear';
@@ -174,7 +174,7 @@ export default function AnimatedFooterLayout({ children }: { children: ReactNode
                                 <div className="absolute top-[-1px] left-1/2 -translate-x-1/2 h-[2px] w-1/3 bg-transparent shadow-[0_0_20px_3px_rgba(96,165,250,0.8)] rounded-full blur-[1px]" />
                                 <div className="flex flex-col-reverse gap-6 md:flex-row md:items-center md:justify-between">
                                     <p className="text-xs text-panel-muted">
-                                        &copy; <CopyrightYear /> Vehicle Control Technologies
+                                        &copy; <Suspense fallback={<span>----</span>}><CopyrightYear /></Suspense> Vehicle Control Technologies
                                     </p>
 
                                     <div className="flex flex-wrap gap-6 text-xs text-panel-muted">

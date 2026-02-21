@@ -453,7 +453,7 @@ ul.list-disc.space-y-3.pl-5.text-base.leading-7.text-ink\/75 li>span {
   }
 
   .input-dark:focus {
-    border-color: theme('colors.panel.accent');
+    border-color: theme('colors.sky.DEFAULT');
     box-shadow: 0 0 0 4px rgba(30, 167, 255, 0.15);
     background: rgba(13, 31, 59, 0.8);
   }

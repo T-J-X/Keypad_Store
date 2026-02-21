@@ -148,6 +148,7 @@ const shopApiExtensions = gql`
 `;
 
 @VendurePlugin({
+  compatibility: '^3.0.0',
   imports: [PluginCommonModule],
   entities: [BaseShopConfig, SavedConfiguration],
   providers: [BaseShopService, SavedConfigurationService, OrderExportService],

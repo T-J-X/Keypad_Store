@@ -4,8 +4,9 @@
   "packageManager": "pnpm@10.28.2",
   "scripts": {
     "dev": "pnpm -r --parallel --filter ./apps/backend --filter ./apps/frontend dev",
-    "dev:all": "concurrently -n BACKEND,FRONTEND -c cyan,magenta \"pnpm run dev:backend\" \"pnpm run dev:storefront\"",
+    "dev:all": "concurrently -n BACKEND,FRONTEND -c cyan,magenta \"pnpm run dev:backend\" \"pnpm run dev:storefront:wait\"",
     "dev:storefront": "pnpm -C apps/frontend dev --port 3001",
+    "dev:storefront:wait": "sh -c 'until curl -sf http://localhost:3000/health >/dev/null; do sleep 1; done; pnpm run dev:storefront'",
     "dev:infra": "docker compose -f infra/docker-compose.dev.yml -p vendure-dev up -d",
     "ports:free": "node -e \"const {execSync}=require('child_process'); try{execSync('lsof -t -iTCP:3000 -sTCP:LISTEN | xargs -r kill -9',{stdio:'inherit',shell:true});}catch(e){}\"",
     "build": "pnpm --filter ./apps/frontend build",
