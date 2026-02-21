@@ -13,10 +13,8 @@ import type {
   SlotId,
 } from './shared';
 
-export { sortSlotIds } from './shared';
 export type {
   KeypadModelGeometry,
-  SlotCoordMode,
   SlotGeometry,
   SlotId,
   SlotSafeZone,

@@ -1,0 +1,39 @@
+react-doctor v0.0.29
+
+✔ Select projects to scan › frontend
+Scanning /private/var/folders/7x/k93t0vgj6tz75gt2l1kmn0sm0000gn/T/tmp.BGMKdPMVJ2/frontend...
+
+
+  ⚠ Component "PurchasePanel" has 7 useState calls — consider useReducer for related state (4)
+    Group related state: `const [state, dispatch] = useReducer(reducer, { field1, field2, ... })`
+    components/ProductPdp/PurchasePanel.tsx: 44
+    components/configurator/SavedDesignsModal.tsx: 30
+    components/order/OrderTechnicalSpecification.tsx: 54
+    components/Navbar.tsx: 150
+
+  ⚠ Component "PurchasePanel" is 335 lines — consider breaking it into smaller focused components (5)
+    Extract logical sections into focused components: `<UserHeader />`, `<UserActions />`, etc.
+    components/ProductPdp/PurchasePanel.tsx: 20
+    components/configurator/SavedDesignsModal.tsx: 30
+    app/checkout/CheckoutClient.tsx: 158
+    components/Navbar.tsx: 150
+    components/configurator/KeypadProvider.tsx: 139
+
+  ┌────────────────────────────────────────────────────┐
+  │ ┌─────┐                                            │
+  │ │ ◠ ◠ │                                            │
+  │ │  ▽  │                                            │
+  │ └─────┘                                            │
+  │ React Doctor (www.react.doctor)                    │
+  │                                                    │
+  │ 99 / 100  Great                                    │
+  │                                                    │
+  │ ██████████████████████████████████████████████████ │
+  │                                                    │
+  │ ⚠ 9 warnings  across 6/129 files  in 206ms         │
+  └────────────────────────────────────────────────────┘
+
+  Full diagnostics written to /var/folders/7x/k93t0vgj6tz75gt2l1kmn0sm0000gn/T/react-doctor-809d5b67-c327-45f2-a3dd-73a8e35887d7
+
+  Share your results: https://www.react.doctor/share?p=frontend&s=99&w=9&f=6
+

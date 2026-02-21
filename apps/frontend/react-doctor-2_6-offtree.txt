@@ -1,0 +1,29 @@
+react-doctor v0.0.29
+
+✔ Select projects to scan › frontend
+Scanning /private/var/folders/7x/k93t0vgj6tz75gt2l1kmn0sm0000gn/T/tmp.IeefZQ41jh/frontend...
+
+
+  ⚠ Component "CheckoutFormDetailsSection" is 326 lines — consider breaking it into smaller focused components (2)
+    Extract logical sections into focused components: `<UserHeader />`, `<UserActions />`, etc.
+    app/checkout/components/CheckoutFormDetailsSection.tsx: 56
+    components/configurator/KeypadProvider.tsx: 139
+
+  ┌────────────────────────────────────────────────────┐
+  │ ┌─────┐                                            │
+  │ │ ◠ ◠ │                                            │
+  │ │  ▽  │                                            │
+  │ └─────┘                                            │
+  │ React Doctor (www.react.doctor)                    │
+  │                                                    │
+  │ 99 / 100  Great                                    │
+  │                                                    │
+  │ ██████████████████████████████████████████████████ │
+  │                                                    │
+  │ ⚠ 2 warnings  across 2/154 files  in 207ms         │
+  └────────────────────────────────────────────────────┘
+
+  Full diagnostics written to /var/folders/7x/k93t0vgj6tz75gt2l1kmn0sm0000gn/T/react-doctor-fce08da3-27b1-41b8-b32d-2b01ec191b09
+
+  Share your results: https://www.react.doctor/share?p=frontend&s=99&w=2&f=2
+

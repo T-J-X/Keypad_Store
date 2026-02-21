@@ -1,0 +1,29 @@
+react-doctor v0.0.29
+
+✔ Select projects to scan › frontend
+Scanning /private/var/folders/7x/k93t0vgj6tz75gt2l1kmn0sm0000gn/T/tmp.xfiYgwqZHb/frontend...
+
+
+  ⚠ Component "KeypadProviderInner" is 743 lines — consider breaking it into smaller focused components (2)
+    Extract logical sections into focused components: `<UserHeader />`, `<UserActions />`, etc.
+    components/configurator/KeypadProvider.tsx: 139
+    app/checkout/CheckoutClient.tsx: 158
+
+  ┌────────────────────────────────────────────────────┐
+  │ ┌─────┐                                            │
+  │ │ ◠ ◠ │                                            │
+  │ │  ▽  │                                            │
+  │ └─────┘                                            │
+  │ React Doctor (www.react.doctor)                    │
+  │                                                    │
+  │ 99 / 100  Great                                    │
+  │                                                    │
+  │ ██████████████████████████████████████████████████ │
+  │                                                    │
+  │ ⚠ 2 warnings  across 2/150 files  in 176ms         │
+  └────────────────────────────────────────────────────┘
+
+  Full diagnostics written to /var/folders/7x/k93t0vgj6tz75gt2l1kmn0sm0000gn/T/react-doctor-65af360b-0c78-41b8-b0cf-a2021bc89c2b
+
+  Share your results: https://www.react.doctor/share?p=frontend&s=99&w=2&f=2
+

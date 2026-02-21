@@ -80,7 +80,7 @@ export function normalizeRingColor(value: unknown): string | null {
   return HEX_COLOR_PATTERN.test(normalized) ? normalized : null;
 }
 
-export function isConfigurationComplete(
+function isConfigurationComplete(
   configuration: KeypadConfigurationDraft,
   slotIds?: readonly string[],
 ) {

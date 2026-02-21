@@ -26,7 +26,7 @@ type ConfiguredIconPayloadItem = {
   categories: string[];
 };
 
-export function buildConfiguredIconLookup(icons: IconCatalogItem[]): ConfiguredIconLookup {
+function buildConfiguredIconLookup(icons: IconCatalogItem[]): ConfiguredIconLookup {
   const lookup: ConfiguredIconLookup = new Map();
 
   for (const icon of icons) {

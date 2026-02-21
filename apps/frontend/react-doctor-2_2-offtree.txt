@@ -1,0 +1,37 @@
+react-doctor v0.0.29
+
+✔ Select projects to scan › frontend
+Scanning /private/var/folders/7x/k93t0vgj6tz75gt2l1kmn0sm0000gn/T/tmp.v7fCjRmMgT/frontend...
+
+
+  ⚠ Component "Navbar" has 9 useState calls — consider useReducer for related state (3)
+    Group related state: `const [state, dispatch] = useReducer(reducer, { field1, field2, ... })`
+    components/Navbar.tsx: 150
+    components/order/OrderTechnicalSpecification.tsx: 54
+    components/configurator/SavedDesignsModal.tsx: 30
+
+  ⚠ Component "Navbar" is 480 lines — consider breaking it into smaller focused components (4)
+    Extract logical sections into focused components: `<UserHeader />`, `<UserActions />`, etc.
+    components/Navbar.tsx: 150
+    components/configurator/KeypadProvider.tsx: 139
+    components/configurator/SavedDesignsModal.tsx: 30
+    app/checkout/CheckoutClient.tsx: 158
+
+  ┌────────────────────────────────────────────────────┐
+  │ ┌─────┐                                            │
+  │ │ ◠ ◠ │                                            │
+  │ │  ▽  │                                            │
+  │ └─────┘                                            │
+  │ React Doctor (www.react.doctor)                    │
+  │                                                    │
+  │ 99 / 100  Great                                    │
+  │                                                    │
+  │ ██████████████████████████████████████████████████ │
+  │                                                    │
+  │ ⚠ 7 warnings  across 5/135 files  in 177ms         │
+  └────────────────────────────────────────────────────┘
+
+  Full diagnostics written to /var/folders/7x/k93t0vgj6tz75gt2l1kmn0sm0000gn/T/react-doctor-6599ae6c-359b-4792-b51b-5137d7d521dc
+
+  Share your results: https://www.react.doctor/share?p=frontend&s=99&w=7&f=5
+

@@ -1,0 +1,36 @@
+react-doctor v0.0.29
+
+✔ Select projects to scan › frontend
+Scanning /private/var/folders/7x/k93t0vgj6tz75gt2l1kmn0sm0000gn/T/tmp.EuhHVTqhej/frontend...
+
+
+  ⚠ Component "SavedDesignsModal" has 15 useState calls — consider useReducer for related state (2)
+    Group related state: `const [state, dispatch] = useReducer(reducer, { field1, field2, ... })`
+    components/configurator/SavedDesignsModal.tsx: 30
+    components/Navbar.tsx: 150
+
+  ⚠ Component "SavedDesignsModal" is 534 lines — consider breaking it into smaller focused components (4)
+    Extract logical sections into focused components: `<UserHeader />`, `<UserActions />`, etc.
+    components/configurator/SavedDesignsModal.tsx: 30
+    components/configurator/KeypadProvider.tsx: 139
+    components/Navbar.tsx: 150
+    app/checkout/CheckoutClient.tsx: 158
+
+  ┌────────────────────────────────────────────────────┐
+  │ ┌─────┐                                            │
+  │ │ ◠ ◠ │                                            │
+  │ │  ▽  │                                            │
+  │ └─────┘                                            │
+  │ React Doctor (www.react.doctor)                    │
+  │                                                    │
+  │ 99 / 100  Great                                    │
+  │                                                    │
+  │ ██████████████████████████████████████████████████ │
+  │                                                    │
+  │ ⚠ 6 warnings  across 4/139 files  in 173ms         │
+  └────────────────────────────────────────────────────┘
+
+  Full diagnostics written to /var/folders/7x/k93t0vgj6tz75gt2l1kmn0sm0000gn/T/react-doctor-db299784-236d-4c1f-af00-eb3b80a0a5bc
+
+  Share your results: https://www.react.doctor/share?p=frontend&s=99&w=6&f=4
+
