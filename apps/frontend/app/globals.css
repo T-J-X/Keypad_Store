@@ -46,6 +46,86 @@
 
   --animate-fade-up: fade-up 0.6s ease-out forwards;
   --animate-scale-in: scale-in 0.2s ease-out forwards;
+  --animate-soft-pulse: softPulse 2.2s ease-in-out infinite;
+  --animate-icon-pulse-blue: iconPulseBlue 2.2s ease-in-out infinite;
+  --animate-float-soft: float-soft 3s ease-in-out infinite;
+  --animate-backlit-glow-pulse: backlitGlowPulse 2.6s ease-in-out infinite;
+
+  @keyframes fade-up {
+    from {
+      opacity: 0;
+      transform: translateY(14px);
+    }
+
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes scale-in {
+    from {
+      opacity: 0;
+      transform: scale(0.96);
+    }
+
+    to {
+      opacity: 1;
+      transform: scale(1);
+    }
+  }
+
+  @keyframes float-soft {
+    from {
+      transform: translateY(0);
+    }
+
+    50% {
+      transform: translateY(-6px);
+    }
+
+    to {
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes backlitGlowPulse {
+
+    0%,
+    100% {
+      opacity: 0.97;
+    }
+
+    50% {
+      opacity: 1;
+    }
+  }
+
+  @keyframes softPulse {
+
+    0%,
+    100% {
+      box-shadow: 0 0 0 0 rgba(4, 15, 46, 0), 0 0 0 0 rgba(41, 69, 122, 0);
+    }
+
+    50% {
+      box-shadow: 0 0 0 5px rgba(17, 43, 93, 0.24), 0 0 0 10px rgba(41, 69, 122, 0.14);
+    }
+  }
+
+  @keyframes iconPulseBlue {
+
+    0%,
+    100% {
+      filter: drop-shadow(0 0 10px rgba(2, 6, 23, 0.6)) brightness(1);
+      transform: scale(1);
+    }
+
+    50% {
+      filter: drop-shadow(0 0 32px rgba(2, 6, 23, 1)) brightness(1.2);
+      transform: scale(1.04);
+    }
+  }
 
   /* Signature "Dark Gradient Blue" (Premium UI) */
   --color-brand-blue-start: #040F2E;
@@ -66,6 +146,7 @@
 
 /* Preserve Tailwind v3 default border color behavior after moving to v4. */
 @layer base {
+
   *,
   ::after,
   ::before,
@@ -205,55 +286,7 @@ ul.list-disc.space-y-3.pl-5.text-base.leading-7.text-ink\/75 li>span {
   font-family: var(--font-sans);
 }
 
-@keyframes fade-up {
-  from {
-    opacity: 0;
-    transform: translateY(14px);
-  }
 
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
-}
-
-@keyframes scale-in {
-  from {
-    opacity: 0;
-    transform: scale(0.96);
-  }
-
-  to {
-    opacity: 1;
-    transform: scale(1);
-  }
-}
-
-@keyframes float-soft {
-  from {
-    transform: translateY(0);
-  }
-
-  50% {
-    transform: translateY(-6px);
-  }
-
-  to {
-    transform: translateY(0);
-  }
-}
-
-@keyframes backlitGlowPulse {
-
-  0%,
-  100% {
-    opacity: 0.97;
-  }
-
-  50% {
-    opacity: 1;
-  }
-}
 
 @layer utilities {
 
@@ -264,17 +297,7 @@ ul.list-disc.space-y-3.pl-5.text-base.leading-7.text-ink\/75 li>span {
 }
 
 @layer utilities {
-  @keyframes softPulse {
 
-    0%,
-    100% {
-      box-shadow: 0 0 0 0 rgba(4, 15, 46, 0), 0 0 0 0 rgba(41, 69, 122, 0);
-    }
-
-    50% {
-      box-shadow: 0 0 0 5px rgba(17, 43, 93, 0.24), 0 0 0 10px rgba(41, 69, 122, 0.14);
-    }
-  }
 
   .animate-soft-pulse {
     animation: softPulse 2.2s ease-in-out infinite;
@@ -698,19 +721,7 @@ ul.list-disc.space-y-3.pl-5.text-base.leading-7.text-ink\/75 li>span {
     animation: backlitGlowPulse 2.6s ease-in-out infinite;
   }
 
-  @keyframes iconPulseBlue {
 
-    0%,
-    100% {
-      filter: drop-shadow(0 0 10px rgba(2, 6, 23, 0.6)) brightness(1);
-      transform: scale(1);
-    }
-
-    50% {
-      filter: drop-shadow(0 0 32px rgba(2, 6, 23, 1)) brightness(1.2);
-      transform: scale(1.04);
-    }
-  }
 
   .animate-icon-pulse-blue {
     animation: iconPulseBlue 2.2s ease-in-out infinite;
