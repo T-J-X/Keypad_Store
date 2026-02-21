@@ -2,7 +2,7 @@ name: vendure-dev
 
 services:
   postgres:
-    image: postgres:16.12
+    image: dhi.io/postgres:16.12-debian13
     container_name: vendure_postgres
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-vendure}
@@ -13,14 +13,14 @@ services:
     ports:
       - "127.0.0.1:5432:5432"
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-vendure} -d ${POSTGRES_DB:-vendure}"]
+      test: ["CMD", "pg_isready", "-U", "${POSTGRES_USER:-vendure}", "-d", "${POSTGRES_DB:-vendure}"]
       interval: 5s
       timeout: 3s
       retries: 20
     restart: unless-stopped
 
   redis:
-    image: redis:7.4.7
+    image: dhi.io/redis:8.2.4-debian13
     container_name: vendure_redis
     command: ["redis-server", "--appendonly", "yes"]
     volumes:
@@ -35,7 +35,7 @@ services:
     restart: unless-stopped
 
   minio:
-    image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z
+    image: minio/minio:RELEASE.2025-09-07T16-13-09Z
     container_name: vendure_minio
     command: server /data --console-address ":9001"
     environment:
