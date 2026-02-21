@@ -116,7 +116,7 @@ export default function MiniCart({ lines, currencyCode, totalWithTax, onClose }:
                     href="/cart"
                     prefetch={false}
                     onClick={onClose}
-                    className="mt-2 flex w-full items-center justify-center rounded-xl px-4 py-2 text-sm font-medium text-white/60 hover:text-white"
+                    className="mt-2 flex w-full items-center justify-center rounded-xl border border-[#5f8fd1] bg-[#1e4f95] px-4 py-2.5 text-sm font-semibold text-white shadow-[0_6px_18px_rgba(20,61,120,0.35)] transition-colors hover:border-[#7fb1f4] hover:bg-[#2a65bc]"
                 >
                     View Cart
                 </Link>

@@ -6,10 +6,7 @@ function trimString(value: string) {
 
 function requiredTrimmedString(message: string) {
   return z
-    .string({
-      required_error: message,
-      invalid_type_error: message,
-    })
+    .string({ error: message })
     .transform(trimString)
     .refine((value) => value.length > 0, { message });
 }
@@ -53,7 +50,7 @@ export const cartAddItemBodySchema = z
     quantity: z.preprocess(
       (value) => (value === undefined ? undefined : normalizeIntegerInput(value)),
       z
-        .number({ invalid_type_error: 'Invalid quantity' })
+        .number({ error: 'Invalid quantity' })
         .int('Invalid quantity')
         .positive('Invalid quantity')
         .default(1),
@@ -73,7 +70,7 @@ export const cartUpdateLineBodySchema = z
     orderLineId: requiredTrimmedString('Missing orderLineId'),
     quantity: z.preprocess(
       normalizeIntegerInput,
-      z.number({ invalid_type_error: 'Invalid quantity' }).int('Invalid quantity'),
+      z.number({ error: 'Invalid quantity' }).int('Invalid quantity'),
     ),
     configuration: z.unknown().optional(),
   })

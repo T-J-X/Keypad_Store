@@ -2,7 +2,7 @@ name: vendure-dev
 
 services:
   postgres:
-    image: postgres:16
+    image: postgres:16.12
     container_name: vendure_postgres
     environment:
       POSTGRES_DB: ${POSTGRES_DB:-vendure}
@@ -20,7 +20,7 @@ services:
     restart: unless-stopped
 
   redis:
-    image: redis:7
+    image: redis:7.4.7
     container_name: vendure_redis
     command: ["redis-server", "--appendonly", "yes"]
     volumes:
@@ -35,7 +35,7 @@ services:
     restart: unless-stopped
 
   minio:
-    image: quay.io/minio/minio:RELEASE.2026-02-07T07-43-34Z
+    image: quay.io/minio/minio:RELEASE.2025-09-07T16-13-09Z
     container_name: vendure_minio
     command: server /data --console-address ":9001"
     environment:
@@ -54,7 +54,7 @@ services:
     restart: unless-stopped
 
   mailpit:
-    image: axllent/mailpit:v1.29
+    image: axllent/mailpit:v1.29.1
     container_name: vendure_mailpit
     ports:
       - "127.0.0.1:${MAILPIT_SMTP_PORT:-1025}:1025"
@@ -62,7 +62,7 @@ services:
     restart: unless-stopped
 
   ntfy:
-    image: binwiederhier/ntfy:v2.17
+    image: binwiederhier/ntfy:v2.17.0
     container_name: vendure_ntfy
     command: ["serve"]
     volumes:

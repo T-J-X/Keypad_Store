@@ -1,7 +1,7 @@
 import 'dotenv/config';
 
 import path from 'node:path';
-import XLSX from 'xlsx';
+import ExcelJS from 'exceljs';
 
 type Args = {
   filePath: string;
@@ -141,56 +141,86 @@ function dedupeCategories(raw: string[]) {
   return values.length > 0 ? values : ['Uncategorised'];
 }
 
-function findColumnKey(row: Record<string, unknown>, candidates: string[]): string | null {
-  const keys = Object.keys(row);
-  const byNorm = new Map<string, string>();
-  for (const k of keys) {
-    byNorm.set(norm(k), k);
-  }
+function findColumnIndex(headersByNorm: Map<string, number>, candidates: string[]): number | null {
   for (const c of candidates) {
-    const found = byNorm.get(norm(c));
+    const found = headersByNorm.get(norm(c));
     if (found) return found;
   }
   return null;
 }
 
-function parseSpreadsheet(filePath: string, requestedSheetName: string): SpreadsheetRow[] {
-  const workbook = XLSX.readFile(filePath, { cellDates: false });
-  const sheetName =
-    workbook.SheetNames.find((name) => norm(name) === norm(requestedSheetName)) ?? workbook.SheetNames[0];
-  if (!sheetName) throw new Error(`No sheet found in ${filePath}`);
+function cellToString(value: ExcelJS.CellValue | undefined | null): string {
+  if (value == null) return '';
+  if (typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean') {
+    return String(value);
+  }
+  if (value instanceof Date) {
+    return value.toISOString();
+  }
+  if (typeof value === 'object') {
+    if ('text' in value && typeof value.text === 'string') {
+      return value.text;
+    }
+    if ('richText' in value && Array.isArray(value.richText)) {
+      return value.richText.map((part) => part.text ?? '').join('');
+    }
+    if ('result' in value && value.result != null) {
+      return String(value.result);
+    }
+  }
+  return String(value);
+}
 
-  const sheet = workbook.Sheets[sheetName];
-  const rawRows = XLSX.utils.sheet_to_json<Record<string, unknown>>(sheet, { defval: '' });
-  if (rawRows.length === 0) return [];
+async function parseSpreadsheet(filePath: string, requestedSheetName: string): Promise<SpreadsheetRow[]> {
+  const workbook = new ExcelJS.Workbook();
+  const ext = path.extname(filePath).toLowerCase();
+  if (ext === '.csv') {
+    await workbook.csv.readFile(filePath);
+  } else {
+    await workbook.xlsx.readFile(filePath);
+  }
 
-  const first = rawRows[0]!;
-  const iconNameKey = findColumnKey(first, ['Icon name (exact)', 'Icon name', 'Name']);
-  const categoriesKey = findColumnKey(first, ['Category/Categories', 'Categories', 'Category']);
-  const skuKey = findColumnKey(first, ['SKU', 'Icon ID', 'IconId', 'iconId']);
+  const sheet =
+    workbook.worksheets.find((worksheet) => norm(worksheet.name) === norm(requestedSheetName)) ??
+    workbook.worksheets[0];
+  if (!sheet) throw new Error(`No sheet found in ${filePath}`);
 
-  if (!iconNameKey || !categoriesKey) {
+  const headerRow = sheet.getRow(1);
+  const headersByNorm = new Map<string, number>();
+  const headersFound: string[] = [];
+  headerRow.eachCell({ includeEmpty: false }, (cell, colNumber) => {
+    const header = cellToString(cell.value).trim();
+    if (!header) return;
+    headersByNorm.set(norm(header), colNumber);
+    headersFound.push(header);
+  });
+
+  const iconNameColumn = findColumnIndex(headersByNorm, ['Icon name (exact)', 'Icon name', 'Name']);
+  const categoriesColumn = findColumnIndex(headersByNorm, ['Category/Categories', 'Categories', 'Category']);
+  const skuColumn = findColumnIndex(headersByNorm, ['SKU', 'Icon ID', 'IconId', 'iconId']);
+
+  if (!iconNameColumn || !categoriesColumn) {
     throw new Error(
-      `Required columns missing. Found headers: ${Object.keys(first).join(', ')}. Required: Icon name, Category/Categories.`,
+      `Required columns missing. Found headers: ${headersFound.join(', ')}. Required: Icon name, Category/Categories.`,
     );
   }
 
   const out: SpreadsheetRow[] = [];
 
-  for (let i = 0; i < rawRows.length; i++) {
-    const src = rawRows[i]!;
-    const iconNameRaw = String(src[iconNameKey] ?? '').trim();
+  for (let rowNumber = 2; rowNumber <= sheet.rowCount; rowNumber++) {
+    const row = sheet.getRow(rowNumber);
+    const iconNameRaw = cellToString(row.getCell(iconNameColumn).value).trim();
     if (!iconNameRaw) continue;
 
-    const categories = dedupeCategories(splitCsvish(String(src[categoriesKey] ?? '')));
-    const skuFromRow = skuKey ? String(src[skuKey] ?? '').trim() : '';
+    const categories = dedupeCategories(splitCsvish(cellToString(row.getCell(categoriesColumn).value)));
+    const skuFromRow = skuColumn ? cellToString(row.getCell(skuColumn).value).trim() : '';
 
     const m = iconNameRaw.match(/^([A-Za-z0-9]+)\s*-\s*(.+)$/);
     const iconNameWithoutCode = m ? m[2].trim() : iconNameRaw;
     const skuFromName = m ? m[1].trim() : '';
 
     out.push({
-      index: i + 2,
+      index: rowNumber,
       iconNameRaw,
       iconNameWithoutCode,
       skuFromRow: skuFromRow || skuFromName || undefined,
@@ -366,7 +396,7 @@ async function main() {
   // eslint-disable-next-line no-console
   console.log(`${mode}: sync iconCategories from ${path.resolve(args.filePath)} (sheet: ${args.sheetName})`);
 
-  const rows = parseSpreadsheet(args.filePath, args.sheetName);
+  const rows = await parseSpreadsheet(args.filePath, args.sheetName);
   if (rows.length === 0) throw new Error('Spreadsheet has no data rows');
   // eslint-disable-next-line no-console
   console.log(`Parsed rows: ${rows.length}`);

@@ -97,18 +97,14 @@ function NavPill({
   expandOnHover?: boolean;
   prefetch?: boolean;
 }) {
-  const isActiveStyle = active
-    ? 'bg-[rgb(24,65,121)] text-white shadow-md shadow-[rgb(24,65,121)]/20 ring-1 ring-white/10'
-    : '';
-
-  const inactiveStyle = inverse
-    ? 'border-white/10 bg-white/[0.06] text-white hover:bg-[rgb(24,65,121)] hover:border-[rgb(24,65,121)] hover:text-white'
-    : 'border-ink/10 bg-white/70 text-ink/80 hover:bg-[rgb(24,65,121)] hover:border-[rgb(24,65,121)] hover:text-white';
+  const navModeClass = inverse ? 'nav-pill-sticky' : 'nav-pill-default';
+  const navStateClass = active ? (inverse ? 'nav-pill-sticky-active' : 'nav-pill-active') : '';
 
   const baseClasses = [
-    'group relative flex items-center rounded-full border transition-all duration-300',
-    isActiveStyle || inactiveStyle,
-    showLabel ? 'pr-5' : '',
+    'group nav-pill',
+    navModeClass,
+    navStateClass,
+    showLabel ? 'nav-pill-expanded' : '',
   ].join(' ');
 
   const content = (
@@ -116,7 +112,7 @@ function NavPill({
       <div className="flex h-10 w-10 shrink-0 items-center justify-center">
         {Icon ? <Icon className="h-[18px] w-[18px]" strokeWidth={2} /> : null}
         {badge ? (
-          <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[rgb(24,65,121)] text-[10px] font-bold text-white shadow-sm ring-2 ring-[#020916]">
+          <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#071835] text-[10px] font-bold text-white shadow-sm ring-2 ring-[#020916]">
             {badge}
           </span>
         ) : null}
@@ -450,7 +446,7 @@ export default function Navbar() {
                   icon={Store}
                   onClick={() => setIsShopMenuOpen(false)}
                   inverse={isScrolled}
-                  active={pathname === '/shop' || pathname?.startsWith('/shop/')}
+                  active={pathname === '/shop' || pathname?.startsWith('/shop/') || isShopMenuOpen}
                   as="link"
                   showLabel
                 />
@@ -588,6 +584,7 @@ export default function Navbar() {
                   icon={UserRound}
                   inverse={isScrolled}
                   active={pathname === '/login'}
+                  showLabel
                 />
               </div>
             )}
@@ -603,6 +600,7 @@ export default function Navbar() {
                 badge={cartQuantity > 0 ? cartQuantity : undefined}
                 inverse={isScrolled}
                 active={pathname === '/cart' || isCartMenuOpen}
+                showLabel={isCartMenuOpen}
                 as="button"
                 prefetch={false}
                 onClick={() => setIsCartMenuOpen((prev) => !prev)}
