@@ -1,7 +1,7 @@
 'use client';
 
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { Suspense, createContext, useEffect, useMemo, useRef, useState, useReducer } from 'react';
+import { usePathname, useRouter } from 'next/navigation';
+import { Suspense, createContext, useEffect, useMemo, useReducer, useRef } from 'react';
 import useSWR from 'swr';
 import { notifyCartUpdated } from '../../lib/cartEvents';
 
@@ -13,7 +13,6 @@ import {
 } from '../../lib/configuratorStore';
 import {
   asStrictConfiguration,
-  isConfigurationComplete,
   validateAndNormalizeConfigurationInput,
   type SlotId,
 } from '../../lib/keypadConfiguration';
@@ -66,6 +65,8 @@ type ActiveCartPayload = {
   } | null;
   error?: string;
 };
+
+type SearchParamsInput = Record<string, string | string[] | undefined>;
 
 function buildDefaultSavedName(modelCode: string) {
   const now = new Date();
@@ -126,6 +127,7 @@ export default function KeypadProvider(props: {
   children: React.ReactNode;
   iconCatalog: IconCatalogItem[];
   sessionSummary: SessionSummary;
+  initialSearchParams: SearchParamsInput;
 }) {
   return (
     <Suspense fallback={props.children}>
@@ -139,15 +141,33 @@ function KeypadProviderInner({
   children,
   iconCatalog,
   sessionSummary,
+  initialSearchParams,
 }: {
   keypad: PilotKeypadProduct;
   children: React.ReactNode;
   iconCatalog: IconCatalogItem[];
   sessionSummary: SessionSummary;
+  initialSearchParams: SearchParamsInput;
 }) {
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const router = useRouter();
+  const searchParams = useMemo(() => {
+    const params = new URLSearchParams();
+    for (const [key, value] of Object.entries(initialSearchParams || {})) {
+      if (Array.isArray(value)) {
+        for (const item of value) {
+          if (typeof item === 'string') {
+            params.append(key, item);
+          }
+        }
+        continue;
+      }
+      if (typeof value === 'string') {
+        params.set(key, value);
+      }
+    }
+    return params;
+  }, [initialSearchParams]);
   const resolvedModelCode = resolveConfiguratorModelCode(keypad);
   const modelGeometry = useMemo(() => getGeometryForModel(resolvedModelCode), [resolvedModelCode]);
   const slotIds = useMemo(() => getSlotIdsForGeometry(modelGeometry), [modelGeometry]);
@@ -236,7 +256,9 @@ function KeypadProviderInner({
 
   const openSavedDesignsModal = () => {
     if (isAuthenticated === false) {
-      const query = searchParams.toString();
+      const query = typeof window !== 'undefined'
+        ? new URLSearchParams(window.location.search).toString()
+        : searchParams.toString();
       const redirectTo = `${pathname}${query ? `?${query}` : ''}`;
       window.location.assign(`/login?redirectTo=${encodeURIComponent(redirectTo)}`);
       return;
@@ -709,7 +731,9 @@ function KeypadProviderInner({
     }
 
     if (isAuthenticated === false) {
-      const query = searchParams.toString();
+      const query = typeof window !== 'undefined'
+        ? new URLSearchParams(window.location.search).toString()
+        : searchParams.toString();
       const redirectTo = `${pathname}${query ? `?${query}` : ''}`;
       window.location.assign(`/login?redirectTo=${encodeURIComponent(redirectTo)}`);
       return;

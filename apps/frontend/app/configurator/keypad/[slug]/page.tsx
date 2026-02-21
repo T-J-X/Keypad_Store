@@ -64,12 +64,14 @@ export async function generateMetadata({
 
 export default function ConfiguratorModelPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ slug: string }>;
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   return (
     <Suspense fallback={<ConfiguratorModelFallback />}>
-      <ConfiguratorModelContent paramsPromise={params} />
+      <ConfiguratorModelContent paramsPromise={params} searchParamsPromise={searchParams} />
     </Suspense>
   );
 }
@@ -84,10 +86,12 @@ function ConfiguratorModelFallback() {
 
 async function ConfiguratorModelContent({
   paramsPromise,
+  searchParamsPromise,
 }: {
   paramsPromise: Promise<{ slug: string }>;
+  searchParamsPromise: Promise<Record<string, string | string[] | undefined>>;
 }) {
-  const resolved = await paramsPromise;
+  const [resolved, resolvedSearchParams] = await Promise.all([paramsPromise, searchParamsPromise]);
   const product = await fetchKeypadForSlug(resolved.slug);
   if (!product) return notFound();
 
@@ -111,6 +115,7 @@ async function ConfiguratorModelContent({
       }}
       iconCatalog={iconCatalog}
       sessionSummary={sessionSummary}
+      initialSearchParams={resolvedSearchParams}
     />
   );
 }

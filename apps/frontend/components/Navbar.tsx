@@ -221,31 +221,38 @@ export default function Navbar() {
 
   const [isVisible, setIsVisible] = useState(true);
   const lastScrollY = useRef(0);
+  const closeDesktopMenus = useCallback(() => {
+    setIsAccountMenuOpen(false);
+    setIsShopMenuOpen(false);
+    setIsCartMenuOpen(false);
+  }, []);
+
+  const syncNavbarOnScroll = useCallback((currentScrollY: number) => {
+    setIsScrolled(currentScrollY > 10);
+    setIsVisible((previous) => {
+      if (currentScrollY < 10) {
+        return true;
+      }
+      if (currentScrollY > lastScrollY.current && currentScrollY > 500) {
+        return false;
+      }
+      if (currentScrollY < lastScrollY.current) {
+        return true;
+      }
+      return previous;
+    });
+    lastScrollY.current = currentScrollY;
+  }, []);
 
   useEffect(() => {
     const onScroll = () => {
-      const currentScrollY = window.scrollY;
-
-      // Determine if scrolled for styling
-      setIsScrolled(currentScrollY > 10);
-
-      // Smart hide/show logic
-      if (currentScrollY < 10) {
-        setIsVisible(true);
-      } else if (currentScrollY > lastScrollY.current && currentScrollY > 500) {
-        // Scrolling down & past header (increased threshold for "delay")
-        setIsVisible(false);
-      } else if (currentScrollY < lastScrollY.current) {
-        // Scrolling up
-        setIsVisible(true);
-      }
-
-      lastScrollY.current = currentScrollY;
+      syncNavbarOnScroll(window.scrollY);
     };
 
     window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
     return () => window.removeEventListener('scroll', onScroll);
-  }, []);
+  }, [syncNavbarOnScroll]);
 
   useEffect(() => {
     void refreshSessionSummary();
@@ -305,16 +312,12 @@ export default function Navbar() {
         return;
       }
 
-      setIsAccountMenuOpen(false);
-      setIsShopMenuOpen(false);
-      setIsCartMenuOpen(false);
+      closeDesktopMenus();
     };
 
     const onKeyDown = (event: KeyboardEvent) => {
       if (event.key !== 'Escape') return;
-      setIsAccountMenuOpen(false);
-      setIsShopMenuOpen(false);
-      setIsCartMenuOpen(false);
+      closeDesktopMenus();
     };
 
     document.addEventListener('mousedown', onPointerDown);
@@ -326,7 +329,7 @@ export default function Navbar() {
       document.removeEventListener('touchstart', onPointerDown);
       window.removeEventListener('keydown', onKeyDown);
     };
-  }, [isAccountMenuOpen, isShopMenuOpen, isCartMenuOpen]);
+  }, [closeDesktopMenus, isAccountMenuOpen, isShopMenuOpen, isCartMenuOpen]);
 
   useEffect(() => {
     return () => {
@@ -347,7 +350,7 @@ export default function Navbar() {
       });
     } finally {
       setIsLoggingOut(false);
-      setIsAccountMenuOpen(false);
+      closeDesktopMenus();
       setIsMenuOpen(false);
       notifyCartUpdated();
       window.location.reload();

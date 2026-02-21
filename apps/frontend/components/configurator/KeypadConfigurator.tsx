@@ -166,14 +166,21 @@ export default function KeypadConfigurator({
   keypad,
   iconCatalog,
   sessionSummary,
+  initialSearchParams,
 }: {
   keypad: PilotKeypadProduct;
   iconCatalog: IconCatalogItem[];
   sessionSummary: SessionSummary;
+  initialSearchParams: Record<string, string | string[] | undefined>;
 }) {
   return (
     <Suspense fallback={<div className="h-96 animate-pulse rounded-3xl bg-surface-alt/50" />}>
-      <Keypad.Provider keypad={keypad} iconCatalog={iconCatalog} sessionSummary={sessionSummary}>
+      <Keypad.Provider
+        keypad={keypad}
+        iconCatalog={iconCatalog}
+        sessionSummary={sessionSummary}
+        initialSearchParams={initialSearchParams}
+      >
         <KeypadConfiguratorShell />
       </Keypad.Provider>
     </Suspense>

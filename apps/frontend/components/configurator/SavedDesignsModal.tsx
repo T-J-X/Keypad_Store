@@ -56,10 +56,7 @@ export default function SavedDesignsModal() {
     // Toast
     const [toast, setToast] = useState<string | null>(null);
 
-    // Check auth when modal opens
-    useEffect(() => {
-        if (!savedDesignsModalOpen) return;
-
+    const resetModalUiState = useCallback(() => {
         setSearchQuery('');
         setActiveTab('current');
         setLoginEmail('');
@@ -74,8 +71,14 @@ export default function SavedDesignsModal() {
         setSignupError('');
         setSignupLoading(false);
         setAuthState('checking');
+    }, []);
 
-    }, [savedDesignsModalOpen]);
+    // Check auth when modal opens
+    useEffect(() => {
+        if (!savedDesignsModalOpen) return;
+
+        resetModalUiState();
+    }, [savedDesignsModalOpen, resetModalUiState]);
 
     const { data: sessionData, error: sessionFetchError } = useSWR(
         savedDesignsModalOpen && authState === 'checking' ? '/api/session/summary' : null,

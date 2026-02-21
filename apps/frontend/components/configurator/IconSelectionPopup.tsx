@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { createContext, use, useEffect, useId, useMemo, useState } from 'react';
+import { createContext, use, useCallback, useEffect, useId, useMemo, useState } from 'react';
 import { X } from 'lucide-react';
 import { RING_GLOW_OPTIONS, type IconCatalogItem } from '../../lib/configuratorCatalog';
 import { assetUrl, categorySlug } from '../../lib/vendure';
@@ -120,6 +120,12 @@ function IconPickerProvider({
   const [searchQuery, setSearchQuery] = useState('');
   const [recommendationSeed, setRecommendationSeed] = useState<string | null>(null);
 
+  const resetPickerView = useCallback(() => {
+    setActiveView('icons');
+    setSearchQuery('');
+    setRecommendationSeed(null);
+  }, []);
+
   const sizeMatchedIcons = useMemo(
     () => resolved.icons.filter((icon) => icon.sizeMm === resolved.slotSizeMm),
     [resolved.icons, resolved.slotSizeMm],
@@ -149,10 +155,8 @@ function IconPickerProvider({
 
   useEffect(() => {
     if (!resolved.isOpen) return;
-    setActiveView('icons');
-    setSearchQuery('');
-    setRecommendationSeed(null);
-  }, [resolved.isOpen]);
+    resetPickerView();
+  }, [resolved.isOpen, resetPickerView]);
 
   useEffect(() => {
     if (!resolved.isOpen) return;

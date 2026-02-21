@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { type CSSProperties, useEffect, useMemo, useState } from 'react';
+import { type CSSProperties, useCallback, useEffect, useMemo, useState } from 'react';
 import type { KeypadConfigurationDraft } from '../../lib/keypadConfiguration';
 import { getOrderedSlotIdsFromConfiguration, sortSlotIds } from '../../lib/keypadConfiguration';
 import type { ConfiguredIconLookup, ConfiguredIconLookupEntry } from '../../lib/configuredKeypadPreview';
@@ -94,11 +94,10 @@ export default function ConfiguredKeypadThumbnail({
   const shellSrc = shellAssetPath ? assetUrl(shellAssetPath) : '';
   const sizeClass = sizeClassFromVariant(size);
   const [renderAspectRatio, setRenderAspectRatio] = useState(geometry.aspectRatio);
-
-  useEffect(() => {
+  const syncRenderAspectRatio = useCallback(() => {
     if (!shellSrc || typeof window === 'undefined') {
       setRenderAspectRatio(geometry.aspectRatio);
-      return;
+      return undefined;
     }
 
     let cancelled = false;
@@ -127,6 +126,8 @@ export default function ConfiguredKeypadThumbnail({
       cancelled = true;
     };
   }, [geometry.aspectRatio, shellSrc]);
+
+  useEffect(() => syncRenderAspectRatio(), [syncRenderAspectRatio]);
 
   const rotationDeg = configuration._meta?.rotation ?? 0;
   const rotationRad = (rotationDeg * Math.PI) / 180;
