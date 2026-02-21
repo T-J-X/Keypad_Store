@@ -1,7 +1,7 @@
 'use client';
 
 import Image from 'next/image';
-import { useCallback, useEffect, useMemo, useRef, useState, useTransition, type FormEvent } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, useTransition, type Dispatch, type FormEvent, type SetStateAction } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import {
   assetUrl,
@@ -157,12 +157,164 @@ function matchesSearchTerms(tokens: string[], queryTerms: string[]) {
   return queryTerms.every((term) => tokens.some((token) => tokenFuzzyMatch(term, token)));
 }
 
+function buildShopProductHref(
+  slug: string,
+  section: 'button-inserts' | 'keypads',
+  categorySlugValues: string[] = [],
+  preferredCategorySlug = '',
+  options?: { hubReady?: boolean },
+) {
+  const params = new URLSearchParams();
+  params.set('from', 'shop');
+  params.set('section', section);
+  if (options?.hubReady) {
+    params.set('hub', '1');
+  }
+  if (section === 'button-inserts' && categorySlugValues.length > 0) {
+    params.set('cats', categorySlugValues.join(','));
+    const categoryForBreadcrumb =
+      preferredCategorySlug && categorySlugValues.includes(preferredCategorySlug)
+        ? preferredCategorySlug
+        : categorySlugValues[0];
+    params.set('cat', categoryForBreadcrumb);
+  }
+  return `/shop/product/${slug}?${params.toString()}`;
+}
+
+function buildShopCategoryHref(categorySlugValue: string, take: number) {
+  const params = new URLSearchParams();
+  params.set('section', 'button-inserts');
+  params.set('cats', categorySlugValue);
+  params.set('cat', categorySlugValue);
+  params.set('page', '1');
+  params.set('take', String(take));
+  return `/shop?${params.toString()}`;
+}
+
+function resolveBreadcrumbCategorySlug({
+  iconId,
+  activeCategorySlugs,
+  categorySlugsByIconId,
+}: {
+  iconId: string;
+  activeCategorySlugs: string[];
+  categorySlugsByIconId: Map<string, string[]>;
+}) {
+  if (activeCategorySlugs.length === 0) return '';
+  const productCategorySlugs = categorySlugsByIconId.get(iconId) ?? [];
+  return activeCategorySlugs.find((slug) => productCategorySlugs.includes(slug)) ?? activeCategorySlugs[0];
+}
+
 type IconSearchEntry = {
   icon: IconProduct;
   tokens: string[];
   categoryNames: string[];
   categorySlugs: string[];
 };
+
+function useShopSearchData({
+  icons,
+  keypads,
+  categoryCounts,
+  activeCategorySlugs,
+  isIconsSection,
+  searchQuery,
+}: {
+  icons: IconProduct[];
+  keypads: KeypadProduct[];
+  categoryCounts?: IconCategory[];
+  activeCategorySlugs: string[];
+  isIconsSection: boolean;
+  searchQuery: string;
+}) {
+  const queryTerms = useMemo(() => tokenizeSearchText(searchQuery), [searchQuery]);
+
+  const categories = useMemo<IconCategory[]>(() => {
+    if (categoryCounts && categoryCounts.length > 0) {
+      return [...categoryCounts].sort((a, b) => a.name.localeCompare(b.name));
+    }
+
+    const bySlug = new Map<string, IconCategory>();
+    for (const icon of icons) {
+      for (const categoryName of iconCategoriesFromProduct(icon)) {
+        const slug = categorySlug(categoryName);
+        const existing = bySlug.get(slug);
+        if (existing) {
+          existing.count += 1;
+        } else {
+          bySlug.set(slug, { name: categoryName, slug, count: 1 });
+        }
+      }
+    }
+    return Array.from(bySlug.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [categoryCounts, icons]);
+
+  const categoriesBySlug = useMemo(() => {
+    return new Map(categories.map((category) => [category.slug, category]));
+  }, [categories]);
+
+  const iconSearchIndex = useMemo<IconSearchEntry[]>(() => {
+    return icons.map((icon) => {
+      const categoryNames = iconCategoriesFromProduct(icon);
+      return {
+        categoryNames,
+        categorySlugs: categoryNames.map((name) => categorySlug(name)),
+        icon,
+        tokens: tokenizeSearchText(
+          `${icon.customFields?.iconId ?? ''} ${icon.name ?? ''} ${icon.slug ?? ''} ${categoryNames.join(' ')}`,
+        ),
+      };
+    });
+  }, [icons]);
+
+  const categoryNamesByIconId = useMemo(
+    () => new Map(iconSearchIndex.map((entry) => [entry.icon.id, entry.categoryNames])),
+    [iconSearchIndex],
+  );
+
+  const categorySlugsByIconId = useMemo(
+    () => new Map(iconSearchIndex.map((entry) => [entry.icon.id, entry.categorySlugs])),
+    [iconSearchIndex],
+  );
+
+  const keypadSearchIndex = useMemo(() => {
+    return keypads.map((keypad) => ({
+      keypad,
+      tokens: tokenizeSearchText(`${keypad.name ?? ''} ${keypad.slug ?? ''} keypad keypads`),
+    }));
+  }, [keypads]);
+
+  const filteredIcons = useMemo(() => {
+    const targetCategories = new Set(activeCategorySlugs);
+    const shouldApplyCategoryFilter = isIconsSection;
+
+    return iconSearchIndex
+      .filter(({ tokens, categorySlugs }) => {
+        if (shouldApplyCategoryFilter) {
+          const matchesCategory =
+            targetCategories.size === 0 || categorySlugs.some((slug) => targetCategories.has(slug));
+          if (!matchesCategory) return false;
+        }
+        return matchesSearchTerms(tokens, queryTerms);
+      })
+      .map(({ icon }) => icon);
+  }, [iconSearchIndex, queryTerms, activeCategorySlugs, isIconsSection]);
+
+  const filteredKeypads = useMemo(() => {
+    return keypadSearchIndex
+      .filter(({ tokens }) => matchesSearchTerms(tokens, queryTerms))
+      .map(({ keypad }) => keypad);
+  }, [keypadSearchIndex, queryTerms]);
+
+  return {
+    categories,
+    categoriesBySlug,
+    categoryNamesByIconId,
+    categorySlugsByIconId,
+    filteredIcons,
+    filteredKeypads,
+  };
+}
 
 
 function ViewToggle({ viewMode, onChange }: { viewMode: 'grid' | 'list', onChange: (mode: 'grid' | 'list') => void }) {
@@ -349,6 +501,711 @@ function KeypadResultsGrid({
   );
 }
 
+type ShopSection = 'landing' | 'all' | 'button-inserts' | 'keypads';
+
+type ShopFilterChip = {
+  label: string;
+  onClear: () => void;
+};
+
+type ProductHrefBuilder = (
+  slug: string,
+  section: 'button-inserts' | 'keypads',
+  categorySlugValues?: string[],
+  preferredCategorySlug?: string,
+  options?: { hubReady?: boolean },
+) => string;
+
+function ShopSectionHeader({
+  isIconsSection,
+  isKeypadsSection,
+  isAllSection,
+  isCatalogWideSection,
+  availableResultCount,
+  visibleResultLabel,
+  viewMode,
+  onViewModeChange,
+  onSearch,
+  query,
+  onQueryChange,
+  searchPlaceholder,
+}: {
+  isIconsSection: boolean;
+  isKeypadsSection: boolean;
+  isAllSection: boolean;
+  isCatalogWideSection: boolean;
+  availableResultCount: number;
+  visibleResultLabel: string;
+  viewMode: 'grid' | 'list';
+  onViewModeChange: (mode: 'grid' | 'list') => void;
+  onSearch: (event: FormEvent<HTMLFormElement>) => void;
+  query: string;
+  onQueryChange: (value: string) => void;
+  searchPlaceholder: string;
+}) {
+  return (
+    <div className="mb-8 flex flex-col gap-4">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        {(isIconsSection || isKeypadsSection || isAllSection) && (
+          <div>
+            <div className="pill">
+              {isIconsSection ? 'Button Insert Catalog' : isKeypadsSection ? 'Keypad models' : 'All products'}
+            </div>
+            <h1 className="mt-3 text-3xl font-semibold tracking-tight text-ink md:text-4xl">
+              {isIconsSection
+                ? 'Explore Inserts: Curated by Category.'
+                : isKeypadsSection
+                  ? 'Spec Your KeyPad: Precision Defined'
+                  : 'Explore Technical Hardware & Components'}
+            </h1>
+            {isKeypadsSection && (
+              <p className="mt-2 text-sm text-ink/60">Compare keypad models, then continue to configuration.</p>
+            )}
+          </div>
+        )}
+        <div className={`flex items-center gap-4 text-sm text-ink/60 ${isCatalogWideSection ? 'ml-auto' : ''}`}>
+          {availableResultCount} {visibleResultLabel} available
+          <ViewToggle viewMode={viewMode} onChange={onViewModeChange} />
+        </div>
+      </div>
+      <form onSubmit={onSearch} className="flex flex-col gap-3 md:flex-row md:flex-nowrap md:items-center">
+        <input
+          value={query}
+          onChange={(event) => {
+            onQueryChange(event.target.value);
+          }}
+          placeholder={searchPlaceholder}
+          className="input flex-1"
+          aria-label={
+            isIconsSection
+              ? 'Search button inserts'
+              : isKeypadsSection
+                ? 'Search keypads'
+                : 'Search products'
+          }
+        />
+        <Button type="submit" variant="premium" className="shrink-0">Search</Button>
+      </form>
+    </div>
+  );
+}
+
+function ShopLandingSection({
+  landingTopTiles,
+  onTopTileSelect,
+  landingDisciplineTiles,
+  onDisciplineTileSelect,
+  onSectionChange,
+  featuredLandingKeypads,
+  toProductHref,
+}: {
+  landingTopTiles: BaseShopTopTile[];
+  onTopTileSelect: (tile: BaseShopTopTile) => void;
+  landingDisciplineTiles: Array<{
+    id: string;
+    slug: string;
+    label: string;
+    count: number;
+    image?: string | null;
+  }>;
+  onDisciplineTileSelect: (tile: { slug: string }) => void;
+  onSectionChange: (section: ShopSection, options?: { scrollToTop?: boolean }) => void;
+  featuredLandingKeypads: KeypadProduct[];
+  toProductHref: ProductHrefBuilder;
+}) {
+  return (
+    <section className="space-y-12">
+      <section className="card rounded-3xl p-5 md:p-7">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="mt-1 text-2xl font-semibold tracking-tight text-ink md:text-3xl">
+              Product Categories
+            </h2>
+          </div>
+        </div>
+        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
+          {landingTopTiles.map((tile) => {
+            const href = tile.kind === 'exploreMore' ? '/shop?section=all' : (tile.href ?? '').trim();
+            const isInteractive = href.length > 0 && tile.isEnabled !== false;
+            const shouldUseRingBlue = isInteractive && (tile.hoverStyle ?? 'ring-blue') !== 'none';
+            const isExploreMoreTile = tile.kind === 'exploreMore';
+            const tileImage = tile.imageSource || tile.imagePreview || (isExploreMoreTile ? DEFAULT_EXPLORE_MORE_IMAGE_URL : '');
+            const tileImageUrl = tileImage ? assetUrl(tileImage) : '';
+            const tileTitle =
+              tile.label?.trim() || (tile.kind === 'exploreMore' ? 'Discover more' : humanizeDisciplineId(tile.id));
+            const tileSubtitle = tile.subtitle?.trim() || '';
+
+            const cardClass = `group relative overflow-hidden rounded-2xl text-left ${shouldUseRingBlue ? ringBlueHoverClass : 'border border-ink/10 bg-white'} ${isInteractive
+              ? 'cursor-pointer transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5'
+              : 'cursor-default'
+              }`;
+
+            const content = (
+              <div className={`relative h-64 w-full ${tileImage ? '' : 'bg-[linear-gradient(145deg,#e8eef9_0%,#f7fbff_48%,#e1ebfa_100%)]'}`}>
+                {tileImage ? (
+                  <Image
+                    src={tileImageUrl}
+                    alt={tileTitle}
+                    fill
+                    sizes="(max-width: 1024px) 100vw, 33vw"
+                    className="object-cover"
+                  />
+                ) : (
+                  <div className="pointer-events-none absolute -right-16 -top-12 h-40 w-40 rounded-full bg-white/70 blur-2xl" />
+                )}
+                {isInteractive && tileImage ? (
+                  <div
+                    className={`pointer-events-none absolute inset-0 transition-opacity duration-200 ${isExploreMoreTile
+                      ? 'bg-black/45 opacity-60 group-hover:opacity-85'
+                      : 'bg-black/25 opacity-55 group-hover:opacity-75'
+                      }`}
+                  />
+                ) : null}
+                <div className="absolute inset-x-0 bottom-0 p-5">
+                  <p className={`text-lg font-semibold leading-tight ${isInteractive ? 'text-white' : 'text-ink'}`}>
+                    {tileTitle}
+                  </p>
+                  {tileSubtitle ? (
+                    <p className={`mt-2 text-sm ${isInteractive ? 'text-white/85' : 'text-ink/60'}`}>{tileSubtitle}</p>
+                  ) : null}
+                  {isInteractive ? (
+                    <span
+                      className={`mt-4 translate-y-2 opacity-0 transition-[opacity,transform] duration-200 group-hover:translate-y-0 group-hover:opacity-100 ${buttonVariants({ variant: 'premium' })} ${isExploreMoreTile
+                        ? 'bg-surface text-ink shadow-sm'
+                        : ''
+                        }`}
+                    >
+                      {tile.kind === 'exploreMore' ? 'Discover more' : 'Explore'}
+                    </span>
+                  ) : null}
+                </div>
+              </div>
+            );
+
+            return isInteractive ? (
+              <button
+                key={tile.id}
+                type="button"
+                onClick={() => onTopTileSelect(tile)}
+                className={cardClass}
+              >
+                {content}
+              </button>
+            ) : (
+              <div key={tile.id} className={cardClass}>
+                {content}
+              </div>
+            );
+          })}
+        </div>
+      </section>
+
+      <section className="card rounded-3xl p-5 md:p-7">
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="mt-1 text-2xl font-semibold tracking-tight text-ink md:text-3xl">
+              Button Insert Categories
+            </h2>
+          </div>
+          <Button
+            type="button"
+            onClick={() => onSectionChange('button-inserts', { scrollToTop: true })}
+            variant="secondary"
+          >
+            View all inserts
+          </Button>
+        </div>
+        {landingDisciplineTiles.length > 0 ? (
+          <div className="grid auto-rows-fr gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
+            {landingDisciplineTiles.map((tile) => {
+              const isInteractive = Boolean(tile.slug);
+
+              return (
+                <div key={tile.id} className="h-full">
+                  {isInteractive ? (
+                    <CategoryCard
+                      label={tile.label}
+                      count={tile.count}
+                      image={tile.image}
+                      onClick={() => onDisciplineTileSelect(tile)}
+                    />
+                  ) : (
+                    <CategoryCard
+                      label={tile.label}
+                      count={tile.count}
+                      image={tile.image}
+                    />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="card-soft rounded-2xl p-6 text-sm text-ink/60">
+            No insert categories are available yet.
+          </div>
+        )}
+      </section>
+
+      <section>
+        <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <h2 className="mt-1 text-2xl font-semibold tracking-tight text-ink md:text-3xl">
+              Popular Keypads to Start From
+            </h2>
+          </div>
+          <Button
+            type="button"
+            onClick={() => onSectionChange('keypads', { scrollToTop: true })}
+            variant="secondary"
+          >
+            View all keypads
+          </Button>
+        </div>
+        {featuredLandingKeypads.length > 0 ? (
+          <div className="grid gap-6 lg:grid-cols-3">
+            {featuredLandingKeypads.map((keypad, index) => (
+              <div key={keypad.id} className={index === 0 ? 'lg:col-span-2' : ''}>
+                <KeypadCard
+                  product={keypad}
+                  mode="shop"
+                  learnMoreHref={toProductHref(keypad.slug, 'keypads', [], '', { hubReady: false })}
+                />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="card-soft p-8 text-sm text-ink/60">
+            No featured keypads are available yet.
+          </div>
+        )}
+      </section>
+    </section>
+  );
+}
+
+function ShopBrowseSidebar({
+  onShopHome,
+  onSectionChange,
+  isAllSection,
+  isIconsSection,
+  isKeypadsSection,
+  totalIconCount,
+  keypadsCount,
+  iconsGroupOpen,
+  onToggleIconsGroup,
+  activeCategorySlugs,
+  onSelectAllCategory,
+  categories,
+  onToggleCategory,
+}: {
+  onShopHome: () => void;
+  onSectionChange: (section: ShopSection, options?: { scrollToTop?: boolean }) => void;
+  isAllSection: boolean;
+  isIconsSection: boolean;
+  isKeypadsSection: boolean;
+  totalIconCount: number;
+  keypadsCount: number;
+  iconsGroupOpen: boolean;
+  onToggleIconsGroup: () => void;
+  activeCategorySlugs: string[];
+  onSelectAllCategory: () => void;
+  categories: IconCategory[];
+  onToggleCategory: (categorySlug: string, checked: boolean) => void;
+}) {
+  return (
+    <aside className="space-y-6 md:sticky md:top-24 md:self-start">
+      <div className="card-soft md:max-h-[calc(100vh-7rem)] md:overflow-y-auto md:pr-1">
+        <div className="px-4 py-4">
+          <div className="text-[10px] font-semibold uppercase tracking-widest text-ink-subtle">
+            Browse
+          </div>
+          <div className="mt-3 space-y-2">
+            <button
+              type="button"
+              onClick={onShopHome}
+              className="flex w-full items-center justify-between rounded-xl border border-surface-border bg-surface px-3 py-2 text-sm font-semibold tracking-tight text-ink transition hover:border-ink/25 hover:bg-surface-alt"
+            >
+              <span>Shop Home</span>
+            </button>
+
+            <button
+              type="button"
+              aria-pressed={isAllSection}
+              onClick={() => onSectionChange('all', { scrollToTop: true })}
+              className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-sm font-semibold tracking-tight transition ${isAllSection
+                ? 'border-ink bg-ink text-white'
+                : 'border-surface-border bg-surface text-ink hover:border-ink/25 hover:bg-surface-alt'
+                }`}
+            >
+              <span>All products</span>
+              <span className={`text-[11px] ${isAllSection ? 'text-white/75' : 'text-ink/45'}`}>
+                {totalIconCount + keypadsCount}
+              </span>
+            </button>
+
+            <button
+              type="button"
+              aria-pressed={isIconsSection}
+              onClick={() => onSectionChange('button-inserts', { scrollToTop: true })}
+              className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-sm font-semibold tracking-tight transition ${isIconsSection
+                ? 'border-ink bg-ink text-white'
+                : 'border-surface-border bg-surface text-ink hover:border-ink/25 hover:bg-surface-alt'
+                }`}
+            >
+              <span>Button Inserts</span>
+              <span className={`text-[11px] ${isIconsSection ? 'text-white/75' : 'text-ink/45'}`}>{totalIconCount}</span>
+            </button>
+
+            <button
+              type="button"
+              aria-pressed={isKeypadsSection}
+              onClick={() => onSectionChange('keypads', { scrollToTop: true })}
+              className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-sm font-semibold tracking-tight transition ${isKeypadsSection
+                ? 'border-ink bg-ink text-white'
+                : 'border-surface-border bg-surface text-ink hover:border-ink/25 hover:bg-surface-alt'
+                }`}
+            >
+              <span>Keypads</span>
+              <span className={`text-[11px] ${isKeypadsSection ? 'text-white/75' : 'text-ink/45'}`}>{keypadsCount}</span>
+            </button>
+          </div>
+        </div>
+
+        <div className="border-t border-surface-border px-4 py-4">
+          <button
+            type="button"
+            aria-expanded={iconsGroupOpen}
+            aria-controls="icons-subcategories"
+            onClick={onToggleIconsGroup}
+            className="flex w-full items-center justify-between rounded-xl border border-surface-border bg-surface px-3 py-2 text-left text-sm font-semibold tracking-tight text-ink transition hover:border-ink/25 hover:bg-surface-alt"
+          >
+            <span>Insert filters</span>
+            <span className={`transition ${iconsGroupOpen ? 'rotate-180' : ''}`}>⌄</span>
+          </button>
+
+          {iconsGroupOpen ? (
+            <div id="icons-subcategories" className="mt-3 space-y-2">
+              <label className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-surface-border bg-surface px-3 py-2 text-sm text-ink transition hover:border-ink/20">
+                <span className="flex items-center gap-2">
+                  <input
+                    type="checkbox"
+                    className="h-4 w-4 rounded border-surface-border text-ink focus:ring-ink/25"
+                    checked={activeCategorySlugs.length === 0}
+                    onChange={onSelectAllCategory}
+                  />
+                  <span className="font-medium">All button inserts</span>
+                </span>
+                <span className="text-[11px] text-ink/45">{totalIconCount}</span>
+              </label>
+
+              {categories.map((category) => (
+                <label
+                  key={category.slug}
+                  className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-surface-border bg-surface px-3 py-2 text-sm text-ink transition hover:border-ink/20"
+                >
+                  <span className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 rounded border-surface-border text-ink focus:ring-ink/25"
+                      checked={activeCategorySlugs.includes(category.slug)}
+                      onChange={(event) => {
+                        onToggleCategory(category.slug, event.target.checked);
+                      }}
+                    />
+                    <span className="font-medium">{category.name}</span>
+                  </span>
+                  <span className="text-[11px] text-ink/45">{category.count}</span>
+                </label>
+              ))}
+            </div>
+          ) : null}
+        </div>
+      </div>
+    </aside>
+  );
+}
+
+function ShopResultsPanel({
+  visibleResultCount,
+  visibleResultLabel,
+  activeChips,
+  hasActiveFilters,
+  clearFilters,
+  isIconsSection,
+  isKeypadsSection,
+  shouldShowIconPaginationControls,
+  page,
+  totalPages,
+  take,
+  paginationSummaryTotal,
+  paginationSummaryLabel,
+  onTakeChange,
+  onPrevPage,
+  onNextPage,
+  displayedIcons,
+  viewMode,
+  categoryNamesByIconId,
+  activeCategorySlugs,
+  isAllSection,
+  toCategoryHref,
+  toProductHref,
+  resolveProductCategoryForBreadcrumb,
+  filteredKeypads,
+  catalogWideKeypads,
+}: {
+  visibleResultCount: number;
+  visibleResultLabel: string;
+  activeChips: ShopFilterChip[];
+  hasActiveFilters: boolean;
+  clearFilters: () => void;
+  isIconsSection: boolean;
+  isKeypadsSection: boolean;
+  shouldShowIconPaginationControls: boolean;
+  page: number;
+  totalPages: number;
+  take: number;
+  paginationSummaryTotal: number;
+  paginationSummaryLabel: string;
+  onTakeChange: (nextTake: number) => void;
+  onPrevPage: () => void;
+  onNextPage: () => void;
+  displayedIcons: IconProduct[];
+  viewMode: 'grid' | 'list';
+  categoryNamesByIconId: Map<string, string[]>;
+  activeCategorySlugs: string[];
+  isAllSection: boolean;
+  toCategoryHref: (categorySlugValue: string) => string;
+  toProductHref: ProductHrefBuilder;
+  resolveProductCategoryForBreadcrumb: (icon: IconProduct) => string;
+  filteredKeypads: KeypadProduct[];
+  catalogWideKeypads: KeypadProduct[];
+}) {
+  return (
+    <section>
+      <div className="mb-4 flex flex-wrap items-center justify-between gap-3 text-sm text-ink/60">
+        <span>
+          Showing <span className="font-semibold text-ink">{visibleResultCount}</span> {visibleResultLabel}
+        </span>
+        {activeChips.length > 0 ? (
+          <div className="flex flex-wrap gap-2">
+            {activeChips.map((chip) => (
+              <button
+                key={chip.label}
+                type="button"
+                onClick={chip.onClear}
+                className="flex items-center gap-2 rounded-full border border-ink/10 px-3 py-1 text-xs font-semibold text-ink/70 transition hover:border-ink/25"
+              >
+                <span>{chip.label}</span>
+                <span className="text-ink/40">x</span>
+              </button>
+            ))}
+            {hasActiveFilters && (
+              <Button
+                type="button"
+                onClick={clearFilters}
+                variant="ghost"
+                className="px-3 py-1 text-xs h-auto"
+              >
+                Clear all filters
+              </Button>
+            )}
+          </div>
+        ) : (
+          <span className="rounded-full border border-ink/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide">
+            {isIconsSection ? 'All categories' : isKeypadsSection ? 'All keypads' : 'All products'}
+          </span>
+        )}
+      </div>
+      {shouldShowIconPaginationControls ? (
+        <IconPaginationControls
+          location="top"
+          page={page}
+          totalPages={totalPages}
+          take={take}
+          summaryTotal={paginationSummaryTotal}
+          summaryLabel={paginationSummaryLabel}
+          onTakeChange={onTakeChange}
+          onPrev={onPrevPage}
+          onNext={onNextPage}
+        />
+      ) : null}
+
+      {visibleResultCount === 0 ? (
+        <div className="card-soft p-8 text-sm text-ink/60">
+          {isIconsSection
+            ? 'No button inserts match that search. Try a different query or category.'
+            : isKeypadsSection
+              ? 'No keypads match that search. Try a different query.'
+              : 'No products match that search. Try a different query.'}
+        </div>
+      ) : isIconsSection ? (
+        <IconResultsGrid
+          iconItems={displayedIcons}
+          viewMode={viewMode}
+          categoryNamesByIconId={categoryNamesByIconId}
+          activeCategorySlugs={activeCategorySlugs}
+          isIconsSection={isIconsSection}
+          isAllSection={isAllSection}
+          toCategoryHref={toCategoryHref}
+          toProductHref={toProductHref}
+          resolveProductCategoryForBreadcrumb={resolveProductCategoryForBreadcrumb}
+        />
+      ) : isKeypadsSection ? (
+        <KeypadResultsGrid
+          keypadItems={filteredKeypads}
+          hubReady
+          replaceDetailNavigation
+          toProductHref={toProductHref}
+        />
+      ) : (
+        <div className="space-y-6">
+          {displayedIcons.length > 0 && (
+            <IconResultsGrid
+              iconItems={displayedIcons}
+              viewMode={viewMode}
+              categoryNamesByIconId={categoryNamesByIconId}
+              activeCategorySlugs={activeCategorySlugs}
+              isIconsSection={isIconsSection}
+              isAllSection={isAllSection}
+              toCategoryHref={toCategoryHref}
+              toProductHref={toProductHref}
+              resolveProductCategoryForBreadcrumb={resolveProductCategoryForBreadcrumb}
+            />
+          )}
+          {catalogWideKeypads.length > 0 &&
+            (
+              <KeypadResultsGrid
+                keypadItems={catalogWideKeypads}
+                hubReady
+                replaceDetailNavigation={false}
+                toProductHref={toProductHref}
+              />
+            )}
+        </div>
+      )}
+
+      {shouldShowIconPaginationControls ? (
+        <IconPaginationControls
+          location="bottom"
+          page={page}
+          totalPages={totalPages}
+          take={take}
+          summaryTotal={paginationSummaryTotal}
+          summaryLabel={paginationSummaryLabel}
+          onTakeChange={onTakeChange}
+          onPrev={onPrevPage}
+          onNext={onNextPage}
+        />
+      ) : null}
+    </section>
+  );
+}
+
+function useShopActions({
+  query,
+  activeSection,
+  categoriesBySlug,
+  activeCategorySlugs,
+  take,
+  updateParams,
+  setQuery,
+  setIconsGroupOpen,
+}: {
+  query: string;
+  activeSection: ShopSection;
+  categoriesBySlug: Map<string, IconCategory>;
+  activeCategorySlugs: string[];
+  take: number;
+  updateParams: (updates: Record<string, string | number | string[] | null>) => void;
+  setQuery: Dispatch<SetStateAction<string>>;
+  setIconsGroupOpen: Dispatch<SetStateAction<boolean>>;
+}) {
+  const scrollToPageTop = useCallback(() => {
+    if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
+  const onSectionChange = useCallback((
+    section: ShopSection,
+    options?: { scrollToTop?: boolean },
+  ) => {
+    if (section === activeSection) return;
+
+    updateParams({
+      section,
+      page: 1,
+      cats: section !== 'button-inserts' ? null : null,
+    });
+
+    if (options?.scrollToTop) {
+      scrollToPageTop();
+    }
+  }, [activeSection, scrollToPageTop, updateParams]);
+
+  const onSearch = useCallback((event: FormEvent<HTMLFormElement>) => {
+    event.preventDefault();
+    updateParams({ q: query, page: 1, section: activeSection === 'landing' && query ? 'all' : null });
+  }, [activeSection, query, updateParams]);
+
+  const onShopHome = useCallback(() => {
+    setQuery('');
+    setIconsGroupOpen(false);
+    updateParams({ section: 'landing', q: null, cats: null, page: 1 });
+    scrollToPageTop();
+  }, [scrollToPageTop, setIconsGroupOpen, setQuery, updateParams]);
+
+  const onDisciplineTileSelect = useCallback((tile: { slug: string }) => {
+    if (!tile.slug) return;
+
+    if (categoriesBySlug.has(tile.slug)) {
+      updateParams({ section: 'button-inserts', cats: [tile.slug], page: 1 });
+      scrollToPageTop();
+      return;
+    }
+
+    onSectionChange('button-inserts', { scrollToTop: true });
+  }, [categoriesBySlug, onSectionChange, scrollToPageTop, updateParams]);
+
+  const clearFilters = useCallback(() => {
+    setQuery('');
+    updateParams({ q: null, cats: null, page: 1 });
+  }, [setQuery, updateParams]);
+
+  const onTakeChange = useCallback((nextTake: number) => {
+    if (nextTake === take) return;
+    updateParams({ take: nextTake, page: 1 });
+  }, [take, updateParams]);
+
+  const onSelectAllCategory = useCallback(() => {
+    updateParams({ section: 'button-inserts', cats: null, page: 1 });
+    scrollToPageTop();
+  }, [scrollToPageTop, updateParams]);
+
+  const onToggleCategory = useCallback((categorySlug: string, checked: boolean) => {
+    let nextSlugs = checked
+      ? [...activeCategorySlugs, categorySlug]
+      : activeCategorySlugs.filter((slug) => slug !== categorySlug);
+    nextSlugs = Array.from(new Set(nextSlugs));
+
+    updateParams({
+      section: 'button-inserts',
+      cats: nextSlugs.length > 0 ? nextSlugs : null,
+      page: 1,
+    });
+  }, [activeCategorySlugs, updateParams]);
+
+  return {
+    onSearch,
+    onShopHome,
+    onSectionChange,
+    onDisciplineTileSelect,
+    clearFilters,
+    onTakeChange,
+    onSelectAllCategory,
+    onToggleCategory,
+  };
+}
+
 export default function ShopClient({
   icons,
   keypads,
@@ -449,126 +1306,47 @@ export default function ShopClient({
     wasSpokeSectionRef.current = isSpokeSection;
   }, [activeSection, pathname]);
 
-  const queryTerms = useMemo(() => tokenizeSearchText(debouncedQuery), [debouncedQuery]);
-
   const totalIconCount = Math.max(catalogIconTotal ?? icons.length, 0);
-
-  const categories = useMemo<IconCategory[]>(() => {
-    if (categoryCounts && categoryCounts.length > 0) {
-      return [...categoryCounts].sort((a, b) => a.name.localeCompare(b.name));
-    }
-
-    const bySlug = new Map<string, IconCategory>();
-    for (const icon of icons) {
-      for (const categoryName of iconCategoriesFromProduct(icon)) {
-        const slug = categorySlug(categoryName);
-        const existing = bySlug.get(slug);
-        if (existing) {
-          existing.count += 1;
-        } else {
-          bySlug.set(slug, { name: categoryName, slug, count: 1 });
-        }
-      }
-    }
-    return Array.from(bySlug.values()).sort((a, b) => a.name.localeCompare(b.name));
-  }, [categoryCounts, icons]);
-
-  const categoriesBySlug = useMemo(() => {
-    return new Map(categories.map((category) => [category.slug, category]));
-  }, [categories]);
 
   const isLandingSection = activeSection === 'landing';
   const isAllSection = activeSection === 'all';
   const isCatalogWideSection = isLandingSection || isAllSection;
   const isIconsSection = activeSection === 'button-inserts';
   const isKeypadsSection = activeSection === 'keypads';
-
-  const iconSearchIndex = useMemo<IconSearchEntry[]>(() => {
-    return icons.map((icon) => {
-      const categoryNames = iconCategoriesFromProduct(icon);
-      return {
-        categoryNames,
-        categorySlugs: categoryNames.map((name) => categorySlug(name)),
-        icon,
-        tokens: tokenizeSearchText(
-          `${icon.customFields?.iconId ?? ''} ${icon.name ?? ''} ${icon.slug ?? ''} ${categoryNames.join(' ')}`,
-        ),
-      };
-    });
-  }, [icons]);
-
-  const categoryNamesByIconId = useMemo(
-    () => new Map(iconSearchIndex.map((entry) => [entry.icon.id, entry.categoryNames])),
-    [iconSearchIndex],
-  );
-
-  const categorySlugsByIconId = useMemo(
-    () => new Map(iconSearchIndex.map((entry) => [entry.icon.id, entry.categorySlugs])),
-    [iconSearchIndex],
-  );
-
-  const keypadSearchIndex = useMemo(() => {
-    return keypads.map((keypad) => ({
-      keypad,
-      tokens: tokenizeSearchText(`${keypad.name ?? ''} ${keypad.slug ?? ''} keypad keypads`),
-    }));
-  }, [keypads]);
-
-  const filteredIcons = useMemo(() => {
-    const targetCategories = new Set(activeCategorySlugs);
-    const shouldApplyCategoryFilter = isIconsSection;
-
-    return iconSearchIndex
-      .filter(({ tokens, categorySlugs }) => {
-        if (shouldApplyCategoryFilter) {
-          const matchesCategory =
-            targetCategories.size === 0 || categorySlugs.some((slug) => targetCategories.has(slug));
-          if (!matchesCategory) return false;
-        }
-        return matchesSearchTerms(tokens, queryTerms);
-      })
-      .map(({ icon }) => icon);
-  }, [iconSearchIndex, queryTerms, activeCategorySlugs, isIconsSection]);
-
-  const filteredKeypads = useMemo(() => {
-    return keypadSearchIndex
-      .filter(({ tokens }) => matchesSearchTerms(tokens, queryTerms))
-      .map(({ keypad }) => keypad);
-  }, [keypadSearchIndex, queryTerms]);
-
-  const onSearch = (event: FormEvent<HTMLFormElement>) => {
-    event.preventDefault();
-    // Immediate update on submit
-    updateParams({ q: query, page: 1, section: activeSection === 'landing' && query ? 'all' : null });
-  };
-
-  const scrollToPageTop = () => {
-    if (typeof window !== 'undefined') window.scrollTo({ top: 0, behavior: 'smooth' });
-  };
-
-  const onShopHome = () => {
-    setQuery('');
-    setIconsGroupOpen(false);
-    updateParams({ section: 'landing', q: null, cats: null, page: 1 });
-    scrollToPageTop();
-  };
-
-  const onSectionChange = (
-    section: 'landing' | 'all' | 'button-inserts' | 'keypads',
-    options?: { scrollToTop?: boolean },
-  ) => {
-    if (section === activeSection) return;
-
-    updateParams({
-      section,
-      page: 1,
-      cats: section !== 'button-inserts' ? null : null
-    });
-
-    if (options?.scrollToTop) {
-      scrollToPageTop();
-    }
-  };
+  const {
+    categories,
+    categoriesBySlug,
+    categoryNamesByIconId,
+    categorySlugsByIconId,
+    filteredIcons,
+    filteredKeypads,
+  } = useShopSearchData({
+    icons,
+    keypads,
+    categoryCounts,
+    activeCategorySlugs,
+    isIconsSection,
+    searchQuery: debouncedQuery,
+  });
+  const {
+    onSearch,
+    onShopHome,
+    onSectionChange,
+    onDisciplineTileSelect,
+    clearFilters,
+    onTakeChange,
+    onSelectAllCategory,
+    onToggleCategory,
+  } = useShopActions({
+    query,
+    activeSection,
+    categoriesBySlug,
+    activeCategorySlugs,
+    take,
+    updateParams,
+    setQuery,
+    setIconsGroupOpen,
+  });
 
   const onTopTileSelect = (tile: BaseShopTopTile) => {
     const forcedHref = tile.kind === 'exploreMore' ? '/shop?section=all' : tile.href;
@@ -584,67 +1362,13 @@ export default function ShopClient({
     if (typeof window !== 'undefined') window.location.assign(safeHref);
   };
 
-  const onDisciplineTileSelect = (tile: { slug: string }) => {
-    if (!tile.slug) return;
-
-    if (categoriesBySlug.has(tile.slug)) {
-      updateParams({ section: 'button-inserts', cats: [tile.slug], page: 1 });
-      scrollToPageTop();
-      return;
-    }
-
-    onSectionChange('button-inserts', { scrollToTop: true });
-  };
-
-  const clearFilters = () => {
-    setQuery(''); // Clear local input
-    updateParams({ q: null, cats: null, page: 1 });
-  };
-
-  const onTakeChange = (nextTake: number) => {
-    if (nextTake === take) return;
-    updateParams({ take: nextTake, page: 1 });
-  };
-
-  const toProductHref = (
-    slug: string,
-    section: 'button-inserts' | 'keypads',
-    categorySlugValues: string[] = [],
-    preferredCategorySlug = '',
-    options?: { hubReady?: boolean },
-  ) => {
-    const params = new URLSearchParams();
-    params.set('from', 'shop');
-    params.set('section', section);
-    if (options?.hubReady) {
-      params.set('hub', '1');
-    }
-    if (section === 'button-inserts' && categorySlugValues.length > 0) {
-      params.set('cats', categorySlugValues.join(','));
-      const categoryForBreadcrumb =
-        preferredCategorySlug && categorySlugValues.includes(preferredCategorySlug)
-          ? preferredCategorySlug
-          : categorySlugValues[0];
-      params.set('cat', categoryForBreadcrumb);
-    }
-    return `/shop/product/${slug}?${params.toString()}`;
-  };
-
-  const toCategoryHref = (categorySlugValue: string) => {
-    const params = new URLSearchParams();
-    params.set('section', 'button-inserts');
-    params.set('cats', categorySlugValue);
-    params.set('cat', categorySlugValue);
-    params.set('page', '1');
-    params.set('take', String(take));
-    return `/shop?${params.toString()}`;
-  };
-
-  const resolveProductCategoryForBreadcrumb = (icon: IconProduct) => {
-    if (activeCategorySlugs.length === 0) return '';
-    const productCategorySlugs = categorySlugsByIconId.get(icon.id) ?? [];
-    return activeCategorySlugs.find((slug) => productCategorySlugs.includes(slug)) ?? activeCategorySlugs[0];
-  };
+  const toProductHref: ProductHrefBuilder = buildShopProductHref;
+  const toCategoryHref = (categorySlugValue: string) => buildShopCategoryHref(categorySlugValue, take);
+  const resolveProductCategoryForBreadcrumb = (icon: IconProduct) => resolveBreadcrumbCategorySlug({
+    iconId: icon.id,
+    activeCategorySlugs,
+    categorySlugsByIconId,
+  });
 
   const isIconsPaginationMode =
     ((isIconsSection && activeCategorySlugs.length === 0) || isAllSection) && isIconsPaginationActive;
@@ -714,7 +1438,7 @@ export default function ShopClient({
       : isKeypadsSection
         ? filteredKeypads.length
         : (isIconsPaginationMode ? paginationTotalItems : filteredIcons.length) + catalogWideKeypads.length;
-  const activeChips = [
+  const activeChips: ShopFilterChip[] = [
     ...(query.trim() ? [{
       label: `Search: ${query.trim()}`, onClear: () => {
         setQuery('');
@@ -740,467 +1464,82 @@ export default function ShopClient({
   const shouldShowIconPaginationControls = (isIconsSection || isAllSection) && isAnyIconsPaginationMode;
   const paginationSummaryTotal = isAllSection ? availableResultCount : paginationTotalItems;
   const paginationSummaryLabel = isAllSection ? 'products' : 'button inserts';
-
-
-
-
+  const onPrevPage = () => updateParams({ page: Math.max(1, page - 1) });
+  const onNextPage = () => updateParams({ page: Math.min(totalPages, page + 1) });
   return (
     <div className="mx-auto w-full max-w-[88rem] bg-white px-6 pb-20 pt-10" aria-busy={isPending}>
       <BaseShopHero showTiles={false} />
 
-      <div className="mb-8 flex flex-col gap-4">
-        <div className="flex flex-wrap items-end justify-between gap-4">
-          {(isIconsSection || isKeypadsSection || isAllSection) && (
-            <div>
-              <div className="pill">
-                {isIconsSection ? 'Button Insert Catalog' : isKeypadsSection ? 'Keypad models' : 'All products'}
-              </div>
-              <h1 className="mt-3 text-3xl font-semibold tracking-tight text-ink md:text-4xl">
-                {isIconsSection
-                  ? 'Explore Inserts: Curated by Category.'
-                  : isKeypadsSection
-                    ? 'Spec Your KeyPad: Precision Defined'
-                    : 'Explore Technical Hardware & Components'}
-              </h1>
-              {isKeypadsSection && (
-                <p className="mt-2 text-sm text-ink/60">Compare keypad models, then continue to configuration.</p>
-              )}
-            </div>
-          )}
-          <div className={`flex items-center gap-4 text-sm text-ink/60 ${isCatalogWideSection ? 'ml-auto' : ''}`}>
-            {availableResultCount} {visibleResultLabel} available
-            <ViewToggle viewMode={viewMode} onChange={setViewMode} />
-          </div>
-        </div>
-        <form onSubmit={onSearch} className="flex flex-col gap-3 md:flex-row md:flex-nowrap md:items-center">
-          <input
-            value={query}
-            onChange={(event) => {
-              setQuery(event.target.value);
-            }}
-            placeholder={searchPlaceholder}
-            className="input flex-1"
-            aria-label={
-              isIconsSection
-                ? 'Search button inserts'
-                : isKeypadsSection
-                  ? 'Search keypads'
-                  : 'Search products'
-            }
-          />
-          <Button type="submit" variant="premium" className="shrink-0">Search</Button>
-        </form>
-      </div>
+      <ShopSectionHeader
+        isIconsSection={isIconsSection}
+        isKeypadsSection={isKeypadsSection}
+        isAllSection={isAllSection}
+        isCatalogWideSection={isCatalogWideSection}
+        availableResultCount={availableResultCount}
+        visibleResultLabel={visibleResultLabel}
+        viewMode={viewMode}
+        onViewModeChange={setViewMode}
+        onSearch={onSearch}
+        query={query}
+        onQueryChange={setQuery}
+        searchPlaceholder={searchPlaceholder}
+      />
 
       {isLandingSection ? (
-        <section className="space-y-12">
-          <section className="card rounded-3xl p-5 md:p-7">
-            <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h2 className="mt-1 text-2xl font-semibold tracking-tight text-ink md:text-3xl">
-                  Product Categories
-                </h2>
-              </div>
-            </div>
-            <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
-              {landingTopTiles.map((tile) => {
-                const href = tile.kind === 'exploreMore' ? '/shop?section=all' : (tile.href ?? '').trim();
-                const isInteractive = href.length > 0 && tile.isEnabled !== false;
-                const shouldUseRingBlue = isInteractive && (tile.hoverStyle ?? 'ring-blue') !== 'none';
-                const isExploreMoreTile = tile.kind === 'exploreMore';
-                const tileImage = tile.imageSource || tile.imagePreview || (isExploreMoreTile ? DEFAULT_EXPLORE_MORE_IMAGE_URL : '');
-                const tileImageUrl = tileImage ? assetUrl(tileImage) : '';
-                const tileTitle =
-                  tile.label?.trim() || (tile.kind === 'exploreMore' ? 'Discover more' : humanizeDisciplineId(tile.id));
-                const tileSubtitle = tile.subtitle?.trim() || '';
-
-                const cardClass = `group relative overflow-hidden rounded-2xl text-left ${shouldUseRingBlue ? ringBlueHoverClass : 'border border-ink/10 bg-white'} ${isInteractive
-                  ? 'cursor-pointer transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5'
-                  : 'cursor-default'
-                  }`;
-
-                const content = (
-                  <div className={`relative h-64 w-full ${tileImage ? '' : 'bg-[linear-gradient(145deg,#e8eef9_0%,#f7fbff_48%,#e1ebfa_100%)]'}`}>
-                    {tileImage ? (
-                      <Image
-                        src={tileImageUrl}
-                        alt={tileTitle}
-                        fill
-                        sizes="(max-width: 1024px) 100vw, 33vw"
-                        className="object-cover"
-                      />
-                    ) : (
-                      <div className="pointer-events-none absolute -right-16 -top-12 h-40 w-40 rounded-full bg-white/70 blur-2xl" />
-                    )}
-                    {isInteractive && tileImage ? (
-                      <div
-                        className={`pointer-events-none absolute inset-0 transition-opacity duration-200 ${isExploreMoreTile
-                          ? 'bg-black/45 opacity-60 group-hover:opacity-85'
-                          : 'bg-black/25 opacity-55 group-hover:opacity-75'
-                          }`}
-                      />
-                    ) : null}
-                    <div className="absolute inset-x-0 bottom-0 p-5">
-                      <p className={`text-lg font-semibold leading-tight ${isInteractive ? 'text-white' : 'text-ink'}`}>
-                        {tileTitle}
-                      </p>
-                      {tileSubtitle ? (
-                        <p className={`mt-2 text-sm ${isInteractive ? 'text-white/85' : 'text-ink/60'}`}>{tileSubtitle}</p>
-                      ) : null}
-                      {isInteractive ? (
-                        <span
-                          className={`mt-4 translate-y-2 opacity-0 transition-[opacity,transform] duration-200 group-hover:translate-y-0 group-hover:opacity-100 ${buttonVariants({ variant: 'premium' })} ${isExploreMoreTile
-                            ? 'bg-surface text-ink shadow-sm'
-                            : ''
-                            }`}
-                        >
-                          {tile.kind === 'exploreMore' ? 'Discover more' : 'Explore'}
-                        </span>
-                      ) : null}
-                    </div>
-                  </div>
-                );
-
-                return isInteractive ? (
-                  <button
-                    key={tile.id}
-                    type="button"
-                    onClick={() => onTopTileSelect(tile)}
-                    className={cardClass}
-                  >
-                    {content}
-                  </button>
-                ) : (
-                  <div key={tile.id} className={cardClass}>
-                    {content}
-                  </div>
-                );
-              })}
-            </div>
-          </section>
-
-          <section className="card rounded-3xl p-5 md:p-7">
-            <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h2 className="mt-1 text-2xl font-semibold tracking-tight text-ink md:text-3xl">
-                  Button Insert Categories
-                </h2>
-              </div>
-              <Button
-                type="button"
-                onClick={() => onSectionChange('button-inserts', { scrollToTop: true })}
-                variant="secondary"
-              >
-                View all inserts
-              </Button>
-            </div>
-            {landingDisciplineTiles.length > 0 ? (
-              <div className="grid auto-rows-fr gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
-                {landingDisciplineTiles.map((tile) => {
-                  const isInteractive = Boolean(tile.slug);
-
-                  return (
-                    <div key={tile.id} className="h-full">
-                      {isInteractive ? (
-                        <CategoryCard
-                          label={tile.label}
-                          count={tile.count}
-                          image={tile.image}
-                          onClick={() => onDisciplineTileSelect(tile)}
-                        />
-                      ) : (
-                        <CategoryCard
-                          label={tile.label}
-                          count={tile.count}
-                          image={tile.image}
-                        />
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            ) : (
-              <div className="card-soft rounded-2xl p-6 text-sm text-ink/60">
-                No insert categories are available yet.
-              </div>
-            )}
-          </section>
-
-          <section>
-            <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
-              <div>
-                <h2 className="mt-1 text-2xl font-semibold tracking-tight text-ink md:text-3xl">
-                  Popular Keypads to Start From
-                </h2>
-              </div>
-              <Button
-                type="button"
-                onClick={() => onSectionChange('keypads', { scrollToTop: true })}
-                variant="secondary"
-              >
-                View all keypads
-              </Button>
-            </div>
-            {featuredLandingKeypads.length > 0 ? (
-              <div className="grid gap-6 lg:grid-cols-3">
-                {featuredLandingKeypads.map((keypad, index) => (
-                  <div key={keypad.id} className={index === 0 ? 'lg:col-span-2' : ''}>
-                    <KeypadCard
-                      product={keypad}
-                      mode="shop"
-                      learnMoreHref={toProductHref(keypad.slug, 'keypads', [], '', { hubReady: false })}
-                    />
-                  </div>
-                ))}
-              </div>
-            ) : (
-              <div className="card-soft p-8 text-sm text-ink/60">
-                No featured keypads are available yet.
-              </div>
-            )}
-          </section>
-        </section>
+        <ShopLandingSection
+          landingTopTiles={landingTopTiles}
+          onTopTileSelect={onTopTileSelect}
+          landingDisciplineTiles={landingDisciplineTiles}
+          onDisciplineTileSelect={onDisciplineTileSelect}
+          onSectionChange={onSectionChange}
+          featuredLandingKeypads={featuredLandingKeypads}
+          toProductHref={toProductHref}
+        />
       ) : (
         <div className="grid gap-8 md:grid-cols-[260px_minmax(0,1fr)] md:items-start">
-          <aside className="space-y-6 md:sticky md:top-24 md:self-start">
-            <div className="card-soft md:max-h-[calc(100vh-7rem)] md:overflow-y-auto md:pr-1">
-              <div className="px-4 py-4">
-                <div className="text-[10px] font-semibold uppercase tracking-widest text-ink-subtle">
-                  Browse
-                </div>
-                <div className="mt-3 space-y-2">
-                  <button
-                    type="button"
-                    onClick={onShopHome}
-                    className="flex w-full items-center justify-between rounded-xl border border-surface-border bg-surface px-3 py-2 text-sm font-semibold tracking-tight text-ink transition hover:border-ink/25 hover:bg-surface-alt"
-                  >
-                    <span>Shop Home</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    aria-pressed={isAllSection}
-                    onClick={() => onSectionChange('all', { scrollToTop: true })}
-                    className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-sm font-semibold tracking-tight transition ${isAllSection
-                      ? 'border-ink bg-ink text-white'
-                      : 'border-surface-border bg-surface text-ink hover:border-ink/25 hover:bg-surface-alt'
-                      }`}
-                  >
-                    <span>All products</span>
-                    <span className={`text-[11px] ${isAllSection ? 'text-white/75' : 'text-ink/45'}`}>
-                      {totalIconCount + keypads.length}
-                    </span>
-                  </button>
-
-                  <button
-                    type="button"
-                    aria-pressed={isIconsSection}
-                    onClick={() => onSectionChange('button-inserts', { scrollToTop: true })}
-                    className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-sm font-semibold tracking-tight transition ${isIconsSection
-                      ? 'border-ink bg-ink text-white'
-                      : 'border-surface-border bg-surface text-ink hover:border-ink/25 hover:bg-surface-alt'
-                      }`}
-                  >
-                    <span>Button Inserts</span>
-                    <span className={`text-[11px] ${isIconsSection ? 'text-white/75' : 'text-ink/45'}`}>{totalIconCount}</span>
-                  </button>
-
-                  <button
-                    type="button"
-                    aria-pressed={isKeypadsSection}
-                    onClick={() => onSectionChange('keypads', { scrollToTop: true })}
-                    className={`flex w-full items-center justify-between rounded-xl border px-3 py-2 text-sm font-semibold tracking-tight transition ${isKeypadsSection
-                      ? 'border-ink bg-ink text-white'
-                      : 'border-surface-border bg-surface text-ink hover:border-ink/25 hover:bg-surface-alt'
-                      }`}
-                  >
-                    <span>Keypads</span>
-                    <span className={`text-[11px] ${isKeypadsSection ? 'text-white/75' : 'text-ink/45'}`}>{keypads.length}</span>
-                  </button>
-                </div>
-              </div>
-
-              <div className="border-t border-surface-border px-4 py-4">
-                <button
-                  type="button"
-                  aria-expanded={iconsGroupOpen}
-                  aria-controls="icons-subcategories"
-                  onClick={() => setIconsGroupOpen((prev) => !prev)}
-                  className="flex w-full items-center justify-between rounded-xl border border-surface-border bg-surface px-3 py-2 text-left text-sm font-semibold tracking-tight text-ink transition hover:border-ink/25 hover:bg-surface-alt"
-                >
-                  <span>Insert filters</span>
-                  <span className={`transition ${iconsGroupOpen ? 'rotate-180' : ''}`}>⌄</span>
-                </button>
-
-                {iconsGroupOpen ? (
-                  <div id="icons-subcategories" className="mt-3 space-y-2">
-                    <label className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-surface-border bg-surface px-3 py-2 text-sm text-ink transition hover:border-ink/20">
-                      <span className="flex items-center gap-2">
-                        <input
-                          type="checkbox"
-                          className="h-4 w-4 rounded border-surface-border text-ink focus:ring-ink/25"
-                          checked={activeCategorySlugs.length === 0}
-                          onChange={() => {
-                            updateParams({ section: 'button-inserts', cats: null, page: 1 });
-                            scrollToPageTop();
-                          }}
-                        />
-                        <span className="font-medium">All button inserts</span>
-                      </span>
-                      <span className="text-[11px] text-ink/45">{totalIconCount}</span>
-                    </label>
-
-                    {categories.map((category) => (
-                      <label
-                        key={category.slug}
-                        className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-surface-border bg-surface px-3 py-2 text-sm text-ink transition hover:border-ink/20"
-                      >
-                        <span className="flex items-center gap-2">
-                          <input
-                            type="checkbox"
-                            className="h-4 w-4 rounded border-surface-border text-ink focus:ring-ink/25"
-                            checked={activeCategorySlugs.includes(category.slug)}
-                            onChange={(event) => {
-                              const { checked } = event.target;
-                              let nextSlugs = checked ? [...activeCategorySlugs, category.slug] : activeCategorySlugs.filter((slug) => slug !== category.slug);
-                              // Ensure uniqueness
-                              nextSlugs = Array.from(new Set(nextSlugs));
-
-                              updateParams({
-                                section: 'button-inserts',
-                                cats: nextSlugs.length > 0 ? nextSlugs : null,
-                                page: 1
-                              });
-                            }}
-                          />
-                          <span className="font-medium">{category.name}</span>
-                        </span>
-                        <span className="text-[11px] text-ink/45">{category.count}</span>
-                      </label>
-                    ))}
-                  </div>
-                ) : null}
-              </div>
-            </div>
-          </aside>
-
-          <section>
-            <div className="mb-4 flex flex-wrap items-center justify-between gap-3 text-sm text-ink/60">
-              <span>
-                Showing <span className="font-semibold text-ink">{visibleResultCount}</span> {visibleResultLabel}
-              </span>
-              {activeChips.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {activeChips.map((chip) => (
-                    <button
-                      key={chip.label}
-                      type="button"
-                      onClick={chip.onClear}
-                      className="flex items-center gap-2 rounded-full border border-ink/10 px-3 py-1 text-xs font-semibold text-ink/70 transition hover:border-ink/25"
-                    >
-                      <span>{chip.label}</span>
-                      <span className="text-ink/40">x</span>
-                    </button>
-                  ))}
-                  {hasActiveFilters && (
-                    <Button
-                      type="button"
-                      onClick={clearFilters}
-                      variant="ghost"
-                      className="px-3 py-1 text-xs h-auto"
-                    >
-                      Clear all filters
-                    </Button>
-                  )}
-                </div>
-              ) : (
-                <span className="rounded-full border border-ink/10 px-3 py-1 text-xs font-semibold uppercase tracking-wide">
-                  {isIconsSection ? 'All categories' : isKeypadsSection ? 'All keypads' : 'All products'}
-                </span>
-              )}
-            </div>
-            {shouldShowIconPaginationControls ? (
-              <IconPaginationControls
-                location="top"
-                page={page}
-                totalPages={totalPages}
-                take={take}
-                summaryTotal={paginationSummaryTotal}
-                summaryLabel={paginationSummaryLabel}
-                onTakeChange={onTakeChange}
-                onPrev={() => updateParams({ page: Math.max(1, page - 1) })}
-                onNext={() => updateParams({ page: Math.min(totalPages, page + 1) })}
-              />
-            ) : null}
-
-            {visibleResultCount === 0 ? (
-              <div className="card-soft p-8 text-sm text-ink/60">
-                {isIconsSection
-                  ? 'No button inserts match that search. Try a different query or category.'
-                  : isKeypadsSection
-                    ? 'No keypads match that search. Try a different query.'
-                    : 'No products match that search. Try a different query.'}
-              </div>
-            ) : isIconsSection ? (
-              <IconResultsGrid
-                iconItems={displayedIcons}
-                viewMode={viewMode}
-                categoryNamesByIconId={categoryNamesByIconId}
-                activeCategorySlugs={activeCategorySlugs}
-                isIconsSection={isIconsSection}
-                isAllSection={isAllSection}
-                toCategoryHref={toCategoryHref}
-                toProductHref={toProductHref}
-                resolveProductCategoryForBreadcrumb={resolveProductCategoryForBreadcrumb}
-              />
-            ) : isKeypadsSection ? (
-              <KeypadResultsGrid
-                keypadItems={filteredKeypads}
-                hubReady
-                replaceDetailNavigation
-                toProductHref={toProductHref}
-              />
-            ) : (
-              <div className="space-y-6">
-                {displayedIcons.length > 0 && (
-                  <IconResultsGrid
-                    iconItems={displayedIcons}
-                    viewMode={viewMode}
-                    categoryNamesByIconId={categoryNamesByIconId}
-                    activeCategorySlugs={activeCategorySlugs}
-                    isIconsSection={isIconsSection}
-                    isAllSection={isAllSection}
-                    toCategoryHref={toCategoryHref}
-                    toProductHref={toProductHref}
-                    resolveProductCategoryForBreadcrumb={resolveProductCategoryForBreadcrumb}
-                  />
-                )}
-                {catalogWideKeypads.length > 0 &&
-                  (
-                    <KeypadResultsGrid
-                      keypadItems={catalogWideKeypads}
-                      hubReady
-                      replaceDetailNavigation={false}
-                      toProductHref={toProductHref}
-                    />
-                  )}
-              </div>
-            )}
-
-            {shouldShowIconPaginationControls ? (
-              <IconPaginationControls
-                location="bottom"
-                page={page}
-                totalPages={totalPages}
-                take={take}
-                summaryTotal={paginationSummaryTotal}
-                summaryLabel={paginationSummaryLabel}
-                onTakeChange={onTakeChange}
-                onPrev={() => updateParams({ page: Math.max(1, page - 1) })}
-                onNext={() => updateParams({ page: Math.min(totalPages, page + 1) })}
-              />
-            ) : null}
-          </section>
+          <ShopBrowseSidebar
+            onShopHome={onShopHome}
+            onSectionChange={onSectionChange}
+            isAllSection={isAllSection}
+            isIconsSection={isIconsSection}
+            isKeypadsSection={isKeypadsSection}
+            totalIconCount={totalIconCount}
+            keypadsCount={keypads.length}
+            iconsGroupOpen={iconsGroupOpen}
+            onToggleIconsGroup={() => setIconsGroupOpen((previous) => !previous)}
+            activeCategorySlugs={activeCategorySlugs}
+            onSelectAllCategory={onSelectAllCategory}
+            categories={categories}
+            onToggleCategory={onToggleCategory}
+          />
+          <ShopResultsPanel
+            visibleResultCount={visibleResultCount}
+            visibleResultLabel={visibleResultLabel}
+            activeChips={activeChips}
+            hasActiveFilters={hasActiveFilters}
+            clearFilters={clearFilters}
+            isIconsSection={isIconsSection}
+            isKeypadsSection={isKeypadsSection}
+            shouldShowIconPaginationControls={shouldShowIconPaginationControls}
+            page={page}
+            totalPages={totalPages}
+            take={take}
+            paginationSummaryTotal={paginationSummaryTotal}
+            paginationSummaryLabel={paginationSummaryLabel}
+            onTakeChange={onTakeChange}
+            onPrevPage={onPrevPage}
+            onNextPage={onNextPage}
+            displayedIcons={displayedIcons}
+            viewMode={viewMode}
+            categoryNamesByIconId={categoryNamesByIconId}
+            activeCategorySlugs={activeCategorySlugs}
+            isAllSection={isAllSection}
+            toCategoryHref={toCategoryHref}
+            toProductHref={toProductHref}
+            resolveProductCategoryForBreadcrumb={resolveProductCategoryForBreadcrumb}
+            filteredKeypads={filteredKeypads}
+            catalogWideKeypads={catalogWideKeypads}
+          />
         </div>
       )}
     </div>
