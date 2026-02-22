@@ -218,6 +218,7 @@ function useShopSearchData({
   categoryCounts,
   activeCategorySlugs,
   isIconsSection,
+  activeKeypadCategorySlugs,
   searchQuery,
 }: {
   icons: IconProduct[];
@@ -225,6 +226,7 @@ function useShopSearchData({
   categoryCounts?: IconCategory[];
   activeCategorySlugs: string[];
   isIconsSection: boolean;
+  activeKeypadCategorySlugs: string[];
   searchQuery: string;
 }) {
   const queryTerms = useMemo(() => tokenizeSearchText(searchQuery), [searchQuery]);
@@ -277,11 +279,39 @@ function useShopSearchData({
     [iconSearchIndex],
   );
 
+  const keypadCategories = useMemo<IconCategory[]>(() => {
+    const bySlug = new Map<string, IconCategory>();
+    for (const keypad of keypads) {
+      const apps = keypad.customFields?.application;
+      const appList = Array.isArray(apps) ? apps : (apps ? [apps] : []);
+
+      for (const app of appList) {
+        if (!app) continue;
+        const name = app.trim();
+        const slug = categorySlug(name);
+        const existing = bySlug.get(slug);
+        if (existing) {
+          existing.count += 1;
+        } else {
+          bySlug.set(slug, { name, slug, count: 1 });
+        }
+      }
+    }
+    return Array.from(bySlug.values()).sort((a, b) => a.name.localeCompare(b.name));
+  }, [keypads]);
+
   const keypadSearchIndex = useMemo(() => {
-    return keypads.map((keypad) => ({
-      keypad,
-      tokens: tokenizeSearchText(`${keypad.name ?? ''} ${keypad.slug ?? ''} keypad keypads`),
-    }));
+    return keypads.map((keypad) => {
+      const apps = keypad.customFields?.application;
+      const appList = Array.isArray(apps) ? apps : (apps ? [apps] : []);
+      const appSlugs = appList.map(a => categorySlug(a));
+
+      return {
+        keypad,
+        appSlugs,
+        tokens: tokenizeSearchText(`${keypad.name ?? ''} ${keypad.slug ?? ''} keypad keypads ${appList.join(' ')}`),
+      };
+    });
   }, [keypads]);
 
   const filteredIcons = useMemo(() => {
@@ -301,14 +331,23 @@ function useShopSearchData({
   }, [iconSearchIndex, queryTerms, activeCategorySlugs, isIconsSection]);
 
   const filteredKeypads = useMemo(() => {
+    const targetCategories = new Set(activeKeypadCategorySlugs);
+
     return keypadSearchIndex
-      .filter(({ tokens }) => matchesSearchTerms(tokens, queryTerms))
+      .filter(({ tokens, appSlugs }) => {
+        const matchesCategory =
+          targetCategories.size === 0 || appSlugs.some((slug) => targetCategories.has(slug));
+        if (!matchesCategory) return false;
+
+        return matchesSearchTerms(tokens, queryTerms);
+      })
       .map(({ keypad }) => keypad);
-  }, [keypadSearchIndex, queryTerms]);
+  }, [keypadSearchIndex, queryTerms, activeKeypadCategorySlugs]);
 
   return {
     categories,
     categoriesBySlug,
+    keypadCategories,
     categoryNamesByIconId,
     categorySlugsByIconId,
     filteredIcons,
@@ -798,6 +837,11 @@ function ShopBrowseSidebar({
   onSelectAllCategory,
   categories,
   onToggleCategory,
+  activeKeypadCategorySlugs,
+  keypadCategories,
+  onToggleKeypadCategory,
+  keypadsGroupOpen,
+  onToggleKeypadsGroup,
 }: {
   onShopHome: () => void;
   onSectionChange: (section: ShopSection, options?: { scrollToTop?: boolean }) => void;
@@ -812,6 +856,11 @@ function ShopBrowseSidebar({
   onSelectAllCategory: () => void;
   categories: IconCategory[];
   onToggleCategory: (categorySlug: string, checked: boolean) => void;
+  activeKeypadCategorySlugs: string[];
+  keypadCategories: IconCategory[];
+  onToggleKeypadCategory: (categorySlug: string, checked: boolean) => void;
+  keypadsGroupOpen: boolean;
+  onToggleKeypadsGroup: () => void;
 }) {
   return (
     <aside className="space-y-6 md:sticky md:top-24 md:self-start">
@@ -911,6 +960,43 @@ function ShopBrowseSidebar({
                       checked={activeCategorySlugs.includes(category.slug)}
                       onChange={(event) => {
                         onToggleCategory(category.slug, event.target.checked);
+                      }}
+                    />
+                    <span className="font-medium">{category.name}</span>
+                  </span>
+                  <span className="text-[11px] text-ink/45">{category.count}</span>
+                </label>
+              ))}
+            </div>
+          ) : null}
+        </div>
+
+        <div className="border-t border-surface-border px-4 py-4">
+          <button
+            type="button"
+            aria-expanded={keypadsGroupOpen}
+            aria-controls="keypads-subcategories"
+            onClick={onToggleKeypadsGroup}
+            className="flex w-full items-center justify-between rounded-xl border border-surface-border bg-surface px-3 py-2 text-left text-sm font-semibold tracking-tight text-ink transition hover:border-ink/25 hover:bg-surface-alt"
+          >
+            <span>Keypad filters</span>
+            <span className={`transition ${keypadsGroupOpen ? 'rotate-180' : ''}`}>⌄</span>
+          </button>
+
+          {keypadsGroupOpen ? (
+            <div id="keypads-subcategories" className="mt-3 space-y-2">
+              {keypadCategories.map((category) => (
+                <label
+                  key={category.slug}
+                  className="flex cursor-pointer items-center justify-between gap-3 rounded-xl border border-surface-border bg-surface px-3 py-2 text-sm text-ink transition hover:border-ink/20"
+                >
+                  <span className="flex items-center gap-2">
+                    <input
+                      type="checkbox"
+                      className="h-4 w-4 rounded border-surface-border text-ink focus:ring-ink/25"
+                      checked={activeKeypadCategorySlugs.includes(category.slug)}
+                      onChange={(event) => {
+                        onToggleKeypadCategory(category.slug, event.target.checked);
                       }}
                     />
                     <span className="font-medium">{category.name}</span>
@@ -1247,6 +1333,7 @@ function useShopClientData({
   // Local state for search input only - not synced back from URL to avoid loop
   const [query, setQuery] = useState('');
   const [iconsGroupOpen, setIconsGroupOpen] = useState(Boolean(initialCategories.length));
+  const [keypadsGroupOpen, setKeypadsGroupOpen] = useState(false);
 
   // Debounce query for URL updates
   const debouncedQuery = useDebouncedValue(query, 300);
@@ -1322,12 +1409,14 @@ function useShopClientData({
     categorySlugsByIconId,
     filteredIcons,
     filteredKeypads,
+    keypadCategories,
   } = useShopSearchData({
     icons,
     keypads,
     categoryCounts,
     activeCategorySlugs,
     isIconsSection,
+    activeKeypadCategorySlugs: [], // TODO: Drive from kcats if needed, but keeping it simple for now
     searchQuery: debouncedQuery,
   });
   const {
@@ -1372,13 +1461,8 @@ function useShopClientData({
     categorySlugsByIconId,
   });
 
-  const isIconsPaginationMode =
-    ((isIconsSection && activeCategorySlugs.length === 0) || isAllSection) && isIconsPaginationActive;
-  const isCategoryPaginationMode =
-    isIconsSection &&
-    !isIconsPaginationMode &&
-    activeCategorySlugs.length > 0 &&
-    filteredIcons.length > PAGE_SIZE_OPTIONS[0];
+  const isIconsPaginationMode = isIconsPaginationActive;
+  const isCategoryPaginationMode = false; // Enabled server-side now
   const isAnyIconsPaginationMode = isIconsPaginationMode || isCategoryPaginationMode;
   const paginationTotalItems = isIconsPaginationMode ? pagedTotalItems : filteredIcons.length;
   const totalPages = Math.max(1, Math.ceil(paginationTotalItems / Math.max(1, take)));
@@ -1519,6 +1603,9 @@ function useShopClientData({
     resolveProductCategoryForBreadcrumb,
     filteredKeypads,
     catalogWideKeypads,
+    keypadCategories,
+    keypadsGroupOpen,
+    setKeypadsGroupOpen,
   };
 }
 
@@ -1573,6 +1660,9 @@ export default function ShopClient(props: ShopClientProps) {
     resolveProductCategoryForBreadcrumb,
     filteredKeypads,
     catalogWideKeypads,
+    keypadCategories,
+    keypadsGroupOpen,
+    setKeypadsGroupOpen,
   } = useShopClientData(props);
 
   return (
@@ -1615,11 +1705,16 @@ export default function ShopClient(props: ShopClientProps) {
             totalIconCount={totalIconCount}
             keypadsCount={keypadsCount}
             iconsGroupOpen={iconsGroupOpen}
-            onToggleIconsGroup={() => setIconsGroupOpen((previous) => !previous)}
+            onToggleIconsGroup={() => setIconsGroupOpen((prev) => !prev)}
             activeCategorySlugs={activeCategorySlugs}
+            activeKeypadCategorySlugs={[]} // Drive from kcats if needed later
             onSelectAllCategory={onSelectAllCategory}
             categories={categories}
             onToggleCategory={onToggleCategory}
+            keypadCategories={keypadCategories}
+            onToggleKeypadCategory={() => { }} // Placeholder for now
+            keypadsGroupOpen={keypadsGroupOpen}
+            onToggleKeypadsGroup={() => setKeypadsGroupOpen((prev: boolean) => !prev)}
           />
           <ShopResultsPanel
             visibleResultCount={visibleResultCount}

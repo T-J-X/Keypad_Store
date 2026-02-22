@@ -319,7 +319,7 @@ async function ShopPageContent({
   // --- Normal Navigation Logic (No Search) ---
 
   const enableIconsPagination =
-    (section === 'button-inserts' && selectedCategories.length === 0) || section === 'all';
+    section === 'button-inserts' || section === 'all';
 
   let icons: IconProduct[] = [];
   let categoryCounts: IconCategory[] = [];
@@ -334,6 +334,7 @@ async function ShopPageContent({
       page: requestedPage,
       take: requestedTake,
       query,
+      categorySlugs: selectedCategories,
     });
 
     const totalPages = Math.max(1, Math.ceil(pagedIcons.totalItems / requestedTake));
@@ -344,6 +345,7 @@ async function ShopPageContent({
         page: safePage,
         take: requestedTake,
         query,
+        categorySlugs: selectedCategories,
       });
     }
 

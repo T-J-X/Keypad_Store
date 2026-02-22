@@ -1,119 +1,228 @@
+import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { Button } from '../components/ui/Button';
+import { ShieldCheck, Layers, Cpu, ArrowRight, Zap, Target } from 'lucide-react';
+import { fetchKeypadProducts } from '../lib/vendure.server';
+import { HeroSlider } from '../components/landing/HeroSlider';
 
 export const metadata: Metadata = {
-  title: 'VCT | Vehicle Control Technologies',
+  title: 'VCT | Premium Sim Racing Keypads',
   description: 'Choose a keypad model, map icon inserts, and export production-ready keypad configurations.',
   alternates: {
     canonical: '/',
   },
 };
 
+// NEW Server Component to handle the dynamic fetching
+async function KeypadSliderSection() {
+  const keypads = await fetchKeypadProducts();
+
+  const sliderProducts = keypads.map(k => ({
+    id: k.id,
+    slug: k.slug || '',
+    name: k.name || '',
+    description: k.description,
+    priceWithTax: k.variants?.[0]?.priceWithTax || 0,
+    currencyCode: k.variants?.[0]?.currencyCode || 'USD',
+    thumbnail: k.featuredAsset?.preview || ''
+  }));
+
+  return <HeroSlider products={sliderProducts} />;
+}
+
 export default function HomePage() {
   return (
-    <div className="mx-auto w-full max-w-6xl px-6">
-      <section className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
-        <div className="space-y-6">
-          <div className="pill">Vehicle Control Technologies</div>
-          <h1 className="text-3xl font-semibold tracking-tight text-ink sm:text-4xl md:text-5xl">
-            Build a keypad that feels custom from the first press.
-          </h1>
-          <p className="max-w-xl text-base text-ink/70">
-            Choose a keypad model, layer curated icon packs, and save configurations that match your workflow. Every icon
-            is built for clarity, contrast, and tactile rhythm.
-          </p>
-          <div className="flex flex-wrap gap-4">
-            <Button asChild variant="premium">
-              <Link href="/shop">Shop icons</Link>
-            </Button>
-            <Button asChild variant="ghost">
-              <Link href="/configurator">Start configuring</Link>
-            </Button>
-          </div>
-          <div className="flex flex-wrap gap-6 text-xs font-semibold uppercase tracking-wide text-ink/45">
-            <span>212+ icons</span>
-            <span>5 keypad sizes</span>
-            <span>Made to ship</span>
-          </div>
-        </div>
-        <div className="card relative overflow-hidden p-6">
-          <div className="absolute -right-8 top-8 h-40 w-40 rounded-full bg-sky/20 blur-2xl" aria-hidden />
-          <div className="absolute bottom-4 left-6 h-36 w-36 rounded-full bg-coral/20 blur-2xl" aria-hidden />
-          <div className="space-y-4">
-            <div className="text-xs font-semibold uppercase tracking-wide text-ink/40">Live drop</div>
-            <div className="text-2xl font-semibold text-ink">Icon Systems - HVAC + Media</div>
-            <p className="text-sm text-ink/60">
-              Layer your icons across compact or extended keypads. Save multiple layouts and ship instantly to your team.
+    <div className="relative min-h-screen w-full bg-[#020617] rounded-[2.5rem] shadow-[0_-20px_40px_-10px_rgba(0,0,0,0.3)] overflow-hidden selection:bg-sky-500/30 selection:text-white -mt-8">
+      {/* Top Curved Glow Separator (Mirroring Footer) */}
+      <div
+        className="absolute top-0 left-0 h-[1px] w-full shadow-[0_0_15px_1px_rgba(96,165,250,0.6)] z-50"
+        style={{
+          background: 'linear-gradient(90deg, transparent 0%, rgba(96,165,250,0.1) 10%, rgba(96,165,250,0.8) 35%, rgba(96,165,250,1) 50%, rgba(96,165,250,0.8) 65%, rgba(96,165,250,0.1) 90%, transparent 100%)'
+        }}
+      />
+      <div className="absolute top-[-1px] left-1/2 -translate-x-1/2 h-[2px] w-1/3 bg-transparent shadow-[0_0_20px_3px_rgba(96,165,250,0.8)] rounded-full blur-[1px] z-50" />
+
+      {/* Background Ambient Glows */}
+      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] opacity-20 pointer-events-none">
+        <div className="absolute inset-0 bg-gradient-to-b from-sky-500/40 to-transparent blur-[120px] rounded-full mix-blend-screen" />
+      </div>
+      <div className="absolute -top-40 -right-40 w-[600px] h-[600px] bg-sky-600/10 blur-[140px] rounded-full pointer-events-none" />
+      <div className="absolute top-1/3 -left-40 w-[500px] h-[500px] bg-indigo-600/10 blur-[130px] rounded-full pointer-events-none" />
+
+      <main className="relative z-10 mx-auto w-full max-w-7xl px-6 pt-12 pb-32 lg:pt-16 lg:px-8">
+
+        {/* CENTERED HERO SECTION & SLIDER */}
+        <section className="flex flex-col items-center relative z-20">
+
+          {/* Centered Hero Content */}
+          <div className="text-center px-6 lg:px-8 animate-fade-up max-w-4xl mx-auto flex flex-col items-center">
+            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/[0.03] border border-white/[0.08] text-xs font-bold tracking-widest uppercase text-sky-400 backdrop-blur-md mb-8 shadow-inner shadow-white/5">
+              <Zap className="w-3.5 h-3.5" />
+              <span>Vehicle Control Technologies</span>
+            </div>
+
+            <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl md:text-6xl lg:text-[5rem] leading-[1.05]">
+              Build a keypad that feels<br className="hidden md:block" />
+              <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-blue-600">custom</span> from the first press.
+            </h1>
+
+            <p className="mt-8 max-w-2xl mx-auto text-lg text-white/50 font-sans leading-relaxed">
+              Choose a premium keypad model, layer curated icon packs, and save configurations that match your exact workflow. Every piece of hardware is built for precision, clarity, and tactile rhythm.
             </p>
-            <div className="grid grid-cols-2 gap-3">
-              {['HVAC', 'Media', 'Security', 'Controls'].map((label) => (
-                <div
-                  key={label}
-                  className="flex items-center justify-between rounded-2xl border border-ink/10 bg-white/80 px-4 py-3 text-sm font-semibold text-ink"
-                >
-                  <span>{label}</span>
-                  <span className="text-xs text-ink/40">Pack</span>
-                </div>
-              ))}
+
+            <div className="flex flex-wrap items-center justify-center gap-4 mt-12 w-full">
+              <Link href="/shop" className="btn-premium flex items-center gap-2 group">
+                Shop Hardware
+                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+              </Link>
+              <Link href="/configurator" className="btn-secondary dark text-white bg-white/[0.02] border-white/10 hover:bg-white/[0.06] backdrop-blur-sm px-6">
+                Start configuring
+              </Link>
+            </div>
+
+            <div className="flex flex-wrap justify-center gap-8 pt-12 text-sm font-semibold tracking-wide text-white/40 w-full max-w-lg mx-auto">
+              <div className="flex items-center gap-2"><Target className="w-4 h-4 text-sky-500/80" /> 212+ Icons</div>
+              <div className="flex items-center gap-2"><Layers className="w-4 h-4 text-sky-500/80" /> 5 Models</div>
+              <div className="flex items-center gap-2"><ShieldCheck className="w-4 h-4 text-sky-500/80" /> Built to Ship</div>
             </div>
           </div>
-        </div>
-      </section>
 
-      <section className="mt-16 grid gap-6 md:grid-cols-3">
-        {[
-          {
-            title: 'Curated icon sets',
-            body: 'Every icon is optimized for legibility on glossy render and matte insert layers.'
-          },
-          {
-            title: 'Save configurations',
-            body: 'Store layouts per team, per room, or per client to deploy instantly.'
-          },
-          {
-            title: 'Production ready',
-            body: 'End-to-end pipeline from configuration to order-ready packaging.'
-          }
-        ].map((card) => (
-          <div key={card.title} className="card p-6">
-            <div className="text-lg font-semibold text-ink">{card.title}</div>
-            <p className="mt-3 text-sm text-ink/60">{card.body}</p>
-          </div>
-        ))}
-      </section>
+          {/* RADIUS CONTAINER SLIDER PANEL (STORE PRODUCTS) */}
+          {/* A large glass pane with a defined radius to hold the slider content below the hero */}
+          <div className="mt-20 w-full max-w-[1400px] animate-fade-up relative" style={{ animationDelay: '200ms', animationFillMode: 'forwards', opacity: 0 }}>
+            {/* Background glow specifically for the slider panel container */}
+            <div className="absolute inset-0 bg-sky-500/5 blur-[80px] rounded-[3rem] -z-10" />
 
-      <section className="mt-16">
-        <div className="flex flex-wrap items-center justify-between gap-6">
-          <div>
-            <div className="text-xs font-semibold uppercase tracking-wide text-ink/40">Start here</div>
-            <h2 className="mt-2 text-3xl font-semibold text-ink">Pick your path</h2>
+            <div className="relative w-full rounded-[2rem] sm:rounded-[3rem] bg-white/[0.02] border border-white/5 p-4 sm:p-8 backdrop-blur-3xl shadow-2xl">
+
+              <div className="flex items-center justify-between mb-8 px-4 sm:px-8">
+                <div>
+                  <h2 className="text-2xl font-bold text-white tracking-tight">Keypad Lineup</h2>
+                  <p className="text-white/50 text-sm mt-1">Available base units for your configuration.</p>
+                </div>
+                <div className="inline-flex items-center justify-center w-2 h-2 rounded-full bg-emerald-500 shadow-[0_0_10px_rgba(16,185,129,0.5)] animate-pulse" />
+              </div>
+
+              <Suspense fallback={
+                <div className="h-[400px] w-full flex items-center justify-center">
+                  <div className="w-8 h-8 rounded-full border-b-2 border-sky-400 animate-spin" />
+                </div>
+              }>
+                <KeypadSliderSection />
+              </Suspense>
+            </div>
           </div>
-          <Button asChild variant="premium">
-            <Link href="/shop">Browse the catalog</Link>
-          </Button>
-        </div>
-        <div className="mt-6 grid gap-6 md:grid-cols-2">
-          <div className="card p-6">
-            <div className="text-xs font-semibold uppercase tracking-wide text-ink/40">Shop icons</div>
-            <h3 className="mt-3 text-2xl font-semibold text-ink">Organized icon catalog</h3>
-            <p className="mt-2 text-sm text-ink/60">
-              Search by category, filter by workflow, and build icon packs that map to your use case.
-            </p>
-            <Link href="/shop" className="mt-4 inline-flex text-sm font-semibold text-sky-600 hover:underline">Explore icons -&gt;</Link>
+        </section>
+
+        {/* FEATURES GRID */}
+        <section className="mt-32 border-t border-white/10 pt-20">
+          <div className="text-center mb-16">
+            <h2 className="text-sm font-bold tracking-widest text-sky-400 uppercase mb-3">Engineered for Racing</h2>
+            <p className="text-3xl md:text-4xl font-semibold text-white">Precision components at every layer.</p>
           </div>
-          <div className="card p-6">
-            <div className="text-xs font-semibold uppercase tracking-wide text-ink/40">Configure</div>
-            <h3 className="mt-3 text-2xl font-semibold text-ink">Keypad configurator</h3>
-            <p className="mt-2 text-sm text-ink/60">
-              Select a keypad model and map icon inserts per slot. Save and revisit any layout.
-            </p>
-            <Link href="/configurator" className="mt-4 inline-flex text-sm font-semibold text-sky-600 hover:underline">
-              Start configuring -&gt;
+
+          <div className="grid gap-6 md:grid-cols-3">
+            {[
+              {
+                icon: <Layers className="w-6 h-6 text-sky-400" />,
+                title: 'Curated Icon Sets',
+                body: 'Every single icon is optimized for maximum legibility on both glossy renders and matte physical insert layers.'
+              },
+              {
+                icon: <ShieldCheck className="w-6 h-6 text-sky-400" />,
+                title: 'Save Configurations',
+                body: 'Store layouts locally per team, per room, or per client to deploy instantly without repeating work.'
+              },
+              {
+                icon: <Cpu className="w-6 h-6 text-sky-400" />,
+                title: 'Production Ready',
+                body: 'An end-to-end pipeline from digital software configuration directly to order-ready hardware packaging.'
+              }
+            ].map((card, i) => (
+              <div
+                key={card.title}
+                className="group p-8 rounded-2xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] hover:border-white/10 transition-all duration-300 hover:-translate-y-1 backdrop-blur-sm"
+              >
+                <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                  {card.icon}
+                </div>
+                <div className="text-xl font-semibold text-white tracking-tight">{card.title}</div>
+                <p className="mt-4 text-sm text-white/50 leading-relaxed font-sans">{card.body}</p>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        {/* CALL TO ACTION PANELS */}
+        <section className="mt-32 px-6 lg:px-8 max-w-7xl mx-auto">
+          <div className="flex flex-wrap items-end justify-between gap-6 mb-12">
+            <div>
+              <div className="text-xs font-bold uppercase tracking-widest text-sky-400">Start Building</div>
+              <h2 className="mt-3 text-4xl font-semibold text-white tracking-tight">Pick your path.</h2>
+            </div>
+            <Link href="/shop" className="btn-premium">
+              Browse the catalog
             </Link>
           </div>
-        </div>
-      </section>
+
+          <div className="grid gap-6 md:grid-cols-2">
+            {/* SHOP PANEL */}
+            <Link href="/shop" className="group relative overflow-hidden rounded-3xl p-10 bg-[#0B1221] border border-white/10 transition-all duration-500 hover:border-sky-500/50 hover:shadow-[0_0_40px_-10px_rgba(56,189,248,0.3)]">
+              <div className="absolute inset-0 bg-gradient-to-br from-sky-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className="relative z-10">
+                <div className="w-12 h-12 rounded-full bg-sky-500/20 flex items-center justify-center mb-6">
+                  <StoreIcon className="w-5 h-5 text-sky-400" />
+                </div>
+                <h3 className="text-3xl font-semibold text-white tracking-tight">Shop Hardware</h3>
+                <p className="mt-4 text-base text-white/60 max-w-md">
+                  Search by category, filter by workflow, and build icon packs that perfectly map to your racing simulation use case.
+                </p>
+                <div className="mt-8 inline-flex items-center gap-2 text-sm font-bold text-sky-400 group-hover:text-sky-300 transition-colors">
+                  Explore catalog <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                </div>
+              </div>
+            </Link>
+
+            {/* CONFIGURATOR PANEL */}
+            <Link href="/configurator" className="group relative overflow-hidden rounded-3xl p-10 bg-[#0B1221] border border-white/10 transition-all duration-500 hover:border-indigo-500/50 hover:shadow-[0_0_40px_-10px_rgba(99,102,241,0.3)]">
+              <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+              <div className="relative z-10">
+                <div className="w-12 h-12 rounded-full bg-indigo-500/20 flex items-center justify-center mb-6">
+                  <SettingsIcon className="w-5 h-5 text-indigo-400" />
+                </div>
+                <h3 className="text-3xl font-semibold text-white tracking-tight">Keypad Configurator</h3>
+                <p className="mt-4 text-base text-white/60 max-w-md">
+                  Select a premium keypad model and map icon inserts per slot interactively. Save, share, and revisit any layout.
+                </p>
+                <div className="mt-8 inline-flex items-center gap-2 text-sm font-bold text-indigo-400 group-hover:text-indigo-300 transition-colors">
+                  Open configurator <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                </div>
+              </div>
+            </Link>
+          </div>
+        </section>
+
+      </main>
     </div>
+  );
+}
+
+// Minimal inline icons for the large CTA panels
+function StoreIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M3 9h18v10a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V9Z" />
+      <path d="m3 9 2.45-4.9A2 2 0 0 1 7.24 3h9.52a2 2 0 0 1 1.8 1.1L21 9" />
+      <path d="M12 3v6" />
+    </svg>
+  );
+}
+
+function SettingsIcon(props: React.SVGProps<SVGSVGElement>) {
+  return (
+    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" {...props}>
+      <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z" />
+      <circle cx="12" cy="12" r="3" />
+    </svg>
   );
 }

@@ -1,7 +1,7 @@
 import dynamic from 'next/dynamic';
 import Image from 'next/image';
 import Link from 'next/link';
-import { Menu, Search, Settings2, ShoppingBag, Store, UserRound, X } from 'lucide-react';
+import { Cpu, LayoutGrid, Menu, Search, ShoppingBag, User, X } from 'lucide-react';
 import type { RefObject } from 'react';
 import type { SessionSummary } from './types';
 import NavPill from './NavPill';
@@ -172,7 +172,7 @@ export default function NavbarView({
                 <NavPill
                   href="/shop"
                   label="Shop"
-                  icon={Store}
+                  icon={LayoutGrid}
                   onClick={onCloseShopMenu}
                   inverse={isScrolled}
                   active={pathname === '/shop' || pathname?.startsWith('/shop/') || isShopMenuOpen}
@@ -186,7 +186,7 @@ export default function NavbarView({
                   onMouseEnter={onOpenShopMenu}
                   onMouseLeave={onScheduleCloseShopMenu}
                   className={[
-                    'absolute left-0 top-[calc(100%+8px)] z-30 w-[480px] rounded-3xl p-4 transition-all duration-200',
+                    'absolute left-0 top-[calc(100%+8px)] z-30 w-[480px] rounded-2xl p-4 transition-all duration-200',
                     desktopPanelClass,
                     isShopMenuOpen ? 'pointer-events-auto translate-y-0 opacity-100' : 'pointer-events-none -translate-y-2 opacity-0',
                   ].join(' ')}
@@ -216,7 +216,7 @@ export default function NavbarView({
               <NavPill
                 href="/configurator"
                 label="Configurator"
-                icon={Settings2}
+                icon={Cpu}
                 inverse={isScrolled}
                 active={pathname === '/configurator' || pathname?.startsWith('/configurator/')}
                 showLabel
@@ -239,7 +239,7 @@ export default function NavbarView({
               <div className="relative hidden lg:block" ref={accountMenuRef}>
                 <NavPill
                   label={isAccountMenuOpen ? 'Close Menu' : 'Account'}
-                  icon={UserRound}
+                  icon={User}
                   buttonRef={accountButtonRef}
                   onClick={onToggleAccountMenu}
                   inverse={isScrolled}
@@ -251,7 +251,7 @@ export default function NavbarView({
                   role="menu"
                   aria-label="Account menu"
                   className={[
-                    'absolute right-0 top-[calc(100%+8px)] z-20 min-w-[220px] rounded-3xl p-2 transition-all duration-200',
+                    'absolute right-0 top-[calc(100%+8px)] z-20 min-w-[220px] rounded-2xl p-2 transition-all duration-200',
                     desktopPanelClass,
                     isAccountMenuOpen ? 'pointer-events-auto translate-y-0 opacity-100' : 'pointer-events-none -translate-y-2 opacity-0',
                   ].join(' ')}
@@ -309,7 +309,7 @@ export default function NavbarView({
                 <NavPill
                   href="/login"
                   label="Sign in"
-                  icon={UserRound}
+                  icon={User}
                   inverse={isScrolled}
                   active={pathname === '/login'}
                   showLabel
@@ -333,7 +333,7 @@ export default function NavbarView({
 
               <div
                 className={[
-                  'absolute right-0 top-[calc(100%+8px)] z-20 w-[340px] rounded-3xl p-3 transition-all duration-300',
+                  'absolute right-0 top-[calc(100%+8px)] z-20 w-[340px] rounded-2xl p-3 transition-all duration-300',
                   desktopPanelClass,
                   isCartMenuOpen ? 'pointer-events-auto translate-y-0 opacity-100' : 'pointer-events-none -translate-y-2 opacity-0',
                 ].join(' ')}

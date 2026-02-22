@@ -42,7 +42,7 @@ export default function NavPill({
   const content = (
     <>
       <div className="flex h-10 w-10 shrink-0 items-center justify-center">
-        {Icon ? <Icon className="h-[18px] w-[18px]" strokeWidth={2} /> : null}
+        {Icon ? <Icon className="h-[18px] w-[18px]" strokeWidth={1.5} /> : null}
         {badge ? (
           <span className="absolute -right-1 -top-1 flex h-4 w-4 items-center justify-center rounded-full bg-[#071835] text-[10px] font-bold text-white shadow-sm ring-2 ring-[#020916]">
             {badge}

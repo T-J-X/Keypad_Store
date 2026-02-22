@@ -799,19 +799,29 @@ export async function fetchIconProductsPage({
   page,
   take,
   query = '',
+  categorySlugs = [],
 }: {
   page: number;
   take: number;
   query?: string;
+  categorySlugs?: string[];
 }): Promise<IconPageResult> {
   const safeTake = Math.max(1, Math.min(MAX_LIST_TAKE, take));
   const safePage = Math.max(1, page);
   const skip = (safePage - 1) * safeTake;
   const trimmedQuery = query.trim();
 
-  const filter: Record<string, unknown> = {
+  const filter: Record<string, any> = {
     isIconProduct: { eq: true },
   };
+
+  if (categorySlugs.length > 0) {
+    // Note: This assumes the Vendure field for icon categories is 'iconCategories'
+    // and we want any icon that has at least one of these categories.
+    // Vendure's filter for text arrays usually supports 'in' or 'contains'.
+    // If it's a custom field array, we use 'iconCategories: { in: categorySlugs }'
+    filter.iconCategories = { in: categorySlugs };
+  }
 
   if (trimmedQuery) {
     filter._or = [
