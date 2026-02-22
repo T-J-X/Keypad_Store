@@ -12,7 +12,6 @@ const footerGroups = [
             { label: 'All Products', href: '/shop' },
             { label: 'Button Inserts', href: '/shop?section=button-inserts' },
             { label: 'Keypads', href: '/shop?section=keypads' },
-            { label: 'Quick Order', href: '/quick-order' },
         ],
     },
     {
@@ -34,7 +33,6 @@ const footerGroups = [
         title: 'Company',
         links: [
             { label: 'About VCT', href: '/about' },
-            { label: 'Partners', href: '/partners' },
             { label: 'Careers', href: '/careers' },
         ],
     },
