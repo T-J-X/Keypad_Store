@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
 import { resolveHeroConfigureHint } from '../../config/heroSliderCopy';
 import { Button } from '../ui/button';
@@ -37,6 +38,7 @@ function formatPrice(minorUnits: number, currencyCode: string) {
 }
 
 export function HeroSlider({ products }: HeroSliderProps) {
+  const router = useRouter();
   const trackRef = useRef<HTMLDivElement | null>(null);
   const [showSwipeHint, setShowSwipeHint] = useState(products.length > 1);
   const [canScrollPrev, setCanScrollPrev] = useState(false);
@@ -165,12 +167,12 @@ export function HeroSlider({ products }: HeroSliderProps) {
                       <HoverCard openDelay={180} closeDelay={120}>
                         <HoverCardTrigger asChild>
                           <Button
-                            asChild
                             variant="premium"
                             size="sm"
                             className="h-10 rounded-full px-4 text-[11px] uppercase tracking-[0.11em]"
+                            onClick={() => router.push(productHref)}
                           >
-                            <Link href={productHref}>Configure</Link>
+                            Configure
                           </Button>
                         </HoverCardTrigger>
                         <HoverCardContent
