@@ -135,3 +135,93 @@
 - `pnpm -C /Users/terry/keypad-store/apps/frontend lint` ✅
 - `pnpm -C /Users/terry/keypad-store/apps/frontend typecheck` ✅
 - `pnpm -C /Users/terry/keypad-store/apps/frontend build` ✅
+
+### Phase 6
+- Generated design-system output artifacts:
+  - `/Users/terry/keypad-store/design-system/MASTER.md`
+  - `/Users/terry/keypad-store/design-system/pages/home.md`
+  - `/Users/terry/keypad-store/design-system/pages/shop.md`
+  - `/Users/terry/keypad-store/design-system/pages/configurator.md`
+- Created UI/UX audit:
+  - `/Users/terry/keypad-store/docs/audits/2026-02-22-ui-ux-audit.md`
+
+### Phase 7
+- Created SEO audit:
+  - `/Users/terry/keypad-store/docs/audits/2026-02-22-seo-audit.md`
+- Created programmatic SEO deliverables:
+  - `/Users/terry/keypad-store/docs/seo/programmatic-seo-strategy.md`
+  - `/Users/terry/keypad-store/docs/seo/programmatic-seo-template-spec.md`
+  - `/Users/terry/keypad-store/docs/seo/programmatic-seo-keyword-map.csv`
+
+### Phase 8
+- Applied low-risk backend Postgres improvements:
+  - Added explicit pool/timeout controls in `/Users/terry/keypad-store/apps/backend/src/index.ts`.
+  - Added env documentation for DB pool/timeouts in `/Users/terry/keypad-store/apps/backend/.env.example`.
+  - Added composite index for saved configuration query path in `/Users/terry/keypad-store/apps/backend/src/plugins/base-shop/saved-designs/saved-configuration.entity.ts`.
+  - Updated saved-configuration query paths to direct `customerId` predicates (removed unnecessary join) in `/Users/terry/keypad-store/apps/backend/src/plugins/base-shop/saved-designs/saved-configuration.service.ts`.
+- Wrote backend audit:
+  - `/Users/terry/keypad-store/docs/audits/2026-02-22-postgres-audit.md`
+
+#### Phase 8 Validation Commands
+- `pnpm -C /Users/terry/keypad-store/apps/backend typecheck` ✅
+- `pnpm -C /Users/terry/keypad-store/apps/backend build` ✅
+
+### Phase 9
+- Configured Stitch MCP in `/Users/terry/.codex/config.toml` and authenticated using Stitch API key.
+- Retrieved Stitch source assets for project `projects/3548116567548613798` and screen `projects/3548116567548613798/screens/116b9c773c4b489b94f8291d8da62abb`:
+  - project metadata (`get_project`)
+  - screen metadata (`get_screen`)
+  - screen HTML (`get_screen_code` + `scripts/fetch-stitch.sh`)
+- Generated design system document from Stitch source:
+  - `/Users/terry/keypad-store/DESIGN.md`
+- Converted Stitch landing screen into modular homepage components:
+  - `/Users/terry/keypad-store/apps/frontend/components/stitch/StitchHome.tsx`
+  - `/Users/terry/keypad-store/apps/frontend/components/stitch/StitchHeader.tsx`
+  - `/Users/terry/keypad-store/apps/frontend/components/stitch/StitchHero.tsx`
+  - `/Users/terry/keypad-store/apps/frontend/components/stitch/StitchTechSpecs.tsx`
+  - `/Users/terry/keypad-store/apps/frontend/components/stitch/StitchFeaturedGrid.tsx`
+  - `/Users/terry/keypad-store/apps/frontend/components/stitch/StitchPromoBanner.tsx`
+  - `/Users/terry/keypad-store/apps/frontend/components/stitch/StitchBottomNav.tsx`
+  - `/Users/terry/keypad-store/apps/frontend/components/stitch/index.ts`
+  - `/Users/terry/keypad-store/apps/frontend/hooks/stitch/useStitchLandingData.ts`
+  - `/Users/terry/keypad-store/apps/frontend/data/stitchMockData.ts`
+  - `/Users/terry/keypad-store/apps/frontend/app/page.tsx` now renders Stitch composition.
+
+#### Phase 9 Validation Commands
+- `pnpm -C /Users/terry/keypad-store/apps/frontend lint` ✅
+- `pnpm -C /Users/terry/keypad-store/apps/frontend typecheck` ✅
+- `pnpm -C /Users/terry/keypad-store/apps/frontend build` ✅
+
+### Phase 10
+- Added Playwright smoke coverage:
+  - `/Users/terry/keypad-store/apps/frontend/playwright.config.ts`
+  - `/Users/terry/keypad-store/apps/frontend/tests/smoke.spec.ts`
+  - package scripts in `/Users/terry/keypad-store/apps/frontend/package.json`:
+    - `test:e2e`
+    - `test:e2e:ui`
+- Added stable accessibility label for navbar action buttons:
+  - `/Users/terry/keypad-store/apps/frontend/components/navbar/NavPill.tsx`
+- Added gitignore entries for Playwright artifacts:
+  - `/Users/terry/keypad-store/.gitignore`
+
+#### Phase 10 Validation Commands
+- `pnpm -C /Users/terry/keypad-store/apps/frontend lint` ✅
+- `pnpm -C /Users/terry/keypad-store/apps/frontend typecheck` ✅
+- `pnpm -C /Users/terry/keypad-store/apps/frontend build` ✅
+- `cd /Users/terry/keypad-store/apps/frontend && npx -y react-doctor@latest . --verbose --diff` ✅
+  - Result: `99/100` (warnings only: `dangerouslySetInnerHTML` for JSON-LD scripts, and a CookieBanner state-structure suggestion)
+- `pnpm -C /Users/terry/keypad-store/apps/frontend test:e2e` ✅
+  - Result: `5 passed`
+
+#### Phase 10 Smoke Checklist
+- [x] Desktop + mobile navbar interactions
+- [x] Search modal
+- [x] Mini-cart
+- [x] Cookie banner accept/reject behavior
+- [x] Analytics gating works (no load before accept; never load after reject)
+- [x] Checkout/cart flows and `noindex` metadata present (verified via route metadata in cart/checkout page files; smoke suite covers navbar/cart interactions)
+- [x] Configurator toasts only on relevant routes (verified by route gating logic in `ClientRuntimeGate.shouldRenderToast`)
+- [x] Playwright smoke tests pass (`pnpm -C apps/frontend test:e2e`)
+
+#### Notes
+- While Playwright web server was running, Next.js logged expected backend connection errors for `/` server data fetch (`ECONNREFUSED` to Vendure API). Smoke tests target `/about` so they remain deterministic without backend dependency.
