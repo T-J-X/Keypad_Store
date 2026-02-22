@@ -30,13 +30,16 @@ function getActionClass(variant: MarketingAction['variant']) {
   return variant === 'secondary' ? secondaryActionClass : primaryActionClass;
 }
 
+const EMPTY_ACTIONS: MarketingAction[] = [];
+const EMPTY_STATS: MarketingStat[] = [];
+
 export default function MarketingPageShell({
   badge,
   title,
   description,
   lastUpdated,
-  actions = [],
-  stats = [],
+  actions = EMPTY_ACTIONS,
+  stats = EMPTY_STATS,
   children,
 }: MarketingPageShellProps) {
   return (

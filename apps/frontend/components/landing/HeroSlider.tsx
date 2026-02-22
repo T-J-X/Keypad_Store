@@ -65,8 +65,7 @@ export function HeroSlider({ products }: HeroSliderProps) {
             {/* Slider Track */}
             <div
                 ref={scrollRef}
-                className="flex overflow-x-auto gap-6 snap-x snap-mandatory pb-8 pt-4 custom-scrollbar hide-scroll"
-                style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+                className="flex overflow-x-auto gap-6 snap-x snap-mandatory pb-8 pt-4 custom-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
             >
                 {/* Visual padding block to center items on edges slightly better */}
                 <div className="min-w-[5vw] shrink-0" />
@@ -126,13 +125,6 @@ export function HeroSlider({ products }: HeroSliderProps) {
                 {/* Visual padding block for Right edge */}
                 <div className="min-w-[5vw] shrink-0" />
             </div>
-
-            <style dangerouslySetInnerHTML={{
-                __html: `
-                .hide-scroll::-webkit-scrollbar {
-                    display: none;
-                }
-            `}} />
         </div>
     );
 }
