@@ -4,6 +4,7 @@ import { spawnSync } from 'node:child_process';
 import fs from 'node:fs/promises';
 import os from 'node:os';
 import path from 'node:path';
+import { ensureDefaultTaxSetup } from './lib/ensure-default-tax-config';
 
 type IconFile = {
   kind: 'render' | 'insert';
@@ -680,6 +681,11 @@ async function main() {
   if (args.validateOnly) return;
 
   const cookie = await login(args.endpoint, args.username, args.password);
+  if (args.apply) {
+    await ensureDefaultTaxSetup(args.endpoint, cookie, {
+      log: (message) => console.log(message),
+    });
+  }
 
   let wouldCreate = 0;
   let wouldSkip = 0;
