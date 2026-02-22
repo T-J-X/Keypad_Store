@@ -62,7 +62,7 @@ export default function NavPill({
 
   if (as === 'button') {
     return (
-      <button ref={buttonRef} type="button" onClick={onClick} className={baseClasses}>
+      <button ref={buttonRef} type="button" onClick={onClick} className={baseClasses} aria-label={label}>
         {content}
       </button>
     );

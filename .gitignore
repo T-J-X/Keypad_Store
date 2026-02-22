@@ -40,6 +40,8 @@ apps/backend/.angular/
 apps/backend/.cache/
 apps/backend/dist/
 apps/backend/imports/
+apps/frontend/test-results/
+apps/frontend/playwright-report/
 
 # Agent Skills
 .agents/
