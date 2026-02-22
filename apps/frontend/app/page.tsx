@@ -37,16 +37,16 @@ async function KeypadSliderSection() {
 
 export default function HomePage() {
   return (
-    <div className="relative min-h-screen w-full bg-[#020617] rounded-[2.5rem] shadow-[0_-20px_40px_-10px_rgba(0,0,0,0.3)] overflow-hidden selection:bg-sky-500/30 selection:text-white -mt-8">
+    <div className="relative isolate -mt-8 min-h-screen w-full overflow-hidden rounded-[2.5rem] bg-[#020617] shadow-[0_-20px_40px_-10px_rgba(0,0,0,0.3)] selection:bg-sky-500/30 selection:text-white">
       {/* Top Curved Glow Separator (Mirroring Footer) */}
       <SparkDivider className="z-50" />
 
       {/* Background Ambient Glows */}
-      <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] opacity-20 pointer-events-none">
+      <div className="pointer-events-none absolute left-1/2 top-0 h-[500px] w-[1000px] -translate-x-1/2 opacity-20 motion-safe:animate-float-soft" style={{ animationDuration: '8s' }}>
         <div className="absolute inset-0 bg-gradient-to-b from-sky-500/40 to-transparent blur-[120px] rounded-full mix-blend-screen" />
       </div>
-      <div className="absolute -top-40 -right-40 w-[600px] h-[600px] bg-sky-600/10 blur-[140px] rounded-full pointer-events-none" />
-      <div className="absolute top-1/3 -left-40 w-[500px] h-[500px] bg-indigo-600/10 blur-[130px] rounded-full pointer-events-none" />
+      <div className="pointer-events-none absolute -right-40 -top-40 h-[600px] w-[600px] rounded-full bg-sky-600/10 blur-[140px] motion-safe:animate-float-soft" style={{ animationDuration: '10s', animationDelay: '220ms' }} />
+      <div className="pointer-events-none absolute -left-40 top-1/3 h-[500px] w-[500px] rounded-full bg-indigo-600/10 blur-[130px] motion-safe:animate-float-soft" style={{ animationDuration: '9s', animationDelay: '420ms' }} />
 
       <main className="relative z-10 mx-auto w-full max-w-7xl px-6 pt-12 pb-32 lg:pt-16 lg:px-8">
 
@@ -54,7 +54,7 @@ export default function HomePage() {
         <section className="flex flex-col items-center relative z-20">
 
           {/* Centered Hero Content */}
-          <div className="text-center px-6 lg:px-8 animate-fade-up max-w-4xl mx-auto flex flex-col items-center">
+          <div className="mx-auto flex max-w-4xl animate-fade-up flex-col items-center px-6 text-center lg:px-8">
             <Badge
               variant="outline"
               className="mb-8 inline-flex items-center gap-2 rounded-full border-white/[0.12] bg-white/[0.03] px-4 py-2 text-xs font-bold tracking-widest uppercase text-sky-400 backdrop-blur-md shadow-inner shadow-white/5"
@@ -93,7 +93,7 @@ export default function HomePage() {
 
           {/* RADIUS CONTAINER SLIDER PANEL (STORE PRODUCTS) */}
           {/* A large glass pane with a defined radius to hold the slider content below the hero */}
-          <div className="mt-20 w-full max-w-[1400px] animate-fade-up relative" style={{ animationDelay: '200ms', animationFillMode: 'forwards', opacity: 0 }}>
+          <div className="relative mt-20 w-full max-w-[1400px] animate-fade-up" style={{ animationDelay: '180ms', animationDuration: '760ms', animationFillMode: 'forwards', opacity: 0 }}>
             {/* Background glow specifically for the slider panel container */}
             <div className="absolute inset-0 bg-sky-500/5 blur-[80px] rounded-[3rem] -z-10" />
 
@@ -147,10 +147,11 @@ export default function HomePage() {
                 title: 'Production Ready',
                 body: 'An end-to-end pipeline from digital software configuration directly to order-ready hardware packaging.'
               }
-            ].map((card) => (
+            ].map((card, index) => (
               <Card
                 key={card.title}
-                className="group gap-0 rounded-2xl border-white/5 bg-white/[0.03] py-0 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-white/10 hover:bg-white/[0.06]"
+                className="group gap-0 rounded-2xl border-white/5 bg-white/[0.03] py-0 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-white/10 hover:bg-white/[0.06] motion-safe:animate-fade-up"
+                style={{ animationDelay: `${220 + index * 90}ms`, animationDuration: '680ms', animationFillMode: 'forwards', opacity: 0 }}
               >
                 <CardContent className="p-8">
                   <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">

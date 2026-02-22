@@ -1,174 +1,222 @@
 'use client';
 
-import { useCallback, useEffect, useRef, useState } from 'react';
-import Link from 'next/link';
+import { useEffect, useMemo, useState } from 'react';
 import Image from 'next/image';
-import { ChevronRight, ChevronLeft } from 'lucide-react';
+import Link from 'next/link';
+import { ChevronLeft, ChevronRight, Sparkles } from 'lucide-react';
+import { Button } from '../ui/button';
+import {
+  type CarouselApi,
+  Carousel,
+  CarouselContent,
+  CarouselItem,
+  CarouselNext,
+  CarouselPrevious,
+} from '../ui/carousel';
+import { HoverCard, HoverCardContent, HoverCardTrigger } from '../ui/hover-card';
+import { Progress } from '../ui/progress';
+import { Tooltip, TooltipContent, TooltipTrigger } from '../ui/tooltip';
 
-// Using a simplified type to accept whatever we pass from the server component
 type SlideProduct = {
-    id: string;
-    slug: string;
-    name: string;
-    description?: string;
-    priceWithTax: number;
-    currencyCode: string;
-    thumbnail: string;
+  id: string;
+  slug: string;
+  name: string;
+  description?: string;
+  priceWithTax: number;
+  currencyCode: string;
+  thumbnail: string;
 };
 
 interface HeroSliderProps {
-    products: SlideProduct[];
+  products: SlideProduct[];
+}
+
+function formatPrice(minorUnits: number, currencyCode: string) {
+  if (!minorUnits) return null;
+  try {
+    return new Intl.NumberFormat('en-US', {
+      style: 'currency',
+      currency: currencyCode || 'USD',
+      maximumFractionDigits: 2,
+    }).format(minorUnits / 100);
+  } catch {
+    return null;
+  }
 }
 
 export function HeroSlider({ products }: HeroSliderProps) {
-    const scrollRef = useRef<HTMLDivElement>(null);
-    const [showSwipeHint, setShowSwipeHint] = useState(products.length > 1);
+  const [api, setApi] = useState<CarouselApi>();
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [slideCount, setSlideCount] = useState(products.length);
+  const [showSwipeHint, setShowSwipeHint] = useState(products.length > 1);
 
-    const dismissSwipeHint = useCallback(() => {
-        setShowSwipeHint((previous) => (previous ? false : previous));
-    }, []);
+  useEffect(() => {
+    if (!api) return;
 
-    const scroll = (direction: 'left' | 'right') => {
-        dismissSwipeHint();
-        if (scrollRef.current) {
-            const { current } = scrollRef;
-            const scrollAmount = current.clientWidth * 0.8; // Scroll 80% of container width
-            current.scrollBy({
-                left: direction === 'left' ? -scrollAmount : scrollAmount,
-                behavior: 'smooth'
-            });
-        }
+    const update = () => {
+      setCurrentIndex(api.selectedScrollSnap());
+      setSlideCount(api.scrollSnapList().length);
+      setShowSwipeHint(false);
     };
 
-    useEffect(() => {
-        setShowSwipeHint(products.length > 1);
-    }, [products.length]);
+    setSlideCount(api.scrollSnapList().length);
+    setCurrentIndex(api.selectedScrollSnap());
 
-    useEffect(() => {
-        const slider = scrollRef.current;
-        if (!slider || !showSwipeHint) return;
+    api.on('select', update);
+    api.on('reInit', update);
+    return () => {
+      api.off('select', update);
+      api.off('reInit', update);
+    };
+  }, [api]);
 
-        const timeoutId = window.setTimeout(() => {
-            dismissSwipeHint();
-        }, 5000);
+  useEffect(() => {
+    setShowSwipeHint(products.length > 1);
+    const timeoutId = window.setTimeout(() => setShowSwipeHint(false), 4600);
+    return () => window.clearTimeout(timeoutId);
+  }, [products.length]);
 
-        const onPointerDown = () => dismissSwipeHint();
-        const onTouchStart = () => dismissSwipeHint();
-        const onWheel = () => dismissSwipeHint();
-        const onScroll = () => {
-            if (slider.scrollLeft > 8) {
-                dismissSwipeHint();
-            }
-        };
+  const progressValue = useMemo(() => {
+    if (slideCount <= 1) return 100;
+    return ((currentIndex + 1) / slideCount) * 100;
+  }, [currentIndex, slideCount]);
 
-        slider.addEventListener('pointerdown', onPointerDown, { passive: true });
-        slider.addEventListener('touchstart', onTouchStart, { passive: true });
-        slider.addEventListener('wheel', onWheel, { passive: true });
-        slider.addEventListener('scroll', onScroll, { passive: true });
+  if (!products || products.length === 0) return null;
 
-        return () => {
-            window.clearTimeout(timeoutId);
-            slider.removeEventListener('pointerdown', onPointerDown);
-            slider.removeEventListener('touchstart', onTouchStart);
-            slider.removeEventListener('wheel', onWheel);
-            slider.removeEventListener('scroll', onScroll);
-        };
-    }, [dismissSwipeHint, showSwipeHint]);
-
-    if (!products || products.length === 0) return null;
-
-    return (
-        <div className="relative w-full max-w-[1400px] mx-auto group">
-            <div
-                aria-hidden="true"
-                className={`pointer-events-none absolute left-1/2 top-3 z-30 flex -translate-x-1/2 justify-center transition-all duration-500 md:hidden ${
-                    showSwipeHint ? 'translate-y-0 opacity-100' : '-translate-y-1 opacity-0'
-                }`}
-            >
-                <div className="inline-flex items-center gap-2 rounded-full border border-sky-300/35 bg-[#081327]/80 px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-sky-100 shadow-[0_8px_22px_rgba(2,8,20,0.5)] backdrop-blur-md">
-                    <ChevronLeft className="h-3.5 w-3.5 animate-pulse" />
-                    <span>Swipe to browse</span>
-                    <ChevronRight className="h-3.5 w-3.5 animate-pulse" />
-                </div>
-            </div>
-
-            {/* Navigation Buttons (Hidden on mobile, appear on hover for desktop) */}
-            <button
-                onClick={() => scroll('left')}
-                className="absolute left-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 flex items-center justify-center rounded-full bg-[#0B1221]/80 border border-white/10 text-white backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-white/10 hover:border-sky-500/50 shadow-xl hidden md:flex"
-                aria-label="Scroll left"
-            >
-                <ChevronLeft className="w-6 h-6" />
-            </button>
-            <button
-                onClick={() => scroll('right')}
-                className="absolute right-4 top-1/2 -translate-y-1/2 z-20 w-12 h-12 flex items-center justify-center rounded-full bg-[#0B1221]/80 border border-white/10 text-white backdrop-blur-md opacity-0 group-hover:opacity-100 transition-opacity duration-300 hover:bg-white/10 hover:border-sky-500/50 shadow-xl hidden md:flex"
-                aria-label="Scroll right"
-            >
-                <ChevronRight className="w-6 h-6" />
-            </button>
-
-            {/* Slider Track */}
-            <div
-                ref={scrollRef}
-                className="flex overflow-x-auto gap-6 snap-x snap-mandatory pb-8 pt-4 custom-scrollbar [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden"
-            >
-                {/* Visual padding block to center items on edges slightly better */}
-                <div className="min-w-[5vw] shrink-0" />
-
-                {products.map((product) => (
-                    <div
-                        key={product.id}
-                        className="snap-center shrink-0 w-[280px] sm:w-[320px] md:w-[380px] group/card perspective-1000"
-                    >
-                        <Link
-                            href={`/configurator/keypad/${product.slug}`}
-                            className="block relative h-full rounded-2xl bg-[#0B1221] border border-white/10 overflow-hidden transform-gpu transition-all duration-500 hover:-translate-y-2 hover:border-sky-500/40 hover:shadow-[0_20px_40px_-10px_rgba(56,189,248,0.2)]"
-                        >
-                            {/* Ambient glow inside card on hover */}
-                            <div className="absolute inset-0 bg-gradient-to-br from-sky-500/0 via-transparent to-transparent opacity-0 group-hover/card:from-sky-500/10 group-hover/card:opacity-100 transition-opacity duration-500 z-0" />
-
-                            {/* Product Image */}
-                            <div className="relative w-full aspect-[4/3] bg-gradient-to-b from-[#0e1628] to-[#0a111e] p-6 flex flex-col items-center justify-center border-b border-white/5 z-10">
-                                {product.thumbnail ? (
-                                    <div className="relative w-full h-full transition-transform duration-700 ease-out group-hover/card:scale-110">
-                                        <Image
-                                            src={product.thumbnail}
-                                            alt={product.name}
-                                            fill
-                                            className="object-contain drop-shadow-[0_10px_15px_rgba(0,0,0,0.5)]"
-                                            sizes="(max-width: 768px) 280px, 380px"
-                                        />
-                                    </div>
-                                ) : (
-                                    <div className="w-16 h-16 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center animate-pulse">
-                                        <div className="w-6 h-6 text-white/20">...</div>
-                                    </div>
-                                )}
-                            </div>
-
-                            {/* Text Content */}
-                            <div className="p-6 relative z-10 bg-[#0B1221]">
-                                <h3 className="text-xl font-bold text-white tracking-tight line-clamp-1">{product.name}</h3>
-                                {product.description && (
-                                    <p className="mt-2 text-sm text-white/50 line-clamp-2 md:line-clamp-3 leading-relaxed">
-                                        {product.description}
-                                    </p>
-                                )}
-                                <div className="mt-6 flex items-center justify-end">
-                                    <span className="btn-premium inline-flex min-h-0 items-center gap-1.5 rounded-full px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.12em]">
-                                        Configure Layout
-                                        <ChevronRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover/card:translate-x-0.5" />
-                                    </span>
-                                </div>
-                            </div>
-                        </Link>
-                    </div>
-                ))}
-
-                {/* Visual padding block for Right edge */}
-                <div className="min-w-[5vw] shrink-0" />
-            </div>
+  return (
+    <div className="relative mx-auto w-full max-w-[1400px]">
+      <div
+        aria-hidden="true"
+        className={`pointer-events-none absolute left-1/2 top-2 z-40 flex -translate-x-1/2 justify-center transition-all duration-500 md:hidden ${showSwipeHint ? 'translate-y-0 opacity-100' : '-translate-y-2 opacity-0'
+          }`}
+      >
+        <div className="inline-flex items-center gap-2 rounded-full border border-sky-300/35 bg-[#081327]/85 px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-sky-100 shadow-[0_8px_22px_rgba(2,8,20,0.5)] backdrop-blur-md">
+          <ChevronLeft className="h-3.5 w-3.5 animate-pulse" />
+          <span>Swipe to browse</span>
+          <ChevronRight className="h-3.5 w-3.5 animate-pulse" />
         </div>
-    );
+      </div>
+
+      <Carousel
+        setApi={setApi}
+        opts={{ align: 'start', dragFree: false, skipSnaps: false }}
+        className="group/carousel"
+        onPointerDown={() => setShowSwipeHint(false)}
+        onTouchStart={() => setShowSwipeHint(false)}
+      >
+        <CarouselContent className="pb-6">
+          {products.map((product, index) => {
+            const priceLabel = formatPrice(product.priceWithTax, product.currencyCode);
+
+            return (
+              <CarouselItem
+                key={product.id}
+                className="basis-[86%] sm:basis-[58%] lg:basis-[42%] xl:basis-[34%]"
+                aria-label={`Slide ${index + 1} of ${products.length}`}
+              >
+                <div className="h-full p-1">
+                  <Link
+                    href={`/configurator/keypad/${product.slug}`}
+                    className="group/card relative block h-full overflow-hidden rounded-2xl border border-white/10 bg-[#0B1221] shadow-[0_14px_34px_-18px_rgba(0,0,0,0.65)] transition-all duration-500 hover:-translate-y-1.5 hover:border-sky-500/40 hover:shadow-[0_28px_55px_-24px_rgba(56,189,248,0.38)]"
+                  >
+                    <div className="absolute inset-0 bg-gradient-to-br from-sky-500/0 via-transparent to-transparent opacity-0 transition-opacity duration-500 group-hover/card:from-sky-500/10 group-hover/card:opacity-100" />
+
+                    <div className="relative z-10 flex aspect-[4/3] w-full items-center justify-center border-b border-white/5 bg-gradient-to-b from-[#0e1628] to-[#0a111e] p-6">
+                      {product.thumbnail ? (
+                        <div className="relative h-full w-full transition-transform duration-700 ease-out group-hover/card:scale-[1.08]">
+                          <Image
+                            src={product.thumbnail}
+                            alt={product.name}
+                            fill
+                            className="object-contain drop-shadow-[0_10px_15px_rgba(0,0,0,0.5)]"
+                            sizes="(max-width: 640px) 86vw, (max-width: 1024px) 58vw, 34vw"
+                          />
+                        </div>
+                      ) : (
+                        <div className="flex h-16 w-16 items-center justify-center rounded-xl border border-white/10 bg-white/5">
+                          <Sparkles className="h-5 w-5 text-white/25" />
+                        </div>
+                      )}
+                    </div>
+
+                    <div className="relative z-10 space-y-3 bg-[#0B1221] p-6">
+                      <h3 className="line-clamp-1 text-xl font-bold tracking-tight text-white">{product.name}</h3>
+                      {product.description ? (
+                        <p className="line-clamp-2 text-sm leading-relaxed text-white/55">{product.description}</p>
+                      ) : null}
+
+                      <div className="flex items-end justify-between gap-3 pt-2">
+                        <div className="space-y-1">
+                          <p className="text-[11px] uppercase tracking-[0.12em] text-white/45">Starting from</p>
+                          <p className="text-base font-semibold text-white">{priceLabel ?? 'Custom quote'}</p>
+                        </div>
+
+                        <HoverCard openDelay={180} closeDelay={120}>
+                          <HoverCardTrigger asChild>
+                            <Button
+                              variant="premium"
+                              size="sm"
+                              className="h-10 rounded-full px-4 text-[11px] uppercase tracking-[0.11em]"
+                            >
+                              Configure
+                            </Button>
+                          </HoverCardTrigger>
+                          <HoverCardContent
+                            side="top"
+                            align="end"
+                            className="w-64 border-sky-300/25 bg-[#081327]/95 text-sky-50 shadow-[0_14px_34px_-20px_rgba(2,8,20,0.85)] backdrop-blur-xl"
+                          >
+                            <p className="text-xs leading-relaxed text-sky-100/85">
+                              Map icons slot-by-slot, save your layout, then add directly to cart with production-ready data.
+                            </p>
+                          </HoverCardContent>
+                        </HoverCard>
+                      </div>
+                    </div>
+                  </Link>
+                </div>
+              </CarouselItem>
+            );
+          })}
+        </CarouselContent>
+
+        <div className="pointer-events-none absolute inset-y-0 left-0 z-20 hidden w-16 bg-gradient-to-r from-[#081327] to-transparent md:block" />
+        <div className="pointer-events-none absolute inset-y-0 right-0 z-20 hidden w-16 bg-gradient-to-l from-[#081327] to-transparent md:block" />
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <CarouselPrevious
+              variant="secondaryDark"
+              className="left-3 top-1/2 z-30 hidden h-11 w-11 -translate-y-1/2 rounded-full border-white/20 bg-[#0b1221]/85 text-white shadow-xl transition-all duration-300 group-hover/carousel:opacity-100 hover:border-sky-500/50 hover:bg-[#101c35] md:flex"
+            />
+          </TooltipTrigger>
+          <TooltipContent className="border-sky-300/25 bg-[#081327] text-sky-50">
+            Previous model
+          </TooltipContent>
+        </Tooltip>
+
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <CarouselNext
+              variant="secondaryDark"
+              className="right-3 top-1/2 z-30 hidden h-11 w-11 -translate-y-1/2 rounded-full border-white/20 bg-[#0b1221]/85 text-white shadow-xl transition-all duration-300 group-hover/carousel:opacity-100 hover:border-sky-500/50 hover:bg-[#101c35] md:flex"
+            />
+          </TooltipTrigger>
+          <TooltipContent className="border-sky-300/25 bg-[#081327] text-sky-50">
+            Next model
+          </TooltipContent>
+        </Tooltip>
+      </Carousel>
+
+      <div className="mt-2 flex items-center gap-4 px-2 sm:px-4">
+        <Progress
+          value={progressValue}
+          className="h-1.5 bg-white/15 [&_[data-slot=progress-indicator]]:bg-gradient-to-r [&_[data-slot=progress-indicator]]:from-sky-300 [&_[data-slot=progress-indicator]]:to-sky-500"
+        />
+        <div className="text-[11px] font-medium uppercase tracking-[0.12em] text-white/55">
+          {Math.min(currentIndex + 1, slideCount)} / {slideCount}
+        </div>
+      </div>
+    </div>
+  );
 }

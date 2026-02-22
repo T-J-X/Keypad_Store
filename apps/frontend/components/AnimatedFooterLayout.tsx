@@ -1,6 +1,7 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
+import { Button } from './ui/button';
 import SparkDivider from './ui/SparkDivider';
 import FooterParallaxEnhancer from './layout/FooterParallaxEnhancer';
 
@@ -51,13 +52,27 @@ export default function AnimatedFooterLayout({ children }: { children: ReactNode
       <footer id="site-footer" className="relative z-0 overflow-hidden w-full bg-[#020a18]">
         <div
           id="site-footer-parallax"
-          className="w-full pt-20 pb-12 px-6 lg:px-8 text-white bg-gradient-to-b from-[#040e21] via-[#06152e] to-[#020a18] will-change-transform"
-          style={{ transform: 'translate3d(0, 0, 0)' }}
+          className="w-full origin-top pt-20 pb-12 px-6 text-white bg-gradient-to-b from-[#040e21] via-[#06152e] to-[#020a18] will-change-transform lg:px-8"
+          style={{
+            transform:
+              'translate3d(0, var(--footer-parallax-y, 0px), 0) scale(var(--footer-parallax-scale, 1))',
+          }}
         >
-          <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_center,rgba(30,100,180,0.12),transparent_60%)] pointer-events-none" />
+          <div
+            className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_center,rgba(30,100,180,0.42),transparent_62%)]"
+            style={{ opacity: 'var(--footer-glow-opacity, 0.2)' }}
+          />
+          <div
+            className="pointer-events-none absolute -top-16 left-[6%] h-44 w-44 rounded-full bg-sky-500/18 blur-3xl"
+            style={{ transform: 'translate3d(0, calc(var(--footer-parallax-y, 0px) * -0.35), 0)' }}
+          />
+          <div
+            className="pointer-events-none absolute -bottom-20 right-[8%] h-56 w-56 rounded-full bg-indigo-500/16 blur-3xl"
+            style={{ transform: 'translate3d(0, calc(var(--footer-parallax-y, 0px) * 0.22), 0)' }}
+          />
 
           <div className="relative z-10 mx-auto w-full max-w-7xl">
-            <div className="flex flex-col gap-12">
+            <div className="staggered flex flex-col gap-12">
               <div className="grid gap-12 lg:grid-cols-[1fr_400px]">
                 <div className="max-w-md space-y-4">
                   <Image
@@ -82,12 +97,14 @@ export default function AnimatedFooterLayout({ children }: { children: ReactNode
                       className="w-full rounded-xl border border-panel-ring bg-panel-input px-4 py-3 text-sm text-white placeholder:text-panel-muted focus:border-sky/50 focus:outline-none focus:ring-2 focus:ring-sky/20"
                       aria-label="Email address for newsletter"
                     />
-                    <button
+                    <Button
                       type="button"
-                      className="absolute right-1.5 top-1.5 flex h-[calc(100%-12px)] items-center justify-center rounded-lg bg-white px-3 text-sm font-semibold text-ink transition hover:bg-white/90"
+                      variant="premium"
+                      size="sm"
+                      className="absolute right-1.5 top-1.5 h-[calc(100%-12px)] rounded-lg px-3 text-[11px] uppercase tracking-[0.11em]"
                     >
                       Subscribe
-                    </button>
+                    </Button>
                   </form>
                   <p className="text-xs text-panel-muted">
                     Updates on new hardware families and software features.
@@ -127,7 +144,7 @@ export default function AnimatedFooterLayout({ children }: { children: ReactNode
                   <div className="flex flex-wrap gap-6 text-xs text-panel-muted">
                     <Link href="/terms" className="hover:text-white transition-colors">Terms of Service</Link>
                     <Link href="/privacy" className="hover:text-white transition-colors">Privacy Policy</Link>
-                    <Link href="/cookies" className="hover:text-white transition-colors">Cookie Settings</Link>
+                    <Link href="/cookies" className="hover:text-white transition-colors">Cookie Policy</Link>
                   </div>
                 </div>
               </div>
