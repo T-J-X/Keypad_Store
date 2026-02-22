@@ -2,6 +2,13 @@
 
 import type { ReactNode } from 'react';
 import { useEffect, useId, useMemo, useState } from 'react';
+import {
+  Boxes,
+  CircleHelp,
+  Download,
+  FileText,
+  Info,
+} from 'lucide-react';
 
 export type PdpTabId = 'overview' | 'specs' | 'in-the-box' | 'faq' | 'downloads';
 
@@ -9,6 +16,14 @@ export type PdpTabPanel = {
   id: PdpTabId;
   label: string;
   content: ReactNode;
+};
+
+const TAB_ICON_BY_ID: Record<PdpTabId, typeof FileText> = {
+  overview: Info,
+  specs: FileText,
+  'in-the-box': Boxes,
+  faq: CircleHelp,
+  downloads: Download,
 };
 
 export default function PdpTabs({
@@ -43,12 +58,13 @@ export default function PdpTabs({
       <nav
         aria-label="Product detail sections"
         role="tablist"
-        className="mx-auto flex w-full max-w-5xl flex-wrap items-center gap-1 border-b border-surface-border pb-2 motion-safe:animate-fade-up"
+        className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-2 sm:grid-cols-2 lg:grid-cols-5 motion-safe:animate-fade-up"
       >
         {panels.map((panel) => {
           const isActive = panel.id === activeTabId;
           const tabId = `pdp-tab-${tabSetId}-${panel.id}`;
           const panelId = `pdp-tabpanel-${tabSetId}-${panel.id}`;
+          const Icon = TAB_ICON_BY_ID[panel.id] ?? FileText;
           return (
             <button
               key={panel.id}
@@ -63,13 +79,19 @@ export default function PdpTabs({
                   setActiveTabId(panel.id);
                 }
               }}
-              className={
+              className={`group w-full touch-manipulation select-none justify-center gap-2 px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.12em] ${
                 isActive
-                  ? 'touch-manipulation select-none rounded-full border border-ink bg-ink px-4 py-2 text-[11px] font-semibold uppercase tracking-widest text-white shadow-[0_8px_18px_-10px_rgba(14,17,26,0.45)] transition-[transform,box-shadow] duration-300'
-                  : 'touch-manipulation select-none rounded-full border border-transparent px-4 py-2 text-[11px] font-semibold uppercase tracking-widest text-ink/55 transition-[background-color,border-color,color,transform] duration-300 hover:-translate-y-0.5 hover:border-surface-border hover:bg-surface hover:text-ink'
-              }
+                  ? 'nav-pill nav-pill-active'
+                  : 'nav-pill nav-pill-default'
+              }`}
             >
-              {panel.label}
+              <Icon
+                className={`h-4 w-4 shrink-0 transition-colors ${
+                  isActive ? 'text-white' : 'text-[#071835] group-hover:text-white'
+                }`}
+                aria-hidden="true"
+              />
+              <span>{panel.label}</span>
             </button>
           );
         })}

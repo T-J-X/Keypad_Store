@@ -42,11 +42,14 @@ const CURRENT_YEAR = 2026;
 
 export default function AnimatedFooterLayout({ children }: { children: ReactNode }) {
   return (
-    <div id="site-shell" className="bg-[#020a18] min-h-screen [--footer-reveal-height:0px]">
+    <div
+      id="site-shell"
+      className="bg-[#020a18] min-h-screen [--footer-reveal-height:0px] [--footer-overlap:26px] sm:[--footer-overlap:34px]"
+    >
       <main
         id="site-main-shell"
         className="relative z-10 bg-white flex flex-col min-h-screen rounded-b-2xl shadow-[0_15px_30px_-10px_rgba(0,0,0,0.15)] pb-8"
-        style={{ marginBottom: 'var(--footer-reveal-height)' }}
+        style={{ marginBottom: 'max(0px, calc(var(--footer-reveal-height) - var(--footer-overlap)))' }}
       >
         {children}
       </main>
@@ -59,7 +62,7 @@ export default function AnimatedFooterLayout({ children }: { children: ReactNode
         <footer id="site-footer" className="absolute inset-x-0 bottom-0 overflow-hidden w-full bg-[#020a18]">
           <div
             id="site-footer-parallax"
-            className="w-full origin-top pt-20 pb-12 px-6 text-white bg-gradient-to-b from-[#040e21] via-[#06152e] to-[#020a18] will-change-transform lg:px-8"
+            className="w-full origin-top pt-14 pb-8 px-6 text-white bg-gradient-to-b from-[#040e21] via-[#06152e] to-[#020a18] will-change-transform lg:px-8"
             style={{
               transform:
                 'translate3d(0, var(--footer-parallax-y, 0px), 0) scale(var(--footer-parallax-scale, 1))',
@@ -79,15 +82,15 @@ export default function AnimatedFooterLayout({ children }: { children: ReactNode
             />
 
             <div className="relative z-10 mx-auto w-full max-w-7xl">
-              <div className="staggered flex flex-col gap-12">
-                <div className="grid gap-12 lg:grid-cols-[1fr_400px]">
+              <div className="staggered flex flex-col gap-9">
+                <div className="grid gap-8 lg:grid-cols-[1fr_400px]">
                   <div className="max-w-md space-y-4">
                     <Image
                       src="/vct-logo.png"
                       alt="Vehicle Control Technologies"
                       width={240}
                       height={80}
-                      className="h-16 w-auto brightness-0 invert"
+                      className="h-14 w-auto brightness-0 invert"
                     />
                     <p className="text-sm leading-relaxed text-white/80">
                       Engineering-grade vehicle control interfaces for demanding environments.
@@ -119,7 +122,7 @@ export default function AnimatedFooterLayout({ children }: { children: ReactNode
                   </div>
                 </div>
 
-                <div className="grid grid-cols-2 gap-8 gap-y-10 md:grid-cols-4 lg:gap-8 mt-4">
+                <div className="grid grid-cols-2 gap-7 gap-y-7 md:grid-cols-4 lg:gap-8">
                   {footerGroups.map((group) => (
                     <div key={group.title} className="space-y-4">
                       <div className="font-mono text-xs font-bold uppercase tracking-widest text-white/90">
@@ -141,7 +144,7 @@ export default function AnimatedFooterLayout({ children }: { children: ReactNode
                   ))}
                 </div>
 
-                <div className="relative mt-8 pt-8">
+                <div className="relative mt-4 pt-6">
                   <SparkDivider />
                   <div className="flex flex-col-reverse gap-6 md:flex-row md:items-center md:justify-between">
                     <p className="text-xs text-panel-muted">

@@ -36,7 +36,7 @@ export default function ProductHero({
   return (
     <div className="grid gap-10 motion-safe:animate-fade-up lg:grid-cols-[1.15fr_0.85fr] lg:items-start">
       <div>
-        <div className="card-soft rounded-[28px] p-6 transition-[transform,box-shadow] duration-300 ease-out hover:-translate-y-0.5 hover:shadow-[0_28px_58px_-28px_rgba(14,17,26,0.3)] sm:p-8 md:p-10 lg:p-12">
+        <div className="card-soft rounded-[28px] p-6 sm:p-8 md:p-10 lg:p-12">
           <div className="flex h-[340px] w-full items-center justify-center overflow-hidden rounded-3xl bg-white sm:h-[420px] lg:h-[520px]">
             <div className="flex h-[220px] w-[220px] items-center justify-center sm:h-[260px] sm:w-[260px]">
               {renderImage ? (

@@ -620,7 +620,7 @@ function ShopLandingSection({
 }) {
   return (
     <section className="space-y-12">
-      <section className="card rounded-3xl p-5 motion-safe:animate-fade-up md:p-7">
+      <section className="card-soft rounded-3xl border border-[#d7e3f4] bg-[linear-gradient(180deg,#f7fbff_0%,#ffffff_66%)] p-5 motion-safe:animate-fade-up md:p-7">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="mt-1 text-2xl font-semibold tracking-tight text-ink md:text-3xl">
@@ -641,7 +641,7 @@ function ShopLandingSection({
             const tileSubtitle = tile.subtitle?.trim() || '';
 
             const cardClass = `group relative overflow-hidden rounded-2xl text-left ${shouldUseRingBlue ? ringBlueHoverClass : 'border border-ink/10 bg-white'} ${isInteractive
-              ? 'cursor-pointer transition-[transform,box-shadow] duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_22px_42px_-18px_rgba(4,15,46,0.24)]'
+              ? 'cursor-pointer transition-[box-shadow,border-color,filter] duration-300 ease-out hover:shadow-[0_22px_42px_-18px_rgba(4,15,46,0.24)]'
               : 'cursor-default'
               }`;
 
@@ -662,7 +662,7 @@ function ShopLandingSection({
                   <div
                     className={`pointer-events-none absolute inset-0 transition-opacity duration-200 ${isExploreMoreTile
                       ? 'bg-black/45 opacity-60 group-hover:opacity-85'
-                      : 'bg-black/25 opacity-55 group-hover:opacity-75'
+                      : 'bg-black/30 opacity-60 group-hover:opacity-72'
                       }`}
                   />
                 ) : null}
@@ -675,7 +675,7 @@ function ShopLandingSection({
                   ) : null}
                   {isInteractive ? (
                     <span
-                      className={`mt-4 translate-y-3 opacity-0 transition-[opacity,transform] duration-300 group-hover:translate-y-0 group-hover:opacity-100 ${buttonVariants({ variant: 'premium' })} ${isExploreMoreTile
+                      className={`mt-4 ${buttonVariants({ variant: 'premium' })} ${isExploreMoreTile
                         ? 'bg-surface text-ink shadow-sm'
                         : ''
                         }`}
@@ -706,7 +706,7 @@ function ShopLandingSection({
       </section>
 
       <section
-        className="card rounded-3xl p-5 opacity-0 motion-safe:animate-fade-up md:p-7"
+        className="card-soft rounded-3xl border border-[#d7e3f4] bg-[linear-gradient(180deg,#f7fbff_0%,#ffffff_66%)] p-5 opacity-0 motion-safe:animate-fade-up md:p-7"
         style={{ animationDelay: '90ms', animationDuration: '620ms', animationFillMode: 'forwards' }}
       >
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
@@ -1580,7 +1580,10 @@ export default function ShopClient(props: ShopClientProps) {
   } = useShopClientData(props);
 
   return (
-    <div className="mx-auto w-full max-w-[88rem] bg-white px-6 pb-20 pt-10" aria-busy={isPending}>
+    <div
+      className="mx-auto w-full max-w-[88rem] bg-[linear-gradient(180deg,#f3f8ff_0%,#ffffff_48%)] px-6 pb-20 pt-10"
+      aria-busy={isPending}
+    >
       <BaseShopHero showTiles={false} />
 
       <ShopSectionHeader

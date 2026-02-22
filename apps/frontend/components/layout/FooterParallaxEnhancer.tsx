@@ -6,6 +6,10 @@ function clamp(value: number, min: number, max: number) {
   return Math.max(min, Math.min(max, value));
 }
 
+function smoothstep(value: number) {
+  return value * value * (3 - 2 * value);
+}
+
 export default function FooterParallaxEnhancer({
   shellId,
   mainId,
@@ -53,12 +57,18 @@ export default function FooterParallaxEnhancer({
 
       const mainRect = mainElement.getBoundingClientRect();
       const viewportHeight = window.innerHeight || 1;
-      const rawProgress = clamp((viewportHeight - mainRect.bottom) / revealHeight, 0, 1);
-      const easedProgress = 1 - Math.pow(1 - rawProgress, 3);
-      const startOffsetPx = Math.min(revealHeight * 0.18, 52);
+      const revealLeadPx = Math.min(viewportHeight * 0.28, 220);
+      const rawProgress = clamp(
+        (viewportHeight + revealLeadPx - mainRect.bottom) / (revealHeight + revealLeadPx),
+        0,
+        1,
+      );
+      const acceleratedProgress = Math.pow(rawProgress, 0.82);
+      const easedProgress = smoothstep(acceleratedProgress);
+      const startOffsetPx = Math.min(revealHeight * 0.22, 64);
       const y = -startOffsetPx * (1 - easedProgress);
-      const scale = 0.972 + easedProgress * 0.028;
-      const glowOpacity = 0.14 + easedProgress * 0.34;
+      const scale = 0.968 + easedProgress * 0.032;
+      const glowOpacity = 0.12 + easedProgress * 0.4;
 
       parallaxElement.style.setProperty('--footer-parallax-y', `${y.toFixed(2)}px`);
       parallaxElement.style.setProperty('--footer-parallax-scale', scale.toFixed(3));

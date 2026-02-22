@@ -27,7 +27,7 @@ type StaticProps = BaseProps & {
 type CategoryCardProps = ClickProps | LinkProps | StaticProps;
 
 const shellClass =
-  'card-soft group h-full w-full p-4 text-left transition-[transform,box-shadow,border-color] duration-200 hover:-translate-y-1 hover:border-ink/20 hover:shadow-premium';
+  'card-soft group h-full w-full p-4 text-left transition-[box-shadow,border-color] duration-200 hover:border-ink/20 hover:shadow-premium';
 
 export default function CategoryCard(props: CategoryCardProps) {
   const content = (

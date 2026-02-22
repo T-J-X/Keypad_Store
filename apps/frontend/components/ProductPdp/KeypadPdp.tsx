@@ -203,13 +203,13 @@ export default function KeypadPdp({
 
       <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
         <div>
-          <div className="card-soft rounded-[28px] p-10 transition-[transform,box-shadow] duration-300 ease-out hover:-translate-y-0.5 hover:shadow-[0_28px_58px_-28px_rgba(14,17,26,0.3)] md:p-12">
+          <div className="card-soft rounded-[28px] p-10 md:p-12">
             <KeypadImageGallery images={galleryImages} productName={product.name} />
           </div>
         </div>
 
         <div className="lg:sticky lg:top-32">
-          <section className="card-soft space-y-4 p-5 transition-[transform,box-shadow] duration-300 ease-out hover:-translate-y-0.5 hover:shadow-[0_24px_54px_-30px_rgba(14,17,26,0.35)]">
+          <section className="card-soft space-y-4 p-5">
             <div>
               <h1 className="text-3xl font-semibold tracking-tight text-ink md:text-4xl">{product.name}</h1>
               <p className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-ink/55">Keypad Product</p>
