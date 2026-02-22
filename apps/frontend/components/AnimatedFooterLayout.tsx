@@ -4,6 +4,7 @@ import { Suspense, useEffect, useRef, type ReactNode } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import CopyrightYear from './CopyrightYear';
+import SparkDivider from './ui/SparkDivider';
 
 const footerGroups = [
     {
@@ -163,13 +164,7 @@ export default function AnimatedFooterLayout({ children }: { children: ReactNode
                             </div>
 
                             <div className="relative mt-8 pt-8">
-                                <div
-                                    className="absolute top-0 left-0 h-[1px] w-full shadow-[0_0_15px_1px_rgba(96,165,250,0.6)]"
-                                    style={{
-                                        background: 'linear-gradient(90deg, transparent 0%, rgba(96,165,250,0.1) 10%, rgba(96,165,250,0.8) 35%, rgba(96,165,250,1) 50%, rgba(96,165,250,0.8) 65%, rgba(96,165,250,0.1) 90%, transparent 100%)'
-                                    }}
-                                />
-                                <div className="absolute top-[-1px] left-1/2 -translate-x-1/2 h-[2px] w-1/3 bg-transparent shadow-[0_0_20px_3px_rgba(96,165,250,0.8)] rounded-full blur-[1px]" />
+                                <SparkDivider />
                                 <div className="flex flex-col-reverse gap-6 md:flex-row md:items-center md:justify-between">
                                     <p className="text-xs text-panel-muted">
                                         &copy; <Suspense fallback={<span>----</span>}><CopyrightYear /></Suspense> Vehicle Control Technologies

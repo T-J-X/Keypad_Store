@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { ShieldCheck, Layers, Cpu, ArrowRight, Zap, Target } from 'lucide-react';
 import { fetchKeypadProducts } from '../lib/vendure.server';
 import { HeroSlider } from '../components/landing/HeroSlider';
+import SparkDivider from '../components/ui/SparkDivider';
 
 export const metadata: Metadata = {
   title: 'VCT | Premium Sim Racing Keypads',
@@ -34,13 +35,7 @@ export default function HomePage() {
   return (
     <div className="relative min-h-screen w-full bg-[#020617] rounded-[2.5rem] shadow-[0_-20px_40px_-10px_rgba(0,0,0,0.3)] overflow-hidden selection:bg-sky-500/30 selection:text-white -mt-8">
       {/* Top Curved Glow Separator (Mirroring Footer) */}
-      <div
-        className="absolute top-0 left-0 h-[1px] w-full shadow-[0_0_15px_1px_rgba(96,165,250,0.6)] z-50"
-        style={{
-          background: 'linear-gradient(90deg, transparent 0%, rgba(96,165,250,0.1) 10%, rgba(96,165,250,0.8) 35%, rgba(96,165,250,1) 50%, rgba(96,165,250,0.8) 65%, rgba(96,165,250,0.1) 90%, transparent 100%)'
-        }}
-      />
-      <div className="absolute top-[-1px] left-1/2 -translate-x-1/2 h-[2px] w-1/3 bg-transparent shadow-[0_0_20px_3px_rgba(96,165,250,0.8)] rounded-full blur-[1px] z-50" />
+      <SparkDivider className="z-50" />
 
       {/* Background Ambient Glows */}
       <div className="absolute top-0 left-1/2 -translate-x-1/2 w-[1000px] h-[500px] opacity-20 pointer-events-none">
