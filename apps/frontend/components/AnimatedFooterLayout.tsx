@@ -42,9 +42,9 @@ const CURRENT_YEAR = 2026;
 
 export default function AnimatedFooterLayout({ children }: { children: ReactNode }) {
   return (
-    <div className="bg-[#020a18] min-h-screen">
+    <div className="min-h-screen overflow-x-clip bg-[#020a18]">
       <main
-        className="relative z-10 bg-white flex flex-col min-h-screen rounded-b-2xl shadow-[0_15px_30px_-10px_rgba(0,0,0,0.15)] pb-8"
+        className="relative z-10 flex min-h-screen flex-col rounded-b-[1.5rem] bg-white pb-8 shadow-[0_15px_30px_-10px_rgba(0,0,0,0.15)] sm:rounded-b-2xl"
       >
         {children}
       </main>
@@ -52,7 +52,7 @@ export default function AnimatedFooterLayout({ children }: { children: ReactNode
       <footer id="site-footer" className="relative z-0 overflow-hidden w-full bg-[#020a18]">
         <div
           id="site-footer-parallax"
-          className="w-full origin-top pt-20 pb-12 px-6 text-white bg-gradient-to-b from-[#040e21] via-[#06152e] to-[#020a18] will-change-transform lg:px-8"
+          className="w-full origin-top bg-gradient-to-b from-[#040e21] via-[#06152e] to-[#020a18] px-4 pb-10 pt-16 text-white will-change-transform sm:px-6 lg:px-8 lg:pb-12 lg:pt-20"
           style={{
             transform:
               'translate3d(0, var(--footer-parallax-y, 0px), 0) scale(var(--footer-parallax-scale, 1))',
@@ -80,7 +80,7 @@ export default function AnimatedFooterLayout({ children }: { children: ReactNode
                     alt="Vehicle Control Technologies"
                     width={240}
                     height={80}
-                    className="h-16 w-auto brightness-0 invert"
+                    className="h-14 w-auto brightness-0 invert sm:h-16"
                   />
                   <p className="text-sm leading-relaxed text-white/80">
                     Engineering-grade vehicle control interfaces for demanding environments.
@@ -90,18 +90,18 @@ export default function AnimatedFooterLayout({ children }: { children: ReactNode
 
                 <div className="space-y-4">
                   <h3 className="text-sm font-semibold">Stay updated</h3>
-                  <form className="relative flex gap-2">
+                  <form className="flex flex-col gap-2 sm:flex-row sm:items-center">
                     <input
                       type="email"
                       placeholder="Enter your email"
-                      className="w-full rounded-xl border border-panel-ring bg-panel-input px-4 py-3 text-sm text-white placeholder:text-panel-muted focus:border-sky/50 focus:outline-none focus:ring-2 focus:ring-sky/20"
+                      className="w-full rounded-xl border border-panel-ring bg-panel-input px-4 py-3 text-sm text-white placeholder:text-panel-muted focus:border-sky/50 focus:outline-none focus:ring-2 focus:ring-sky/20 sm:flex-1"
                       aria-label="Email address for newsletter"
                     />
                     <Button
                       type="button"
                       variant="premium"
                       size="sm"
-                      className="absolute right-1.5 top-1.5 h-[calc(100%-12px)] rounded-lg px-3 text-[11px] uppercase tracking-[0.11em]"
+                      className="h-11 w-full rounded-lg px-3 text-[11px] uppercase tracking-[0.11em] sm:h-10 sm:w-auto"
                     >
                       Subscribe
                     </Button>
@@ -112,7 +112,7 @@ export default function AnimatedFooterLayout({ children }: { children: ReactNode
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-8 gap-y-10 md:grid-cols-4 lg:gap-8 mt-4">
+              <div className="mt-4 grid grid-cols-1 gap-8 gap-y-10 min-[420px]:grid-cols-2 md:grid-cols-4 lg:gap-8">
                 {footerGroups.map((group) => (
                   <div key={group.title} className="space-y-4">
                     <div className="font-mono text-xs font-bold uppercase tracking-widest text-white/90">

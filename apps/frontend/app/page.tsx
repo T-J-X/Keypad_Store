@@ -47,13 +47,13 @@ export default function HomePage() {
       <div className="pointer-events-none absolute -right-40 -top-40 h-[600px] w-[600px] rounded-full bg-sky-600/10 blur-[140px] motion-safe:animate-float-soft" style={{ animationDuration: '10s', animationDelay: '220ms' }} />
       <div className="pointer-events-none absolute -left-40 top-1/3 h-[500px] w-[500px] rounded-full bg-indigo-600/10 blur-[130px] motion-safe:animate-float-soft" style={{ animationDuration: '9s', animationDelay: '420ms' }} />
 
-      <main className="relative z-10 mx-auto w-full max-w-7xl px-6 pt-12 pb-32 lg:pt-16 lg:px-8">
+      <main className="relative z-10 mx-auto w-full max-w-7xl px-4 pb-32 pt-12 sm:px-6 lg:px-8 lg:pt-16">
 
         {/* CENTERED HERO SECTION & SLIDER */}
         <section className="flex flex-col items-center relative z-20">
 
           {/* Centered Hero Content */}
-          <div className="mx-auto flex max-w-4xl animate-fade-up flex-col items-center px-6 text-center lg:px-8">
+          <div className="mx-auto flex max-w-4xl animate-fade-up flex-col items-center px-4 text-center sm:px-6 lg:px-8">
             <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl md:text-6xl lg:text-[5rem] leading-[1.05]">
               Build a keypad that feels<br className="hidden md:block" />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-blue-600">custom</span> from the first press.
@@ -159,7 +159,7 @@ export default function HomePage() {
         </section>
 
         {/* CALL TO ACTION PANELS */}
-        <section className="mt-32 px-6 lg:px-8 max-w-7xl mx-auto">
+        <section className="mx-auto mt-32 max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex flex-wrap items-end justify-between gap-6 mb-12">
             <div>
               <div className="text-xs font-bold uppercase tracking-widest text-sky-400">Start Building</div>
@@ -172,7 +172,7 @@ export default function HomePage() {
 
           <div className="grid gap-6 md:grid-cols-2">
             {/* SHOP PANEL */}
-            <Link href="/shop" className="group relative overflow-hidden rounded-3xl p-10 bg-[#0B1221] border border-white/10 transition-all duration-500 hover:border-sky-500/50 hover:shadow-[0_0_40px_-10px_rgba(56,189,248,0.3)]">
+            <Link href="/shop" className="group relative overflow-hidden rounded-3xl border border-white/10 bg-[#0B1221] p-6 transition-all duration-500 hover:border-sky-500/50 hover:shadow-[0_0_40px_-10px_rgba(56,189,248,0.3)] sm:p-8 lg:p-10">
               <div className="absolute inset-0 bg-gradient-to-br from-sky-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               <div className="relative z-10">
                 <div className="w-12 h-12 rounded-full bg-sky-500/20 flex items-center justify-center mb-6">
@@ -189,7 +189,7 @@ export default function HomePage() {
             </Link>
 
             {/* CONFIGURATOR PANEL */}
-            <Link href="/configurator" className="group relative overflow-hidden rounded-3xl p-10 bg-[#0B1221] border border-white/10 transition-all duration-500 hover:border-indigo-500/50 hover:shadow-[0_0_40px_-10px_rgba(99,102,241,0.3)]">
+            <Link href="/configurator" className="group relative overflow-hidden rounded-3xl border border-white/10 bg-[#0B1221] p-6 transition-all duration-500 hover:border-indigo-500/50 hover:shadow-[0_0_40px_-10px_rgba(99,102,241,0.3)] sm:p-8 lg:p-10">
               <div className="absolute inset-0 bg-gradient-to-br from-indigo-500/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
               <div className="relative z-10">
                 <div className="w-12 h-12 rounded-full bg-indigo-500/20 flex items-center justify-center mb-6">

@@ -69,7 +69,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
             <Suspense fallback={<div className="h-16 w-full border-b border-white/10" />}>
               <Navbar />
             </Suspense>
-            <div id="main-content" className="flex-1 pt-24 lg:pt-28 pb-12 lg:pb-20">{children}</div>
+            <div id="main-content" className="flex-1 pb-16 pt-24 lg:pb-20 lg:pt-28">{children}</div>
           </AnimatedFooterLayout>
           <Suspense fallback={null}>
             <ClientRuntimeGate />

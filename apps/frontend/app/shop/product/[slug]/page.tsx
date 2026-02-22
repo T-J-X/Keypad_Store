@@ -243,7 +243,7 @@ export default function ProductDetailPage({
 
 function ProductPageFallback() {
   return (
-    <div className="mx-auto w-full max-w-6xl px-6 pb-20">
+    <div className="mx-auto w-full max-w-6xl px-4 pb-20 sm:px-6">
       <Skeleton className="mb-3 h-3 w-28 rounded-full bg-gray-200" />
       <Skeleton className="mb-6 h-4 w-48 rounded bg-gray-200" />
       <div className="grid gap-10 lg:grid-cols-[1.15fr_0.85fr]">

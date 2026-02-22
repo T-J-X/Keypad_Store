@@ -12,7 +12,7 @@ export default function RelatedProducts({
   return (
     <section className="mt-14 space-y-5">
       <h2 className="text-2xl font-semibold tracking-tight text-ink">Products You May Also Like</h2>
-      <div className="grid gap-4 md:grid-cols-3">
+      <div className="grid gap-4 sm:grid-cols-2 xl:grid-cols-3">
         {products.map((product) => {
           const image = product.featuredAsset?.preview ?? product.featuredAsset?.source ?? '';
           const iconId = product.customFields?.iconId ?? '—';

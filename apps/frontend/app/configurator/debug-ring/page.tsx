@@ -32,7 +32,7 @@ export default async function ConfiguratorRingDebugPage({
   searchParams: Promise<Record<string, string | string[] | undefined>>;
 }) {
   return (
-    <Suspense fallback={<div className="mx-auto w-full max-w-6xl px-6 pb-20 pt-12" />}>
+    <Suspense fallback={<div className="mx-auto w-full max-w-6xl px-4 pb-20 pt-12 sm:px-6" />}>
       <ConfiguratorRingDebugContent searchParamsPromise={searchParams} />
     </Suspense>
   );

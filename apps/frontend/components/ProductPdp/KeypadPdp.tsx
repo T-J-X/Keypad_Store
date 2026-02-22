@@ -196,7 +196,7 @@ export default function KeypadPdp({
   });
 
   return (
-    <div className="mx-auto w-full max-w-6xl bg-transparent px-6 motion-safe:animate-fade-up">
+    <div className="mx-auto w-full max-w-6xl bg-transparent px-4 motion-safe:animate-fade-up sm:px-6">
       <div className="mb-6">
         <Breadcrumbs items={breadcrumbs} />
       </div>

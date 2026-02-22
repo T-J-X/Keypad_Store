@@ -237,7 +237,7 @@ export default function ShopPage({
 
 function ShopPageFallback() {
   return (
-    <div className="mx-auto w-full max-w-[88rem] bg-white px-6">
+    <div className="mx-auto w-full max-w-[88rem] bg-white px-4 sm:px-6">
       <Skeleton className="mb-3 h-3 w-28 rounded-full bg-gray-200" />
       <Skeleton className="mb-8 h-10 w-72 rounded bg-gray-200" />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">

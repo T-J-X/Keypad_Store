@@ -15,7 +15,7 @@ export const metadata: Metadata = buildPageMetadata({
 
 function KeypadGridFallback() {
   return (
-    <div className="staggered grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="staggered grid gap-6 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]">
       {Array.from({ length: 6 }).map((_, index) => (
         <Skeleton key={index} className="card-soft h-[360px] rounded-3xl bg-gray-200/80" />
       ))}
@@ -31,7 +31,7 @@ async function KeypadGrid() {
   }
 
   return (
-    <div className="staggered grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+    <div className="staggered grid gap-6 [grid-template-columns:repeat(auto-fill,minmax(240px,1fr))]">
       {keypads.map((keypad) => (
         <KeypadCard key={keypad.id} product={keypad} />
       ))}
@@ -41,7 +41,7 @@ async function KeypadGrid() {
 
 export default function ConfiguratorPage() {
   return (
-    <div className="mx-auto w-full max-w-6xl px-6">
+    <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
       <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
         <div>
           <div className="pill">Configurator</div>

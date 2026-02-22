@@ -262,7 +262,7 @@ export default function ButtonInsertPdp({
   });
 
   return (
-    <div className="mx-auto w-full max-w-6xl bg-transparent px-6">
+    <div className="mx-auto w-full max-w-6xl bg-transparent px-4 sm:px-6">
       <div className="mb-6">
         <Breadcrumbs items={breadcrumbs} />
       </div>
