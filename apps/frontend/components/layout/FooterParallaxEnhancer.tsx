@@ -7,56 +7,57 @@ function clamp(value: number, min: number, max: number) {
 }
 
 export default function FooterParallaxEnhancer({
+  shellId,
+  mainId,
   footerId,
   parallaxId,
 }: {
+  shellId: string;
+  mainId: string;
   footerId: string;
   parallaxId: string;
 }) {
   useEffect(() => {
+    const shellElement = document.getElementById(shellId);
+    const mainElement = document.getElementById(mainId);
     const footerElement = document.getElementById(footerId);
     const parallaxElement = document.getElementById(parallaxId);
-    if (!footerElement || !parallaxElement) return;
+    if (!shellElement || !mainElement || !footerElement || !parallaxElement) return;
 
     const reduceMotionQuery = window.matchMedia('(prefers-reduced-motion: reduce)');
-    const mobileViewportQuery = window.matchMedia('(max-width: 1023px)');
-    const coarsePointerQuery = window.matchMedia('(pointer: coarse)');
+    const applyRevealHeight = () => {
+      const revealHeight = Math.ceil(Math.max(parallaxElement.getBoundingClientRect().height, 1));
+      shellElement.style.setProperty('--footer-reveal-height', `${revealHeight}px`);
+      return revealHeight;
+    };
     const applyStaticState = () => {
       parallaxElement.style.setProperty('--footer-parallax-y', '0px');
       parallaxElement.style.setProperty('--footer-parallax-scale', '1');
       parallaxElement.style.setProperty('--footer-glow-opacity', '0.18');
     };
 
-    const shouldDisableParallax = () =>
-      reduceMotionQuery.matches || mobileViewportQuery.matches || coarsePointerQuery.matches;
-
     let frameId: number | null = null;
-    let footerIsNearby = false;
-    let parallaxEnabled = !shouldDisableParallax();
-
-    const observer = new IntersectionObserver(
-      (entries) => {
-        footerIsNearby = entries.some((entry) => entry.isIntersecting);
-        if (footerIsNearby && parallaxEnabled) requestTick();
-      },
-      {
-        rootMargin: '260px 0px 260px 0px',
-      },
-    );
-    observer.observe(footerElement);
+    const resizeObserver = new ResizeObserver(() => {
+      applyRevealHeight();
+      requestTick();
+    });
+    resizeObserver.observe(footerElement);
 
     const updateParallax = () => {
       frameId = null;
-      if (!footerIsNearby || !parallaxEnabled) return;
+      const revealHeight = applyRevealHeight();
+      if (reduceMotionQuery.matches) {
+        applyStaticState();
+        return;
+      }
 
-      const rect = footerElement.getBoundingClientRect();
-      const footerHeight = Math.max(rect.height, 1);
+      const mainRect = mainElement.getBoundingClientRect();
       const viewportHeight = window.innerHeight || 1;
-      const rawProgress = clamp((viewportHeight - rect.top) / (viewportHeight + footerHeight), 0, 1);
+      const rawProgress = clamp((viewportHeight - mainRect.bottom) / revealHeight, 0, 1);
       const easedProgress = 1 - Math.pow(1 - rawProgress, 3);
-      const startOffsetPx = Math.min(footerHeight * 0.15, 44);
+      const startOffsetPx = Math.min(revealHeight * 0.18, 52);
       const y = -startOffsetPx * (1 - easedProgress);
-      const scale = 0.982 + easedProgress * 0.018;
+      const scale = 0.972 + easedProgress * 0.028;
       const glowOpacity = 0.14 + easedProgress * 0.34;
 
       parallaxElement.style.setProperty('--footer-parallax-y', `${y.toFixed(2)}px`);
@@ -65,39 +66,33 @@ export default function FooterParallaxEnhancer({
     };
 
     const requestTick = () => {
-      if (!parallaxEnabled) return;
       if (frameId !== null) return;
       frameId = window.requestAnimationFrame(updateParallax);
     };
 
-    const syncParallaxMode = () => {
-      parallaxEnabled = !shouldDisableParallax();
-      if (!parallaxEnabled) {
+    const handleMotionPreferenceChange = () => {
+      if (reduceMotionQuery.matches) {
         applyStaticState();
-        return;
       }
       requestTick();
     };
 
-    syncParallaxMode();
+    applyRevealHeight();
+    requestTick();
     window.addEventListener('scroll', requestTick, { passive: true });
     window.addEventListener('resize', requestTick);
-    reduceMotionQuery.addEventListener('change', syncParallaxMode);
-    mobileViewportQuery.addEventListener('change', syncParallaxMode);
-    coarsePointerQuery.addEventListener('change', syncParallaxMode);
+    reduceMotionQuery.addEventListener('change', handleMotionPreferenceChange);
 
     return () => {
-      observer.disconnect();
+      resizeObserver.disconnect();
       window.removeEventListener('scroll', requestTick);
       window.removeEventListener('resize', requestTick);
-      reduceMotionQuery.removeEventListener('change', syncParallaxMode);
-      mobileViewportQuery.removeEventListener('change', syncParallaxMode);
-      coarsePointerQuery.removeEventListener('change', syncParallaxMode);
+      reduceMotionQuery.removeEventListener('change', handleMotionPreferenceChange);
       if (frameId !== null) {
         window.cancelAnimationFrame(frameId);
       }
     };
-  }, [footerId, parallaxId]);
+  }, [footerId, mainId, parallaxId, shellId]);
 
   return null;
 }

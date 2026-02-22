@@ -4,7 +4,6 @@ import Link from 'next/link';
 import { ShieldCheck, Layers, Cpu, ArrowRight, Target } from 'lucide-react';
 import { fetchKeypadProducts } from '../lib/vendure.server';
 import { HeroSlider } from '../components/landing/HeroSlider';
-import { Button } from '../components/ui/button';
 import { Card, CardContent } from '../components/ui/card';
 import { Skeleton } from '../components/ui/skeleton';
 import SparkDivider from '../components/ui/SparkDivider';
@@ -165,9 +164,12 @@ export default function HomePage() {
               <div className="text-xs font-bold uppercase tracking-widest text-sky-400">Start Building</div>
               <h2 className="mt-3 text-4xl font-semibold text-white tracking-tight">Pick your path.</h2>
             </div>
-            <Button asChild variant="premium">
-              <Link href="/shop">Browse the catalog</Link>
-            </Button>
+            <Link href="/shop" className="btn-premium group min-w-[190px]">
+              <span className="relative z-10 flex items-center gap-2">
+                Browse the catalog
+                <ArrowRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5" />
+              </span>
+            </Link>
           </div>
 
           <div className="grid gap-6 md:grid-cols-2">
