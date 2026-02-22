@@ -167,25 +167,14 @@
 - `pnpm -C /Users/terry/keypad-store/apps/backend build` ✅
 
 ### Phase 9
-- Configured Stitch MCP in `/Users/terry/.codex/config.toml` and authenticated using Stitch API key.
-- Retrieved Stitch source assets for project `projects/3548116567548613798` and screen `projects/3548116567548613798/screens/116b9c773c4b489b94f8291d8da62abb`:
-  - project metadata (`get_project`)
-  - screen metadata (`get_screen`)
-  - screen HTML (`get_screen_code` + `scripts/fetch-stitch.sh`)
-- Generated design system document from Stitch source:
+- Stitch homepage integration was removed by user request.
+- Restored pre-Stitch homepage implementation in:
+  - `/Users/terry/keypad-store/apps/frontend/app/page.tsx`
+- Removed Stitch-deliverable files:
   - `/Users/terry/keypad-store/DESIGN.md`
-- Converted Stitch landing screen into modular homepage components:
-  - `/Users/terry/keypad-store/apps/frontend/components/stitch/StitchHome.tsx`
-  - `/Users/terry/keypad-store/apps/frontend/components/stitch/StitchHeader.tsx`
-  - `/Users/terry/keypad-store/apps/frontend/components/stitch/StitchHero.tsx`
-  - `/Users/terry/keypad-store/apps/frontend/components/stitch/StitchTechSpecs.tsx`
-  - `/Users/terry/keypad-store/apps/frontend/components/stitch/StitchFeaturedGrid.tsx`
-  - `/Users/terry/keypad-store/apps/frontend/components/stitch/StitchPromoBanner.tsx`
-  - `/Users/terry/keypad-store/apps/frontend/components/stitch/StitchBottomNav.tsx`
-  - `/Users/terry/keypad-store/apps/frontend/components/stitch/index.ts`
+  - `/Users/terry/keypad-store/apps/frontend/components/stitch/*`
   - `/Users/terry/keypad-store/apps/frontend/hooks/stitch/useStitchLandingData.ts`
   - `/Users/terry/keypad-store/apps/frontend/data/stitchMockData.ts`
-  - `/Users/terry/keypad-store/apps/frontend/app/page.tsx` now renders Stitch composition.
 
 #### Phase 9 Validation Commands
 - `pnpm -C /Users/terry/keypad-store/apps/frontend lint` ✅

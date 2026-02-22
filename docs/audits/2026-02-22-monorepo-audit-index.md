@@ -15,7 +15,7 @@
 - [x] [`docs/seo/programmatic-seo-strategy.md`](../seo/programmatic-seo-strategy.md)
 - [x] [`docs/seo/programmatic-seo-template-spec.md`](../seo/programmatic-seo-template-spec.md)
 - [x] [`docs/seo/programmatic-seo-keyword-map.csv`](../seo/programmatic-seo-keyword-map.csv)
-- [x] [`DESIGN.md`](../../DESIGN.md)
+- [ ] [`DESIGN.md`](../../DESIGN.md)
 
 ## Phase Change Log
 - Phase 0: Initialized index and monorepo audit shell with baseline branch and commit hash.
@@ -27,5 +27,5 @@
 - Phase 6: Added UI/UX audit outputs and generated design-system reference docs.
 - Phase 7: Added SEO audit and all programmatic SEO strategy/spec/keyword map deliverables.
 - Phase 8: Completed backend Postgres audit and applied low-risk pool/timeout + query/index improvements with backend validation pass.
-- Phase 9: Configured Stitch MCP with API-key auth, generated `DESIGN.md`, and converted homepage into modular Stitch React components with validation pass.
+- Phase 9: Stitch integration was rolled back; homepage restored to pre-Stitch implementation and `DESIGN.md` removed.
 - Phase 10: Added Playwright smoke suite + scripts, ran react-doctor, executed smoke checklist, and recorded evidence in monorepo audit.
