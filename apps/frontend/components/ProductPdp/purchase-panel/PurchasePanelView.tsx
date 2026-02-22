@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
-import { Button } from '../../ui/Button';
+import { Button } from '../../ui/button';
 import type { CategoryItem } from './types';
 import QuantityStepper from './subcomponents/QuantityStepper';
 import AuthPromptModal from './subcomponents/AuthPromptModal';

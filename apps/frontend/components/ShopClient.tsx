@@ -19,7 +19,7 @@ import BaseShopHero from './BaseShopHero';
 import CategoryCard from './CategoryCard';
 import KeypadCard from './KeypadCard';
 import ProductCard from './ProductCard';
-import { Button, buttonVariants } from './ui/Button';
+import { Button, buttonVariants } from './ui/button';
 import { LayoutGrid, List as ListIcon } from 'lucide-react';
 
 const PAGE_SIZE_OPTIONS = [24, 48, 96] as const;

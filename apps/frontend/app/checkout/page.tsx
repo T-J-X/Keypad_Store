@@ -7,6 +7,10 @@ import CheckoutClient from './CheckoutClient';
 export const metadata: Metadata = {
   title: 'Checkout | Vehicle Control Technologies',
   description: 'Complete your secure checkout process.',
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export default function CheckoutPage() {

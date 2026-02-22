@@ -1,15 +1,12 @@
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
-import { Analytics } from '@vercel/analytics/react';
-import { SpeedInsights } from '@vercel/speed-insights/next';
 import { GeistSans } from 'geist/font/sans';
 import { GeistMono } from 'geist/font/mono';
 import './globals.css';
 import Navbar from '../components/Navbar';
 import AnimatedFooterLayout from '../components/AnimatedFooterLayout';
-import GlobalToastViewport from '../components/GlobalToastViewport';
 import SiteJsonLd from '../components/SiteJsonLd';
-import CookieBanner from '../components/CookieBanner';
+import ClientRuntimeGate from '../components/layout/ClientRuntimeGate';
 import { resolveMetadataBase } from '../lib/siteUrl';
 
 export const metadata: Metadata = {
@@ -62,10 +59,9 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
           </Suspense>
           <div id="main-content" className="flex-1 pt-24 lg:pt-28 pb-12 lg:pb-20">{children}</div>
         </AnimatedFooterLayout>
-        <GlobalToastViewport />
-        <CookieBanner />
-        <Analytics />
-        <SpeedInsights />
+        <Suspense fallback={null}>
+          <ClientRuntimeGate />
+        </Suspense>
       </body>
     </html>
   );

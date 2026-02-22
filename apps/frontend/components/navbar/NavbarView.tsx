@@ -102,15 +102,17 @@ export default function NavbarView({
 }: NavbarViewProps) {
   return (
     <>
-      <SearchModal isOpen={isSearchOpen} onClose={onCloseSearch} />
-      <MobileMenu
-        isOpen={isMenuOpen}
-        onClose={onCloseMenu}
-        isAuthenticated={isAuthenticated}
-        cartQuantity={cartQuantity}
-        onLogout={onLogout}
-        onOpenSearch={onOpenSearch}
-      />
+      {isSearchOpen ? <SearchModal isOpen={isSearchOpen} onClose={onCloseSearch} /> : null}
+      {isMenuOpen ? (
+        <MobileMenu
+          isOpen={isMenuOpen}
+          onClose={onCloseMenu}
+          isAuthenticated={isAuthenticated}
+          cartQuantity={cartQuantity}
+          onLogout={onLogout}
+          onOpenSearch={onOpenSearch}
+        />
+      ) : null}
 
       <header
         className={[
@@ -338,12 +340,14 @@ export default function NavbarView({
                   isCartMenuOpen ? 'pointer-events-auto translate-y-0 opacity-100' : 'pointer-events-none -translate-y-2 opacity-0',
                 ].join(' ')}
               >
-                <MiniCart
-                  lines={sessionSummary.cart?.lines || []}
-                  currencyCode={sessionSummary.cart?.currencyCode || 'USD'}
-                  totalWithTax={sessionSummary.cart?.totalWithTax || 0}
-                  onClose={onCloseCartMenu}
-                />
+                {isCartMenuOpen ? (
+                  <MiniCart
+                    lines={sessionSummary.cart?.lines || []}
+                    currencyCode={sessionSummary.cart?.currencyCode || 'USD'}
+                    totalWithTax={sessionSummary.cart?.totalWithTax || 0}
+                    onClose={onCloseCartMenu}
+                  />
+                ) : null}
               </div>
             </div>
           </div>

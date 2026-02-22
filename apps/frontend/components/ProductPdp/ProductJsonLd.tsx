@@ -1,4 +1,3 @@
-import Script from 'next/script';
 import type { CatalogProduct } from '../../lib/vendure';
 import { resolveSeoDescription } from '../../lib/productSeo';
 import { serializeJsonLd } from '../../lib/seo/jsonLd';
@@ -70,8 +69,10 @@ export default function ProductJsonLd({
   }
 
   return (
-    <Script id="product-json-ld" type="application/ld+json" strategy="lazyOnload">
-      {serializeJsonLd(schema)}
-    </Script>
+    <script
+      id="product-json-ld"
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: serializeJsonLd(schema) }}
+    />
   );
 }

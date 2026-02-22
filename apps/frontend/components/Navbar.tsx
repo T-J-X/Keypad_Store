@@ -1,5 +1,3 @@
-'use client';
+import NavbarServer from './navbar/Navbar.server';
 
-import NavbarController from './navbar/controller';
-
-export default NavbarController;
+export default NavbarServer;

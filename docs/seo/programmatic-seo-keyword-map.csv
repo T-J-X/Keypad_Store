@@ -1,0 +1,30 @@
+cluster,page_type,slug_pattern,primary_keyword,secondary_keyword,intent,indexation,status
+button-inserts-discipline,discipline,/shop/button-inserts/[discipline],marine button inserts,boat control panel icons,commercial,index,planned
+button-inserts-discipline,discipline,/shop/button-inserts/[discipline],hvac button inserts,hvac control icons,commercial,index,planned
+button-inserts-discipline,discipline,/shop/button-inserts/[discipline],off-road button inserts,4x4 dashboard icons,commercial,index,planned
+button-inserts-discipline,discipline,/shop/button-inserts/[discipline],utility vehicle button inserts,fleet control icons,commercial,index,planned
+button-inserts-discipline,discipline,/shop/button-inserts/[discipline],agriculture button inserts,tractor control icons,commercial,index,planned
+keypad-family,protocol-family,/shop/keypads/[protocol-or-family],can keypad,can bus keypad,commercial,index,planned
+keypad-family,protocol-family,/shop/keypads/[protocol-or-family],j1939 keypad,j1939 control keypad,commercial,index,planned
+keypad-family,protocol-family,/shop/keypads/[protocol-or-family],canopen keypad,canopen control panel,commercial,index,planned
+keypad-family,protocol-family,/shop/keypads/[protocol-or-family],backlit keypad,illuminated keypad buttons,commercial,index,planned
+keypad-family,protocol-family,/shop/keypads/[protocol-or-family],sealed keypad,ip rated keypad,commercial,index,planned
+integration-guide,guide,/guides/[integration-or-use-case],keypad wiring guide,keypad installation wiring,informational,index,planned
+integration-guide,guide,/guides/[integration-or-use-case],keypad icon mapping guide,button icon mapping workflow,informational,index,planned
+integration-guide,guide,/guides/[integration-or-use-case],can keypad setup guide,can keypad integration steps,informational,index,planned
+integration-guide,guide,/guides/[integration-or-use-case],marine helm keypad setup,boat helm keypad wiring,informational,index,planned
+integration-guide,guide,/guides/[integration-or-use-case],sim racing keypad setup,sim racing control keypad guide,informational,index,planned
+comparison,comparison,/guides/compare/[a]-vs-[b],can keypad vs canopen keypad,protocol keypad comparison,informational,index,planned
+comparison,comparison,/guides/compare/[a]-vs-[b],backlit vs non backlit keypad,keypad visibility comparison,informational,index,planned
+comparison,comparison,/guides/compare/[a]-vs-[b],laser etched vs printed inserts,keypad insert durability comparison,informational,index,planned
+comparison,comparison,/guides/compare/[a]-vs-[b],sealed vs open keypad,keypad ingress protection comparison,informational,index,planned
+comparison,comparison,/guides/compare/[a]-vs-[b],custom keypad vs standard keypad,keypad customization tradeoffs,informational,index,planned
+technical-doc,docs,/docs/[technical-topic],keypad debounce time,button debounce specification,informational,index,planned
+technical-doc,docs,/docs/[technical-topic],can message mapping for keypads,keypad can message design,informational,index,planned
+technical-doc,docs,/docs/[technical-topic],keypad ingress protection ratings,ip rating for control keypads,informational,index,planned
+technical-doc,docs,/docs/[technical-topic],keypad current draw,current consumption keypad,informational,index,planned
+technical-doc,docs,/docs/[technical-topic],keypad legend readability,icon readability standards,informational,index,planned
+low-signal-variants,noindex-variant,/shop/button-inserts/[discipline]?page=[n],button inserts page 2,paginated low-intent variant,navigational,noindex,planned
+low-signal-variants,noindex-variant,/shop?q=[query],broad query result pages,internal search page,navigational,noindex,planned
+low-signal-variants,noindex-variant,/guides/[topic]?filter=[x],filtered guide variants,parameterized variants,navigational,noindex,planned
+low-signal-variants,noindex-variant,/docs/[topic]?view=[x],alternate view variants,duplicate utility views,navigational,noindex,planned

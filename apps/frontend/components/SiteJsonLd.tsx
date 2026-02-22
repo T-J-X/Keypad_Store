@@ -1,4 +1,3 @@
-import Script from 'next/script';
 import { serializeJsonLd } from '../lib/seo/jsonLd';
 import { resolvePublicSiteUrl } from '../lib/siteUrl';
 
@@ -29,8 +28,10 @@ export default function SiteJsonLd() {
   };
 
   return (
-    <Script id="site-json-ld" type="application/ld+json" strategy="lazyOnload">
-      {serializeJsonLd(payload)}
-    </Script>
+    <script
+      id="site-json-ld"
+      type="application/ld+json"
+      dangerouslySetInnerHTML={{ __html: serializeJsonLd(payload) }}
+    />
   );
 }

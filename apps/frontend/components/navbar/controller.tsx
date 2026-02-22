@@ -1,8 +1,7 @@
-'use client';
-
 import { usePathname } from 'next/navigation';
 import { useCallback, useEffect, useMemo, useReducer, useRef } from 'react';
 import { CART_UPDATED_EVENT, notifyCartUpdated } from '../../lib/cartEvents';
+import { broadcastCartUpdated, subscribeCartUpdated } from '../../lib/cartSync';
 import NavbarView from './NavbarView';
 import { navbarReducer } from './reducer';
 import {
@@ -31,6 +30,15 @@ export default function NavbarController() {
   const shopMenuCloseTimerRef = useRef<number | null>(null);
   const cartMenuRef = useRef<HTMLDivElement | null>(null);
   const lastScrollY = useRef(0);
+  const sessionSummaryHashRef = useRef(JSON.stringify(EMPTY_SESSION_SUMMARY));
+  const inFlightRefreshRef = useRef<Promise<void> | null>(null);
+
+  const setSessionSummaryIfChanged = useCallback((nextSummary: SessionSummary) => {
+    const nextHash = JSON.stringify(nextSummary);
+    if (nextHash === sessionSummaryHashRef.current) return;
+    sessionSummaryHashRef.current = nextHash;
+    patch({ sessionSummary: nextSummary });
+  }, [patch]);
 
   const openShopMenu = useCallback(() => {
     if (shopMenuCloseTimerRef.current != null) {
@@ -50,26 +58,28 @@ export default function NavbarController() {
     }, 120);
   }, [patch]);
 
-  const refreshSessionSummary = useCallback(async () => {
-    try {
-      const response = await fetch('/api/session/summary', {
-        method: 'GET',
-        cache: 'no-store',
-      });
+  const refreshSessionSummary = useCallback(() => {
+    if (inFlightRefreshRef.current) return inFlightRefreshRef.current;
 
-      if (!response.ok) {
-        patch({ sessionSummary: EMPTY_SESSION_SUMMARY });
-        return;
-      }
+    const request = (async () => {
+      try {
+        const response = await fetch('/api/session/summary', {
+          method: 'GET',
+          cache: 'no-store',
+        });
 
-      const payload = (await response.json().catch(() => ({}))) as {
-        authenticated?: boolean;
-        totalQuantity?: number;
-        customer?: SessionSummary['customer'];
-      };
+        if (!response.ok) {
+          setSessionSummaryIfChanged(EMPTY_SESSION_SUMMARY);
+          return;
+        }
 
-      patch({
-        sessionSummary: {
+        const payload = (await response.json().catch(() => ({}))) as {
+          authenticated?: boolean;
+          totalQuantity?: number;
+          customer?: SessionSummary['customer'];
+        };
+
+        setSessionSummaryIfChanged({
           authenticated: payload.authenticated === true,
           totalQuantity: normalizeQuantity(payload.totalQuantity),
           customer:
@@ -77,12 +87,17 @@ export default function NavbarController() {
               ? payload.customer
               : null,
           cart: (payload as any).cart || null,
-        },
-      });
-    } catch {
-      patch({ sessionSummary: EMPTY_SESSION_SUMMARY });
-    }
-  }, [patch]);
+        });
+      } catch {
+        setSessionSummaryIfChanged(EMPTY_SESSION_SUMMARY);
+      }
+    })();
+
+    inFlightRefreshRef.current = request.finally(() => {
+      inFlightRefreshRef.current = null;
+    });
+    return inFlightRefreshRef.current;
+  }, [setSessionSummaryIfChanged]);
 
   const closeDesktopMenus = useCallback(() => {
     patch({
@@ -128,8 +143,13 @@ export default function NavbarController() {
     void refreshSessionSummary();
 
     const onCartUpdated = () => {
+      broadcastCartUpdated({ at: Date.now() });
       void refreshSessionSummary();
     };
+
+    const unsubscribeCartSync = subscribeCartUpdated(() => {
+      void refreshSessionSummary();
+    });
 
     const onFocus = () => {
       void refreshSessionSummary();
@@ -141,21 +161,15 @@ export default function NavbarController() {
       }
     };
 
-    const pollTimer = window.setInterval(() => {
-      if (document.visibilityState === 'visible') {
-        void refreshSessionSummary();
-      }
-    }, 30000);
-
     window.addEventListener(CART_UPDATED_EVENT, onCartUpdated as EventListener);
     window.addEventListener('focus', onFocus);
     document.addEventListener('visibilitychange', onVisibilityChange);
 
     return () => {
-      window.clearInterval(pollTimer);
       window.removeEventListener(CART_UPDATED_EVENT, onCartUpdated as EventListener);
       window.removeEventListener('focus', onFocus);
       document.removeEventListener('visibilitychange', onVisibilityChange);
+      unsubscribeCartSync();
     };
   }, [refreshSessionSummary]);
 

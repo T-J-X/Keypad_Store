@@ -1,6 +1,6 @@
 import Link from 'next/link';
 import type { FormEvent, RefObject } from 'react';
-import { Button } from '../../../components/ui/Button';
+import { Button } from '../../../components/ui/button';
 import type { ConfiguredIconLookup } from '../../../lib/configuredKeypadPreview';
 import type { CheckoutOrder, PaymentMethodQuote, ShippingMethodQuote } from '../../../lib/checkoutTypes';
 import CheckoutConfiguredLines from './CheckoutConfiguredLines';

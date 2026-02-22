@@ -2,30 +2,29 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { Button } from './ui/Button';
+import { Button } from './ui/button';
+import { getCookieConsent, setCookieConsent } from '../lib/consent';
 
 export default function CookieBanner() {
     const [showBanner, setShowBanner] = useState(false);
 
     useEffect(() => {
-        // Check if user has already made a choice
-        const consent = localStorage.getItem('cookie-consent');
-        if (!consent) {
-            // Small delay to prevent layout thrashing on load
-            const timer = setTimeout(() => setShowBanner(true), 1000);
-            return () => clearTimeout(timer);
+        if (getCookieConsent()) {
+            setShowBanner(false);
+            return;
         }
+
+        const timer = setTimeout(() => setShowBanner(true), 1000);
+        return () => clearTimeout(timer);
     }, []);
 
     const handleAccept = () => {
-        localStorage.setItem('cookie-consent', 'accepted');
+        setCookieConsent('accepted');
         setShowBanner(false);
-        // Here you would trigger analytics initialization
-        // e.g. window.gtag('consent', 'update', { ... });
     };
 
     const handleReject = () => {
-        localStorage.setItem('cookie-consent', 'rejected');
+        setCookieConsent('rejected');
         setShowBanner(false);
     };
 

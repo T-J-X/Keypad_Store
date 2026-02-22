@@ -3,7 +3,7 @@ import Image from 'next/image';
 import type { KeypadProduct } from '../lib/vendure';
 import { assetUrl } from '../lib/vendure';
 import { resolvePkpModelCode } from '../lib/keypadUtils';
-import { Button } from './ui/Button';
+import { Button } from './ui/button';
 import {
   cardPlaceholderTextClass,
   cardSupportingTextClass,

@@ -6,6 +6,10 @@ import { fetchActiveOrder } from '../../lib/vendure.server';
 export const metadata: Metadata = {
   title: 'Your Cart | Vehicle Control Technologies',
   description: 'Review and edit your keypad configurations before checkout.',
+  robots: {
+    index: false,
+    follow: false,
+  },
 };
 
 export default function CartPage() {

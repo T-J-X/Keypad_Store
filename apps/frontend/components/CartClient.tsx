@@ -4,7 +4,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { useCallback, useMemo, useState } from 'react';
-import { Button } from './ui/Button';
+import { Button } from './ui/button';
 import ConfiguredKeypadThumbnail from './configurator/ConfiguredKeypadThumbnail';
 import { notifyCartUpdated } from '../lib/cartEvents';
 import { RING_GLOW_OPTIONS } from '../lib/configuratorCatalog';

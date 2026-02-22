@@ -1,4 +1,5 @@
 import { cn } from '../../lib/utils';
+import { Separator } from './separator';
 
 type SparkDividerProps = {
   className?: string;
@@ -13,7 +14,7 @@ export default function SparkDivider({ className }: SparkDividerProps) {
         className,
       )}
     >
-      <div className="absolute left-1/2 top-[-1px] h-[2px] w-[130%] -translate-x-1/2 rounded-full bg-[linear-gradient(90deg,rgba(125,211,252,0)_0%,rgba(56,189,248,0.06)_10%,rgba(56,189,248,0.22)_26%,rgba(96,165,250,0.56)_40%,rgba(125,211,252,0.82)_50%,rgba(96,165,250,0.56)_60%,rgba(56,189,248,0.22)_74%,rgba(56,189,248,0.06)_90%,rgba(125,211,252,0)_100%)] shadow-[0_0_18px_3px_rgba(56,189,248,0.38)]" />
+      <Separator className="absolute left-1/2 top-[-1px] h-[2px] w-[130%] -translate-x-1/2 rounded-full border-0 bg-[linear-gradient(90deg,rgba(125,211,252,0)_0%,rgba(56,189,248,0.06)_10%,rgba(56,189,248,0.22)_26%,rgba(96,165,250,0.56)_40%,rgba(125,211,252,0.82)_50%,rgba(96,165,250,0.56)_60%,rgba(56,189,248,0.22)_74%,rgba(56,189,248,0.06)_90%,rgba(125,211,252,0)_100%)] shadow-[0_0_18px_3px_rgba(56,189,248,0.38)]" />
     </div>
   );
 }
