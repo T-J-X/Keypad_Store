@@ -5,6 +5,7 @@ import Accordion from '../faq/Accordion';
 import DownloadsList from './DownloadsList';
 import KeypadImageGallery from './KeypadImageGallery';
 import PdpTabs, { type PdpTabPanel } from './PdpTabs';
+import { Button } from '../ui/button';
 import { type CatalogProduct, assetUrl } from '../../lib/vendure';
 import { normalizeSpecValue, resolveAdditionalSpecs, resolveInTheBoxItems, resolveProductDownloads } from './productFieldData';
 import { Breadcrumbs, type BreadcrumbItem } from '../Breadcrumbs';
@@ -195,20 +196,20 @@ export default function KeypadPdp({
   });
 
   return (
-    <div className="mx-auto w-full max-w-6xl bg-transparent px-6">
+    <div className="mx-auto w-full max-w-6xl bg-transparent px-6 motion-safe:animate-fade-up">
       <div className="mb-6">
         <Breadcrumbs items={breadcrumbs} />
       </div>
 
       <div className="grid gap-10 lg:grid-cols-[1.1fr_0.9fr] lg:items-start">
         <div>
-          <div className="card-soft rounded-[28px] p-10 md:p-12">
+          <div className="card-soft rounded-[28px] p-10 transition-[transform,box-shadow] duration-300 ease-out hover:-translate-y-0.5 hover:shadow-[0_28px_58px_-28px_rgba(14,17,26,0.3)] md:p-12">
             <KeypadImageGallery images={galleryImages} productName={product.name} />
           </div>
         </div>
 
         <div className="lg:sticky lg:top-32">
-          <section className="card-soft space-y-4 p-5">
+          <section className="card-soft space-y-4 p-5 transition-[transform,box-shadow] duration-300 ease-out hover:-translate-y-0.5 hover:shadow-[0_24px_54px_-30px_rgba(14,17,26,0.35)]">
             <div>
               <h1 className="text-3xl font-semibold tracking-tight text-ink md:text-4xl">{product.name}</h1>
               <p className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-ink/55">Keypad Product</p>
@@ -246,14 +247,9 @@ export default function KeypadPdp({
             )}
 
             <div className="pt-2">
-              <Link
-                href={configuratorHref}
-                className="group relative isolate inline-flex min-h-[44px] w-full items-center justify-center gap-2 rounded-2xl border border-transparent px-6 py-4 text-sm font-medium text-white whitespace-nowrap bg-[linear-gradient(90deg,#040F2E_0%,#112B5D_55%,#29457A_100%),linear-gradient(90deg,#203f7a_0%,#2f5da8_55%,#4b7fca_100%)] [background-origin:padding-box,border-box] [background-clip:padding-box,border-box] transition-[background,box-shadow,transform] duration-300 hover:-translate-y-[1px] hover:bg-[linear-gradient(270deg,#040F2E_0%,#112B5D_55%,#29457A_100%),linear-gradient(90deg,#24497d_0%,#39629a_55%,#537bb0_100%)] hover:shadow-[0_0_0_1px_rgba(72,116,194,0.56),0_10px_24px_rgba(4,15,46,0.29)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#29457A]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white"
-              >
-                <span className="pointer-events-none absolute inset-0 rounded-2xl bg-[linear-gradient(270deg,rgba(255,255,255,0.10)_0%,rgba(255,255,255,0.02)_45%,rgba(255,255,255,0.08)_100%)] opacity-0 transition-opacity duration-300 group-hover:opacity-45" />
-                <span className="pointer-events-none absolute -inset-[1px] -z-10 rounded-2xl bg-[linear-gradient(90deg,rgba(11,27,58,0.44)_0%,rgba(27,52,95,0.30)_55%,rgba(58,116,198,0.30)_100%)] opacity-0 transition-opacity duration-300 group-hover:opacity-55" />
-                <span className="relative z-10">Customize keypad</span>
-              </Link>
+              <Button asChild variant="premium" className="w-full justify-center">
+                <Link href={configuratorHref}>Customize keypad</Link>
+              </Button>
             </div>
           </section>
         </div>

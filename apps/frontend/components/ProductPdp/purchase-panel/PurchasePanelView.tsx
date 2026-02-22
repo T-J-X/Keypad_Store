@@ -71,7 +71,7 @@ export default function PurchasePanelView({
   const loading = adding;
 
   return (
-    <section className="card-soft space-y-4 p-4">
+    <section className="card-soft space-y-4 p-4 transition-[transform,box-shadow] duration-300 ease-out hover:-translate-y-0.5 hover:shadow-[0_24px_54px_-30px_rgba(14,17,26,0.35)]">
       <div>
         <h1 className="text-3xl font-semibold tracking-tight text-ink md:text-4xl">{productName}</h1>
         <p className="mt-1 text-xs font-semibold uppercase tracking-[0.12em] text-ink/55">{productTypeLabel}</p>

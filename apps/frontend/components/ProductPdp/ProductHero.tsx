@@ -34,9 +34,9 @@ export default function ProductHero({
   const renderImage = renderAsset?.preview ?? renderAsset?.source ?? '';
 
   return (
-    <div className="grid gap-10 lg:grid-cols-[1.15fr_0.85fr] lg:items-start">
+    <div className="grid gap-10 motion-safe:animate-fade-up lg:grid-cols-[1.15fr_0.85fr] lg:items-start">
       <div>
-        <div className="card-soft rounded-[28px] p-10 md:p-12">
+        <div className="card-soft rounded-[28px] p-10 transition-[transform,box-shadow] duration-300 ease-out hover:-translate-y-0.5 hover:shadow-[0_28px_58px_-28px_rgba(14,17,26,0.3)] md:p-12">
           <div className="flex h-[520px] w-full items-center justify-center overflow-hidden rounded-3xl bg-white">
             <div className="flex h-[260px] w-[260px] items-center justify-center">
               {renderImage ? (

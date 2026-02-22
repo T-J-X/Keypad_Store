@@ -1,11 +1,10 @@
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import Link from 'next/link';
-import { ShieldCheck, Layers, Cpu, ArrowRight, Zap, Target } from 'lucide-react';
+import { ShieldCheck, Layers, Cpu, ArrowRight, Target } from 'lucide-react';
 import { fetchKeypadProducts } from '../lib/vendure.server';
 import { HeroSlider } from '../components/landing/HeroSlider';
 import { Button } from '../components/ui/button';
-import { Badge } from '../components/ui/badge';
 import { Card, CardContent } from '../components/ui/card';
 import { Skeleton } from '../components/ui/skeleton';
 import SparkDivider from '../components/ui/SparkDivider';
@@ -55,14 +54,6 @@ export default function HomePage() {
 
           {/* Centered Hero Content */}
           <div className="mx-auto flex max-w-4xl animate-fade-up flex-col items-center px-6 text-center lg:px-8">
-            <Badge
-              variant="outline"
-              className="mb-8 inline-flex items-center gap-2 rounded-full border-white/[0.12] bg-white/[0.03] px-4 py-2 text-xs font-bold tracking-widest uppercase text-sky-400 backdrop-blur-md shadow-inner shadow-white/5"
-            >
-              <Zap className="w-3.5 h-3.5" />
-              <span>Vehicle Control Technologies</span>
-            </Badge>
-
             <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl md:text-6xl lg:text-[5rem] leading-[1.05]">
               Build a keypad that feels<br className="hidden md:block" />
               <span className="text-transparent bg-clip-text bg-gradient-to-r from-sky-400 to-blue-600">custom</span> from the first press.
@@ -73,15 +64,17 @@ export default function HomePage() {
             </p>
 
             <div className="flex flex-wrap items-center justify-center gap-4 mt-12 w-full">
-              <Button asChild variant="premium" className="group px-6">
-                <Link href="/shop">
+              <Link href="/shop" className="btn-premium group min-w-[190px]">
+                <span className="relative z-10 flex items-center gap-2">
                   Shop Hardware
                   <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
-                </Link>
-              </Button>
-              <Button asChild variant="secondaryDark" className="bg-white/[0.02] border-white/10 hover:bg-white/[0.06] backdrop-blur-sm px-6">
-                <Link href="/configurator">Start configuring</Link>
-              </Button>
+                </span>
+              </Link>
+              <Link href="/configurator" className="btn-premium min-w-[190px]">
+                <span className="relative z-10 flex items-center justify-center">
+                  Start configuring
+                </span>
+              </Link>
             </div>
 
             <div className="flex flex-wrap justify-center gap-8 pt-12 text-sm font-semibold tracking-wide text-white/40 w-full max-w-lg mx-auto">

@@ -441,7 +441,7 @@ function IconResultsGrid({
   resolveProductCategoryForBreadcrumb: (icon: IconProduct) => string;
 }) {
   const gridClasses = viewMode === 'grid'
-    ? 'staggered grid grid-cols-2 gap-3 min-[480px]:grid-cols-3 md:grid-cols-4 lg:grid-cols-6 xl:grid-cols-6'
+    ? 'staggered grid gap-3 [grid-template-columns:repeat(auto-fill,minmax(148px,1fr))] sm:[grid-template-columns:repeat(auto-fill,minmax(160px,1fr))] lg:[grid-template-columns:repeat(auto-fill,minmax(172px,1fr))]'
     : 'flex flex-col gap-3';
 
   return (
@@ -549,7 +549,7 @@ function ShopSectionHeader({
   searchPlaceholder: string;
 }) {
   return (
-    <div className="mb-8 flex flex-col gap-4">
+    <div className="mb-8 flex flex-col gap-4 motion-safe:animate-fade-up">
       <div className="flex flex-wrap items-end justify-between gap-4">
         {(isIconsSection || isKeypadsSection || isAllSection) && (
           <div>
@@ -620,7 +620,7 @@ function ShopLandingSection({
 }) {
   return (
     <section className="space-y-12">
-      <section className="card rounded-3xl p-5 md:p-7">
+      <section className="card rounded-3xl p-5 motion-safe:animate-fade-up md:p-7">
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="mt-1 text-2xl font-semibold tracking-tight text-ink md:text-3xl">
@@ -641,7 +641,7 @@ function ShopLandingSection({
             const tileSubtitle = tile.subtitle?.trim() || '';
 
             const cardClass = `group relative overflow-hidden rounded-2xl text-left ${shouldUseRingBlue ? ringBlueHoverClass : 'border border-ink/10 bg-white'} ${isInteractive
-              ? 'cursor-pointer transition-[transform,box-shadow] duration-200 hover:-translate-y-0.5'
+              ? 'cursor-pointer transition-[transform,box-shadow] duration-300 ease-out hover:-translate-y-1 hover:shadow-[0_22px_42px_-18px_rgba(4,15,46,0.24)]'
               : 'cursor-default'
               }`;
 
@@ -675,7 +675,7 @@ function ShopLandingSection({
                   ) : null}
                   {isInteractive ? (
                     <span
-                      className={`mt-4 translate-y-2 opacity-0 transition-[opacity,transform] duration-200 group-hover:translate-y-0 group-hover:opacity-100 ${buttonVariants({ variant: 'premium' })} ${isExploreMoreTile
+                      className={`mt-4 translate-y-3 opacity-0 transition-[opacity,transform] duration-300 group-hover:translate-y-0 group-hover:opacity-100 ${buttonVariants({ variant: 'premium' })} ${isExploreMoreTile
                         ? 'bg-surface text-ink shadow-sm'
                         : ''
                         }`}
@@ -705,7 +705,10 @@ function ShopLandingSection({
         </div>
       </section>
 
-      <section className="card rounded-3xl p-5 md:p-7">
+      <section
+        className="card rounded-3xl p-5 opacity-0 motion-safe:animate-fade-up md:p-7"
+        style={{ animationDelay: '90ms', animationDuration: '620ms', animationFillMode: 'forwards' }}
+      >
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <div>
             <h2 className="mt-1 text-2xl font-semibold tracking-tight text-ink md:text-3xl">

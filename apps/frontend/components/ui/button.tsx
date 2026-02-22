@@ -18,7 +18,7 @@ const buttonVariants = cva(
         soft: 'bg-sky-500/10 text-sky-600 hover:bg-sky-500/20',
         premium:
           'border border-transparent text-white bg-[linear-gradient(90deg,#040F2E_0%,#112B5D_55%,#29457A_100%),linear-gradient(90deg,#203f7a_0%,#2f5da8_55%,#4b7fca_100%)] [background-origin:padding-box,border-box] [background-clip:padding-box,border-box] shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:-translate-y-[1px] hover:bg-[linear-gradient(270deg,#040F2E_0%,#112B5D_55%,#29457A_100%),linear-gradient(90deg,#24497d_0%,#39629a_55%,#537bb0_100%)] hover:shadow-[0_0_0_1px_rgba(72,116,194,0.56),0_10px_24px_rgba(4,15,46,0.29)] disabled:opacity-50 disabled:shadow-none',
-        secondaryDark: 'border border-white/15 bg-transparent text-white/70 hover:bg-white/5 hover:text-white hover:border-white/30',
+        secondaryDark: 'border border-white/15 bg-transparent text-white hover:bg-white/5 hover:text-white hover:border-white/30',
       },
       size: {
         default: 'h-11 px-6 py-3',

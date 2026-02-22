@@ -68,7 +68,7 @@ export default function ProductCard({
   const finalProductHref = productHref ?? `/shop/product/${product.slug}`;
 
   return (
-    <div className={`group relative flex ${isList ? 'flex-row items-center gap-4 p-2' : 'flex-col'} rounded-2xl bg-white transition-all duration-300 hover:shadow-soft hover:-translate-y-1`}>
+    <div className={`group relative flex ${isList ? 'flex-row items-center gap-4 p-2' : 'flex-col'} rounded-2xl border border-surface-border bg-white transition-[transform,box-shadow,border-color] duration-300 ease-out hover:-translate-y-1 hover:border-ink/20 hover:shadow-[0_18px_38px_-18px_rgba(14,17,26,0.34)] motion-safe:animate-fade-up`}>
       {/* Image Container */}
       <Link
         href={finalProductHref}

@@ -200,8 +200,8 @@ export default function NavbarView({
                         role="menuitem"
                         onClick={onCloseShopMenu}
                         className={[
-                          'relative flex flex-col rounded-xl px-4 py-3 transition-[padding,background-color,color] duration-200',
-                          'text-white/80 hover:bg-white/[0.08] hover:text-white hover:pl-5',
+                          'relative flex flex-col rounded-xl px-4 py-3 transition-[padding,background-color,color,transform] duration-300',
+                          'text-white/80 hover:translate-x-0.5 hover:bg-white/[0.08] hover:text-white hover:pl-5',
                         ].join(' ')}
                       >
                         <div className="text-sm font-semibold tracking-wide text-white">{item.label}</div>
@@ -263,8 +263,8 @@ export default function NavbarView({
                     href="/account"
                     onClick={onCloseAccountMenu}
                     className={[
-                      'block rounded-xl px-3 py-2.5 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky/45',
-                      'text-white/80 hover:bg-white/[0.08] hover:text-white',
+                      'block rounded-xl px-3 py-2.5 text-sm font-medium transition-[background-color,color,transform] duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky/45',
+                      'text-white/80 hover:translate-x-0.5 hover:bg-white/[0.08] hover:text-white',
                     ].join(' ')}
                   >
                     Profile
@@ -274,8 +274,8 @@ export default function NavbarView({
                     href="/account?tab=orders"
                     onClick={onCloseAccountMenu}
                     className={[
-                      'block rounded-xl px-3 py-2.5 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky/45',
-                      'text-white/80 hover:bg-white/[0.08] hover:text-white',
+                      'block rounded-xl px-3 py-2.5 text-sm font-medium transition-[background-color,color,transform] duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky/45',
+                      'text-white/80 hover:translate-x-0.5 hover:bg-white/[0.08] hover:text-white',
                     ].join(' ')}
                   >
                     Orders
