@@ -1,6 +1,7 @@
 import { Customer, type DeepPartial, VendureEntity } from '@vendure/core';
 import { Column, Entity, Index, JoinColumn, ManyToOne, RelationId } from 'typeorm';
 
+@Index('idx_saved_configuration_customer_updated_at', ['customerId', 'updatedAt'])
 @Entity()
 export class SavedConfiguration extends VendureEntity {
   constructor(input?: DeepPartial<SavedConfiguration>) {

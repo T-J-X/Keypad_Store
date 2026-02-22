@@ -49,6 +49,16 @@ const ngCompilerPath = require.resolve('@angular/cli/bin/ng.js', {
 const superadminIdentifier = process.env.SUPERADMIN_USERNAME?.trim() || (isProduction ? '' : 'superadmin');
 const superadminPassword = process.env.SUPERADMIN_PASSWORD?.trim() || (isProduction ? '' : 'superadmin');
 const dbSynchronize = (process.env.DB_SYNCHRONIZE ?? (isProduction ? 'false' : 'true')).trim().toLowerCase() === 'true';
+const parsePositiveInt = (value: string | undefined, fallback: number): number => {
+  const parsed = Number.parseInt(String(value ?? ''), 10);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+};
+const dbPoolMax = parsePositiveInt(process.env.DB_POOL_MAX, isProduction ? 20 : 10);
+const dbConnectionTimeoutMs = parsePositiveInt(process.env.DB_CONNECTION_TIMEOUT_MS, 5000);
+const dbQueryTimeoutMs = parsePositiveInt(process.env.DB_QUERY_TIMEOUT_MS, 15000);
+const dbStatementTimeoutMs = parsePositiveInt(process.env.DB_STATEMENT_TIMEOUT_MS, 15000);
+const dbIdleTimeoutMs = parsePositiveInt(process.env.DB_IDLE_TIMEOUT_MS, 30000);
+const dbIdleInTransactionTimeoutMs = parsePositiveInt(process.env.DB_IDLE_IN_TX_TIMEOUT_MS, 10000);
 
 if (isProduction && (!superadminIdentifier || !superadminPassword)) {
   throw new Error(
@@ -126,6 +136,14 @@ export const config: VendureConfig = {
     database: process.env.DB_NAME ?? 'vendure',
     synchronize: dbSynchronize,
     logging: false,
+    extra: {
+      max: dbPoolMax,
+      connectionTimeoutMillis: dbConnectionTimeoutMs,
+      query_timeout: dbQueryTimeoutMs,
+      statement_timeout: dbStatementTimeoutMs,
+      idleTimeoutMillis: dbIdleTimeoutMs,
+      idle_in_transaction_session_timeout: dbIdleInTransactionTimeoutMs,
+    },
   },
   logger: new DefaultLogger({ level: LogLevel.Info }),
   customFields: {

@@ -36,15 +36,12 @@ export class SavedConfigurationService {
 
   async getSavedConfigurations(ctx: RequestContext): Promise<SavedConfiguration[]> {
     const customer = await this.getActiveCustomerOrThrow(ctx);
-
-    return this.connection.getRepository(ctx, SavedConfiguration).find({
-      where: {
-        customer: { id: String(customer.id) } as Customer,
-      },
-      order: {
-        updatedAt: 'DESC',
-      },
-    });
+    return this.connection
+      .getRepository(ctx, SavedConfiguration)
+      .createQueryBuilder('savedConfiguration')
+      .where('savedConfiguration.customerId = :customerId', { customerId: String(customer.id) })
+      .orderBy('savedConfiguration.updatedAt', 'DESC')
+      .getMany();
   }
 
   async getSavedConfigurationById(ctx: RequestContext, id: string): Promise<SavedConfiguration> {
@@ -125,9 +122,8 @@ export class SavedConfigurationService {
     const repo = this.connection.getRepository(ctx, SavedConfiguration);
     const entity = await repo
       .createQueryBuilder('savedConfiguration')
-      .leftJoin('savedConfiguration.customer', 'customer')
       .where('savedConfiguration.id = :id', { id })
-      .andWhere('customer.id = :customerId', { customerId })
+      .andWhere('savedConfiguration.customerId = :customerId', { customerId })
       .getOne();
     if (!entity) {
       throw new UserInputError('Saved configuration not found.');
