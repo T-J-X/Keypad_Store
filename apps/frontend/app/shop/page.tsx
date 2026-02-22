@@ -179,6 +179,17 @@ function pickIconVariantFields(variant: VendureProductVariant | null | undefined
   ];
 }
 
+function pickKeypadVariantFields(variant: VendureProductVariant | null | undefined): VendureProductVariant[] {
+  if (!variant) return [];
+  return [
+    {
+      id: variant.id,
+      priceWithTax: variant.priceWithTax ?? null,
+      currencyCode: variant.currencyCode ?? null,
+    },
+  ];
+}
+
 function pickIconCardFields(icon: IconProduct): IconProduct {
   return {
     id: icon.id,
@@ -199,6 +210,10 @@ function pickKeypadCardFields(keypad: KeypadProduct): KeypadProduct {
     name: keypad.name,
     slug: keypad.slug,
     featuredAsset: pickAssetFields(keypad.featuredAsset),
+    variants: pickKeypadVariantFields(keypad.variants?.[0]),
+    customFields: {
+      application: keypad.customFields?.application ?? [],
+    },
   };
 }
 

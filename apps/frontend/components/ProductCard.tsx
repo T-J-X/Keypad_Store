@@ -34,6 +34,7 @@ export default function ProductCard({
   const showToast = useUIStore((state) => state.showToast);
 
   const priceWithVatLabel = formatPrice(primaryVariant?.priceWithTax, primaryVariant?.currencyCode);
+  const priceExVatLabel = formatPriceExVatUk(primaryVariant?.priceWithTax, primaryVariant?.currencyCode);
 
   const onAddToCart = async (e: React.MouseEvent) => {
     e.preventDefault();
@@ -130,7 +131,10 @@ export default function ProductCard({
               {priceWithVatLabel || 'Unavailable'}
             </span>
             {priceWithVatLabel && (
-              <span className="text-[9px] font-medium text-ink-muted">INCL VAT</span>
+              <span className="text-[9px] font-medium text-ink-muted">
+                Incl VAT
+                {priceExVatLabel ? ` · Ex VAT ${priceExVatLabel}` : ''}
+              </span>
             )}
           </div>
 
@@ -158,14 +162,32 @@ export default function ProductCard({
 
 function formatPrice(priceWithTax?: number | null, currencyCode?: string | null) {
   if (typeof priceWithTax !== 'number') return null;
-  const currency = currencyCode || 'USD';
+  const currency = (currencyCode || 'GBP').toUpperCase();
   try {
-    return new Intl.NumberFormat('en-US', {
+    return new Intl.NumberFormat('en-GB', {
       style: 'currency',
       currency,
+      minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     }).format(priceWithTax / 100);
   } catch {
     return `${(priceWithTax / 100).toFixed(2)} ${currency}`;
+  }
+}
+
+function formatPriceExVatUk(priceWithTax?: number | null, currencyCode?: string | null) {
+  if (typeof priceWithTax !== 'number') return null;
+  const currency = (currencyCode || 'GBP').toUpperCase();
+  if (currency !== 'GBP') return null;
+  const exVatMinor = Math.round(priceWithTax / 1.2);
+  try {
+    return new Intl.NumberFormat('en-GB', {
+      style: 'currency',
+      currency,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(exVatMinor / 100);
+  } catch {
+    return `${(exVatMinor / 100).toFixed(2)} ${currency}`;
   }
 }

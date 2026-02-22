@@ -44,6 +44,9 @@ export default function KeypadCard({
   const isShopCard = mode === 'shop';
   const detailHref = learnMoreHref ?? `/shop/product/${encodedProductSlug}`;
   const configuratorHref = `/configurator/keypad/${encodedConfiguratorSlug}`;
+  const primaryVariant = product.variants?.[0];
+  const priceWithVatLabel = formatMinorPrice(primaryVariant?.priceWithTax, primaryVariant?.currencyCode);
+  const priceExVatLabel = formatPriceExVatUk(primaryVariant?.priceWithTax, primaryVariant?.currencyCode);
   const mediaHeightClass = isShopCard ? 'h-56' : 'h-44';
   const mediaPaddingClass = isShopCard ? 'p-5' : 'p-4';
 
@@ -86,7 +89,18 @@ export default function KeypadCard({
           <div className={`mt-1 ${cardSupportingTextClass}`}>{description}</div>
         </div>
         {isShopCard ? (
-          <div className="pointer-events-auto relative z-20 flex flex-col gap-2">
+          <div className="pointer-events-auto relative z-20 flex flex-col gap-3">
+            <div className="rounded-xl border border-surface-border bg-surface-alt/80 px-3 py-2">
+              <div className="text-sm font-semibold text-ink">
+                {priceWithVatLabel ?? 'Price unavailable'}
+              </div>
+              {priceWithVatLabel ? (
+                <div className="mt-0.5 text-[10px] font-medium uppercase tracking-wide text-ink-muted">
+                  Incl. VAT
+                  {priceExVatLabel ? ` · Excl. VAT ${priceExVatLabel}` : ''}
+                </div>
+              ) : null}
+            </div>
             <Button asChild variant="secondary" className="w-full justify-center">
               <Link
                 href={detailHref}
@@ -115,4 +129,26 @@ export default function KeypadCard({
       </div>
     </div>
   );
+}
+
+function formatMinorPrice(minorUnits?: number | null, currencyCode?: string | null) {
+  if (typeof minorUnits !== 'number') return null;
+  const currency = (currencyCode || 'GBP').toUpperCase();
+  try {
+    return new Intl.NumberFormat('en-GB', {
+      style: 'currency',
+      currency,
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    }).format(minorUnits / 100);
+  } catch {
+    return `${(minorUnits / 100).toFixed(2)} ${currency}`;
+  }
+}
+
+function formatPriceExVatUk(priceWithTax?: number | null, currencyCode?: string | null) {
+  if (typeof priceWithTax !== 'number') return null;
+  const currency = (currencyCode || 'GBP').toUpperCase();
+  if (currency !== 'GBP') return null;
+  return formatMinorPrice(Math.round(priceWithTax / 1.2), currency);
 }
