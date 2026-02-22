@@ -1,12 +1,11 @@
 import type { Metadata } from 'next';
+import { buildPageMetadata } from '../../lib/seo/metadata';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata({
     title: 'Privacy Policy',
     description: 'How we collect, use, and protect your data.',
-    alternates: {
-        canonical: '/privacy',
-    },
-};
+    canonical: '/privacy',
+});
 
 export default function PrivacyPage() {
     return (

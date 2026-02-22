@@ -2,14 +2,14 @@ import type { Metadata } from 'next';
 import { Users, Cpu, ShieldCheck, Rocket, ArrowUpRight } from 'lucide-react';
 import Link from 'next/link';
 import MarketingPageShell from '../../components/marketing/MarketingPageShell';
+import { buildPageMetadata } from '../../lib/seo/metadata';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata({
   title: 'Careers',
   description: 'Explore careers at Vehicle Control Technologies and submit your interest.',
-  alternates: {
-    canonical: '/careers',
-  },
-};
+  canonical: '/careers',
+  keywords: ['VCT careers', 'keypad engineering jobs', 'industrial hardware careers'],
+});
 
 const principles = [
   {

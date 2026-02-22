@@ -2,8 +2,10 @@ import type { Metadata } from 'next';
 import { notFound } from 'next/navigation';
 import { Suspense, cache } from 'react';
 import KeypadConfigurator from '../../../../components/configurator/KeypadConfigurator';
+import { Skeleton } from '../../../../components/ui/skeleton';
 import { resolveKeypadShellAssetPath } from '../../../../lib/keypadShellAsset';
 import { resolvePkpModelCode } from '../../../../lib/keypadUtils';
+import { buildPageMetadata } from '../../../../lib/seo/metadata';
 import { fetchKeypadProducts, fetchProductBySlug, fetchSessionSummary } from '../../../../lib/vendure.server';
 import { fetchIconCatalog } from '../../../../lib/configurator.server';
 
@@ -39,27 +41,21 @@ export async function generateMetadata({
   const product = await fetchKeypadForSlug(resolved.slug);
 
   if (!product) {
-    return {
+    return buildPageMetadata({
       title: 'Configurator Not Found',
       description: 'The requested keypad configurator page could not be found.',
-      alternates: {
-        canonical: `/configurator/keypad/${encodeURIComponent(resolved.slug)}`,
-      },
-      robots: {
-        index: false,
-        follow: false,
-      },
-    };
+      canonical: `/configurator/keypad/${encodeURIComponent(resolved.slug)}`,
+      noIndex: true,
+    });
   }
 
   const modelCode = resolvePkpModelCode(product.slug, product.name) || product.name.toUpperCase();
-  return {
+  return buildPageMetadata({
     title: `${modelCode} Configurator`,
     description: `Configure ${modelCode} with per-slot inserts, glow rings, and production-ready layout precision.`,
-    alternates: {
-      canonical: `/configurator/keypad/${encodeURIComponent(product.slug)}`,
-    },
-  };
+    canonical: `/configurator/keypad/${encodeURIComponent(product.slug)}`,
+    keywords: [`${modelCode} keypad`, `${modelCode} configurator`, 'custom keypad layout'],
+  });
 }
 
 export default function ConfiguratorModelPage({
@@ -79,7 +75,7 @@ export default function ConfiguratorModelPage({
 function ConfiguratorModelFallback() {
   return (
     <div className="mx-auto w-full max-w-7xl px-4 sm:px-6 lg:px-8">
-      <div className="h-[640px] animate-pulse rounded-3xl bg-[linear-gradient(180deg,#dbe8f9_0%,#f4f7fc_100%)]" />
+      <Skeleton className="h-[640px] rounded-3xl bg-[linear-gradient(180deg,#dbe8f9_0%,#f4f7fc_100%)]" />
     </div>
   );
 }

@@ -1,12 +1,11 @@
 import type { Metadata } from 'next';
+import { buildPageMetadata } from '../../lib/seo/metadata';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata({
     title: 'Cookie Policy',
     description: 'Information about the cookies we use on our website.',
-    alternates: {
-        canonical: '/cookies',
-    },
-};
+    canonical: '/cookies',
+});
 
 export default function CookiesPage() {
     return (

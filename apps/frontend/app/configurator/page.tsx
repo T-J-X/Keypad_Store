@@ -2,21 +2,22 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { Suspense } from 'react';
 import KeypadCard from '../../components/KeypadCard';
+import { Skeleton } from '../../components/ui/skeleton';
+import { buildPageMetadata } from '../../lib/seo/metadata';
 import { fetchKeypadProducts } from '../../lib/vendure.server';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata({
   title: 'Configurator',
   description: 'Choose a keypad model and configure slot-by-slot inserts with engineering-ready precision.',
-  alternates: {
-    canonical: '/configurator',
-  },
-};
+  canonical: '/configurator',
+  keywords: ['keypad configurator', 'custom keypad layout', 'vehicle control keypad builder'],
+});
 
 function KeypadGridFallback() {
   return (
     <div className="staggered grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
       {Array.from({ length: 6 }).map((_, index) => (
-        <div key={index} className="card-soft h-[360px] animate-pulse rounded-3xl bg-gray-200" />
+        <Skeleton key={index} className="card-soft h-[360px] rounded-3xl bg-gray-200/80" />
       ))}
     </div>
   );

@@ -1,6 +1,9 @@
 import Link from 'next/link';
 import { ArrowRight } from 'lucide-react';
 import type { ReactNode } from 'react';
+import { Button } from '../ui/button';
+import { Badge } from '../ui/badge';
+import { Card, CardContent } from '../ui/card';
 
 type MarketingAction = {
   label: string;
@@ -23,11 +26,8 @@ type MarketingPageShellProps = {
   children: ReactNode;
 };
 
-const primaryActionClass = 'inline-flex min-h-[44px] items-center gap-2 rounded-2xl border border-transparent px-5 py-2.5 text-sm font-semibold text-white bg-[linear-gradient(90deg,#040F2E_0%,#112B5D_55%,#29457A_100%),linear-gradient(90deg,#203f7a_0%,#2f5da8_55%,#4b7fca_100%)] [background-origin:padding-box,border-box] [background-clip:padding-box,border-box] shadow-[0_1px_2px_rgba(0,0,0,0.1)] transition-[transform,background,box-shadow] duration-300 hover:-translate-y-[1px] hover:bg-[linear-gradient(270deg,#040F2E_0%,#112B5D_55%,#29457A_100%),linear-gradient(90deg,#24497d_0%,#39629a_55%,#537bb0_100%)] hover:shadow-[0_0_0_1px_rgba(72,116,194,0.56),0_10px_24px_rgba(4,15,46,0.29)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#29457A]/60 focus-visible:ring-offset-2 focus-visible:ring-offset-white';
-const secondaryActionClass = 'inline-flex min-h-[44px] items-center gap-2 rounded-2xl border border-[#2d4d81]/45 bg-[#071634]/55 px-5 py-2.5 text-sm font-semibold text-blue-50 backdrop-blur-xl transition-[transform,border-color,background-color,color] duration-300 hover:-translate-y-[1px] hover:border-[#4f79bb]/70 hover:bg-[#0a1f45]/70 hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#4f79bb]/65 focus-visible:ring-offset-2 focus-visible:ring-offset-white';
-
-function getActionClass(variant: MarketingAction['variant']) {
-  return variant === 'secondary' ? secondaryActionClass : primaryActionClass;
+function getActionVariant(variant: MarketingAction['variant']) {
+  return variant === 'secondary' ? 'secondaryDark' : 'premium';
 }
 
 const EMPTY_ACTIONS: MarketingAction[] = [];
@@ -50,10 +50,13 @@ export default function MarketingPageShell({
         <div className="pointer-events-none absolute -right-24 bottom-12 h-72 w-72 rounded-full bg-blue-500/15 blur-3xl" />
 
         <div className="relative z-10 px-6 py-12 sm:px-10 lg:px-14 lg:py-16">
-          <header className="max-w-3xl">
-            <span className="inline-flex items-center rounded-full border border-[#3c5f95]/45 bg-[#0a2047]/70 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#9edcff] backdrop-blur-lg">
+          <header className="max-w-3xl motion-safe:animate-fade-up">
+            <Badge
+              variant="outline"
+              className="rounded-full border-[#3c5f95]/45 bg-[#0a2047]/70 px-4 py-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-[#9edcff] backdrop-blur-lg"
+            >
               {badge}
-            </span>
+            </Badge>
             <h1 className="mt-5 text-balance text-4xl font-semibold tracking-tight text-white sm:text-5xl">
               {title}
             </h1>
@@ -70,24 +73,33 @@ export default function MarketingPageShell({
           {actions.length > 0 ? (
             <div className="mt-8 flex flex-wrap gap-3">
               {actions.map((action) => (
-                <Link key={`${action.href}-${action.label}`} href={action.href} className={getActionClass(action.variant)}>
-                  {action.label}
-                  <ArrowRight className="h-4 w-4" />
-                </Link>
+                <Button
+                  key={`${action.href}-${action.label}`}
+                  asChild
+                  variant={getActionVariant(action.variant)}
+                  className="group min-h-[46px] rounded-2xl px-5 py-2.5 text-sm"
+                >
+                  <Link href={action.href}>
+                    {action.label}
+                    <ArrowRight className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" />
+                  </Link>
+                </Button>
               ))}
             </div>
           ) : null}
 
           {stats.length > 0 ? (
-            <dl className="mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <dl className="staggered mt-10 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
               {stats.map((stat) => (
-                <div
+                <Card
                   key={stat.label}
-                  className="rounded-2xl border border-white/10 bg-white/[0.045] p-4 backdrop-blur-xl transition-colors duration-300 hover:border-white/20 hover:bg-white/[0.075]"
+                  className="gap-0 rounded-2xl border-white/10 bg-white/[0.045] py-0 backdrop-blur-xl transition-colors duration-300 hover:border-white/20 hover:bg-white/[0.075]"
                 >
-                  <dt className="text-[11px] font-semibold uppercase tracking-[0.13em] text-blue-100/55">{stat.label}</dt>
-                  <dd className="mt-2 text-2xl font-semibold tracking-tight text-white">{stat.value}</dd>
-                </div>
+                  <CardContent className="p-4">
+                    <dt className="text-[11px] font-semibold uppercase tracking-[0.13em] text-blue-100/55">{stat.label}</dt>
+                    <dd className="mt-2 text-2xl font-semibold tracking-tight text-white">{stat.value}</dd>
+                  </CardContent>
+                </Card>
               ))}
             </dl>
           ) : null}

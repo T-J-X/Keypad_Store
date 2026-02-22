@@ -2,14 +2,14 @@ import type { Metadata } from 'next';
 import { Cpu, ShieldCheck, Layers, Wrench, ArrowUpRight } from 'lucide-react';
 import Link from 'next/link';
 import MarketingPageShell from '../../components/marketing/MarketingPageShell';
+import { buildPageMetadata } from '../../lib/seo/metadata';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata({
   title: 'About Us',
   description: 'Learn how Vehicle Control Technologies designs rugged keypad systems for demanding environments.',
-  alternates: {
-    canonical: '/about',
-  },
-};
+  canonical: '/about',
+  keywords: ['about vehicle control technologies', 'rugged keypad engineering', 'industrial keypad company'],
+});
 
 const pillars = [
   {

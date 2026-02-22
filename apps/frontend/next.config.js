@@ -39,6 +39,7 @@ const remotePatterns = Array.from(
 const nextConfig = {
   reactStrictMode: true,
   cacheComponents: true,
+  allowedDevOrigins: ['127.0.0.1', 'localhost'],
   poweredByHeader: false,
   transpilePackages: ['@keypad-store/shared-utils'],
   images: {

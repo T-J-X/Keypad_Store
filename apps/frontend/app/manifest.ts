@@ -7,8 +7,8 @@ export default function manifest(): MetadataRoute.Manifest {
         description: 'Configure technical keypads, map icon IDs, and export engineering-ready specifications.',
         start_url: '/',
         display: 'standalone',
-        background_color: '#ffffff',
-        theme_color: '#ffffff',
+        background_color: '#020617',
+        theme_color: '#020617',
         icons: [
             {
                 src: '/vct-logo.png',

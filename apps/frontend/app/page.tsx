@@ -4,15 +4,19 @@ import Link from 'next/link';
 import { ShieldCheck, Layers, Cpu, ArrowRight, Zap, Target } from 'lucide-react';
 import { fetchKeypadProducts } from '../lib/vendure.server';
 import { HeroSlider } from '../components/landing/HeroSlider';
+import { Button } from '../components/ui/button';
+import { Badge } from '../components/ui/badge';
+import { Card, CardContent } from '../components/ui/card';
+import { Skeleton } from '../components/ui/skeleton';
 import SparkDivider from '../components/ui/SparkDivider';
+import { buildPageMetadata } from '../lib/seo/metadata';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata({
   title: 'Premium Sim Racing Keypads',
   description: 'Choose a keypad model, map icon inserts, and export production-ready keypad configurations.',
-  alternates: {
-    canonical: '/',
-  },
-};
+  canonical: '/',
+  keywords: ['sim racing keypad', 'custom keypad', 'keypad configurator', 'racing button inserts'],
+});
 
 // NEW Server Component to handle the dynamic fetching
 async function KeypadSliderSection() {
@@ -51,10 +55,13 @@ export default function HomePage() {
 
           {/* Centered Hero Content */}
           <div className="text-center px-6 lg:px-8 animate-fade-up max-w-4xl mx-auto flex flex-col items-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-white/[0.03] border border-white/[0.08] text-xs font-bold tracking-widest uppercase text-sky-400 backdrop-blur-md mb-8 shadow-inner shadow-white/5">
+            <Badge
+              variant="outline"
+              className="mb-8 inline-flex items-center gap-2 rounded-full border-white/[0.12] bg-white/[0.03] px-4 py-2 text-xs font-bold tracking-widest uppercase text-sky-400 backdrop-blur-md shadow-inner shadow-white/5"
+            >
               <Zap className="w-3.5 h-3.5" />
               <span>Vehicle Control Technologies</span>
-            </div>
+            </Badge>
 
             <h1 className="text-4xl font-semibold tracking-tight text-white sm:text-5xl md:text-6xl lg:text-[5rem] leading-[1.05]">
               Build a keypad that feels<br className="hidden md:block" />
@@ -66,13 +73,15 @@ export default function HomePage() {
             </p>
 
             <div className="flex flex-wrap items-center justify-center gap-4 mt-12 w-full">
-              <Link href="/shop" className="btn-premium flex items-center gap-2 group">
-                Shop Hardware
-                <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
-              </Link>
-              <Link href="/configurator" className="btn-secondary dark text-white bg-white/[0.02] border-white/10 hover:bg-white/[0.06] backdrop-blur-sm px-6">
-                Start configuring
-              </Link>
+              <Button asChild variant="premium" className="group px-6">
+                <Link href="/shop">
+                  Shop Hardware
+                  <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-0.5" />
+                </Link>
+              </Button>
+              <Button asChild variant="secondaryDark" className="bg-white/[0.02] border-white/10 hover:bg-white/[0.06] backdrop-blur-sm px-6">
+                <Link href="/configurator">Start configuring</Link>
+              </Button>
             </div>
 
             <div className="flex flex-wrap justify-center gap-8 pt-12 text-sm font-semibold tracking-wide text-white/40 w-full max-w-lg mx-auto">
@@ -99,8 +108,12 @@ export default function HomePage() {
               </div>
 
               <Suspense fallback={
-                <div className="h-[400px] w-full flex items-center justify-center">
-                  <div className="w-8 h-8 rounded-full border-b-2 border-sky-400 animate-spin" />
+                <div className="h-[400px] w-full px-4 sm:px-8">
+                  <div className="grid h-full gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                    <Skeleton className="h-full rounded-2xl bg-white/10" />
+                    <Skeleton className="hidden h-full rounded-2xl bg-white/10 sm:block" />
+                    <Skeleton className="hidden h-full rounded-2xl bg-white/10 lg:block" />
+                  </div>
                 </div>
               }>
                 <KeypadSliderSection />
@@ -134,17 +147,19 @@ export default function HomePage() {
                 title: 'Production Ready',
                 body: 'An end-to-end pipeline from digital software configuration directly to order-ready hardware packaging.'
               }
-            ].map((card, i) => (
-              <div
+            ].map((card) => (
+              <Card
                 key={card.title}
-                className="group p-8 rounded-2xl bg-white/[0.03] border border-white/5 hover:bg-white/[0.06] hover:border-white/10 transition-all duration-300 hover:-translate-y-1 backdrop-blur-sm"
+                className="group gap-0 rounded-2xl border-white/5 bg-white/[0.03] py-0 backdrop-blur-sm transition-all duration-300 hover:-translate-y-1 hover:border-white/10 hover:bg-white/[0.06]"
               >
-                <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
-                  {card.icon}
-                </div>
-                <div className="text-xl font-semibold text-white tracking-tight">{card.title}</div>
-                <p className="mt-4 text-sm text-white/50 leading-relaxed font-sans">{card.body}</p>
-              </div>
+                <CardContent className="p-8">
+                  <div className="w-12 h-12 rounded-xl bg-white/5 border border-white/10 flex items-center justify-center mb-6 group-hover:scale-110 transition-transform duration-300">
+                    {card.icon}
+                  </div>
+                  <div className="text-xl font-semibold text-white tracking-tight">{card.title}</div>
+                  <p className="mt-4 text-sm text-white/50 leading-relaxed font-sans">{card.body}</p>
+                </CardContent>
+              </Card>
             ))}
           </div>
         </section>
@@ -156,9 +171,9 @@ export default function HomePage() {
               <div className="text-xs font-bold uppercase tracking-widest text-sky-400">Start Building</div>
               <h2 className="mt-3 text-4xl font-semibold text-white tracking-tight">Pick your path.</h2>
             </div>
-            <Link href="/shop" className="btn-premium">
-              Browse the catalog
-            </Link>
+            <Button asChild variant="premium">
+              <Link href="/shop">Browse the catalog</Link>
+            </Button>
           </div>
 
           <div className="grid gap-6 md:grid-cols-2">

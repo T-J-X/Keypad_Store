@@ -1,6 +1,7 @@
 import type { CatalogProduct } from '../../lib/vendure';
 import { resolveSeoDescription } from '../../lib/productSeo';
 import { serializeJsonLd } from '../../lib/seo/jsonLd';
+import { resolvePublicSiteUrl } from '../../lib/siteUrl';
 import { assetUrl } from '../../lib/vendure';
 
 type CatalogVariant = NonNullable<CatalogProduct['variants']>[number];
@@ -23,7 +24,7 @@ export default function ProductJsonLd({
 }: {
   product: CatalogProduct;
 }) {
-  const siteOrigin = process.env.NEXT_PUBLIC_SITE_URL || process.env.NEXT_PUBLIC_STOREFRONT_URL || '';
+  const siteOrigin = resolvePublicSiteUrl();
   const primaryVariant = product.variants?.[0];
   const availability = hasStock(primaryVariant)
     ? 'https://schema.org/InStock'
@@ -43,6 +44,19 @@ export default function ProductJsonLd({
       name: 'Vehicle Control Technologies',
     },
   };
+
+  const rawCategories = product.customFields?.iconCategories ?? product.customFields?.application;
+  const categories = (Array.isArray(rawCategories)
+    ? rawCategories
+    : typeof rawCategories === 'string'
+      ? [rawCategories]
+      : []
+  )
+    .map((value) => value.trim())
+    .filter(Boolean);
+  if (categories.length > 0) {
+    schema.category = categories.join(', ');
+  }
 
   if (primaryVariant?.sku) {
     schema.sku = primaryVariant.sku;
@@ -65,6 +79,10 @@ export default function ProductJsonLd({
       availability,
       itemCondition: 'https://schema.org/NewCondition',
       url: offerUrl,
+      seller: {
+        '@type': 'Organization',
+        name: 'Vehicle Control Technologies',
+      },
     };
   }
 

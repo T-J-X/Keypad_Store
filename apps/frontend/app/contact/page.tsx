@@ -2,14 +2,14 @@ import type { Metadata } from 'next';
 import { Headset, BadgeCheck, Building2, Mail, ArrowUpRight } from 'lucide-react';
 import Link from 'next/link';
 import MarketingPageShell from '../../components/marketing/MarketingPageShell';
+import { buildPageMetadata } from '../../lib/seo/metadata';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata({
   title: 'Contact',
   description: 'Talk to Vehicle Control Technologies about sales, support, and integration planning.',
-  alternates: {
-    canonical: '/contact',
-  },
-};
+  canonical: '/contact',
+  keywords: ['contact VCT', 'keypad sales support', 'industrial keypad support'],
+});
 
 const channels = [
   {

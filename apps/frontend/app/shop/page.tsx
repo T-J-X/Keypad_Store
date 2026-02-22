@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { parseUniqueCsvSlugs, toAllowedPageSize, toPositiveInteger, toStringParam } from '@keypad-store/shared-utils/search-params';
 import ShopClient from '../../components/ShopClient';
+import { Skeleton } from '../../components/ui/skeleton';
+import { buildPageMetadata } from '../../lib/seo/metadata';
 import type { IconCategory, IconProduct, KeypadProduct, VendureAsset, VendureProductVariant } from '../../lib/vendure';
 import { categorySlug, normalizeCategoryName } from '../../lib/vendure';
 import { fetchIconProducts, fetchIconProductsPage, fetchKeypadProducts, fetchShopLandingContent, searchGlobalProducts } from '../../lib/vendure.server';
@@ -114,13 +116,17 @@ export async function generateMetadata({
     description = `Explore ${discipline} button inserts and icon sets built for reliable control workflows.`;
   }
 
-  return {
+  return buildPageMetadata({
     title,
     description,
-    alternates: {
-      canonical,
-    },
-  };
+    canonical,
+    keywords:
+      section === 'keypads'
+        ? ['shop keypads', 'industrial keypads', 'VCT keypads']
+        : section === 'button-inserts'
+          ? ['button inserts', 'keypad icons', 'icon inserts']
+          : ['keypad store', 'industrial keypad shop', 'custom keypad components'],
+  });
 }
 
 function parseCategorySlugs(
@@ -232,11 +238,11 @@ export default function ShopPage({
 function ShopPageFallback() {
   return (
     <div className="mx-auto w-full max-w-[88rem] bg-white px-6">
-      <div className="mb-3 h-3 w-28 animate-pulse rounded-full bg-gray-200" />
-      <div className="mb-8 h-10 w-72 animate-pulse rounded bg-gray-200" />
+      <Skeleton className="mb-3 h-3 w-28 rounded-full bg-gray-200" />
+      <Skeleton className="mb-8 h-10 w-72 rounded bg-gray-200" />
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
         {Array.from({ length: 8 }).map((_, index) => (
-          <div key={index} className="card-soft h-[360px] animate-pulse rounded-3xl bg-gray-100" />
+          <Skeleton key={index} className="card-soft h-[360px] rounded-3xl bg-gray-100" />
         ))}
       </div>
     </div>

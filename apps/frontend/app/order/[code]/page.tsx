@@ -3,6 +3,9 @@ import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { Suspense, use } from 'react';
 import { toStringParam } from '@keypad-store/shared-utils/search-params';
+import { Button } from '../../../components/ui/button';
+import { Skeleton } from '../../../components/ui/skeleton';
+import { buildPageMetadata } from '../../../lib/seo/metadata';
 
 const OrderTechnicalSpecification = dynamic(() => import('../../../components/order/OrderTechnicalSpecification'), {
   loading: () => (
@@ -24,17 +27,12 @@ export async function generateMetadata({
   const resolved = await params;
   const orderCode = decodeURIComponent(resolved.code || '').trim();
 
-  return {
+  return buildPageMetadata({
     title: orderCode ? `Order ${orderCode}` : 'Order Confirmation',
     description: 'Order confirmation and technical specification access.',
-    alternates: {
-      canonical: orderCode ? `/order/${encodeURIComponent(orderCode)}` : '/order',
-    },
-    robots: {
-      index: false,
-      follow: false,
-    },
-  };
+    canonical: orderCode ? `/order/${encodeURIComponent(orderCode)}` : '/order',
+    noIndex: true,
+  });
 }
 
 export default function OrderConfirmationPage({
@@ -88,18 +86,12 @@ function OrderConfirmationContent({
 
         <div className="mt-7 flex flex-wrap gap-3">
           {orderCode ? <OrderTechnicalSpecification orderCode={orderCode} /> : null}
-          <Link
-            href="/account"
-            className="inline-flex min-h-[44px] w-full min-w-[12rem] items-center justify-center rounded-2xl bg-ink px-5 py-2.5 text-sm font-semibold text-white whitespace-nowrap transition hover:opacity-90 sm:w-auto"
-          >
-            View account
-          </Link>
-          <Link
-            href="/shop"
-            className="inline-flex min-h-[44px] w-full min-w-[12rem] items-center justify-center rounded-2xl border border-ink/15 px-5 py-2.5 text-sm font-semibold text-ink whitespace-nowrap transition hover:border-ink/30 hover:bg-white sm:w-auto"
-          >
-            Continue shopping
-          </Link>
+          <Button asChild variant="default" className="w-full min-w-[12rem] sm:w-auto">
+            <Link href="/account">View account</Link>
+          </Button>
+          <Button asChild variant="outline" className="w-full min-w-[12rem] sm:w-auto">
+            <Link href="/shop">Continue shopping</Link>
+          </Button>
         </div>
       </div>
     </div>
@@ -109,10 +101,10 @@ function OrderConfirmationContent({
 function OrderConfirmationSkeleton() {
   return (
     <div className="mx-auto w-full max-w-4xl px-4 pb-20 pt-14 sm:px-6 lg:px-8">
-      <div className="card-soft animate-pulse space-y-4 p-8 sm:p-10">
-        <div className="h-5 w-28 rounded bg-gray-200" />
-        <div className="h-8 w-3/4 rounded bg-gray-200" />
-        <div className="h-4 w-2/3 rounded bg-gray-200" />
+      <div className="card-soft space-y-4 p-8 sm:p-10">
+        <Skeleton className="h-5 w-28 rounded bg-gray-200" />
+        <Skeleton className="h-8 w-3/4 rounded bg-gray-200" />
+        <Skeleton className="h-4 w-2/3 rounded bg-gray-200" />
       </div>
     </div>
   );

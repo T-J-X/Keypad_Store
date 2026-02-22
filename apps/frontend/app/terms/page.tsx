@@ -1,13 +1,12 @@
 import type { Metadata } from 'next';
 import Link from 'next/link';
+import { buildPageMetadata } from '../../lib/seo/metadata';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata({
     title: 'Terms of Service',
     description: 'Terms and conditions for use of Vehicle Control Technologies and purchase of products.',
-    alternates: {
-        canonical: '/terms',
-    },
-};
+    canonical: '/terms',
+});
 
 export default function TermsPage() {
     return (

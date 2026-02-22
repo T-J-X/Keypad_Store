@@ -143,24 +143,24 @@ export default function MobileMenu({
       <SheetContent
         side="left"
         showCloseButton={false}
-        className="w-full max-w-xs border-r border-white/10 bg-[rgba(6,10,18,0.95)] p-0 text-white backdrop-blur-xl"
+        className="w-full max-w-[22rem] border-r border-white/10 bg-[rgba(6,10,18,0.95)] p-0 text-white backdrop-blur-xl"
       >
         <SheetTitle className="sr-only">Mobile navigation menu</SheetTitle>
 
-        <div className="flex h-full flex-col">
+        <div className="flex h-full flex-col pt-[max(env(safe-area-inset-top),0px)] pb-[max(env(safe-area-inset-bottom),0px)]">
           <div className="flex items-center justify-between border-b border-panel-border px-6 py-4">
             <span className="font-mono text-sm font-bold uppercase tracking-widest">Menu</span>
             <button
               type="button"
               onClick={closeMenu}
-              className="rounded-full p-2 transition-colors hover:bg-white/10"
+              className="inline-flex h-11 w-11 items-center justify-center rounded-full p-2 transition-colors hover:bg-white/10"
               aria-label="Close menu"
             >
               <X className="h-5 w-5" />
             </button>
           </div>
 
-          <div className="flex-1 overflow-y-auto px-6 py-6">
+          <div className="flex-1 overflow-y-auto overscroll-contain px-6 py-6">
             <form onSubmit={handleSearchSubmit} className="mb-6">
               <label htmlFor="mobile-menu-search" className="sr-only">
                 Search products
@@ -218,7 +218,7 @@ export default function MobileMenu({
                     <button
                       type="button"
                       onClick={submitSearch}
-                      className="w-full text-center text-xs font-medium text-sky-400 transition-colors hover:text-sky-300"
+                      className="min-h-[44px] w-full text-center text-xs font-medium text-sky-400 transition-colors hover:text-sky-300"
                     >
                       View all results
                     </button>
@@ -269,7 +269,7 @@ export default function MobileMenu({
                           onLogout();
                           closeMenu();
                         }}
-                        className="flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium text-red-400 transition-colors hover:bg-white/5"
+                        className="flex min-h-[44px] w-full items-center justify-between rounded-lg px-3 py-2 text-sm font-medium text-red-400 transition-colors hover:bg-white/5"
                       >
                         <span>Sign Out</span>
                       </button>
@@ -311,7 +311,7 @@ function MobileLink({
       href={href}
       prefetch={prefetch}
       onClick={onClick}
-      className={`group flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-colors ${highlight
+      className={`group flex min-h-[44px] items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-colors ${highlight
         ? 'bg-sky-500/10 text-sky-400 hover:bg-sky-500/20'
         : 'text-white/80 hover:bg-white/5 hover:text-white'
       }`}

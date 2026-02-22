@@ -12,6 +12,14 @@ export default function SiteJsonLd() {
         '@id': `${base}/#organization`,
         name: 'Vehicle Control Technologies',
         url: base,
+        logo: `${base}/vct-logo.png`,
+        contactPoint: [
+          {
+            '@type': 'ContactPoint',
+            contactType: 'customer support',
+            email: 'support@vc-tech.co.uk',
+          },
+        ],
       },
       {
         '@type': 'WebSite',

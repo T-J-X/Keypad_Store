@@ -5,10 +5,13 @@ import { parseUniqueCsvSlugs, toAllowedPageSize, toPositiveInteger, toStringPara
 import ButtonInsertPdp from '../../../../components/ProductPdp/ButtonInsertPdp';
 import KeypadPdp from '../../../../components/ProductPdp/KeypadPdp';
 import ProductJsonLd from '../../../../components/ProductPdp/ProductJsonLd';
+import BreadcrumbJsonLd from '../../../../components/seo/BreadcrumbJsonLd';
 import PriceAndStock from '../../../../components/ProductPdp/PriceAndStock';
 import ShopHubBackAnchor from '../../../../components/ShopHubBackAnchor';
+import { Skeleton } from '../../../../components/ui/skeleton';
 import { resolvePkpModelCode } from '../../../../lib/keypadUtils';
 import { resolveSeoDescription } from '../../../../lib/productSeo';
+import { buildPageMetadata } from '../../../../lib/seo/metadata';
 import { type CatalogProduct, type IconProduct } from '../../../../lib/vendure';
 import { fetchIconProducts, fetchKeypadProducts, fetchProductBySlug } from '../../../../lib/vendure.server';
 
@@ -102,17 +105,12 @@ export async function generateMetadata({
   const product = await fetchCatalogProductForSlug(resolvedParams.slug);
 
   if (!product) {
-    return {
+    return buildPageMetadata({
       title: 'Product Not Found',
       description: 'The requested product could not be found.',
-      alternates: {
-        canonical: `/shop/product/${encodeURIComponent(resolvedParams.slug)}`,
-      },
-      robots: {
-        index: false,
-        follow: false,
-      },
-    };
+      canonical: `/shop/product/${encodeURIComponent(resolvedParams.slug)}`,
+      noIndex: true,
+    });
   }
 
   const seoTitle = normalizeTitleForTemplate(
@@ -121,19 +119,22 @@ export async function generateMetadata({
   const canonical = resolveCanonicalUrl(product, resolvedParams.slug);
   const noIndex = product.customFields?.seoNoIndex === true;
 
-  return {
+  return buildPageMetadata({
     title: seoTitle,
     description: resolveSeoDescription(product),
-    alternates: {
-      canonical,
-    },
-    robots: noIndex
-      ? {
-        index: false,
-        follow: false,
-      }
-      : undefined,
-  };
+    canonical,
+    noIndex,
+    keywords: [
+      product.name,
+      product.customFields?.iconId ?? '',
+      ...(product.customFields?.iconCategories ?? []),
+      ...(product.customFields?.application ?? []),
+      product.customFields?.isIconProduct ? 'button insert' : 'keypad',
+    ]
+      .map((value) => value.trim())
+      .filter(Boolean)
+      .slice(0, 10),
+  });
 }
 
 function buildShopHref({
@@ -243,11 +244,11 @@ export default function ProductDetailPage({
 function ProductPageFallback() {
   return (
     <div className="mx-auto w-full max-w-6xl px-6 pb-20">
-      <div className="mb-3 h-3 w-28 animate-pulse rounded-full bg-gray-200" />
-      <div className="mb-6 h-4 w-48 animate-pulse rounded bg-gray-200" />
+      <Skeleton className="mb-3 h-3 w-28 rounded-full bg-gray-200" />
+      <Skeleton className="mb-6 h-4 w-48 rounded bg-gray-200" />
       <div className="grid gap-10 lg:grid-cols-[1.15fr_0.85fr]">
-        <div className="card-soft h-[560px] animate-pulse rounded-3xl bg-gray-200" />
-        <div className="card-soft h-[520px] animate-pulse rounded-3xl bg-gray-200" />
+        <Skeleton className="card-soft h-[560px] rounded-3xl bg-gray-200" />
+        <Skeleton className="card-soft h-[520px] rounded-3xl bg-gray-200" />
       </div>
     </div>
   );
@@ -323,6 +324,7 @@ async function ProductDetailContent({
 
     return (
       <>
+        <BreadcrumbJsonLd items={breadcrumbs} />
         <ProductJsonLd product={product} />
         <ShopHubBackAnchor enabled={!hubReady} />
         <ButtonInsertPdp
@@ -341,6 +343,7 @@ async function ProductDetailContent({
   }
   return (
     <>
+      <BreadcrumbJsonLd items={breadcrumbs} />
       <ProductJsonLd product={product} />
       <ShopHubBackAnchor enabled={!hubReady} />
       <KeypadPdp

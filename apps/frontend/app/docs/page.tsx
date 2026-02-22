@@ -2,14 +2,14 @@ import type { Metadata } from 'next';
 import { FileText, Settings2, PackageSearch, ShieldCheck, ArrowUpRight } from 'lucide-react';
 import Link from 'next/link';
 import MarketingPageShell from '../../components/marketing/MarketingPageShell';
+import { buildPageMetadata } from '../../lib/seo/metadata';
 
-export const metadata: Metadata = {
+export const metadata: Metadata = buildPageMetadata({
   title: 'Documentation',
   description: 'Central documentation for configuring, ordering, and deploying VCT keypad products.',
-  alternates: {
-    canonical: '/docs',
-  },
-};
+  canonical: '/docs',
+  keywords: ['VCT documentation', 'keypad configurator guide', 'keypad ordering documentation'],
+});
 
 const docsCards = [
   {
