@@ -9,11 +9,11 @@ export default function SparkDivider({ className }: SparkDividerProps) {
     <div
       aria-hidden="true"
       className={cn(
-        "pointer-events-none absolute inset-x-0 top-0 h-[2px] overflow-hidden bg-transparent before:absolute before:left-1/2 before:top-0 before:h-[2px] before:w-[140%] before:-translate-x-1/2 before:content-[''] before:bg-[linear-gradient(90deg,rgba(125,211,252,0)_0%,rgba(125,211,252,0.03)_14%,rgba(125,211,252,0.1)_30%,rgba(224,242,254,0.28)_50%,rgba(125,211,252,0.1)_70%,rgba(125,211,252,0.03)_86%,rgba(125,211,252,0)_100%)] before:shadow-[0_0_14px_1px_rgba(96,165,250,0.22),0_0_30px_2px_rgba(56,189,248,0.1)] after:absolute after:left-1/2 after:top-[-4px] after:h-4 after:w-[160%] after:-translate-x-1/2 after:content-[''] after:bg-[radial-gradient(82%_100%_at_50%_0%,rgba(125,211,252,0.22)_0%,rgba(125,211,252,0.09)_44%,rgba(125,211,252,0.03)_76%,rgba(125,211,252,0)_100%)]",
+        "pointer-events-none absolute inset-x-0 top-0 h-6 overflow-hidden bg-transparent [mask-image:linear-gradient(90deg,transparent_0%,black_11%,black_89%,transparent_100%)] [-webkit-mask-image:linear-gradient(90deg,transparent_0%,black_11%,black_89%,transparent_100%)] before:absolute before:left-1/2 before:top-0 before:h-[2px] before:w-[140%] before:-translate-x-1/2 before:content-[''] before:bg-[linear-gradient(90deg,rgba(56,189,248,0.02)_0%,rgba(56,189,248,0.06)_16%,rgba(56,189,248,0.18)_34%,rgba(96,165,250,0.52)_50%,rgba(56,189,248,0.18)_66%,rgba(56,189,248,0.06)_84%,rgba(56,189,248,0.02)_100%)] before:shadow-[0_0_12px_1px_rgba(56,189,248,0.28),0_0_28px_4px_rgba(56,189,248,0.14)] after:absolute after:left-1/2 after:top-[-5px] after:h-6 after:w-[155%] after:-translate-x-1/2 after:content-[''] after:bg-[radial-gradient(74%_100%_at_50%_0%,rgba(56,189,248,0.24)_0%,rgba(56,189,248,0.11)_46%,rgba(56,189,248,0.035)_74%,rgba(56,189,248,0)_100%)]",
         className,
       )}
     >
-      <div className="absolute left-1/2 top-[-1px] h-[2px] w-[132%] -translate-x-1/2 rounded-full bg-[linear-gradient(90deg,rgba(224,242,254,0)_0%,rgba(191,219,254,0.05)_8%,rgba(191,219,254,0.16)_20%,rgba(224,242,254,0.44)_36%,rgba(224,242,254,0.9)_50%,rgba(224,242,254,0.44)_64%,rgba(191,219,254,0.16)_80%,rgba(191,219,254,0.05)_92%,rgba(224,242,254,0)_100%)] shadow-[0_0_20px_3px_rgba(125,211,252,0.34)]" />
+      <div className="absolute left-1/2 top-[-1px] h-[2px] w-[130%] -translate-x-1/2 rounded-full bg-[linear-gradient(90deg,rgba(125,211,252,0)_0%,rgba(56,189,248,0.06)_10%,rgba(56,189,248,0.22)_26%,rgba(96,165,250,0.56)_40%,rgba(125,211,252,0.82)_50%,rgba(96,165,250,0.56)_60%,rgba(56,189,248,0.22)_74%,rgba(56,189,248,0.06)_90%,rgba(125,211,252,0)_100%)] shadow-[0_0_18px_3px_rgba(56,189,248,0.38)]" />
     </div>
   );
 }
