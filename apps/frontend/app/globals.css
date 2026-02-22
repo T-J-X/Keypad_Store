@@ -430,6 +430,61 @@ ul.list-disc.space-y-3.pl-5.text-base.leading-7.text-ink\/75 li>span {
 }
 
 @layer components {
+  .ui-button-base {
+    display: inline-flex;
+    min-width: 0;
+    align-items: center;
+    justify-content: center;
+    gap: 0.5rem;
+    white-space: nowrap;
+    border-radius: var(--radius-btn);
+    font-size: 0.875rem;
+    font-weight: 500;
+    line-height: 1.25rem;
+    transition-property: color, background-color, border-color, box-shadow, transform;
+    transition-duration: 200ms;
+  }
+
+  .ui-button-base:focus-visible {
+    outline: none;
+    box-shadow: 0 0 0 2px rgb(56 189 248), 0 0 0 4px #ffffff;
+  }
+
+  .ui-button-base:active {
+    transform: scale(0.98);
+  }
+
+  .ui-button-base:disabled,
+  .ui-button-base[aria-disabled='true'] {
+    pointer-events: none;
+    opacity: 0.5;
+  }
+
+  .ui-button-premium {
+    border: 1px solid transparent;
+    color: #ffffff;
+    background:
+      linear-gradient(90deg, #040f2e 0%, #112b5d 55%, #29457a 100%) padding-box,
+      linear-gradient(90deg, #203f7a 0%, #2f5da8 55%, #4b7fca 100%) border-box;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1);
+  }
+
+  .ui-button-premium:hover {
+    transform: translateY(-1px);
+    background:
+      linear-gradient(270deg, #040f2e 0%, #112b5d 55%, #29457a 100%) padding-box,
+      linear-gradient(90deg, #24497d 0%, #39629a 55%, #537bb0 100%) border-box;
+    box-shadow:
+      0 0 0 1px rgba(72, 116, 194, 0.56),
+      0 10px 24px rgba(4, 15, 46, 0.29);
+  }
+
+  .ui-button-premium:disabled,
+  .ui-button-premium[aria-disabled='true'] {
+    box-shadow: none;
+    transform: none;
+  }
+
   .nav-pill {
     position: relative;
     display: flex;

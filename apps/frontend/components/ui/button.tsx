@@ -5,7 +5,7 @@ import { Slot } from 'radix-ui';
 import { cn } from '@/lib/utils';
 
 const buttonVariants = cva(
-  'inline-flex items-center justify-center whitespace-nowrap rounded-btn text-sm font-medium ring-offset-white transition-[color,background-color,border-color,box-shadow,transform] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky-400 focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50 active:scale-[0.98] gap-2',
+  'ui-button-base',
   {
     variants: {
       variant: {
@@ -16,8 +16,7 @@ const buttonVariants = cva(
         ghost: 'hover:bg-surface-alt hover:text-ink',
         link: 'text-sky underline-offset-4 hover:underline',
         soft: 'bg-sky-500/10 text-sky-600 hover:bg-sky-500/20',
-        premium:
-          'border border-transparent text-white bg-[linear-gradient(90deg,#040F2E_0%,#112B5D_55%,#29457A_100%),linear-gradient(90deg,#203f7a_0%,#2f5da8_55%,#4b7fca_100%)] [background-origin:padding-box,border-box] [background-clip:padding-box,border-box] shadow-[0_1px_2px_rgba(0,0,0,0.1)] hover:-translate-y-[1px] hover:bg-[linear-gradient(270deg,#040F2E_0%,#112B5D_55%,#29457A_100%),linear-gradient(90deg,#24497d_0%,#39629a_55%,#537bb0_100%)] hover:shadow-[0_0_0_1px_rgba(72,116,194,0.56),0_10px_24px_rgba(4,15,46,0.29)] disabled:opacity-50 disabled:shadow-none',
+        premium: 'ui-button-premium',
         secondaryDark: 'border border-white/15 bg-transparent text-white hover:bg-white/5 hover:text-white hover:border-white/30',
       },
       size: {

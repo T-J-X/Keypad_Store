@@ -1,5 +1,4 @@
 import type { Metadata } from 'next';
-import Link from 'next/link';
 import { Suspense } from 'react';
 import KeypadCard from '../../components/KeypadCard';
 import { Skeleton } from '../../components/ui/skeleton';
@@ -41,24 +40,25 @@ async function KeypadGrid() {
 
 export default function ConfiguratorPage() {
   return (
-    <div className="mx-auto w-full max-w-6xl px-4 sm:px-6">
-      <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <div className="pill">Configurator</div>
-          <h1 className="mt-3 text-3xl font-semibold tracking-tight text-ink md:text-4xl">
-            Choose your keypad model
+    <div className="mx-auto w-full max-w-6xl bg-[linear-gradient(180deg,#f3f8ff_0%,#ffffff_58%)] px-4 pb-10 pt-8 sm:px-6">
+        <div className="mb-8 overflow-hidden rounded-[1.6rem] border border-white/12 bg-[radial-gradient(130%_120%_at_10%_0%,rgba(56,189,248,0.22)_0%,rgba(56,189,248,0.02)_42%,rgba(2,6,23,0.95)_75%),linear-gradient(160deg,#07122a_0%,#040b1f_56%,#020617_100%)] px-6 py-8 text-white">
+          <div className="inline-flex items-center rounded-full border border-white/20 bg-white/[0.08] px-3 py-1 text-[10px] font-bold uppercase tracking-[0.14em] text-sky-100/90">
+            Configurator
+          </div>
+          <h1 className="mt-4 text-3xl font-semibold tracking-tight sm:text-4xl md:text-5xl">
+            Choose your keypad model.
+            <span className="block bg-gradient-to-r from-sky-300 via-blue-300 to-blue-500 bg-clip-text text-transparent">
+              Build from the first press.
+            </span>
           </h1>
-          <p className="mt-3 max-w-2xl text-sm text-ink/60">
-            Select a base keypad to start building. You will be able to place icons, adjust layouts, and save variations
-            in the next step.
+          <p className="mt-4 max-w-2xl text-sm leading-relaxed text-blue-100/75 sm:text-base">
+            Select a base keypad to start building. In the next step you can place icons, adjust layouts, and save variations with full production intent.
           </p>
         </div>
-        <Link href="/shop" className="btn-ghost">Browse icon catalog</Link>
-      </div>
 
-      <Suspense fallback={<KeypadGridFallback />}>
-        <KeypadGrid />
-      </Suspense>
+        <Suspense fallback={<KeypadGridFallback />}>
+          <KeypadGrid />
+        </Suspense>
     </div>
   );
 }

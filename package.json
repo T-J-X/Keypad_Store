@@ -5,7 +5,9 @@
   "scripts": {
     "dev": "pnpm run dev:all",
     "dev:all": "concurrently -n BACKEND,FRONTEND -c cyan,magenta \"pnpm run dev:backend\" \"pnpm run dev:storefront:wait\"",
-    "dev:storefront": "pnpm -C apps/frontend dev --port 3001",
+    "dev:storefront": "pnpm -C apps/frontend dev",
+    "dev:storefront:turbo": "pnpm -C apps/frontend dev:turbo",
+    "dev:storefront:webpack": "pnpm -C apps/frontend dev:webpack",
     "dev:storefront:wait": "sh -c 'until curl -sf http://localhost:3000/health >/dev/null; do sleep 1; done; pnpm run dev:storefront'",
     "dev:infra": "pnpm run infra:up",
     "ports:free": "node -e \"const {execSync}=require('child_process'); try{execSync('lsof -t -iTCP:3000 -sTCP:LISTEN | xargs -r kill -9',{stdio:'inherit',shell:true});}catch(e){}\"",
