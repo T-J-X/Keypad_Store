@@ -811,25 +811,37 @@ export async function fetchIconProductsPage({
   const skip = (safePage - 1) * safeTake;
   const trimmedQuery = query.trim();
 
-  const filter: Record<string, any> = {
-    isIconProduct: { eq: true },
-  };
+  const normalizedCategories = categorySlugs
+    .map((value) => value.trim())
+    .filter((value) => value.length > 0);
 
-  if (categorySlugs.length > 0) {
-    // Note: This assumes the Vendure field for icon categories is 'iconCategories'
-    // and we want any icon that has at least one of these categories.
-    // Vendure's filter for text arrays usually supports 'in' or 'contains'.
-    // If it's a custom field array, we use 'iconCategories: { in: categorySlugs }'
-    filter.iconCategories = { in: categorySlugs };
+  const filterClauses: Array<Record<string, any>> = [
+    { isIconProduct: { eq: true } },
+  ];
+
+  if (normalizedCategories.length === 1) {
+    filterClauses.push({ iconCategories: { inList: normalizedCategories[0] } });
+  } else if (normalizedCategories.length > 1) {
+    filterClauses.push({
+      _or: normalizedCategories.map((category) => ({
+        iconCategories: { inList: category },
+      })),
+    });
   }
 
   if (trimmedQuery) {
-    filter._or = [
-      { iconId: { contains: trimmedQuery } },
-      { name: { contains: trimmedQuery } },
-      { slug: { contains: trimmedQuery } },
-    ];
+    filterClauses.push({
+      _or: [
+        { iconId: { contains: trimmedQuery } },
+        { name: { contains: trimmedQuery } },
+        { slug: { contains: trimmedQuery } },
+      ],
+    });
   }
+
+  const filter = filterClauses.length === 1
+    ? filterClauses[0]
+    : { _and: filterClauses };
 
   const data = await vendureFetch<ProductListResponse>(PRODUCT_LIST_QUERY, {
     options: {
