@@ -110,7 +110,8 @@ export default function HomePage() {
         </section>
 
         {/* FEATURES GRID */}
-        <section className="mt-32 border-t border-white/10 pt-20">
+        <section className="relative mt-32 pt-20">
+          <SparkDivider />
           <div className="text-center mb-16">
             <h2 className="text-sm font-bold tracking-widest text-sky-400 uppercase mb-3">Engineered for Racing</h2>
             <p className="text-3xl md:text-4xl font-semibold text-white">Precision components at every layer.</p>

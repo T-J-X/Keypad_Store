@@ -27,6 +27,7 @@ type IconProductNode = {
     featuredAsset?: ProductAsset | null;
     assets?: ProductAsset[] | null;
     customFields?: {
+        isIconProduct?: boolean | null;
         iconId?: string | null;
         iconCategories?: string[] | null;
         insertAssetId?: string | null;
@@ -65,6 +66,7 @@ const ICON_CATALOG_QUERY = `
           name
         }
         customFields {
+          isIconProduct
           iconId
           iconCategories
           insertAssetId
@@ -115,6 +117,18 @@ function resolveInsertAssetForVariant(product: IconProductNode, variant: Product
     return resolveInsertAsset(assets, featuredId, insertAssetId) as ProductAsset | null;
 }
 
+function hasIconLikeData(product: IconProductNode) {
+    if (product.customFields?.iconId?.trim()) return true;
+    if (Array.isArray(product.variants)) {
+        return product.variants.some((variant) => Boolean(variant.customFields?.iconId?.trim()));
+    }
+    return false;
+}
+
+function isIconLikeProduct(product: IconProductNode) {
+    return Boolean(product.customFields?.isIconProduct) || hasIconLikeData(product);
+}
+
 function resolveIconId(product: IconProductNode, variant: ProductVariantNode): string | null {
     const raw = variant.customFields?.iconId ?? product.customFields?.iconId ?? '';
     if (typeof raw !== 'string') return null;
@@ -138,9 +152,11 @@ function resolveCategories(product: IconProductNode): string[] {
 }
 
 function toCatalogItems(products: IconProductNode[]): IconCatalogItem[] {
-    const items: IconCatalogItem[] = [];
+    const byIconId = new Map<string, IconCatalogItem>();
 
     for (const product of products) {
+        if (!isIconLikeProduct(product)) continue;
+
         const variants = product.variants ?? [];
         const categories = resolveCategories(product);
         const glossyAssetPath = resolveAssetPath(product.featuredAsset);
@@ -150,12 +166,11 @@ function toCatalogItems(products: IconProductNode[]): IconCatalogItem[] {
             if (!iconId) continue;
 
             const insertAsset = resolveInsertAssetForVariant(product, variant);
-            const matteAssetPath = resolveAssetPath(insertAsset);
-            if (!matteAssetPath) continue;
+            const matteAssetPath = resolveAssetPath(insertAsset) ?? glossyAssetPath;
 
-            const sizeMm = parseSizeMm(variant.customFields?.sizeMm) ?? parseSizeMm(product.customFields?.size);
+            const sizeMm = parseSizeMm(variant.customFields?.sizeMm) ?? parseSizeMm(product.customFields?.size) ?? 15;
 
-            items.push({
+            const item: IconCatalogItem = {
                 id: variant.id,
                 productId: product.id,
                 variantId: variant.id,
@@ -166,11 +181,33 @@ function toCatalogItems(products: IconProductNode[]): IconCatalogItem[] {
                 sizeMm,
                 glossyAssetPath,
                 matteAssetPath,
-            });
+            };
+
+            const existing = byIconId.get(iconId);
+            if (!existing) {
+                byIconId.set(iconId, item);
+                continue;
+            }
+
+            // Prefer richer entries when duplicates are present (e.g. duplicate imports).
+            const existingScore =
+                Number(Boolean(existing.matteAssetPath)) +
+                Number(Boolean(existing.glossyAssetPath)) +
+                Number(existing.categories.length > 0) +
+                Number(Boolean(existing.sku));
+            const nextScore =
+                Number(Boolean(item.matteAssetPath)) +
+                Number(Boolean(item.glossyAssetPath)) +
+                Number(item.categories.length > 0) +
+                Number(Boolean(item.sku));
+
+            if (nextScore > existingScore) {
+                byIconId.set(iconId, item);
+            }
         }
     }
 
-    return items.sort((a, b) => a.iconId.localeCompare(b.iconId));
+    return Array.from(byIconId.values()).sort((a, b) => a.iconId.localeCompare(b.iconId));
 }
 
 export async function fetchIconCatalog(): Promise<IconCatalogItem[]> {
@@ -182,9 +219,6 @@ export async function fetchIconCatalog(): Promise<IconCatalogItem[]> {
             options: {
                 take: PAGE_SIZE,
                 skip,
-                filter: {
-                    isIconProduct: { eq: true },
-                },
             },
         });
 
