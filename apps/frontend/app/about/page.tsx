@@ -4,7 +4,7 @@ import Link from 'next/link';
 import MarketingPageShell from '../../components/marketing/MarketingPageShell';
 
 export const metadata: Metadata = {
-  title: 'About Us | VCT',
+  title: 'About Us',
   description: 'Learn how Vehicle Control Technologies designs rugged keypad systems for demanding environments.',
   alternates: {
     canonical: '/about',

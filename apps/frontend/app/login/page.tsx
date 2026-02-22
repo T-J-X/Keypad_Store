@@ -7,7 +7,7 @@ import LoginForm from '../../components/LoginForm';
 import { getSafeRelativePath } from '../../lib/googleAuth';
 
 export const metadata: Metadata = {
-  title: 'Login | VCT',
+  title: 'Login',
   description: 'Sign in to manage keypad layouts and orders.',
   alternates: {
     canonical: '/login',

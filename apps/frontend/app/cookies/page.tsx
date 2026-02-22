@@ -1,7 +1,7 @@
 import type { Metadata } from 'next';
 
 export const metadata: Metadata = {
-    title: 'Cookie Policy | VCT',
+    title: 'Cookie Policy',
     description: 'Information about the cookies we use on our website.',
     alternates: {
         canonical: '/cookies',

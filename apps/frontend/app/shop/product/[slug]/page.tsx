@@ -37,6 +37,10 @@ function toTrimmedString(value: unknown) {
   return typeof value === 'string' ? value.trim() : '';
 }
 
+function normalizeTitleForTemplate(value: string) {
+  return value.replace(/\s*\|\s*VCT$/i, '').trim();
+}
+
 function parseCategorySlugs(value: string) {
   return parseUniqueCsvSlugs(value);
 }
@@ -99,7 +103,7 @@ export async function generateMetadata({
 
   if (!product) {
     return {
-      title: 'Product Not Found | VCT',
+      title: 'Product Not Found',
       description: 'The requested product could not be found.',
       alternates: {
         canonical: `/shop/product/${encodeURIComponent(resolvedParams.slug)}`,
@@ -111,7 +115,9 @@ export async function generateMetadata({
     };
   }
 
-  const seoTitle = toTrimmedString(product.customFields?.seoTitle) || `${product.name} | VCT`;
+  const seoTitle = normalizeTitleForTemplate(
+    toTrimmedString(product.customFields?.seoTitle) || product.name,
+  );
   const canonical = resolveCanonicalUrl(product, resolvedParams.slug);
   const noIndex = product.customFields?.seoNoIndex === true;
 

@@ -28,24 +28,24 @@ function normalizeSection(value: string): 'landing' | 'all' | 'button-inserts' |
 function sectionSeo(section: 'landing' | 'all' | 'button-inserts' | 'keypads') {
   if (section === 'landing') {
     return {
-      title: 'Shop | VCT',
+      title: 'Shop',
       description: 'Browse premium keypads and curated button inserts for high-performance control systems.',
     };
   }
   if (section === 'button-inserts') {
     return {
-      title: 'Shop - Button Inserts | VCT',
+      title: 'Shop - Button Inserts',
       description: 'Explore category-sorted button inserts and icon sets built for reliable control workflows.',
     };
   }
   if (section === 'keypads') {
     return {
-      title: 'Shop - Keypads | VCT',
+      title: 'Shop - Keypads',
       description: 'Compare high-reliability keypad products and find the right layout for your system.',
     };
   }
   return {
-    title: 'Shop - All Products | VCT',
+    title: 'Shop - All Products',
     description: 'View all keypads and button inserts in one catalog.',
   };
 }
@@ -110,7 +110,7 @@ export async function generateMetadata({
   let description = seo.description;
   if (section === 'button-inserts' && catsList.length === 1) {
     const discipline = formatDisciplineSlug(catsList[0]);
-    title = `Shop - Button Inserts - ${discipline} | VCT`;
+    title = `Shop - Button Inserts - ${discipline}`;
     description = `Explore ${discipline} button inserts and icon sets built for reliable control workflows.`;
   }
 

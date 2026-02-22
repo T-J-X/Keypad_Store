@@ -4,7 +4,7 @@ import Link from 'next/link';
 import MarketingPageShell from '../../components/marketing/MarketingPageShell';
 
 export const metadata: Metadata = {
-  title: 'Guides | VCT',
+  title: 'Guides',
   description: 'Step-by-step guides for configuring, validating, and ordering VCT keypads.',
   alternates: {
     canonical: '/guides',

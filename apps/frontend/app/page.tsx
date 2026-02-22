@@ -7,7 +7,7 @@ import { HeroSlider } from '../components/landing/HeroSlider';
 import SparkDivider from '../components/ui/SparkDivider';
 
 export const metadata: Metadata = {
-  title: 'VCT | Premium Sim Racing Keypads',
+  title: 'Premium Sim Racing Keypads',
   description: 'Choose a keypad model, map icon inserts, and export production-ready keypad configurations.',
   alternates: {
     canonical: '/',

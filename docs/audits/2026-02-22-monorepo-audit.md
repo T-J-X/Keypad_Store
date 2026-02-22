@@ -212,5 +212,30 @@
 - [x] Configurator toasts only on relevant routes (verified by route gating logic in `ClientRuntimeGate.shouldRenderToast`)
 - [x] Playwright smoke tests pass (`pnpm -C apps/frontend test:e2e`)
 
+### Phase 11
+- Closed remaining actionable audit remediations:
+  - Migrated `/Users/terry/keypad-store/apps/frontend/components/ui/SearchModal.tsx` to shadcn/Radix `Dialog` with explicit search input labeling.
+  - Migrated `/Users/terry/keypad-store/apps/frontend/components/ui/MobileMenu.tsx` to shadcn/Radix `Sheet` with explicit search input labeling.
+  - Replaced `transition-all` usage in audited high-traffic paths:
+    - `/Users/terry/keypad-store/apps/frontend/components/navbar/NavPill.tsx`
+    - `/Users/terry/keypad-store/apps/frontend/components/navbar/NavbarView.tsx`
+    - `/Users/terry/keypad-store/apps/frontend/components/ui/button.tsx`
+    - `/Users/terry/keypad-store/apps/frontend/app/globals.css`
+  - Added global reduced-motion fallback policy in `/Users/terry/keypad-store/apps/frontend/app/globals.css`.
+  - Normalized page metadata titles to avoid duplicate `| VCT` suffixes while preserving layout template formatting.
+  - Added structured-data QA release gate checklist:
+    - `/Users/terry/keypad-store/docs/seo/structured-data-release-checklist.md`
+  - Updated smoke tests for robust dialog selectors after primitive migration:
+    - `/Users/terry/keypad-store/apps/frontend/tests/smoke.spec.ts`
+
+#### Phase 11 Validation Commands
+- `pnpm -C /Users/terry/keypad-store/apps/frontend lint` ✅
+- `pnpm -C /Users/terry/keypad-store/apps/frontend typecheck` ✅
+- `pnpm -C /Users/terry/keypad-store/apps/frontend build` ✅
+- `cd /Users/terry/keypad-store/apps/frontend && npx -y react-doctor@latest . --verbose --diff` ✅
+  - Result: `99/100` (same warnings as before: JSON-LD `dangerouslySetInnerHTML`, CookieBanner state-shape suggestion)
+- `pnpm -C /Users/terry/keypad-store/apps/frontend test:e2e` ✅
+  - Result: `5 passed`
+
 #### Notes
 - While Playwright web server was running, Next.js logged expected backend connection errors for `/` server data fetch (`ECONNREFUSED` to Vendure API). Smoke tests target `/about` so they remain deterministic without backend dependency.

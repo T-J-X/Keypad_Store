@@ -5,7 +5,7 @@ import { fetchIconCatalog } from '../../lib/configurator.server';
 import CheckoutClient from './CheckoutClient';
 
 export const metadata: Metadata = {
-  title: 'Checkout | Vehicle Control Technologies',
+  title: 'Checkout',
   description: 'Complete your secure checkout process.',
   robots: {
     index: false,

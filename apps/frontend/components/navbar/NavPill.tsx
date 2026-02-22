@@ -53,7 +53,7 @@ export default function NavPill({
       {showLabel ? (
         <span className="text-sm font-medium">{label}</span>
       ) : (
-        <div className={`max-w-0 overflow-hidden whitespace-nowrap opacity-0 transition-all duration-300 ${expandOnHover ? 'group-hover:max-w-[120px] group-hover:opacity-100' : ''}`}>
+        <div className={`max-w-0 overflow-hidden whitespace-nowrap opacity-0 transition-[max-width,opacity] duration-300 ${expandOnHover ? 'group-hover:max-w-[120px] group-hover:opacity-100' : ''}`}>
           <span className="pr-4 text-sm font-medium">{label}</span>
         </div>
       )}

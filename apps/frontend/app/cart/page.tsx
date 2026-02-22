@@ -4,7 +4,7 @@ import CartClient from '../../components/CartClient';
 import { fetchActiveOrder } from '../../lib/vendure.server';
 
 export const metadata: Metadata = {
-  title: 'Your Cart | Vehicle Control Technologies',
+  title: 'Your Cart',
   description: 'Review and edit your keypad configurations before checkout.',
   robots: {
     index: false,

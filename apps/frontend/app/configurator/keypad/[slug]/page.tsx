@@ -40,7 +40,7 @@ export async function generateMetadata({
 
   if (!product) {
     return {
-      title: 'Configurator Not Found | VCT',
+      title: 'Configurator Not Found',
       description: 'The requested keypad configurator page could not be found.',
       alternates: {
         canonical: `/configurator/keypad/${encodeURIComponent(resolved.slug)}`,
@@ -54,7 +54,7 @@ export async function generateMetadata({
 
   const modelCode = resolvePkpModelCode(product.slug, product.name) || product.name.toUpperCase();
   return {
-    title: `${modelCode} Configurator | VCT`,
+    title: `${modelCode} Configurator`,
     description: `Configure ${modelCode} with per-slot inserts, glow rings, and production-ready layout precision.`,
     alternates: {
       canonical: `/configurator/keypad/${encodeURIComponent(product.slug)}`,

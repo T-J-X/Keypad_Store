@@ -110,13 +110,12 @@ export default function NavbarView({
           isAuthenticated={isAuthenticated}
           cartQuantity={cartQuantity}
           onLogout={onLogout}
-          onOpenSearch={onOpenSearch}
         />
       ) : null}
 
       <header
         className={[
-          'sticky top-0 z-50 transition-all duration-500 ease-in-out will-change-[transform,height,background-color]',
+          'sticky top-0 z-50 transition-[transform,height,background-color,border-color,box-shadow] duration-500 ease-in-out will-change-[transform,height,background-color]',
           isVisible ? 'translate-y-0' : '-translate-y-full',
           isScrolled
             ? 'h-[76px] border-b border-white/10 bg-[#020a18]/90 shadow-[0_10px_40px_rgba(0,0,0,0.4)] backdrop-blur-xl lg:h-[80px]'
@@ -145,7 +144,7 @@ export default function NavbarView({
               href="/"
               aria-label="Go to homepage"
               className={[
-                'absolute left-1/2 -translate-x-1/2 transition-all duration-300 hover:opacity-85',
+                'absolute left-1/2 -translate-x-1/2 transition-opacity duration-300 hover:opacity-85',
                 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sky/45 focus-visible:ring-offset-2 focus-visible:ring-offset-black/40',
                 'lg:static lg:translate-x-0',
               ].join(' ')}
@@ -156,7 +155,7 @@ export default function NavbarView({
                 width={200}
                 height={64}
                 className={[
-                  'w-auto transition-all duration-500',
+                  'w-auto transition-[filter] duration-500',
                   'h-14',
                   isScrolled ? 'brightness-0 invert' : '',
                 ].join(' ')}
@@ -188,7 +187,7 @@ export default function NavbarView({
                   onMouseEnter={onOpenShopMenu}
                   onMouseLeave={onScheduleCloseShopMenu}
                   className={[
-                    'absolute left-0 top-[calc(100%+8px)] z-30 w-[480px] rounded-2xl p-4 transition-all duration-200',
+                    'absolute left-0 top-[calc(100%+8px)] z-30 w-[480px] rounded-2xl p-4 transition-[opacity,transform] duration-200',
                     desktopPanelClass,
                     isShopMenuOpen ? 'pointer-events-auto translate-y-0 opacity-100' : 'pointer-events-none -translate-y-2 opacity-0',
                   ].join(' ')}
@@ -201,7 +200,7 @@ export default function NavbarView({
                         role="menuitem"
                         onClick={onCloseShopMenu}
                         className={[
-                          'relative flex flex-col rounded-xl px-4 py-3 transition-all duration-200',
+                          'relative flex flex-col rounded-xl px-4 py-3 transition-[padding,background-color,color] duration-200',
                           'text-white/80 hover:bg-white/[0.08] hover:text-white hover:pl-5',
                         ].join(' ')}
                       >
@@ -253,7 +252,7 @@ export default function NavbarView({
                   role="menu"
                   aria-label="Account menu"
                   className={[
-                    'absolute right-0 top-[calc(100%+8px)] z-20 min-w-[220px] rounded-2xl p-2 transition-all duration-200',
+                    'absolute right-0 top-[calc(100%+8px)] z-20 min-w-[220px] rounded-2xl p-2 transition-[opacity,transform] duration-200',
                     desktopPanelClass,
                     isAccountMenuOpen ? 'pointer-events-auto translate-y-0 opacity-100' : 'pointer-events-none -translate-y-2 opacity-0',
                   ].join(' ')}
@@ -335,7 +334,7 @@ export default function NavbarView({
 
               <div
                 className={[
-                  'absolute right-0 top-[calc(100%+8px)] z-20 w-[340px] rounded-2xl p-3 transition-all duration-300',
+                  'absolute right-0 top-[calc(100%+8px)] z-20 w-[340px] rounded-2xl p-3 transition-[opacity,transform] duration-300',
                   desktopPanelClass,
                   isCartMenuOpen ? 'pointer-events-auto translate-y-0 opacity-100' : 'pointer-events-none -translate-y-2 opacity-0',
                 ].join(' ')}

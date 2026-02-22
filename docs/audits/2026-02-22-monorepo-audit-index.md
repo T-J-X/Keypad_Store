@@ -15,7 +15,8 @@
 - [x] [`docs/seo/programmatic-seo-strategy.md`](../seo/programmatic-seo-strategy.md)
 - [x] [`docs/seo/programmatic-seo-template-spec.md`](../seo/programmatic-seo-template-spec.md)
 - [x] [`docs/seo/programmatic-seo-keyword-map.csv`](../seo/programmatic-seo-keyword-map.csv)
-- [ ] [`DESIGN.md`](../../DESIGN.md)
+- [x] [`docs/seo/structured-data-release-checklist.md`](../seo/structured-data-release-checklist.md)
+- [x] `DESIGN.md` intentionally removed after Phase 9 rollback per user request.
 
 ## Phase Change Log
 - Phase 0: Initialized index and monorepo audit shell with baseline branch and commit hash.
@@ -29,3 +30,4 @@
 - Phase 8: Completed backend Postgres audit and applied low-risk pool/timeout + query/index improvements with backend validation pass.
 - Phase 9: Stitch integration was rolled back; homepage restored to pre-Stitch implementation and `DESIGN.md` removed.
 - Phase 10: Added Playwright smoke suite + scripts, ran react-doctor, executed smoke checklist, and recorded evidence in monorepo audit.
+- Phase 11: Closed actionable audit remediations (UI/UX primitive alignment, reduced-motion policy, metadata title normalization, structured-data release checklist).

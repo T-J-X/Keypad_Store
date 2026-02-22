@@ -4,7 +4,7 @@ import Image from 'next/image';
 import SignupForm from '../../components/SignupForm';
 
 export const metadata: Metadata = {
-  title: 'Sign Up | VCT',
+  title: 'Sign Up',
   description: 'Create a VCT account to save and manage keypad configurations.',
   alternates: {
     canonical: '/signup',

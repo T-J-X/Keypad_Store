@@ -4,7 +4,7 @@ import Link from 'next/link';
 import MarketingPageShell from '../../components/marketing/MarketingPageShell';
 
 export const metadata: Metadata = {
-  title: 'Contact | VCT',
+  title: 'Contact',
   description: 'Talk to Vehicle Control Technologies about sales, support, and integration planning.',
   alternates: {
     canonical: '/contact',

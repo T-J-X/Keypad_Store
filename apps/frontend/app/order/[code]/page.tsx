@@ -25,7 +25,7 @@ export async function generateMetadata({
   const orderCode = decodeURIComponent(resolved.code || '').trim();
 
   return {
-    title: orderCode ? `Order ${orderCode} | VCT` : 'Order Confirmation | VCT',
+    title: orderCode ? `Order ${orderCode}` : 'Order Confirmation',
     description: 'Order confirmation and technical specification access.',
     alternates: {
       canonical: orderCode ? `/order/${encodeURIComponent(orderCode)}` : '/order',

@@ -36,10 +36,10 @@ test('mobile navbar drawer opens and closes', async ({ page }) => {
 
   await page.getByRole('button', { name: /open navigation menu/i }).click();
 
-  const mobileMenuDialog = page.locator('[role="dialog"][aria-modal="true"]').first();
+  const mobileMenuDialog = page.getByRole('dialog', { name: /mobile navigation menu/i });
   await expect(mobileMenuDialog).toBeVisible();
 
-  await mobileMenuDialog.getByRole('button', { name: /close menu/i }).nth(1).click();
+  await mobileMenuDialog.getByRole('button', { name: /close menu/i }).click();
   await expect(mobileMenuDialog).toBeHidden();
 });
 
@@ -50,7 +50,7 @@ test('search modal opens and closes on desktop', async ({ page }) => {
   const header = page.locator('header').first();
   await header.getByRole('button', { name: /^Search$/ }).click();
 
-  const searchDialog = page.locator('[role="dialog"][aria-modal="true"]').first();
+  const searchDialog = page.getByRole('dialog', { name: /search products/i });
   await expect(searchDialog).toBeVisible();
   await expect(searchDialog.getByPlaceholder('Search products, IDs, or categories...')).toBeVisible();
 

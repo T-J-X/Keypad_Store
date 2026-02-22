@@ -10,34 +10,35 @@ Scope reviewed (code-level):
 Method:
 - Static audit against current UI code and current Web Interface Guidelines categories (focus visibility, keyboard interaction, labeling, motion/performance, responsive touch targets).
 
-## Key Findings
+## Key Findings (Current State)
 
-1. Missing explicit labels on search inputs in modal/drawer contexts.
+1. Explicit labels on modal/drawer search inputs are now present.
 - Files:
   - `/Users/terry/keypad-store/apps/frontend/components/ui/SearchModal.tsx`
   - `/Users/terry/keypad-store/apps/frontend/components/ui/MobileMenu.tsx`
-- Inputs rely on placeholder text only. Add `aria-label` and/or visible `<label>` to improve screen reader clarity and avoid placeholder-only labeling.
+- Inputs now include explicit labeling (`aria-label` + screen-reader label element).
 
-2. Search modal lacks robust keyboard focus trapping.
+2. Search modal now uses standardized dialog primitives with focus containment.
 - File:
   - `/Users/terry/keypad-store/apps/frontend/components/ui/SearchModal.tsx`
-- Modal closes on Escape, but focus trapping is custom/partial and tab order can escape modal context. Standardized dialog primitives are preferred for reliable keyboard containment.
+- Implementation now uses shadcn/Radix `Dialog`, replacing custom focus/escape handling.
 
-3. Mobile menu drawer has custom overlay/dialog behavior without formal dialog primitives.
+3. Mobile menu drawer now uses standardized sheet primitives.
 - File:
   - `/Users/terry/keypad-store/apps/frontend/components/ui/MobileMenu.tsx`
-- Current implementation is functional but higher maintenance risk for keyboard and assistive-tech parity compared with standardized sheet/dialog primitives.
+- Implementation now uses shadcn/Radix `Sheet` with built-in dialog semantics.
 
-4. Extensive use of `transition-all` in interactive navigation components.
+4. `transition-all` usage in high-traffic nav/button paths has been replaced.
 - Files:
   - `/Users/terry/keypad-store/apps/frontend/components/navbar/NavPill.tsx`
   - `/Users/terry/keypad-store/apps/frontend/components/navbar/NavbarView.tsx`
   - `/Users/terry/keypad-store/apps/frontend/components/ui/button.tsx`
-- `transition-all` can animate non-composited properties and increase paint/reflow cost. Prefer targeted transition properties.
+- Targeted transitions now scope animation to relevant properties (`opacity`, `transform`, `color`, `background-color`, etc.).
 
-5. Motion reduction handling is not centralized.
-- Files: multiple (`navbar`, modals, toasts, footer effects).
-- There is no explicit `prefers-reduced-motion` strategy for key animated interactions (nav transitions, modal in/out, hover-heavy controls).
+5. Global motion reduction policy is now centralized.
+- File:
+  - `/Users/terry/keypad-store/apps/frontend/app/globals.css`
+- Added `@media (prefers-reduced-motion: reduce)` fallback policy for animation/transition-heavy UI.
 
 ## Accessibility Risks
 
@@ -51,12 +52,12 @@ Method:
 - [x] Desktop navbar open/close and dropdown behavior functional.
 - [x] Mobile menu open/close functional.
 - [x] Navbar focus rings visible on primary controls.
-- [ ] Full keyboard focus trap/loop confirmed for all nav overlays (manual browser verification pending).
+- [x] Focus trap/loop validated for modal nav overlays (`SearchModal` dialog + `MobileMenu` sheet) via Radix primitives and Playwright smoke coverage.
 
 ### Dialog/Modal Surfaces
 - [x] Shared modal infrastructure exists (`AccessibleModal`, shadcn `dialog` primitives available).
-- [ ] Search modal fully aligned to standardized dialog primitive with guaranteed focus trap.
-- [ ] Drawer/menu fully aligned to standardized sheet primitive.
+- [x] Search modal fully aligned to standardized dialog primitive with guaranteed focus trap.
+- [x] Drawer/menu fully aligned to standardized sheet primitive.
 
 ### Toasts
 - [x] Toast surface has `role="status"` and `aria-live="polite"`.
@@ -67,11 +68,9 @@ Method:
 - [x] Tailwind v4 token architecture migrated to `:root` + `.dark` + `@theme inline`.
 - [x] shadcn primitives integrated (`button/dialog/sheet/command/separator/sonner/accordion`).
 - [ ] Live contrast verification across desktop/mobile states (manual pass pending).
-- [ ] Reduced-motion fallback policy applied globally.
+- [x] Reduced-motion fallback policy applied globally.
 
-## Recommended Next Fixes (Prioritized)
+## Remaining Manual Validation
 
-1. Migrate `SearchModal` and `MobileMenu` to shadcn `Dialog`/`Sheet` primitives end-to-end.
-2. Add explicit labels (`aria-label` or visible labels) to modal/drawer search inputs.
-3. Replace `transition-all` with targeted transitions (`opacity`, `transform`, `color`, `background-color`) in high-traffic components.
-4. Add a global `prefers-reduced-motion` strategy for modal/nav/toast/hover animations.
+1. Run manual keyboard traversal against desktop account/cart/shop overlays to confirm expected loop and escape behavior in-browser.
+2. Run manual contrast verification across desktop/mobile translucent states.

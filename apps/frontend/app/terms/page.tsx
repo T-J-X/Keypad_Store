@@ -2,7 +2,7 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 
 export const metadata: Metadata = {
-    title: 'Terms of Service | VCT',
+    title: 'Terms of Service',
     description: 'Terms and conditions for use of Vehicle Control Technologies and purchase of products.',
     alternates: {
         canonical: '/terms',
