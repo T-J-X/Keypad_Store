@@ -54,7 +54,15 @@ export async function generateMetadata({
     title: `${modelCode} Configurator`,
     description: `Configure ${modelCode} with per-slot inserts, glow rings, and production-ready layout precision.`,
     canonical: `/configurator/keypad/${encodeURIComponent(product.slug)}`,
-    keywords: [`${modelCode} keypad`, `${modelCode} configurator`, 'custom keypad layout'],
+    keywords: [
+      `${modelCode} keypad`,
+      `${modelCode} keypad configurator`,
+      `${modelCode} custom keypad layout`,
+      `${modelCode} CAN keypad`,
+      `${modelCode} J1939 keypad`,
+      'vehicle control keypad builder',
+      'programmable keypad configurator',
+    ],
   });
 }
 

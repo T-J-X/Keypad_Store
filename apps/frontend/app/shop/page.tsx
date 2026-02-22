@@ -2,6 +2,8 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import { parseUniqueCsvSlugs, toAllowedPageSize, toPositiveInteger, toStringParam } from '@keypad-store/shared-utils/search-params';
 import ShopClient from '../../components/ShopClient';
+import BreadcrumbJsonLd from '../../components/seo/BreadcrumbJsonLd';
+import ShopCollectionJsonLd from '../../components/seo/ShopCollectionJsonLd';
 import { Skeleton } from '../../components/ui/skeleton';
 import { buildPageMetadata } from '../../lib/seo/metadata';
 import type { IconCategory, IconProduct, KeypadProduct, VendureAsset, VendureProductVariant } from '../../lib/vendure';
@@ -19,15 +21,16 @@ type SearchParams = {
 
 const PAGE_SIZE_OPTIONS = [24, 48, 96] as const;
 const DEFAULT_PAGE_SIZE = 24;
+type ShopSection = 'landing' | 'all' | 'button-inserts' | 'keypads';
 
-function normalizeSection(value: string): 'landing' | 'all' | 'button-inserts' | 'keypads' {
+function normalizeSection(value: string): ShopSection {
   if (value === 'all') return 'all';
   if (value === 'keypads') return 'keypads';
   if (value === 'button-inserts' || value === 'icons' || value === 'inserts') return 'button-inserts';
   return 'landing';
 }
 
-function sectionSeo(section: 'landing' | 'all' | 'button-inserts' | 'keypads') {
+function sectionSeo(section: ShopSection) {
   if (section === 'landing') {
     return {
       title: 'Shop',
@@ -50,6 +53,88 @@ function sectionSeo(section: 'landing' | 'all' | 'button-inserts' | 'keypads') {
     title: 'Shop - All Products',
     description: 'View all keypads and button inserts in one catalog.',
   };
+}
+
+function dedupeKeywords(values: string[], maxKeywords = 18) {
+  const seen = new Set<string>();
+  const output: string[] = [];
+
+  for (const value of values) {
+    const keyword = value.replace(/\s+/g, ' ').trim();
+    if (!keyword) continue;
+
+    const normalized = keyword.toLowerCase();
+    if (seen.has(normalized)) continue;
+    seen.add(normalized);
+    output.push(keyword);
+
+    if (output.length >= maxKeywords) break;
+  }
+
+  return output;
+}
+
+function buildShopKeywords(
+  section: ShopSection,
+  categorySlugs: string[],
+) {
+  const categoryKeywords = categorySlugs.flatMap((slug) => {
+    const label = formatDisciplineSlug(slug);
+    return [
+      `${label} button inserts`,
+      `${label} keypad icons`,
+      `${label} control panel icons`,
+      `${label} icon category`,
+      `${label} icon class`,
+    ];
+  });
+
+  const baseKeywords = [
+    'keypad store',
+    'keypad catalog',
+    'button insert catalog',
+    'vehicle control components',
+  ];
+
+  const landingKeywords = [
+    'custom keypad shop',
+    'CAN keypad products',
+    'J1939 keypad products',
+    'industrial control keypads',
+  ];
+
+  const keypadKeywords = [
+    'shop keypads',
+    'programmable keypad catalog',
+    'industrial keypad products',
+    'vehicle control keypad hardware',
+    'CAN keypad',
+    'J1939 keypad',
+  ];
+
+  const insertKeywords = [
+    'button inserts',
+    'keypad icons',
+    'control panel icons',
+    'button insert categories',
+    'button insert classes',
+    'laser etched button inserts',
+    'custom icon inserts',
+  ];
+
+  if (section === 'landing') {
+    return dedupeKeywords([...baseKeywords, ...landingKeywords], 18);
+  }
+  if (section === 'keypads') {
+    return dedupeKeywords([...baseKeywords, ...keypadKeywords], 18);
+  }
+  if (section === 'button-inserts') {
+    return dedupeKeywords([...baseKeywords, ...insertKeywords, ...categoryKeywords], 20);
+  }
+  return dedupeKeywords(
+    [...baseKeywords, ...keypadKeywords, ...insertKeywords, ...categoryKeywords],
+    20,
+  );
 }
 
 function parseCanonicalCatsList(
@@ -85,28 +170,90 @@ function formatDisciplineSlug(slug: string) {
     .join(' ');
 }
 
+function buildShopCanonicalPath(section: ShopSection, categorySlugs: string[]) {
+  const baseShopCanonical = '/shop';
+  if (section === 'landing') return baseShopCanonical;
+  if (section === 'all') return baseShopCanonical;
+  if (section === 'button-inserts') {
+    return categorySlugs.length === 1
+      ? `${baseShopCanonical}/button-inserts/${encodeURIComponent(categorySlugs[0])}`
+      : `${baseShopCanonical}/button-inserts`;
+  }
+  return `${baseShopCanonical}/keypads`;
+}
+
+function buildShopBreadcrumbItems(section: ShopSection, categorySlugs: string[]) {
+  const items: { label: string; href?: string }[] = [
+    { label: 'Home', href: '/' },
+    { label: 'Shop', href: '/shop' },
+  ];
+
+  if (section === 'all') {
+    items.push({ label: 'All Products', href: '/shop' });
+  } else if (section === 'keypads') {
+    items.push({ label: 'Keypads', href: '/shop/keypads' });
+  } else if (section === 'button-inserts') {
+    items.push({ label: 'Button Inserts', href: '/shop/button-inserts' });
+    if (categorySlugs.length === 1) {
+      items.push({
+        label: formatDisciplineSlug(categorySlugs[0]),
+        href: buildShopCanonicalPath(section, categorySlugs),
+      });
+    }
+  }
+
+  return items;
+}
+
+function shouldNoIndexShopVariant({
+  query,
+  page,
+  take,
+  section,
+  categorySlugs,
+}: {
+  query: string;
+  page: number;
+  take: number;
+  section: ShopSection;
+  categorySlugs: string[];
+}) {
+  if (section !== 'landing') return true;
+  if (query.trim().length > 0) return true;
+  if (page > 1) return true;
+  if (take !== DEFAULT_PAGE_SIZE) return true;
+  return false;
+}
+
 export async function generateMetadata({
   searchParams,
 }: {
   searchParams?: Promise<SearchParams>;
 }): Promise<Metadata> {
   const resolvedSearchParams = await searchParams;
-  const section = normalizeSection(toStringParam(resolvedSearchParams?.section));
+  const query = toStringParam(resolvedSearchParams?.q).trim();
+  const sectionRaw = normalizeSection(toStringParam(resolvedSearchParams?.section));
+  const section: ShopSection =
+    sectionRaw === 'landing' && query.length > 0 ? 'all' : sectionRaw;
   const seo = sectionSeo(section);
-  const baseShopCanonical = '/shop';
-  const catsList = parseCanonicalCatsList(resolvedSearchParams?.cats, resolvedSearchParams?.cat);
-
-  let canonical = baseShopCanonical;
-  if (section !== 'landing') {
-    if (section === 'button-inserts') {
-      canonical =
-        catsList.length === 1
-          ? `${baseShopCanonical}?section=button-inserts&cats=${encodeURIComponent(catsList[0])}`
-          : `${baseShopCanonical}?section=button-inserts`;
-    } else {
-      canonical = `${baseShopCanonical}?section=${encodeURIComponent(section)}`;
-    }
-  }
+  const catsList =
+    section === 'button-inserts'
+      ? parseCanonicalCatsList(resolvedSearchParams?.cats, resolvedSearchParams?.cat)
+      : [];
+  const canonical = buildShopCanonicalPath(section, catsList);
+  const page = toPositiveInteger(toStringParam(resolvedSearchParams?.page), 1);
+  const take = toAllowedPageSize(
+    toStringParam(resolvedSearchParams?.take),
+    PAGE_SIZE_OPTIONS,
+    DEFAULT_PAGE_SIZE,
+  );
+  const noIndex = shouldNoIndexShopVariant({
+    query,
+    page,
+    take,
+    section,
+    categorySlugs: catsList,
+  });
 
   let title = seo.title;
   let description = seo.description;
@@ -120,12 +267,8 @@ export async function generateMetadata({
     title,
     description,
     canonical,
-    keywords:
-      section === 'keypads'
-        ? ['shop keypads', 'industrial keypads', 'VCT keypads']
-        : section === 'button-inserts'
-          ? ['button inserts', 'keypad icons', 'icon inserts']
-          : ['keypad store', 'industrial keypad shop', 'custom keypad components'],
+    keywords: buildShopKeywords(section, catsList),
+    noIndex,
   });
 }
 
@@ -266,6 +409,8 @@ async function ShopPageContent({
     section === 'button-inserts'
       ? parseCategorySlugs(resolvedSearchParams?.cats, resolvedSearchParams?.cat)
       : [];
+  const canonicalPath = buildShopCanonicalPath(section, selectedCategories);
+  const breadcrumbItems = buildShopBreadcrumbItems(section, selectedCategories);
   const requestedPage = toPositiveInteger(toStringParam(resolvedSearchParams?.page), 1);
   const requestedTake = toAllowedPageSize(
     toStringParam(resolvedSearchParams?.take),
@@ -319,6 +464,15 @@ async function ShopPageContent({
 
     return (
       <div className="mx-auto w-full max-w-[88rem] bg-white px-4 sm:px-6">
+        <BreadcrumbJsonLd items={breadcrumbItems} />
+        <ShopCollectionJsonLd
+          section={section}
+          canonicalPath={canonicalPath}
+          query={query}
+          categorySlugs={selectedCategories}
+          icons={icons}
+          keypads={matchedKeypads}
+        />
         <ShopClient
           icons={icons}
           keypads={matchedKeypads}
@@ -392,6 +546,15 @@ async function ShopPageContent({
 
   return (
     <div className="mx-auto w-full max-w-[88rem] bg-white px-4 sm:px-6">
+      <BreadcrumbJsonLd items={breadcrumbItems} />
+      <ShopCollectionJsonLd
+        section={section}
+        canonicalPath={canonicalPath}
+        query={query}
+        categorySlugs={selectedCategories}
+        icons={icons}
+        keypads={trimmedKeypads}
+      />
       <ShopClient
         icons={icons}
         keypads={trimmedKeypads}

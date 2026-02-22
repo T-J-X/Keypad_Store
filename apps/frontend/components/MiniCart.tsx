@@ -61,6 +61,7 @@ export default function MiniCart({ lines, currencyCode, totalWithTax, onClose }:
             <div className="max-h-[380px] space-y-3 overflow-y-auto px-2 py-2 custom-scrollbar">
                 {lines.map((line) => {
                     const product = line.productVariant?.product;
+                    const productName = (product?.name || line.productVariant?.name || 'Product').trim();
                     const imagePath = product?.featuredAsset?.preview || product?.featuredAsset?.source;
                     const imageUrl = imagePath ? assetUrl(imagePath) : null;
 
@@ -75,7 +76,7 @@ export default function MiniCart({ lines, currencyCode, totalWithTax, onClose }:
                                 {imageUrl ? (
                                     <Image
                                         src={imageUrl}
-                                        alt={product?.name || 'Product'}
+                                        alt={`${productName} cart line item image`.replace(/\s+/g, ' ').trim()}
                                         fill
                                         className="object-contain p-2"
                                         sizes="56px"
@@ -84,7 +85,7 @@ export default function MiniCart({ lines, currencyCode, totalWithTax, onClose }:
                             </div>
                             <div className="flex min-w-0 flex-1 flex-col justify-center">
                                 <div className="truncate text-sm font-semibold text-white transition-colors group-hover:text-sky">
-                                    {product?.name || line.productVariant?.name}
+                                    {productName}
                                 </div>
                                 <div className="mt-0.5 text-[13px] font-mono text-white/50">
                                     Qty: {line.quantity} × {formatPrice(line.linePriceWithTax / line.quantity, currencyCode)}

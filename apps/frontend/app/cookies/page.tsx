@@ -5,6 +5,13 @@ export const metadata: Metadata = buildPageMetadata({
     title: 'Cookie Policy',
     description: 'Information about the cookies we use on our website.',
     canonical: '/cookies',
+    keywords: [
+        'cookie policy',
+        'website cookies',
+        'tracking preferences',
+        'analytics cookies policy',
+        'vehicle control technologies cookies',
+    ],
 });
 
 export default function CookiesPage() {

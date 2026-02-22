@@ -1,6 +1,7 @@
 'use client';
 
 import Image from 'next/image';
+import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState, useTransition, type Dispatch, type FormEvent, type SetStateAction } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import {
@@ -15,6 +16,7 @@ import {
 } from '../lib/vendure';
 import { useShopLandingSubcategoryIcons } from '../lib/useShopLandingSubcategoryIcons';
 import { ensureShopHubAnchor } from '../lib/shopHistory';
+import { buildKeypadProtocolClusters } from '../lib/seo/shopTaxonomy';
 import BaseShopHero from './BaseShopHero';
 import CategoryCard from './CategoryCard';
 import KeypadCard from './KeypadCard';
@@ -33,7 +35,7 @@ const fallbackTopTiles: BaseShopTopTile[] = [
     id: 'button-inserts',
     label: 'Button Inserts',
     subtitle: 'Browse category-sorted inserts and find the exact symbol set for your workflow.',
-    href: '/shop?section=button-inserts',
+    href: '/shop/button-inserts',
     hoverStyle: 'ring-blue',
     kind: 'section',
     isEnabled: true,
@@ -42,7 +44,7 @@ const fallbackTopTiles: BaseShopTopTile[] = [
     id: 'keypads',
     label: 'Keypads',
     subtitle: 'Compare layouts, hardware formats, and jump directly into configuration.',
-    href: '/shop?section=keypads',
+    href: '/shop/keypads',
     hoverStyle: 'ring-blue',
     kind: 'section',
     isEnabled: true,
@@ -181,14 +183,8 @@ function buildShopProductHref(
   return `/shop/product/${slug}?${params.toString()}`;
 }
 
-function buildShopCategoryHref(categorySlugValue: string, take: number) {
-  const params = new URLSearchParams();
-  params.set('section', 'button-inserts');
-  params.set('cats', categorySlugValue);
-  params.set('cat', categorySlugValue);
-  params.set('page', '1');
-  params.set('take', String(take));
-  return `/shop?${params.toString()}`;
+function buildShopCategoryHref(categorySlugValue: string) {
+  return `/shop/button-inserts/${encodeURIComponent(categorySlugValue)}`;
 }
 
 function resolveBreadcrumbCategorySlug({
@@ -602,6 +598,8 @@ function ShopLandingSection({
   onDisciplineTileSelect,
   onSectionChange,
   featuredLandingKeypads,
+  disciplineSeoLinks,
+  protocolSeoLinks,
   toProductHref,
 }: {
   landingTopTiles: BaseShopTopTile[];
@@ -616,6 +614,16 @@ function ShopLandingSection({
   onDisciplineTileSelect: (tile: { slug: string }) => void;
   onSectionChange: (section: ShopSection, options?: { scrollToTop?: boolean }) => void;
   featuredLandingKeypads: KeypadProduct[];
+  disciplineSeoLinks: Array<{
+    slug: string;
+    label: string;
+    count: number;
+  }>;
+  protocolSeoLinks: Array<{
+    slug: string;
+    label: string;
+    count: number;
+  }>;
   toProductHref: ProductHrefBuilder;
 }) {
   return (
@@ -630,7 +638,7 @@ function ShopLandingSection({
         </div>
         <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
           {landingTopTiles.map((tile) => {
-            const href = tile.kind === 'exploreMore' ? '/shop?section=all' : (tile.href ?? '').trim();
+            const href = tile.kind === 'exploreMore' ? '/shop' : (tile.href ?? '').trim();
             const isInteractive = href.length > 0 && tile.isEnabled !== false;
             const shouldUseRingBlue = isInteractive && (tile.hoverStyle ?? 'ring-blue') !== 'none';
             const isExploreMoreTile = tile.kind === 'exploreMore';
@@ -650,7 +658,7 @@ function ShopLandingSection({
                 {tileImage ? (
                   <Image
                     src={tileImageUrl}
-                    alt={tileTitle}
+                    alt={`${tileTitle} category image`}
                     fill
                     sizes="(max-width: 1024px) 100vw, 33vw"
                     className="object-cover"
@@ -755,6 +763,28 @@ function ShopLandingSection({
         )}
       </section>
 
+      {disciplineSeoLinks.length > 0 ? (
+        <section className="rounded-3xl border border-[#d7e3f4] bg-white p-5 md:p-6">
+          <div className="mb-3">
+            <h2 className="text-xl font-semibold tracking-tight text-ink">Browse by button insert class</h2>
+            <p className="mt-1 text-sm text-ink/60">
+              Indexable class pages for direct category intent.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {disciplineSeoLinks.map((item) => (
+              <Link
+                key={item.slug}
+                href={`/shop/button-inserts/${encodeURIComponent(item.slug)}`}
+                className="rounded-full border border-ink/12 bg-surface px-3 py-1.5 text-xs font-semibold text-ink/70 transition hover:border-ink/25 hover:text-ink"
+              >
+                {item.label} ({item.count})
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
+
       <section>
         <div className="mb-5 flex flex-wrap items-center justify-between gap-3">
           <div>
@@ -788,6 +818,28 @@ function ShopLandingSection({
           </div>
         )}
       </section>
+
+      {protocolSeoLinks.length > 0 ? (
+        <section className="rounded-3xl border border-[#d7e3f4] bg-white p-5 md:p-6">
+          <div className="mb-3">
+            <h2 className="text-xl font-semibold tracking-tight text-ink">Browse keypads by protocol</h2>
+            <p className="mt-1 text-sm text-ink/60">
+              Protocol and family pages for high-intent keypad selection queries.
+            </p>
+          </div>
+          <div className="flex flex-wrap gap-2">
+            {protocolSeoLinks.map((item) => (
+              <Link
+                key={item.slug}
+                href={`/shop/keypads/${encodeURIComponent(item.slug)}`}
+                className="rounded-full border border-ink/12 bg-surface px-3 py-1.5 text-xs font-semibold text-ink/70 transition hover:border-ink/25 hover:text-ink"
+              >
+                {item.label} ({item.count})
+              </Link>
+            ))}
+          </div>
+        </section>
+      ) : null}
     </section>
   );
 }
@@ -1360,7 +1412,7 @@ function useShopClientData({
   });
 
   const onTopTileSelect = (tile: BaseShopTopTile) => {
-    const forcedHref = tile.kind === 'exploreMore' ? '/shop?section=all' : tile.href;
+    const forcedHref = tile.kind === 'exploreMore' ? '/shop' : tile.href;
     const safeHref = getSafeUrl(forcedHref);
 
     if (safeHref.startsWith('/')) {
@@ -1374,7 +1426,7 @@ function useShopClientData({
   };
 
   const toProductHref: ProductHrefBuilder = buildShopProductHref;
-  const toCategoryHref = (categorySlugValue: string) => buildShopCategoryHref(categorySlugValue, take);
+  const toCategoryHref = (categorySlugValue: string) => buildShopCategoryHref(categorySlugValue);
   const resolveProductCategoryForBreadcrumb = (icon: IconProduct) => resolveBreadcrumbCategorySlug({
     iconId: icon.id,
     activeCategorySlugs,
@@ -1429,6 +1481,28 @@ function useShopClientData({
       .filter((keypad): keypad is KeypadProduct => Boolean(keypad));
     return fromConfig.length > 0 ? fromConfig : keypads.slice(0, 3);
   }, [baseShopConfig, keypads]);
+  const disciplineSeoLinks = useMemo(() => {
+    return [...categories]
+      .sort((a, b) => {
+        if (b.count !== a.count) return b.count - a.count;
+        return a.name.localeCompare(b.name);
+      })
+      .slice(0, 10)
+      .map((category) => ({
+        slug: category.slug,
+        label: category.name,
+        count: category.count,
+      }));
+  }, [categories]);
+  const protocolSeoLinks = useMemo(() => {
+    return buildKeypadProtocolClusters(keypads)
+      .slice(0, 10)
+      .map((cluster) => ({
+        slug: cluster.slug,
+        label: cluster.label,
+        count: cluster.count,
+      }));
+  }, [keypads]);
   const visibleResultCount = isLandingSection
     ? 0
     : isIconsSection
@@ -1494,6 +1568,8 @@ function useShopClientData({
     onDisciplineTileSelect,
     onSectionChange,
     featuredLandingKeypads,
+    disciplineSeoLinks,
+    protocolSeoLinks,
     toProductHref,
     onShopHome,
     totalIconCount,
@@ -1548,6 +1624,8 @@ export default function ShopClient(props: ShopClientProps) {
     onDisciplineTileSelect,
     onSectionChange,
     featuredLandingKeypads,
+    disciplineSeoLinks,
+    protocolSeoLinks,
     toProductHref,
     onShopHome,
     totalIconCount,
@@ -1609,6 +1687,8 @@ export default function ShopClient(props: ShopClientProps) {
           onDisciplineTileSelect={onDisciplineTileSelect}
           onSectionChange={onSectionChange}
           featuredLandingKeypads={featuredLandingKeypads}
+          disciplineSeoLinks={disciplineSeoLinks}
+          protocolSeoLinks={protocolSeoLinks}
           toProductHref={toProductHref}
         />
       ) : (

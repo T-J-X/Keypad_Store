@@ -158,7 +158,7 @@ export default function KeypadPdp({
               answer: (
                 <p>
                   Use PKP-SI 15mm inserts from the{' '}
-                  <Link href="/shop?section=button-inserts" className="underline underline-offset-4">
+                  <Link href="/shop/button-inserts" className="underline underline-offset-4">
                     Button Insert catalog
                   </Link>
                   .
@@ -224,7 +224,7 @@ export default function KeypadPdp({
                 <dt className="font-semibold text-ink">Compatibility</dt>
                 <dd>
                   <Link
-                    href="/shop?section=button-inserts"
+                    href="/shop/button-inserts"
                     className="text-ink underline underline-offset-4 hover:text-ink/75"
                   >
                     Compatible with PKP-SI 15mm Button Inserts

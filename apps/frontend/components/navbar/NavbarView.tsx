@@ -19,17 +19,17 @@ const MiniCart = dynamic(() => import('../MiniCart'), {
 
 const shopCollectionLinks = [
   {
-    href: '/shop?section=button-inserts',
+    href: '/shop/button-inserts',
     label: 'Button Inserts',
     description: 'Curated insert icons organized by discipline.',
   },
   {
-    href: '/shop?section=keypads',
+    href: '/shop/keypads',
     label: 'Keypads',
     description: 'Hardware families and layout options.',
   },
   {
-    href: '/shop?section=all',
+    href: '/shop',
     label: 'All Products',
     description: 'Unified view across inserts and keypads.',
   },

@@ -25,6 +25,12 @@ export const metadata: Metadata = {
     'custom keypad',
     'marine keypad icons',
     'CAN keypad',
+    'J1939 keypad',
+    'CANopen keypad',
+    'button inserts',
+    'control panel icons',
+    'programmable keypad',
+    'industrial keypad catalog',
     'engineering specification',
   ],
   alternates: {

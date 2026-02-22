@@ -9,7 +9,15 @@ export const metadata: Metadata = buildPageMetadata({
   title: 'Configurator',
   description: 'Choose a keypad model and configure slot-by-slot inserts with engineering-ready precision.',
   canonical: '/configurator',
-  keywords: ['keypad configurator', 'custom keypad layout', 'vehicle control keypad builder'],
+  keywords: [
+    'keypad configurator',
+    'programmable keypad configurator',
+    'custom keypad layout',
+    'CAN keypad configurator',
+    'J1939 keypad configurator',
+    'button insert mapping',
+    'vehicle control keypad builder',
+  ],
 });
 
 function KeypadGridFallback() {

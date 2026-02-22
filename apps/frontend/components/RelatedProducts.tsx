@@ -17,6 +17,7 @@ export default function RelatedProducts({
           const image = product.featuredAsset?.preview ?? product.featuredAsset?.source ?? '';
           const iconId = product.customFields?.iconId ?? '—';
           const categories = iconCategoriesFromProduct(product);
+          const imageAlt = `${product.name} button insert ${iconId} ${categories.slice(0, 2).join(' ')}`.replace(/\s+/g, ' ').trim();
 
           return (
             <Link
@@ -28,7 +29,7 @@ export default function RelatedProducts({
                 {image ? (
                   <Image
                     src={assetUrl(image)}
-                    alt={product.name}
+                    alt={imageAlt}
                     width={288}
                     height={144}
                     sizes="(max-width: 768px) 100vw, 33vw"

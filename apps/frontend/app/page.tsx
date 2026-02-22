@@ -13,7 +13,17 @@ export const metadata: Metadata = buildPageMetadata({
   title: 'Premium Sim Racing Keypads',
   description: 'Choose a keypad model, map icon inserts, and export production-ready keypad configurations.',
   canonical: '/',
-  keywords: ['sim racing keypad', 'custom keypad', 'keypad configurator', 'racing button inserts'],
+  keywords: [
+    'sim racing keypad',
+    'custom keypad',
+    'programmable keypad',
+    'keypad configurator',
+    'racing button inserts',
+    'CAN keypad',
+    'J1939 keypad',
+    'vehicle control keypad',
+    'keypad icon inserts',
+  ],
 });
 
 // NEW Server Component to handle the dynamic fetching

@@ -5,6 +5,13 @@ export const metadata: Metadata = buildPageMetadata({
     title: 'Privacy Policy',
     description: 'How we collect, use, and protect your data.',
     canonical: '/privacy',
+    keywords: [
+        'privacy policy',
+        'data protection policy',
+        'GDPR privacy policy',
+        'vehicle control technologies privacy',
+        'customer data handling',
+    ],
 });
 
 export default function PrivacyPage() {

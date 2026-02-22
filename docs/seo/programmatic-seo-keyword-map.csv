@@ -28,3 +28,18 @@ low-signal-variants,noindex-variant,/shop/button-inserts/[discipline]?page=[n],b
 low-signal-variants,noindex-variant,/shop?q=[query],broad query result pages,internal search page,navigational,noindex,planned
 low-signal-variants,noindex-variant,/guides/[topic]?filter=[x],filtered guide variants,parameterized variants,navigational,noindex,planned
 low-signal-variants,noindex-variant,/docs/[topic]?view=[x],alternate view variants,duplicate utility views,navigational,noindex,planned
+competitor-alternatives,competitor-alternative,/guides/alternatives/[competitor],blink marine alternatives,blink marine competitors,commercial-investigational,index,in-progress
+competitor-alternatives,competitor-alternative,/guides/alternatives/[competitor],blink marine replacement keypad,blink marine keypad alternative,commercial-investigational,index,planned
+competitor-alternatives,competitor-alternative,/guides/alternatives/[competitor],blink marine vs czone keypad,marine keypad platform comparison,informational-commercial,index,planned
+competitor-alternatives,competitor-alternative,/guides/alternatives/[competitor],blink marine vs hed keypad,j1939 keypad platform comparison,informational-commercial,index,planned
+competitor-alternatives,competitor-alternative,/guides/alternatives/[competitor],blink marine vs marlin keypad,canopen keypad comparison,informational-commercial,index,planned
+competitor-alternatives,competitor-alternative,/guides/alternatives/[competitor],hed keypad alternatives,hed raptor alternatives,commercial-investigational,index,in-progress
+competitor-alternatives,competitor-alternative,/guides/alternatives/[competitor],marlin keypad alternatives,m-flex keypad alternatives,commercial-investigational,index,in-progress
+competitor-alternatives,competitor-alternative,/guides/alternatives/[competitor],czone keypad alternatives,marine digital switching keypad alternatives,commercial-investigational,index,in-progress
+competitor-alternatives,competitor-alternative,/guides/alternatives/[competitor],carling keypad alternatives,carling ckp alternatives,commercial-investigational,index,in-progress
+competitor-alternatives,competitor-alternative,/guides/alternatives/[competitor],grayhill keypad alternatives,grayhill 3kg1 alternatives,commercial-investigational,index,in-progress
+competitor-alternatives,competitor-alternative,/guides/alternatives/[competitor],apem keypad alternatives,apem kp6 alternatives,commercial-investigational,index,in-progress
+competitor-alternatives,competitor-alternative,/guides/alternatives/[competitor],eaton keypad alternatives,eaton m-can keypad alternatives,commercial-investigational,index,in-progress
+competitor-alternatives,competitor-alternative,/guides/alternatives/[competitor],aim shop alternatives,aim button box alternatives,commercial-investigational,index,in-progress
+catalog-hub,hub,/shop/button-inserts,button inserts catalog,keypad icon catalog,commercial,index,in-progress
+catalog-hub,hub,/shop/keypads,keypads catalog,can keypad catalog,commercial,index,in-progress

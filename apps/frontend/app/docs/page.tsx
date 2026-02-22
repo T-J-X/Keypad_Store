@@ -8,7 +8,15 @@ export const metadata: Metadata = buildPageMetadata({
   title: 'Documentation',
   description: 'Central documentation for configuring, ordering, and deploying VCT keypad products.',
   canonical: '/docs',
-  keywords: ['VCT documentation', 'keypad configurator guide', 'keypad ordering documentation'],
+  keywords: [
+    'VCT documentation',
+    'keypad configurator guide',
+    'keypad ordering documentation',
+    'CAN keypad documentation',
+    'J1939 keypad documentation',
+    'button insert documentation',
+    'keypad integration documentation',
+  ],
 });
 
 const docsCards = [

@@ -8,7 +8,14 @@ export const metadata: Metadata = buildPageMetadata({
   title: 'Contact',
   description: 'Talk to Vehicle Control Technologies about sales, support, and integration planning.',
   canonical: '/contact',
-  keywords: ['contact VCT', 'keypad sales support', 'industrial keypad support'],
+  keywords: [
+    'contact VCT',
+    'keypad sales support',
+    'industrial keypad support',
+    'CAN keypad support',
+    'J1939 keypad support',
+    'vehicle control keypad contact',
+  ],
 });
 
 const channels = [

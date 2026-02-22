@@ -135,7 +135,7 @@ export function HeroSlider({ products }: HeroSliderProps) {
                       <div className="relative h-full w-full transition-transform duration-700 ease-out group-hover/card:scale-[1.06]">
                         <Image
                           src={product.thumbnail}
-                          alt={product.name}
+                          alt={`${product.name} keypad model`}
                           fill
                           className="object-contain drop-shadow-[0_10px_15px_rgba(0,0,0,0.5)]"
                           sizes="(max-width: 640px) 86vw, (max-width: 1024px) 58vw, 34vw"

@@ -89,7 +89,7 @@ export default function PurchasePanelView({
               categoryItems.map((category) => (
                 <Link
                   key={category.slug}
-                  href={`/shop?section=button-inserts&cats=${encodeURIComponent(category.slug)}&cat=${encodeURIComponent(category.slug)}&page=1`}
+                  href={`/shop/button-inserts/${encodeURIComponent(category.slug)}`}
                   className="flex items-center gap-2 rounded-full border border-ink/10 px-3 py-1 text-xs font-semibold text-ink/70 transition hover:border-ink/25"
                 >
                   <span>Category: {category.label}</span>

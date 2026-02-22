@@ -158,7 +158,7 @@ export default function ConfiguredKeypadThumbnail({
           {shellSrc ? (
             <Image
               src={shellSrc}
-              alt="Configured keypad shell"
+              alt={`${resolvedModelCode} keypad shell preview`.replace(/\s+/g, ' ').trim()}
               fill
               className="object-contain"
               sizes={size === 'lg' ? '320px' : '120px'}
@@ -243,7 +243,11 @@ export default function ConfiguredKeypadThumbnail({
                   >
                     <Image
                       src={matteSrc}
-                      alt={iconId ? `Icon ${iconId}` : 'Configured icon'}
+                      alt={
+                        iconId
+                          ? `${resolvedModelCode} ${slotGeometry.label} keypad icon ${iconId}`.replace(/\s+/g, ' ').trim()
+                          : `${resolvedModelCode} configured keypad icon`.replace(/\s+/g, ' ').trim()
+                      }
                       fill
                       className="block object-contain drop-shadow-[0_1px_2px_rgba(0,0,0,0.55)]"
                       sizes={size === 'lg' ? '68px' : '26px'}

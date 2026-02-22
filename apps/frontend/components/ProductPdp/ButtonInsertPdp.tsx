@@ -224,7 +224,7 @@ export default function ButtonInsertPdp({
               answer: (
                 <p>
                   No - only the PKP-SI line. See compatible models in{' '}
-                  <Link href="/shop?section=keypads" className="underline underline-offset-4">
+                  <Link href="/shop/keypads" className="underline underline-offset-4">
                     PKP-SI keypads
                   </Link>
                   .
@@ -272,7 +272,7 @@ export default function ButtonInsertPdp({
         productTypeLabel={productTypeLabel}
         iconId={iconId}
         categories={categories}
-        compatibilityLinkHref="/shop?section=keypads"
+        compatibilityLinkHref="/shop/keypads"
         priceExVatLabel={priceExVatLabel}
         priceWithVatLabel={priceWithVatLabel}
         productVariantId={primaryVariant?.id}

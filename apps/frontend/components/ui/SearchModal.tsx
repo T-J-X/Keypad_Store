@@ -178,7 +178,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                     {result.image ? (
                       <Image
                         src={result.image}
-                        alt={result.name}
+                        alt={`${result.name} product search result ${result.iconId ?? result.slug}`.replace(/\s+/g, ' ').trim()}
                         fill
                         className="object-contain p-1"
                         sizes="48px"
@@ -218,7 +218,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                   <button
                     type="button"
                     onClick={() => {
-                      router.push('/shop?section=keypads');
+                      router.push('/shop/keypads');
                       closeModal();
                     }}
                     className="group flex w-full items-center justify-between rounded-xl p-3 text-left transition-colors hover:bg-surface-alt"
@@ -234,7 +234,7 @@ export default function SearchModal({ isOpen, onClose }: SearchModalProps) {
                   <button
                     type="button"
                     onClick={() => {
-                      router.push('/shop?section=button-inserts');
+                      router.push('/shop/button-inserts');
                       closeModal();
                     }}
                     className="group flex w-full items-center justify-between rounded-xl p-3 text-left transition-colors hover:bg-surface-alt"

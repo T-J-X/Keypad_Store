@@ -7,6 +7,9 @@ import CheckoutClient from './CheckoutClient';
 export const metadata: Metadata = {
   title: 'Checkout',
   description: 'Complete your secure checkout process.',
+  alternates: {
+    canonical: '/checkout',
+  },
   robots: {
     index: false,
     follow: false,

@@ -32,6 +32,7 @@ export default function ProductHero({
 }) {
   const renderAsset = product.featuredAsset ?? product.assets?.[0] ?? null;
   const renderImage = renderAsset?.preview ?? renderAsset?.source ?? '';
+  const imageAlt = `${product.name} ${productTypeLabel} product render`.replace(/\s+/g, ' ').trim();
 
   return (
     <div className="grid gap-10 motion-safe:animate-fade-up lg:grid-cols-[1.15fr_0.85fr] lg:items-start">
@@ -42,7 +43,7 @@ export default function ProductHero({
               {renderImage ? (
                 <Image
                   src={assetUrl(renderImage)}
-                  alt={product.name}
+                  alt={imageAlt}
                   width={260}
                   height={260}
                   sizes="260px"

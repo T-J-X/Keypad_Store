@@ -10,8 +10,8 @@ const footerGroups = [
     title: 'Shop',
     links: [
       { label: 'All Products', href: '/shop' },
-      { label: 'Button Inserts', href: '/shop?section=button-inserts' },
-      { label: 'Keypads', href: '/shop?section=keypads' },
+      { label: 'Button Inserts', href: '/shop/button-inserts' },
+      { label: 'Keypads', href: '/shop/keypads' },
     ],
   },
   {

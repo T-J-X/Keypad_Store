@@ -43,6 +43,11 @@ export default function CheckoutConfiguredLines({
             configuration: previewConfiguration,
           });
           const configuredSlots = countConfiguredSlots(previewConfiguration);
+          const productName = (
+            line.productVariant?.name
+            || line.productVariant?.product?.name
+            || 'Product'
+          ).trim();
           const imagePath = line.productVariant?.product?.featuredAsset?.preview
             || line.productVariant?.product?.featuredAsset?.source
             || '';
@@ -62,7 +67,7 @@ export default function CheckoutConfiguredLines({
                 ) : imageSrc ? (
                   <Image
                     src={imageSrc}
-                    alt={line.productVariant?.name || 'Product image'}
+                    alt={`${productName} checkout line item product image`.replace(/\s+/g, ' ').trim()}
                     fill
                     className="object-contain p-2"
                     sizes="80px"
@@ -71,7 +76,7 @@ export default function CheckoutConfiguredLines({
               </div>
               <div className="min-w-0 flex-1">
                 <div className="text-sm font-semibold text-white">
-                  {line.productVariant?.name || line.productVariant?.product?.name || 'Product'}
+                  {productName}
                 </div>
                 {hasConfiguration ? (
                   <div className="mt-1 text-xs font-semibold uppercase tracking-[0.1em] text-[#9dcfff]">

@@ -49,6 +49,7 @@ export default function KeypadCard({
   const priceExVatLabel = formatPriceExVatUk(primaryVariant?.priceWithTax, primaryVariant?.currencyCode);
   const mediaHeightClass = isShopCard ? 'h-56' : 'h-44';
   const mediaPaddingClass = isShopCard ? 'p-5' : 'p-4';
+  const imageAlt = `${modelCode} keypad product image`.replace(/\s+/g, ' ').trim();
 
   return (
     <div className="card relative flex h-full flex-col gap-4 p-4">
@@ -67,7 +68,7 @@ export default function KeypadCard({
         {image ? (
           <Image
             src={assetUrl(image)}
-            alt={product.name}
+            alt={imageAlt}
             width={448}
             height={224}
             sizes="(max-width: 768px) 100vw, 50vw"

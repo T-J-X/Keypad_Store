@@ -9,6 +9,9 @@ import { fetchKeypadProducts } from '../../../lib/vendure.server';
 export const metadata: Metadata = {
   title: 'Configurator Debug Ring',
   description: 'Internal calibration route for keypad slot and ring geometry.',
+  alternates: {
+    canonical: '/configurator/debug-ring',
+  },
   robots: {
     index: false,
     follow: false,

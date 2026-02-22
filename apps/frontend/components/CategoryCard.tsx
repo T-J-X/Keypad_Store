@@ -39,7 +39,7 @@ export default function CategoryCard(props: CategoryCardProps) {
         </div>
       </div>
       <div className="shrink-0">
-        <ShopCategoryIcon image={props.image} alt={props.label} />
+        <ShopCategoryIcon image={props.image} alt={`${props.label} button insert category icon`} />
       </div>
     </div>
   );

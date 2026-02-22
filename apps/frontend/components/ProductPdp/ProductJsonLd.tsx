@@ -1,5 +1,5 @@
 import type { CatalogProduct } from '../../lib/vendure';
-import { resolveSeoDescription } from '../../lib/productSeo';
+import { resolveSeoDescription, resolveSeoKeywords } from '../../lib/productSeo';
 import { serializeJsonLd } from '../../lib/seo/jsonLd';
 import { resolvePublicSiteUrl } from '../../lib/siteUrl';
 import { assetUrl } from '../../lib/vendure';
@@ -44,6 +44,11 @@ export default function ProductJsonLd({
       name: 'Vehicle Control Technologies',
     },
   };
+
+  const keywords = resolveSeoKeywords(product, 20);
+  if (keywords.length > 0) {
+    schema.keywords = keywords.join(', ');
+  }
 
   const rawCategories = product.customFields?.iconCategories ?? product.customFields?.application;
   const categories = (Array.isArray(rawCategories)

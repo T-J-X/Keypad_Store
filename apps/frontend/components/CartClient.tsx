@@ -205,6 +205,11 @@ export default function CartClient({ order, iconCatalog }: { order: CartOrder | 
                                         ? `/configurator/keypad/${encodedProductSlug}?lineId=${encodeURIComponent(line.id)}`
                                         : null;
                                     const isUpdatingLine = activeLineId === line.id;
+                                    const productName = (
+                                        line.productVariant?.name
+                                        || line.productVariant?.product?.name
+                                        || 'Product'
+                                    ).trim();
 
                                     return (
                                         <li key={line.id} className="flex gap-4 p-4 sm:p-5">
@@ -220,7 +225,7 @@ export default function CartClient({ order, iconCatalog }: { order: CartOrder | 
                                                 ) : imageSrc ? (
                                                     <Image
                                                         src={imageSrc}
-                                                        alt={line.productVariant?.name || 'Product image'}
+                                                        alt={`${productName} cart line item product image`.replace(/\s+/g, ' ').trim()}
                                                         fill
                                                         className="object-contain p-2"
                                                         sizes="80px"
@@ -231,11 +236,11 @@ export default function CartClient({ order, iconCatalog }: { order: CartOrder | 
                                             <div className="min-w-0 flex-1">
                                                 {encodedProductSlug ? (
                                                     <Link href={`/shop/product/${encodedProductSlug}`} className="text-sm font-semibold text-white transition hover:underline">
-                                                        {line.productVariant?.name || line.productVariant?.product?.name || 'Product'}
+                                                        {productName}
                                                     </Link>
                                                 ) : (
                                                     <div className="text-sm font-semibold text-white">
-                                                        {line.productVariant?.name || line.productVariant?.product?.name || 'Product'}
+                                                        {productName}
                                                     </div>
                                                 )}
 

@@ -33,6 +33,27 @@ function toAbsoluteUrl(urlOrPath: string) {
   return `${base}${path}`;
 }
 
+function normalizeKeywords(keywords?: string[]) {
+  if (!keywords || keywords.length === 0) return undefined;
+
+  const seen = new Set<string>();
+  const deduped: string[] = [];
+
+  for (const keyword of keywords) {
+    const normalizedKeyword = keyword.replace(/\s+/g, ' ').trim();
+    if (!normalizedKeyword) continue;
+
+    const key = normalizedKeyword.toLowerCase();
+    if (seen.has(key)) continue;
+    seen.add(key);
+    deduped.push(normalizedKeyword);
+
+    if (deduped.length >= 24) break;
+  }
+
+  return deduped.length > 0 ? deduped : undefined;
+}
+
 export function withBrandTitle(title: string) {
   const trimmed = title.trim();
   if (!trimmed) return 'VCT';
@@ -51,12 +72,13 @@ export function buildPageMetadata({
   const normalizedCanonical = normalizeCanonical(canonical);
   const absoluteCanonical = toAbsoluteUrl(normalizedCanonical);
   const absoluteImage = toAbsoluteUrl(image);
+  const normalizedKeywords = normalizeKeywords(keywords);
   const socialTitle = withBrandTitle(title);
 
   return {
     title,
     description,
-    keywords,
+    keywords: normalizedKeywords,
     alternates: {
       canonical: normalizedCanonical,
     },

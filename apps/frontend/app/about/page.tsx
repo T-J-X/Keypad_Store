@@ -8,7 +8,14 @@ export const metadata: Metadata = buildPageMetadata({
   title: 'About Us',
   description: 'Learn how Vehicle Control Technologies designs rugged keypad systems for demanding environments.',
   canonical: '/about',
-  keywords: ['about vehicle control technologies', 'rugged keypad engineering', 'industrial keypad company'],
+  keywords: [
+    'about vehicle control technologies',
+    'rugged keypad engineering',
+    'industrial keypad company',
+    'vehicle control keypad manufacturer',
+    'CAN keypad supplier',
+    'J1939 keypad supplier',
+  ],
 });
 
 const pillars = [
@@ -36,7 +43,7 @@ export default function AboutPage() {
       title="We build control interfaces that stay clear under pressure."
       description="Vehicle Control Technologies helps teams design, configure, and ship rugged keypad systems with confidence. Our workflow connects catalog hardware, configurable icon systems, and order-ready outputs."
       actions={[
-        { label: 'Browse Keypads', href: '/shop?section=keypads' },
+        { label: 'Browse Keypads', href: '/shop/keypads' },
         { label: 'Contact Sales', href: '/contact', variant: 'secondary' },
       ]}
       stats={[

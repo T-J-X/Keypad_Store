@@ -8,7 +8,15 @@ export const metadata: Metadata = buildPageMetadata({
   title: 'Guides',
   description: 'Step-by-step guides for configuring, validating, and ordering VCT keypads.',
   canonical: '/guides',
-  keywords: ['keypad configuration guides', 'VCT setup guides', 'industrial keypad workflow'],
+  keywords: [
+    'keypad configuration guides',
+    'VCT setup guides',
+    'industrial keypad workflow',
+    'keypad installation guide',
+    'button icon mapping guide',
+    'CAN keypad setup guide',
+    'J1939 keypad setup guide',
+  ],
 });
 
 const steps = [
@@ -73,13 +81,17 @@ export default function GuidesPage() {
 
       <section className="mt-6 rounded-2xl border border-white/10 bg-white/[0.045] p-5 backdrop-blur-2xl">
         <h2 className="text-lg font-semibold tracking-tight text-white">Where to go next</h2>
-        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+        <div className="mt-4 grid gap-3 sm:grid-cols-3">
           <Link href="/docs" className="group flex items-center justify-between rounded-xl border border-white/10 bg-[#071938]/70 px-4 py-3 text-sm text-blue-100/80 transition-colors hover:border-white/20 hover:text-white">
             Documentation hub
             <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
           </Link>
-          <Link href="/shop?section=keypads" className="group flex items-center justify-between rounded-xl border border-white/10 bg-[#071938]/70 px-4 py-3 text-sm text-blue-100/80 transition-colors hover:border-white/20 hover:text-white">
+          <Link href="/shop/keypads" className="group flex items-center justify-between rounded-xl border border-white/10 bg-[#071938]/70 px-4 py-3 text-sm text-blue-100/80 transition-colors hover:border-white/20 hover:text-white">
             Browse keypad models
+            <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
+          </Link>
+          <Link href="/guides/alternatives" className="group flex items-center justify-between rounded-xl border border-white/10 bg-[#071938]/70 px-4 py-3 text-sm text-blue-100/80 transition-colors hover:border-white/20 hover:text-white">
+            Alternatives guides
             <ArrowUpRight className="h-4 w-4 transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5" />
           </Link>
         </div>

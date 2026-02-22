@@ -29,6 +29,7 @@ export default function ProductCard({
   const isList = layout === 'list';
   const image = product.featuredAsset?.preview ?? product.featuredAsset?.source ?? '';
   const iconId = product.customFields?.iconId ?? product.name;
+  const productImageAlt = `${product.name} ${categoryLabel} button insert ${iconId}`.replace(/\s+/g, ' ').trim();
   const primaryVariant = product.variants?.[0];
   const [adding, setAdding] = useState(false);
   const showToast = useUIStore((state) => state.showToast);
@@ -79,7 +80,7 @@ export default function ProductCard({
           <div className="relative h-[70%] w-[70%]">
             <Image
               src={assetUrl(image)}
-              alt={product.name}
+              alt={productImageAlt}
               fill
               className="object-contain object-center transition-transform duration-500 group-hover:scale-105"
               sizes="(min-width: 1024px) 25vw, (min-width: 768px) 33vw, 50vw"

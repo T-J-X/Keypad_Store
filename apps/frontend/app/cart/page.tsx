@@ -6,6 +6,9 @@ import { fetchActiveOrder } from '../../lib/vendure.server';
 export const metadata: Metadata = {
   title: 'Your Cart',
   description: 'Review and edit your keypad configurations before checkout.',
+  alternates: {
+    canonical: '/cart',
+  },
   robots: {
     index: false,
     follow: false,

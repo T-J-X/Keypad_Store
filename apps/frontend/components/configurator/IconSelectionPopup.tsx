@@ -376,7 +376,7 @@ function IconCard({
         {glossySrc ? (
           <Image
             src={glossySrc}
-            alt={icon.name}
+            alt={`${icon.name} button icon ${icon.iconId}`.replace(/\s+/g, ' ').trim()}
             fill
             className="object-contain p-2"
             sizes="112px"

@@ -98,6 +98,29 @@ Metadata template:
 - Title: `[A] vs [B] for Keypad Workflows | VCT`
 - Description: `Compare [A] and [B] across compatibility, workflow fit, and deployment trade-offs.`
 
+## Template 5: Competitor Alternative Page
+
+Pattern:
+- `/guides/alternatives/[competitor]`
+
+Intent:
+- Users explicitly searching for replacement options for a known competitor.
+
+Required data:
+- Competitor baseline profile, protocol claims, environmental claims, shortlist alternatives, scenario-fit guidance, source links.
+
+Required sections:
+1. Scenario-first verdict (who should switch and who should not)
+2. Alternative shortlist with protocol + ruggedization snapshots
+3. Decision matrix by deployment criteria
+4. Migration/procurement checklist
+5. FAQ
+6. Sources + conversion CTA
+
+Metadata template:
+- Title: `[Competitor] Alternatives for [Category] | VCT`
+- Description: `Compare alternatives to [Competitor] across protocol support, durability, and deployment workflow.`
+
 ## Indexation Gating Rules
 
 Index only if all are true:
@@ -105,11 +128,13 @@ Index only if all are true:
 - At least one data-driven matrix/list section
 - At least two contextual internal links
 - Valid canonical and metadata fields
+- Competitor page includes dated source references for vendor claims
 
 Noindex if any are true:
 - Missing required data fields
 - Duplicate keyword ownership conflict
 - Fails uniqueness threshold review
+- Page lacks scenario-specific recommendations
 
 ## Structured Data
 

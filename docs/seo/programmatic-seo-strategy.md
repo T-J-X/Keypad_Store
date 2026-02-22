@@ -17,6 +17,7 @@ All programmatic surfaces remain under first-party subfolders:
 - `/shop/keypads/[protocol-or-family]`
 - `/guides/[integration-or-use-case]`
 - `/guides/compare/[topic-a]-vs-[topic-b]`
+- `/guides/alternatives/[competitor]`
 - `/docs/[technical-topic]`
 
 No subdomains are used for pSEO surfaces.
@@ -82,7 +83,10 @@ Cannibalization controls:
 4. Comparison pages (`/guides/compare/[a]-vs-[b]`)
 - Unique elements: criteria matrix, scenario recommendations, trade-off explanations, decision framework.
 
-5. Technical doc pages (`/docs/[technical-topic]`)
+5. Competitor alternative pages (`/guides/alternatives/[competitor]`)
+- Unique elements: vendor-specific baseline profile, scenario-fit recommendations, evidence-backed matrix, migration checklist.
+
+6. Technical doc pages (`/docs/[technical-topic]`)
 - Unique elements: definitions, implementation constraints, field examples, validation steps.
 
 ## Rollout Sequence
@@ -90,7 +94,8 @@ Cannibalization controls:
 1. Launch discipline and protocol pages first (highest commercial intent).
 2. Add integration guides for top product workflows.
 3. Expand comparison pages for high-confusion keyword pairs.
-4. Scale technical docs tied to sales/support friction points.
+4. Launch competitor-alternatives pages for high-intent vendor terms (`[brand] alternatives` + `[brand] vs [category]`).
+5. Scale technical docs tied to sales/support friction points.
 
 ## Measurement
 
@@ -104,3 +109,4 @@ Secondary:
 - Scroll depth and dwell on guide/doc templates
 - Internal-link assisted sessions
 - Query coverage growth for mapped long-tail clusters
+- Conversion assist rate from alternatives pages into `/shop` and `/configurator`

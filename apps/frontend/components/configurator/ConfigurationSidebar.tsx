@@ -57,7 +57,7 @@ function MobileSlotItem({
         <div className="relative h-full w-full drop-shadow-md">
           <Image
             src={previewImage}
-            alt={label}
+            alt={`${label} configured keypad icon`.replace(/\s+/g, ' ').trim()}
             fill
             className="object-contain"
             sizes="(max-width: 768px) 25vw, 10vw"
@@ -151,7 +151,7 @@ function DesktopSlotItem({
             <div className="relative h-20 w-20 transition-transform duration-300 group-hover:scale-110 drop-shadow-md">
               <Image
                 src={previewImage}
-                alt={iconName || 'Slot icon'}
+                alt={`${iconName || label} keypad slot icon`.replace(/\s+/g, ' ').trim()}
                 fill
                 className="object-contain"
                 sizes="96px"

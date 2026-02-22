@@ -6,6 +6,13 @@ export const metadata: Metadata = buildPageMetadata({
     title: 'Terms of Service',
     description: 'Terms and conditions for use of Vehicle Control Technologies and purchase of products.',
     canonical: '/terms',
+    keywords: [
+        'terms of service',
+        'terms and conditions',
+        'keypad purchase terms',
+        'custom keypad order terms',
+        'vehicle control technologies terms',
+    ],
 });
 
 export default function TermsPage() {

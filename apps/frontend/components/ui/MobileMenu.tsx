@@ -198,7 +198,7 @@ export default function MobileMenu({
                           {result.image ? (
                             <Image
                               src={result.image}
-                              alt={result.name}
+                              alt={`${result.name} product search result ${result.iconId ?? result.slug}`.replace(/\s+/g, ' ').trim()}
                               fill
                               className="object-contain p-1"
                               sizes="40px"
@@ -252,8 +252,8 @@ export default function MobileMenu({
                 <div className="text-xs font-semibold uppercase tracking-wider text-panel-muted">Shop</div>
                 <div className="flex flex-col gap-1">
                   <MobileLink href="/shop" label="Shop Home" onClick={closeMenu} />
-                  <MobileLink href="/shop?section=button-inserts" label="Button Inserts" onClick={closeMenu} />
-                  <MobileLink href="/shop?section=keypads" label="Keypads" onClick={closeMenu} />
+                  <MobileLink href="/shop/button-inserts" label="Button Inserts" onClick={closeMenu} />
+                  <MobileLink href="/shop/keypads" label="Keypads" onClick={closeMenu} />
                 </div>
               </div>
 

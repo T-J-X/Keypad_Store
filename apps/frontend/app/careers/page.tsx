@@ -8,7 +8,14 @@ export const metadata: Metadata = buildPageMetadata({
   title: 'Careers',
   description: 'Explore careers at Vehicle Control Technologies and submit your interest.',
   canonical: '/careers',
-  keywords: ['VCT careers', 'keypad engineering jobs', 'industrial hardware careers'],
+  keywords: [
+    'VCT careers',
+    'keypad engineering jobs',
+    'industrial hardware careers',
+    'embedded systems careers',
+    'product engineering jobs',
+    'vehicle control technology jobs',
+  ],
 });
 
 const principles = [

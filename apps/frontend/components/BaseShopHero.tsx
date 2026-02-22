@@ -6,7 +6,7 @@ const heroCtaClass =
 const tiles = [
   {
     id: 'button-inserts',
-    href: '/shop?section=button-inserts',
+    href: '/shop/button-inserts',
     eyebrow: 'Button Inserts',
     title: 'Curated icon libraries for mission-critical controls',
     body: 'Browse category-sorted inserts and find the exact symbol set for your workflow.',
@@ -16,7 +16,7 @@ const tiles = [
   },
   {
     id: 'keypads',
-    href: '/shop?section=keypads',
+    href: '/shop/keypads',
     eyebrow: 'Keypads',
     title: 'High-reliability keypads engineered for precise control',
     body: 'Compare layouts, hardware formats, and jump directly into configuration.',

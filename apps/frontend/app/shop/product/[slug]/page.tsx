@@ -10,15 +10,16 @@ import PriceAndStock from '../../../../components/ProductPdp/PriceAndStock';
 import ShopHubBackAnchor from '../../../../components/ShopHubBackAnchor';
 import { Skeleton } from '../../../../components/ui/skeleton';
 import { resolvePkpModelCode } from '../../../../lib/keypadUtils';
-import { resolveSeoDescription } from '../../../../lib/productSeo';
+import { resolveSeoDescription, resolveSeoKeywords } from '../../../../lib/productSeo';
 import { buildPageMetadata } from '../../../../lib/seo/metadata';
-import { type CatalogProduct, type IconProduct } from '../../../../lib/vendure';
+import { assetUrl, categorySlug, type CatalogProduct, type IconProduct } from '../../../../lib/vendure';
 import { fetchIconProducts, fetchKeypadProducts, fetchProductBySlug } from '../../../../lib/vendure.server';
 
 type ProductSearchParams = {
   from?: string | string[];
   hub?: string | string[];
   section?: string | string[];
+  protocol?: string | string[];
   cat?: string | string[];
   cats?: string | string[];
   q?: string | string[];
@@ -55,11 +56,29 @@ function normalizeSection(value: string): ShopSection | undefined {
 }
 
 function toCategoryLabelFromSlug(slug: string) {
+  const acronymMap: Record<string, string> = {
+    can: 'CAN',
+    j1939: 'J1939',
+    nmea: 'NMEA',
+    hvac: 'HVAC',
+  };
+
   return slug
     .split('-')
     .filter(Boolean)
-    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .map((part) => acronymMap[part.toLowerCase()] ?? (part.charAt(0).toUpperCase() + part.slice(1)))
     .join(' ');
+}
+
+function normalizeTaxonomySlug(value: string) {
+  const trimmed = value.trim();
+  if (!trimmed) return '';
+
+  try {
+    return categorySlug(decodeURIComponent(trimmed));
+  } catch {
+    return categorySlug(trimmed);
+  }
 }
 
 function resolveCanonicalUrl(product: CatalogProduct, fallbackSlug: string) {
@@ -118,22 +137,15 @@ export async function generateMetadata({
   );
   const canonical = resolveCanonicalUrl(product, resolvedParams.slug);
   const noIndex = product.customFields?.seoNoIndex === true;
+  const imageSource = product.featuredAsset?.source ?? product.featuredAsset?.preview;
 
   return buildPageMetadata({
     title: seoTitle,
     description: resolveSeoDescription(product),
     canonical,
     noIndex,
-    keywords: [
-      product.name,
-      product.customFields?.iconId ?? '',
-      ...(product.customFields?.iconCategories ?? []),
-      ...(product.customFields?.application ?? []),
-      product.customFields?.isIconProduct ? 'button insert' : 'keypad',
-    ]
-      .map((value) => value.trim())
-      .filter(Boolean)
-      .slice(0, 10),
+    image: imageSource ? assetUrl(imageSource) : undefined,
+    keywords: resolveSeoKeywords(product),
   });
 }
 
@@ -271,14 +283,19 @@ async function ProductDetailContent({
   const origin = toStringParam(searchParams?.from);
   const hubReady = toStringParam(searchParams?.hub) === '1';
   const section = normalizeSection(toStringParam(searchParams?.section));
-  const categoryParam = toStringParam(searchParams?.cat).trim();
+  const categoryParam = normalizeTaxonomySlug(toStringParam(searchParams?.cat));
+  const protocolParam = normalizeTaxonomySlug(toStringParam(searchParams?.protocol));
   const categoryParamList = parseCategorySlugs(toStringParam(searchParams?.cats));
   const categorySlugs = categoryParamList.length > 0
     ? categoryParamList
     : (categoryParam ? [categoryParam] : []);
   const query = toStringParam(searchParams?.q);
-  const page = toPositiveInteger(toStringParam(searchParams?.page), 1);
-  const take = toAllowedPageSize(toStringParam(searchParams?.take), PAGE_SIZE_OPTIONS, DEFAULT_PAGE_SIZE);
+  const rawPage = toStringParam(searchParams?.page);
+  const rawTake = toStringParam(searchParams?.take);
+  const page = toPositiveInteger(rawPage, 1);
+  const take = toAllowedPageSize(rawTake, PAGE_SIZE_OPTIONS, DEFAULT_PAGE_SIZE);
+  const hasPageParam = rawPage.trim().length > 0;
+  const hasTakeParam = rawTake.trim().length > 0;
 
   const sectionHref = section
     ? buildShopHref({
@@ -286,30 +303,30 @@ async function ProductDetailContent({
       q: query,
       cats: section === 'button-inserts' ? categorySlugs : [],
       cat: section === 'button-inserts' ? categoryParam : undefined,
-      page,
-      take,
+      page: hasPageParam ? page : undefined,
+      take: hasTakeParam ? take : undefined,
     })
     : buildShopHref({});
 
-  const categoryHref = section === 'button-inserts' && categoryParam
-    ? buildShopHref({
-      section: 'button-inserts',
-      q: query,
-      cats: categorySlugs.length > 0 ? categorySlugs : [categoryParam],
-      cat: categoryParam,
-      page: 1,
-      take,
-    })
+  const categoryBreadcrumbSlug = categoryParam || categorySlugs[0] || '';
+  const categoryHref = section === 'button-inserts' && categoryBreadcrumbSlug
+    ? `/shop/button-inserts/${encodeURIComponent(categoryBreadcrumbSlug)}`
     : undefined;
 
   const sectionLabel = section === 'keypads' ? 'Keypads' : 'Button Inserts';
+  const protocolHref = protocolParam
+    ? `/shop/keypads/${encodeURIComponent(protocolParam)}`
+    : undefined;
 
   const breadcrumbs: BreadcrumbItem[] = origin === 'shop'
     ? [
       { label: 'Shop', href: buildShopHref({}) },
       ...(section ? [{ label: sectionLabel, href: sectionHref }] : []),
-      ...(section === 'button-inserts' && categoryParam && categoryHref
-        ? [{ label: toCategoryLabelFromSlug(categoryParam), href: categoryHref }]
+      ...(section === 'keypads' && protocolParam && protocolHref
+        ? [{ label: toCategoryLabelFromSlug(protocolParam), href: protocolHref }]
+        : []),
+      ...(section === 'button-inserts' && categoryBreadcrumbSlug && categoryHref
+        ? [{ label: toCategoryLabelFromSlug(categoryBreadcrumbSlug), href: categoryHref }]
         : []),
       { label: product.name },
     ]
