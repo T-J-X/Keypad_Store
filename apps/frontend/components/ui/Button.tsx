@@ -50,20 +50,36 @@ function Button({
   disabled,
   ...props
 }: ButtonProps) {
-  const Comp = asChild ? Slot.Root : 'button';
+  const isDisabled = loading || disabled;
+
+  if (asChild) {
+    return (
+      <Slot.Root
+        data-slot="button"
+        data-variant={variant}
+        data-size={size}
+        data-loading={loading ? 'true' : undefined}
+        className={cn(buttonVariants({ variant, size, className }))}
+        aria-disabled={isDisabled || undefined}
+        {...props}
+      >
+        {children}
+      </Slot.Root>
+    );
+  }
 
   return (
-    <Comp
+    <button
       data-slot="button"
       data-variant={variant}
       data-size={size}
       className={cn(buttonVariants({ variant, size, className }))}
-      disabled={loading || disabled}
+      disabled={isDisabled}
       {...props}
     >
       {loading ? <Loader2 className="size-4 animate-spin" /> : null}
       {children}
-    </Comp>
+    </button>
   );
 }
 
