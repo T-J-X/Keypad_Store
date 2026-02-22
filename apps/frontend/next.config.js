@@ -1,4 +1,10 @@
 /** @type {import('next').NextConfig} */
+import createBundleAnalyzer from '@next/bundle-analyzer';
+
+const withBundleAnalyzer = createBundleAnalyzer({
+  enabled: process.env.ANALYZE === 'true',
+});
+
 const isProduction = process.env.NODE_ENV === 'production';
 const imageHostCandidates = [
   process.env.NEXT_PUBLIC_VENDURE_HOST,
@@ -69,4 +75,4 @@ const nextConfig = {
   },
 };
 
-export default nextConfig;
+export default withBundleAnalyzer(nextConfig);
