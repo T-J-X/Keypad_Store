@@ -3,9 +3,10 @@
 ## Pinned Images
 - PostgreSQL: `dhi.io/postgres:16.12-debian13`
 - Redis: `dhi.io/redis:8.2.4-debian13`
-- MinIO: `minio/minio:RELEASE.2025-09-07T16-13-09Z` (non-DHI by design)
+- MinIO: `minio/minio:latest` (non-DHI by design)
 - Mailpit: `axllent/mailpit:v1.29.1`
 - ntfy: `binwiederhier/ntfy:v2.17.0`
+- Watchtower: `containrrr/watchtower` (`--interval 300 --cleanup`)
 
 ## Start
 ```bash
@@ -61,3 +62,4 @@ This Compose setup uses Docker named volumes (`pg_data`, `redis_data`), which is
 ## Notes
 - Ports are bound to `127.0.0.1` (localhost only).
 - This project does not use Elasticsearch in local infra.
+- Watchtower monitors running containers and applies image updates automatically every 5 minutes.
