@@ -1263,6 +1263,12 @@ function useShopClientData({
     setQuery((previous) => (previous === initialQuery ? previous : initialQuery ?? ''));
   }, [initialQuery]);
 
+  useEffect(() => {
+    if (activeSection !== 'button-inserts') {
+      setIconsGroupOpen(false);
+    }
+  }, [activeSection]);
+
   const wasSpokeSectionRef = useRef(false);
 
   const updateParams = useCallback((updates: Record<string, string | number | string[] | null>) => {

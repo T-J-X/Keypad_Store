@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { ChevronRight, ChevronLeft } from 'lucide-react';
@@ -22,8 +22,14 @@ interface HeroSliderProps {
 
 export function HeroSlider({ products }: HeroSliderProps) {
     const scrollRef = useRef<HTMLDivElement>(null);
+    const [showSwipeHint, setShowSwipeHint] = useState(products.length > 1);
+
+    const dismissSwipeHint = useCallback(() => {
+        setShowSwipeHint((previous) => (previous ? false : previous));
+    }, []);
 
     const scroll = (direction: 'left' | 'right') => {
+        dismissSwipeHint();
         if (scrollRef.current) {
             const { current } = scrollRef;
             const scrollAmount = current.clientWidth * 0.8; // Scroll 80% of container width
@@ -34,17 +40,57 @@ export function HeroSlider({ products }: HeroSliderProps) {
         }
     };
 
-    if (!products || products.length === 0) return null;
+    useEffect(() => {
+        setShowSwipeHint(products.length > 1);
+    }, [products.length]);
 
-    const formatPrice = (value: number, currencyCode: string) => {
-        return new Intl.NumberFormat('en-US', {
-            style: 'currency',
-            currency: currencyCode,
-        }).format(value / 100);
-    };
+    useEffect(() => {
+        const slider = scrollRef.current;
+        if (!slider || !showSwipeHint) return;
+
+        const timeoutId = window.setTimeout(() => {
+            dismissSwipeHint();
+        }, 5000);
+
+        const onPointerDown = () => dismissSwipeHint();
+        const onTouchStart = () => dismissSwipeHint();
+        const onWheel = () => dismissSwipeHint();
+        const onScroll = () => {
+            if (slider.scrollLeft > 8) {
+                dismissSwipeHint();
+            }
+        };
+
+        slider.addEventListener('pointerdown', onPointerDown, { passive: true });
+        slider.addEventListener('touchstart', onTouchStart, { passive: true });
+        slider.addEventListener('wheel', onWheel, { passive: true });
+        slider.addEventListener('scroll', onScroll, { passive: true });
+
+        return () => {
+            window.clearTimeout(timeoutId);
+            slider.removeEventListener('pointerdown', onPointerDown);
+            slider.removeEventListener('touchstart', onTouchStart);
+            slider.removeEventListener('wheel', onWheel);
+            slider.removeEventListener('scroll', onScroll);
+        };
+    }, [dismissSwipeHint, showSwipeHint]);
+
+    if (!products || products.length === 0) return null;
 
     return (
         <div className="relative w-full max-w-[1400px] mx-auto group">
+            <div
+                aria-hidden="true"
+                className={`pointer-events-none absolute left-1/2 top-3 z-30 flex -translate-x-1/2 justify-center transition-all duration-500 md:hidden ${
+                    showSwipeHint ? 'translate-y-0 opacity-100' : '-translate-y-1 opacity-0'
+                }`}
+            >
+                <div className="inline-flex items-center gap-2 rounded-full border border-sky-300/35 bg-[#081327]/80 px-4 py-2 text-[10px] font-semibold uppercase tracking-[0.12em] text-sky-100 shadow-[0_8px_22px_rgba(2,8,20,0.5)] backdrop-blur-md">
+                    <ChevronLeft className="h-3.5 w-3.5 animate-pulse" />
+                    <span>Swipe to browse</span>
+                    <ChevronRight className="h-3.5 w-3.5 animate-pulse" />
+                </div>
+            </div>
 
             {/* Navigation Buttons (Hidden on mobile, appear on hover for desktop) */}
             <button
@@ -109,13 +155,11 @@ export function HeroSlider({ products }: HeroSliderProps) {
                                         {product.description}
                                     </p>
                                 )}
-                                <div className="mt-6 flex items-center justify-between">
-                                    <div className="text-sky-400 font-mono font-semibold tracking-wide">
+                                <div className="mt-6 flex items-center justify-end">
+                                    <span className="btn-premium inline-flex min-h-0 items-center gap-1.5 rounded-full px-4 py-2 text-[11px] font-semibold uppercase tracking-[0.12em]">
                                         Configure Layout
-                                    </div>
-                                    <div className="w-8 h-8 rounded-full bg-white/5 flex items-center justify-center text-white/50 group-hover/card:bg-indigo-500 group-hover/card:text-white transition-colors">
-                                        <ChevronRight className="w-4 h-4" />
-                                    </div>
+                                        <ChevronRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover/card:translate-x-0.5" />
+                                    </span>
                                 </div>
                             </div>
                         </Link>
